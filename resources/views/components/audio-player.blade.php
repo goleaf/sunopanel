@@ -9,7 +9,8 @@
     'class' => '',
     'src' => '',
     'trackTitle' => null,
-    'showDownload' => true
+    'showDownload' => true,
+    'isPlaying' => false
 ])
 
 @php
@@ -34,7 +35,7 @@
 
 <div x-data="{
     player: null,
-    isPlaying: false,
+    isPlaying: {{ $isPlaying ? 'true' : 'false' }},
     currentTime: 0,
     duration: 0,
     volume: 80,
@@ -170,7 +171,8 @@
                 <x-button 
                     type="button" 
                     size="sm"
-                    :color="isPlaying ? 'primary' : 'base'"
+                    :color="$isPlaying ? 'primary' : 'base'"
+                    x-bind:color="isPlaying ? 'primary' : 'base'"
                     icon
                     @click="togglePlay()"
                     title="Play/Pause"
@@ -223,7 +225,7 @@
                 <x-button 
                     type="button"
                     size="sm"
-                    :color="isLooping ? 'primary' : 'ghost'"
+                    :color="$loop ? 'primary' : 'ghost'"
                     icon
                     @click="toggleLoop()"
                     title="Toggle loop"
@@ -248,27 +250,28 @@
                             <x-icon name="volume-off" size="4" />
                         </template>
                     </x-button>
-                    <div tabindex="0" class="dropdown-content z-[1] p-2 shadow bg-base-100 rounded-box">
+                    <div tabindex="0" class="dropdown-content z-[1] p-2 shadow bg-base-100 rounded-box w-52">
                         <input 
                             type="range" 
                             min="0" 
                             max="100" 
-                            x-model="volume"
+                            x-model="volume" 
                             @input="updateVolume()"
-                            class="range range-primary range-sm h-24"
-                            orient="vertical"
-                        >
+                            class="range range-xs range-primary w-full"
+                            :class="{ 'range-primary': volume > 50, 'range-warning': volume > 0 && volume <= 50, 'range-error': volume === 0 }"
+                        />
                     </div>
                 </div>
                 
-                <!-- Download button if enabled -->
-                @if($showDownload)
+                @if($showDownload && $audioUrl)
+                <!-- Download -->
                 <x-button 
-                    :href="$audioUrl" 
-                    download 
+                    type="button"
                     size="sm"
                     color="ghost"
                     icon
+                    href="{{ $audioUrl }}" 
+                    download="{{ $trackName }}"
                     title="Download"
                 >
                     <x-icon name="download" size="4" />

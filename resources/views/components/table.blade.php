@@ -3,11 +3,13 @@
     'headerClasses' => 'px-6 py-3 text-left text-xs font-medium text-base-content opacity-70 uppercase tracking-wider',
     'bodyClasses' => 'px-6 py-4 whitespace-nowrap text-sm text-base-content',
     'sortField' => null,
-    'sortDirection' => 'asc'
+    'sortDirection' => 'asc',
+    'hover' => true,
+    'striped' => true
 ])
 
-<div class="overflow-x-auto">
-    <table {{ $attributes->merge(['class' => 'min-w-full divide-y divide-base-300']) }}>
+<div class="overflow-hidden shadow rounded-lg">
+    <table class="min-w-full divide-y divide-base-300">
         <thead class="bg-base-200">
             <tr>
                 @foreach($headers as $key => $header)

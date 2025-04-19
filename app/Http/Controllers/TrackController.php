@@ -85,13 +85,15 @@ final class TrackController extends Controller
                 'count' => $tracks->count()
             ]);
             
-            return view('tracks.index', compact('tracks', 'genres'));
+            return view('tracks.index', compact('tracks', 'genres', 'sortField', 'direction'));
         } catch (\Exception $e) {
             $this->loggingService->logError($e, $request, 'TrackController@index');
             
             return view('tracks.index', [
                 'tracks' => collect(),
                 'genres' => Genre::orderBy('name')->get(),
+                'sortField' => 'title',
+                'direction' => 'asc',
                 'error' => 'An error occurred while loading tracks.'
             ]);
         }

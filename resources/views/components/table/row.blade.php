@@ -1,5 +1,5 @@
-@props(['active' => false, 'hover' => true])
+@props(['highlight' => false])
 
-<tr class="{{ $active ? 'active' : '' }} {{ $hover ? 'hover' : '' }}">
+<tr {{ $attributes->merge(['class' => $highlight ? 'bg-base-200/30' : 'hover:bg-base-200/30']) }}>
     {{ $slot }}
 </tr> 
