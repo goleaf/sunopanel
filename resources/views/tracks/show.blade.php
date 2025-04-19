@@ -5,28 +5,28 @@
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-3xl font-bold text-primary">{{ $track->title }}</h1>
         <div class="flex gap-2">
-            <a href="{{ route('tracks.edit', $track) }}" class="btn btn-sm btn-warning">
+            <x-button :href="route('tracks.edit', $track)" color="warning" size="sm">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                 </svg>
                 Edit
-            </a>
-            <a href="{{ route('tracks.play', $track) }}" target="_blank" class="btn btn-sm btn-success">
+            </x-button>
+            <x-button :href="route('tracks.play', $track)" color="success" size="sm" target="_blank">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 Play
-            </a>
+            </x-button>
             <form action="{{ route('tracks.destroy', $track) }}" method="POST" class="inline">
                 @csrf
                 @method('DELETE')
-                <button type="submit" class="btn btn-sm btn-error" onclick="return confirm('Are you sure you want to delete this track?')">
+                <x-button type="submit" color="error" size="sm" onclick="return confirm('Are you sure you want to delete this track?')">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
                     Delete
-                </button>
+                </x-button>
             </form>
         </div>
     </div>
@@ -164,10 +164,10 @@
                         <ul class="space-y-2">
                             @foreach($track->playlists as $playlist)
                                 <li>
-                                    <a href="{{ route('playlists.show', $playlist) }}" class="btn btn-outline btn-sm w-full justify-start">
+                                    <x-button :href="route('playlists.show', $playlist)" outline size="sm" color="primary" block class="justify-start">
                                         <span class="truncate">{{ $playlist->title }}</span>
                                         <span class="badge badge-neutral">Position: {{ $playlist->pivot->position }}</span>
-                                    </a>
+                                    </x-button>
                                 </li>
                             @endforeach
                         </ul>
@@ -180,12 +180,12 @@
     </div>
     
     <div class="mt-6">
-        <a href="{{ route('tracks.index') }}" class="btn btn-ghost">
+        <x-button :href="route('tracks.index')" color="ghost">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
                 <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
             </svg>
             Back to Tracks
-        </a>
+        </x-button>
     </div>
 </div>
 @endsection
