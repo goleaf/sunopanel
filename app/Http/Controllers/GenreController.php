@@ -9,7 +9,6 @@ use App\Models\Track;
 use App\Services\Logging\LoggingService;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
 final class GenreController extends Controller
