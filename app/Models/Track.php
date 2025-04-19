@@ -150,13 +150,13 @@ final class Track extends Model
      */
     public function getGenresListAttribute(): string
     {
-        // Check if the relationship is loaded and is a collection
-        if ($this->relationLoaded('genres') && $this->genres instanceof Collection) {
-            return $this->genres->pluck('name')->implode(', ');
+        // Force loading the relationship if not already loaded
+        if (!$this->relationLoaded('genres')) {
+            $this->load('genres');
         }
-
-        // Return empty string as fallback
-        return '';
+        
+        // Return the imploded genre names
+        return $this->genres->pluck('name')->implode(', ');
     }
 
     /**
