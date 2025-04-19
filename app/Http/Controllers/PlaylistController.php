@@ -5,22 +5,24 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Http\Requests\PlaylistCreateFromGenreRequest;
+use App\Http\Requests\PlaylistRequest;
+use App\Http\Requests\PlaylistStoreTracksRequest;
 use App\Models\Genre;
 use App\Models\Playlist;
 use App\Models\Track;
 use App\Services\Logging\LoggingService;
+use App\Services\Playlist\PlaylistService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
 final class PlaylistController extends Controller
 {
-    private LoggingService $loggingService;
-
-    public function __construct(LoggingService $loggingService)
-    {
-        $this->loggingService = $loggingService;
-    }
+    public function __construct(
+        private readonly LoggingService $loggingService,
+        private readonly PlaylistService $playlistService
+    ) {}
 
     /**
      * Display a listing of the playlists.
@@ -33,52 +35,21 @@ final class PlaylistController extends Controller
                 'user_id' => auth()->id(),
             ]);
 
-            $query = Playlist::query()->withCount('tracks')->with('genre');
+            $playlists = $this->playlistService->getPaginatedPlaylists($request);
 
-            // Handle search
-            if ($request->has('search')) {
-                $searchTerm = $request->search;
-                $query->where('title', 'like', "%{$searchTerm}%")
-                    ->orWhere('description', 'like', "%{$searchTerm}%");
-
-                $this->loggingService->info('Playlist search applied', ['term' => $searchTerm]);
-            }
-
-            // Handle sorting
-            if ($request->has('sort')) {
-                $sortField = $request->sort;
-                $direction = $request->direction ?? 'asc';
-
-                // Validate sort direction
-                if (! in_array($direction, ['asc', 'desc'])) {
-                    $direction = 'asc';
-                }
-
-                // Validate sort field
-                $allowedSortFields = ['title', 'created_at', 'tracks_count'];
-                if (in_array($sortField, $allowedSortFields)) {
-                    $query->orderBy($sortField, $direction);
-
-                    $this->loggingService->info('Playlist sort applied', [
-                        'field' => $sortField,
-                        'direction' => $direction,
-                    ]);
-                }
-            } else {
-                // Default sorting
-                $query->orderBy('created_at', 'desc');
-            }
-
-            $playlists = $query->paginate(10)->withQueryString();
-
-            return view('playlists.index', compact('playlists'));
+            return view('playlists.index', [
+                'playlists' => $playlists,
+                'sortField' => $request->input('sort', 'created_at'),
+                'direction' => $request->input('direction', 'desc'),
+            ]);
         } catch (\Exception $e) {
             $this->loggingService->logError($e, $request, 'PlaylistController@index');
 
             return view('playlists.index', [
                 'playlists' => collect(),
-                'error' => 'An error occurred while loading playlists.',
-            ]);
+                'sortField' => 'created_at',
+                'direction' => 'desc',
+            ])->with('error', 'An error occurred while loading playlists.');
         }
     }
 
@@ -90,46 +61,28 @@ final class PlaylistController extends Controller
         $this->loggingService->info('Playlist create form accessed');
         $genres = Genre::orderBy('name')->get();
 
-        return view('playlists.create', compact('genres'));
+        return view('playlists.form', compact('genres'));
     }
 
     /**
      * Store a newly created playlist in storage.
      */
-    public function store(Request $request): RedirectResponse
+    public function store(PlaylistRequest $request): RedirectResponse
     {
-        $this->loggingService->info('Playlist store method called', ['request' => $request->except(['_token'])]);
-
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'cover_image' => 'nullable|url',
-            'genre_id' => 'nullable|exists:genres,id',
-            'track_ids' => 'nullable|array',
-            'track_ids.*' => 'exists:tracks,id',
-        ]);
+        $this->loggingService->info('Playlist store method called', ['request' => $request->validated()]);
 
         try {
-            $playlist = Playlist::create($validated);
+            $playlist = $this->playlistService->storeFromRequest($request, Auth::user());
 
-            // Attach tracks if provided
-            if ($request->has('track_ids')) {
-                $position = 0;
-                foreach ($request->track_ids as $trackId) {
-                    $playlist->tracks()->attach($trackId, ['position' => $position]);
-                    $position++;
-                }
-            }
+            $this->loggingService->info('Playlist created successfully via service', ['playlist_id' => $playlist->id, 'title' => $playlist->title]);
 
-            $this->loggingService->info('Playlist created successfully', ['playlist_id' => $playlist->id, 'title' => $playlist->title]);
-
-            return redirect()->route('playlists.index')
-                ->with('success', 'Playlist created successfully.');
+            return redirect()->route('playlists.addTracks', $playlist)
+                ->with('success', "Playlist '{$playlist->title}' created successfully. Now add some tracks!");
         } catch (\Exception $e) {
             $this->loggingService->logError($e, $request, 'PlaylistController@store');
 
             return redirect()->back()
-                ->with('error', 'Failed to create playlist: '.$e->getMessage())
+                ->with('error', 'Failed to create playlist: ' . $e->getMessage())
                 ->withInput();
         }
     }
@@ -141,9 +94,14 @@ final class PlaylistController extends Controller
     {
         $this->loggingService->info('Playlist show page accessed', ['playlist_id' => $playlist->id, 'title' => $playlist->title]);
 
-        $playlist->load(['tracks.genres', 'genre']);
+        try {
+            $playlistWithDetails = $this->playlistService->getPlaylistWithTrackDetails($playlist);
 
-        return view('playlists.show', compact('playlist'));
+            return view('playlists.show', ['playlist' => $playlistWithDetails]);
+        } catch (\Exception $e) {
+            $this->loggingService->logError($e, $request, 'PlaylistController@show', $playlist->id);
+            return redirect()->route('playlists.index')->with('error', 'Playlist not found or an error occurred.');
+        }
     }
 
     /**
@@ -152,67 +110,33 @@ final class PlaylistController extends Controller
     public function edit(Playlist $playlist): View
     {
         $this->loggingService->info('Playlist edit form accessed', ['playlist_id' => $playlist->id, 'title' => $playlist->title]);
-
         $genres = Genre::orderBy('name')->get();
 
-        return view('playlists.edit', compact('playlist', 'genres'));
+        return view('playlists.form', compact('playlist', 'genres'));
     }
 
     /**
      * Update the specified playlist in storage.
      */
-    public function update(Request $request, Playlist $playlist): RedirectResponse
+    public function update(PlaylistRequest $request, Playlist $playlist): RedirectResponse
     {
         $this->loggingService->info('Playlist update method called', [
             'playlist_id' => $playlist->id,
-            'title' => $playlist->title,
-            'request' => $request->except(['_token']),
+            'request' => $request->validated(),
         ]);
-
-        $validated = $request->validate([
-            'title' => 'nullable|string|max:255',
-            'name' => 'nullable|string|max:255',
-            'description' => 'nullable|string',
-            'genre_id' => 'nullable|exists:genres,id',
-        ]);
-
-        // For backward compatibility: if name is set but title isn't, use name as title
-        if (! isset($validated['title']) && isset($validated['name'])) {
-            $validated['title'] = $validated['name'];
-        }
-
-        // Make sure title is set (required)
-        if (empty($validated['title'])) {
-            return redirect()->back()
-                ->withErrors(['title' => 'The title field is required.'])
-                ->withInput();
-        }
 
         try {
-            // Remove 'name' from the validated array to prevent unknown column error
-            if (isset($validated['name'])) {
-                unset($validated['name']);
-            }
+            $updatedPlaylist = $this->playlistService->updateFromRequest($request, $playlist);
 
-            $playlist->update($validated);
+            $this->loggingService->info('Playlist updated successfully via service', ['playlist_id' => $updatedPlaylist->id, 'title' => $updatedPlaylist->title]);
 
-            // Update cover image if provided
-            if ($request->hasFile('cover_image')) {
-                $file = $request->file('cover_image');
-                $filename = time().'_'.$file->getClientOriginalName();
-                $file->storeAs('public/covers', $filename);
-                $playlist->update(['cover_image' => 'covers/'.$filename]);
-            }
-
-            $this->loggingService->info('Playlist updated successfully', ['playlist_id' => $playlist->id, 'title' => $playlist->title]);
-
-            return redirect()->route('playlists.index')
-                ->with('success', 'Playlist updated successfully.');
+            return redirect()->route('playlists.show', $updatedPlaylist)
+                ->with('success', "Playlist '{$updatedPlaylist->title}' updated successfully.");
         } catch (\Exception $e) {
             $this->loggingService->logError($e, $request, 'PlaylistController@update', $playlist->id);
 
             return redirect()->back()
-                ->with('error', 'Failed to update playlist: '.$e->getMessage())
+                ->with('error', 'Failed to update playlist: ' . $e->getMessage())
                 ->withInput();
         }
     }
@@ -220,180 +144,128 @@ final class PlaylistController extends Controller
     /**
      * Remove the specified playlist from storage.
      */
-    public function destroy(Playlist $playlist): RedirectResponse
+    public function destroy(Request $request, Playlist $playlist): RedirectResponse
     {
+        $playlistTitle = $playlist->title;
+        $this->loggingService->info('Playlist delete initiated', ['playlist_id' => $playlist->id, 'title' => $playlistTitle]);
+
         try {
-            $this->loggingService->info('Playlist delete initiated', ['playlist_id' => $playlist->id, 'title' => $playlist->title]);
+            $deleted = $this->playlistService->deletePlaylistAndDetachTracks($playlist);
 
-            $playlist->delete();
-
-            $this->loggingService->info('Playlist deleted successfully', ['playlist_id' => $playlist->id, 'title' => $playlist->title]);
+            if ($deleted) {
+                $this->loggingService->info('Playlist deleted successfully via service', ['playlist_id' => $playlist->id, 'title' => $playlistTitle]);
+                return redirect()->route('playlists.index')
+                    ->with('success', "Playlist '{$playlistTitle}' deleted successfully.");
+            } else {
+                $this->loggingService->warning('Playlist deletion failed via service', ['playlist_id' => $playlist->id, 'title' => $playlistTitle]);
+                return redirect()->route('playlists.index')
+                    ->with('error', "Failed to delete playlist '{$playlistTitle}'.");
+            }
+        } catch (\Exception $e) {
+            $this->loggingService->logError($e, $request, 'PlaylistController@destroy', $playlist->id);
 
             return redirect()->route('playlists.index')
-                ->with('success', 'Playlist deleted successfully.');
-        } catch (\Exception $e) {
-            $this->loggingService->logError($e, request(), 'PlaylistController@destroy', $playlist->id);
-
-            return redirect()->back()
-                ->with('error', 'Failed to delete playlist: '.$e->getMessage());
+                ->with('error', 'Failed to delete playlist: ' . $e->getMessage());
         }
     }
 
     /**
      * Show form to add tracks to the playlist.
      */
-    public function addTracks(Playlist $playlist): View
+    public function addTracks(Request $request, Playlist $playlist): View
     {
         $this->loggingService->info('Add tracks to playlist form accessed', ['playlist_id' => $playlist->id, 'title' => $playlist->title]);
 
-        $playlist->load('tracks');
-        $existingTrackIds = $playlist->tracks->pluck('id')->toArray();
+        try {
+            [$playlist, $tracks, $genres] = $this->playlistService->getAvailableTracksForPlaylist($playlist, $request);
 
-        // Get tracks not in this playlist
-        $tracks = Track::with('genres')
-            ->whereNotIn('id', $existingTrackIds)
-            ->orderBy('title')
-            ->paginate(20);
-
-        // Get all genres for filtering
-        $genres = Genre::orderBy('name')->get();
-
-        // Add available tracks for tests that check for this variable
-        $availableTracks = $tracks;
-
-        return view('playlists.add-tracks', compact('playlist', 'tracks', 'genres', 'availableTracks'));
+            return view('playlists.add-tracks', compact('playlist', 'tracks', 'genres'));
+        } catch (\Exception $e) {
+            $this->loggingService->logError($e, $request, 'PlaylistController@addTracks', $playlist->id);
+            return redirect()->route('playlists.show', $playlist)->with('error', 'Error loading tracks page.');
+        }
     }
 
     /**
-     * Store tracks in the playlist.
+     * Store tracks added to the playlist.
      */
-    public function storeTracks(Request $request, Playlist $playlist): RedirectResponse
+    public function storeTracks(PlaylistStoreTracksRequest $request, Playlist $playlist): RedirectResponse
     {
-        $this->loggingService->info('Adding tracks to playlist', [
+        $this->loggingService->info('Store tracks to playlist method called', [
             'playlist_id' => $playlist->id,
-            'playlist_title' => $playlist->title,
-            'track_count' => count($request->input('track_ids', [])),
-        ]);
-
-        $request->validate([
-            'track_ids' => 'required|array',
-            'track_ids.*' => 'exists:tracks,id',
+            'track_ids' => $request->validated()['track_ids'] ?? [],
         ]);
 
         try {
-            $trackIds = $request->input('track_ids', []);
-            $position = $playlist->tracks()->count(); // Start position after existing tracks
+            $count = $this->playlistService->addTracksFromRequest($request, $playlist);
 
-            foreach ($trackIds as $trackId) {
-                // Check if track is already in playlist
-                if (! $playlist->tracks()->where('track_id', $trackId)->exists()) {
-                    $playlist->tracks()->attach($trackId, ['position' => $position]);
-                    $position++;
-                }
+            if ($count > 0) {
+                $this->loggingService->info("{$count} tracks added to playlist via service", ['playlist_id' => $playlist->id]);
+                return redirect()->route('playlists.show', $playlist)
+                    ->with('success', "{$count} track(s) added to playlist '{$playlist->title}'.");
+            } else {
+                $this->loggingService->info('No new tracks added to playlist via service', ['playlist_id' => $playlist->id]);
+                return redirect()->route('playlists.show', $playlist)
+                    ->with('info', 'No new tracks were added.');
             }
-
-            $this->loggingService->info('Tracks added to playlist successfully', [
-                'playlist_id' => $playlist->id,
-                'track_count' => count($trackIds),
-            ]);
-
-            return redirect()->route('playlists.show', $playlist->id)
-                ->with('success', count($trackIds).' tracks added to playlist successfully.');
         } catch (\Exception $e) {
             $this->loggingService->logError($e, $request, 'PlaylistController@storeTracks', $playlist->id);
-
-            return redirect()->back()
-                ->with('error', 'Failed to add tracks to playlist: '.$e->getMessage());
+            return redirect()->route('playlists.show', $playlist)
+                ->with('error', 'An error occurred while adding tracks: ' . $e->getMessage());
         }
     }
 
     /**
-     * Remove a track from the playlist.
+     * Remove a specific track from the playlist.
      */
-    public function removeTrack(Playlist $playlist, Track $track): RedirectResponse
+    public function removeTrack(Request $request, Playlist $playlist, Track $track): RedirectResponse
     {
+        $this->loggingService->info('Remove track from playlist method called', [
+            'playlist_id' => $playlist->id,
+            'track_id' => $track->id,
+        ]);
+
         try {
-            $this->loggingService->info('Removing track from playlist', [
-                'playlist_id' => $playlist->id,
-                'playlist_title' => $playlist->title,
-                'track_id' => $track->id,
-                'track_title' => $track->title,
-            ]);
+            $removed = $this->playlistService->removeTrack($playlist, $track);
 
-            // Detach the track from the playlist
-            $playlist->tracks()->detach($track->id);
-
-            // Reorder the remaining tracks to ensure position integrity
-            $positions = 0;
-            foreach ($playlist->tracks as $trackItem) {
-                $playlist->tracks()->updateExistingPivot($trackItem->id, ['position' => $positions]);
-                $positions++;
+            if ($removed) {
+                $this->loggingService->info('Track removed successfully via service', ['playlist_id' => $playlist->id, 'track_id' => $track->id]);
+                return redirect()->route('playlists.show', $playlist)
+                    ->with('success', "Track '{$track->title}' removed from playlist.");
+            } else {
+                $this->loggingService->warning('Failed to remove track via service', ['playlist_id' => $playlist->id, 'track_id' => $track->id]);
+                return redirect()->route('playlists.show', $playlist)
+                    ->with('error', "Failed to remove track '{$track->title}'.");
             }
-
-            $this->loggingService->info('Track removed from playlist successfully', [
-                'playlist_id' => $playlist->id,
-                'track_id' => $track->id,
-            ]);
-
-            return redirect()->route('playlists.show', $playlist->id)
-                ->with('success', 'Track removed from playlist successfully.');
         } catch (\Exception $e) {
-            $this->loggingService->logError($e, request(), 'PlaylistController@removeTrack', $playlist->id);
-
-            return redirect()->back()
-                ->with('error', 'Failed to remove track from playlist: '.$e->getMessage());
+            $this->loggingService->logError($e, $request, 'PlaylistController@removeTrack', $playlist->id, ['track_id' => $track->id]);
+            return redirect()->route('playlists.show', $playlist)
+                ->with('error', 'An error occurred while removing the track: ' . $e->getMessage());
         }
     }
 
     /**
-     * Create a playlist from a genre.
+     * Create a new playlist from a genre.
      */
     public function createFromGenre(PlaylistCreateFromGenreRequest $request, Genre $genre): RedirectResponse
     {
+        $this->loggingService->info('Create playlist from genre method called', ['genre_id' => $genre->id, 'name' => $genre->name]);
+
         try {
-            $this->loggingService->info('Creating playlist from genre', [
-                'genre_id' => $genre->id,
-                'genre_name' => $genre->name,
-            ]);
+            $playlist = $this->playlistService->createFromGenre($genre, Auth::user(), $request->validated());
 
-            // Get tracks from this genre (limited to 50 to prevent too large playlists)
-            $tracks = $genre->tracks()->inRandomOrder()->limit(50)->get();
-
-            if ($tracks->isEmpty()) {
-                return redirect()->route('genres.show', $genre->id)
-                    ->with('warning', 'No tracks found in this genre to create playlist.');
-            }
-
-            // Get title suffix if provided, otherwise use "Playlist"
-            $titleSuffix = $request->input('title_suffix') ? $request->input('title_suffix') : ' Playlist';
-
-            // Create a new playlist
-            $playlist = Playlist::create([
-                'title' => $genre->name.$titleSuffix,
-                'description' => 'Auto-generated playlist from '.$genre->name.' genre.',
-                'genre_id' => $genre->id,
-            ]);
-
-            // Add tracks to playlist
-            $position = 0;
-            foreach ($tracks as $track) {
-                $playlist->tracks()->attach($track->id, ['position' => $position]);
-                $position++;
-            }
-
-            $this->loggingService->info('Playlist created from genre successfully', [
+            $this->loggingService->info('Playlist created from genre successfully via service', [
                 'playlist_id' => $playlist->id,
+                'title' => $playlist->title,
                 'genre_id' => $genre->id,
-                'track_count' => $tracks->count(),
             ]);
 
-            return redirect()->route('playlists.show', $playlist->id)
-                ->with('success', 'Playlist created from genre with '.$tracks->count().' tracks.');
+            return redirect()->route('playlists.show', $playlist)
+                ->with('success', "Playlist '{$playlist->title}' created from genre '{$genre->name}'.");
         } catch (\Exception $e) {
-            $this->loggingService->logError($e, request(), 'PlaylistController@createFromGenre', $genre->id);
-
-            return redirect()->back()
-                ->with('error', 'Failed to create playlist from genre: '.$e->getMessage());
+            $this->loggingService->logError($e, $request, 'PlaylistController@createFromGenre', null, ['genre_id' => $genre->id]);
+            return redirect()->route('genres.show', $genre)
+                ->with('error', 'Failed to create playlist from genre: ' . $e->getMessage());
         }
     }
 }
