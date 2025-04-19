@@ -7,7 +7,10 @@ namespace App\Services\Genre;
 use App\Http\Requests\GenreStoreRequest;
 use App\Http\Requests\GenreUpdateRequest;
 use App\Models\Genre;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
@@ -174,5 +177,108 @@ final readonly class GenreService
         }
 
         return $genre;
+    }
+
+    /**
+     * Get paginated genres with filtering and sorting.
+     */
+    public function getPaginatedGenres(Request $request): LengthAwarePaginator
+    {
+        $query = Genre::query()->withCount('tracks');
+
+        // Handle search
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where('name', 'like', '%'.$search.'%');
+        }
+
+        // Handle sorting
+        $sortField = $request->input('sort', 'name');
+        $direction = $request->input('direction', 'asc');
+
+        // Validate sort field
+        $allowedSortFields = ['name', 'tracks_count', 'created_at'];
+        $sortField = in_array($sortField, $allowedSortFields) ? $sortField : 'name';
+        $direction = in_array($direction, ['asc', 'desc']) ? $direction : 'asc';
+
+        $query->orderBy($sortField, $direction);
+
+        // Default pagination size
+        $perPage = (int) $request->input('per_page', 15);
+
+        return $query->paginate($perPage)->withQueryString();
+    }
+
+    /**
+     * Get paginated tracks for a specific genre with sorting.
+     */
+    public function getPaginatedTracksForGenre(Genre $genre, Request $request): LengthAwarePaginator
+    {
+        $query = $genre->tracks()->with('genres'); // Eager load genres for tracks
+
+        // Handle sorting
+        $sortField = $request->query('sort', 'title');
+        $direction = $request->query('direction', 'asc');
+
+        // Validate sort field
+        $allowedSortFields = ['title', 'created_at', 'duration'];
+        $sortField = in_array($sortField, $allowedSortFields) ? $sortField : 'title';
+        $direction = in_array($direction, ['asc', 'desc']) ? $direction : 'asc';
+
+        $query->orderBy($sortField, $direction);
+
+        // Default pagination size
+        $perPage = (int) $request->input('per_page', 10);
+
+        return $query->paginate($perPage)->withQueryString();
+    }
+
+    /**
+     * Delete a genre after detaching its tracks.
+     */
+    public function deleteGenreAndDetachTracks(Genre $genre): bool
+    {
+        $genreId = $genre->id;
+        $genreName = $genre->name;
+
+        try {
+            return DB::transaction(function () use ($genre) {
+                $trackCount = $genre->tracks()->count();
+
+                // Detach all tracks associated with this genre
+                if ($trackCount > 0) {
+                    $genre->tracks()->detach();
+                    Log::info('Detached tracks from genre before deletion', [
+                        'genre_id' => $genre->id,
+                        'name' => $genre->name,
+                        'detached_tracks' => $trackCount,
+                    ]);
+                }
+
+                // Now delete the genre
+                $deleted = $genre->delete();
+
+                if ($deleted) {
+                    Log::info('Genre deleted successfully after detaching tracks', [
+                        'genre_id' => $genre->id,
+                        'name' => $genre->name,
+                    ]);
+                } else {
+                    Log::warning('Failed to delete genre after detaching tracks', [
+                        'genre_id' => $genre->id,
+                        'name' => $genre->name,
+                    ]);
+                }
+                return (bool) $deleted;
+            });
+        } catch (\Throwable $e) {
+            Log::error('Error deleting genre and detaching tracks', [
+                'genre_id' => $genreId,
+                'name' => $genreName,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(), // Include stack trace for debugging
+            ]);
+            return false; // Indicate failure
+        }
     }
 }
