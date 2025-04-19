@@ -84,11 +84,6 @@ final class TrackController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
             
-            return redirect()->back()
-                ->with('error', 'An error occurred while loading tracks.')
-                ->with('details', app()->environment('local') ? $e->getMessage() : null)
-                ->getTargetUrl();
-                
             return view('tracks.index', [
                 'tracks' => collect(),
                 'genres' => Genre::orderBy('name')->get(),
@@ -103,7 +98,8 @@ final class TrackController extends Controller
     public function create(): View
     {
         Log::info('Track create form accessed');
-        return view('tracks.create');
+        $genres = Genre::orderBy('name')->get();
+        return view('tracks.create', compact('genres'));
     }
 
     /**
@@ -117,11 +113,12 @@ final class TrackController extends Controller
             $track = Track::create([
                 'title' => $request->validated('title'),
                 'url' => $request->validated('url'),
-                'cover_image' => $request->validated('cover_image'),
+                'cover_image' => $request->validated('cover_image', null),
+                'unique_id' => Track::generateUniqueId($request->validated('title')),
             ]);
             
             if ($request->has('genres')) {
-                $track->genres()->attach($request->validated('genres'));
+                $track->syncGenres($request->validated('genres'));
             }
             
             if ($request->has('playlists')) {
@@ -147,15 +144,11 @@ final class TrackController extends Controller
     /**
      * Process bulk upload of tracks.
      */
-    public function processBulkUpload(Request $request): RedirectResponse
+    public function processBulkUpload(BulkTrackRequest $request): RedirectResponse
     {
-        $request->validate([
-            'bulk_tracks' => 'required|string'
-        ]);
+        Log::info('Bulk track upload initiated', ['lines_count' => substr_count($request->validated('bulk_tracks'), PHP_EOL) + 1]);
 
-        Log::info('Bulk track upload initiated', ['lines_count' => substr_count($request->bulk_tracks, PHP_EOL) + 1]);
-
-        $bulkText = $request->bulk_tracks;
+        $bulkText = $request->validated('bulk_tracks');
         $lines = explode(PHP_EOL, $bulkText);
         $processedCount = 0;
         $errors = [];
@@ -249,7 +242,9 @@ final class TrackController extends Controller
     public function edit(Track $track): View
     {
         Log::info('Track edit form accessed', ['id' => $track->id, 'title' => $track->title]);
-        return view('tracks.edit', compact('track'));
+        $genres = Genre::orderBy('name')->get();
+        $trackGenres = $track->genres->pluck('id')->toArray();
+        return view('tracks.edit', compact('track', 'genres', 'trackGenres'));
     }
 
     /**
@@ -267,6 +262,10 @@ final class TrackController extends Controller
             
             if ($request->has('genres')) {
                 $track->syncGenres($request->validated('genres'));
+            }
+            
+            if ($request->has('playlists')) {
+                $track->playlists()->sync($request->validated('playlists'));
             }
             
             Log::info('TrackController: track updated successfully', ['track_id' => $track->id]);
