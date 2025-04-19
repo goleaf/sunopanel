@@ -8,7 +8,7 @@ use App\Http\Requests\GenreStoreRequest;
 use App\Http\Requests\GenreUpdateRequest;
 use App\Models\Genre;
 use App\Services\Genre\GenreService;
-use App\Services\Logging\LoggingService;
+use App\Services\Logging\LoggingServiceInterface;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -16,7 +16,7 @@ use Illuminate\View\View;
 final class GenreController extends Controller
 {
     public function __construct(
-        private readonly LoggingService $loggingService,
+        private readonly LoggingServiceInterface $loggingService,
         private readonly GenreService $genreService
     ) {}
 
@@ -28,7 +28,7 @@ final class GenreController extends Controller
         try {
             $genres = $this->genreService->getPaginatedGenres($request);
 
-            $this->loggingService->info('Genres index page accessed', [
+            $this->loggingService->logInfoMessage('Genres index page accessed', [
                 'search' => $request->search,
                 'sort' => $request->input('sort', 'name'),
                 'direction' => $request->input('direction', 'asc'),
@@ -41,7 +41,11 @@ final class GenreController extends Controller
                 'direction' => $request->input('direction', 'asc'),
             ]);
         } catch (\Exception $e) {
-            $this->loggingService->logError($e, $request, 'GenreController@index');
+            $this->loggingService->logErrorMessage('Error in GenreController@index', [
+                 'error' => $e->getMessage(),
+                 'trace' => substr($e->getTraceAsString(), 0, 500),
+                 'user_id' => auth()->id(),
+             ]);
 
             return view('genres.index', [
                 'genres' => collect(),
@@ -56,7 +60,7 @@ final class GenreController extends Controller
      */
     public function create(): View
     {
-        $this->loggingService->info('Genre create form accessed');
+        $this->loggingService->logInfoMessage('Genre create form accessed');
         return view('genres.form');
     }
 
@@ -65,17 +69,21 @@ final class GenreController extends Controller
      */
     public function store(GenreStoreRequest $request): RedirectResponse
     {
-        $this->loggingService->info('Genre store method called', ['request' => $request->validated()]);
+        $this->loggingService->logInfoMessage('Genre store method called', ['request' => $request->validated()]);
 
         try {
             $genre = $this->genreService->store($request);
 
-            $this->loggingService->info('Genre created successfully via service', ['genre_id' => $genre->id, 'name' => $genre->name]);
+            $this->loggingService->logInfoMessage('Genre created successfully via service', ['genre_id' => $genre->id, 'name' => $genre->name]);
 
             return redirect()->route('genres.index')
                 ->with('success', "Genre '{$genre->name}' created successfully.");
         } catch (\Exception $e) {
-             $this->loggingService->logError($e, $request, 'GenreController@store');
+             $this->loggingService->logErrorMessage('Error in GenreController@store', [
+                 'error' => $e->getMessage(),
+                 'trace' => substr($e->getTraceAsString(), 0, 500),
+                 'user_id' => auth()->id(),
+             ]);
              return redirect()->back()->withInput()->with('error', 'Failed to create genre: ' . $e->getMessage());
         }
     }
@@ -86,11 +94,11 @@ final class GenreController extends Controller
     public function show(Request $request, Genre $genre): View
     {
         try {
-            $this->loggingService->info('Genre show page accessed', ['genre_id' => $genre->id, 'name' => $genre->name]);
+            $this->loggingService->logInfoMessage('Genre show page accessed', ['genre_id' => $genre->id, 'name' => $genre->name]);
 
             $tracks = $this->genreService->getPaginatedTracksForGenre($genre, $request);
 
-            $this->loggingService->info('Genre show page tracks retrieved', [
+            $this->loggingService->logInfoMessage('Genre show page tracks retrieved', [
                 'genre_id' => $genre->id,
                 'field' => $request->query('sort', 'title'),
                 'direction' => $request->query('direction', 'asc'),
@@ -104,7 +112,12 @@ final class GenreController extends Controller
                 'sortOrder' => $request->query('direction', 'asc'),
             ]);
         } catch (\Exception $e) {
-            $this->loggingService->logError($e, $request, 'GenreController@show', $genre->id);
+            $this->loggingService->logErrorMessage('Error in GenreController@show', [
+                 'genre_id' => $genre->id,
+                 'error' => $e->getMessage(),
+                 'trace' => substr($e->getTraceAsString(), 0, 500),
+                 'user_id' => auth()->id(),
+             ]);
              return redirect()->route('genres.index')->with('error', 'Genre not found or an error occurred.');
         }
     }
@@ -114,7 +127,7 @@ final class GenreController extends Controller
      */
     public function edit(Genre $genre): View
     {
-        $this->loggingService->info('Genre edit form accessed', ['genre_id' => $genre->id, 'name' => $genre->name]);
+        $this->loggingService->logInfoMessage('Genre edit form accessed', ['genre_id' => $genre->id, 'name' => $genre->name]);
         return view('genres.form', compact('genre'));
     }
 
@@ -123,7 +136,7 @@ final class GenreController extends Controller
      */
     public function update(GenreUpdateRequest $request, Genre $genre): RedirectResponse
     {
-        $this->loggingService->info('Genre update method called', [
+        $this->loggingService->logInfoMessage('Genre update method called', [
             'genre_id' => $genre->id,
             'request' => $request->validated(),
         ]);
@@ -131,12 +144,17 @@ final class GenreController extends Controller
         try {
             $updatedGenre = $this->genreService->update($request, $genre);
 
-            $this->loggingService->info('Genre updated successfully via service', ['genre_id' => $updatedGenre->id, 'name' => $updatedGenre->name]);
+            $this->loggingService->logInfoMessage('Genre updated successfully via service', ['genre_id' => $updatedGenre->id, 'name' => $updatedGenre->name]);
 
             return redirect()->route('genres.index')
                 ->with('success', "Genre '{$updatedGenre->name}' updated successfully.");
         } catch (\Exception $e) {
-            $this->loggingService->logError($e, $request, 'GenreController@update', $genre->id);
+            $this->loggingService->logErrorMessage('Error in GenreController@update', [
+                 'genre_id' => $genre->id,
+                 'error' => $e->getMessage(),
+                 'trace' => substr($e->getTraceAsString(), 0, 500),
+                 'user_id' => auth()->id(),
+             ]);
             return redirect()->back()->withInput()->with('error', 'Failed to update genre: ' . $e->getMessage());
         }
     }
@@ -147,23 +165,28 @@ final class GenreController extends Controller
     public function destroy(Request $request, Genre $genre): RedirectResponse
     {
         $genreName = $genre->name;
-        $this->loggingService->info('Genre delete method called', ['genre_id' => $genre->id, 'name' => $genreName]);
+        $this->loggingService->logInfoMessage('Genre delete method called', ['genre_id' => $genre->id, 'name' => $genreName]);
 
         try {
             $deleted = $this->genreService->deleteGenreAndDetachTracks($genre);
 
             if ($deleted) {
-                $this->loggingService->info('Genre deleted successfully via service', ['genre_id' => $genre->id, 'name' => $genreName]);
+                $this->loggingService->logInfoMessage('Genre deleted successfully via service', ['genre_id' => $genre->id, 'name' => $genreName]);
                 return redirect()->route('genres.index')
                     ->with('success', "Genre '{$genreName}' deleted successfully.");
             } else {
-                 $this->loggingService->warning('Genre deletion failed via service (e.g., tracks attached)', ['genre_id' => $genre->id, 'name' => $genreName]);
+                 $this->loggingService->logErrorMessage('Genre deletion failed via service (warning)', ['genre_id' => $genre->id, 'name' => $genreName]);
                  return redirect()->route('genres.index')
                      ->with('error', "Failed to delete genre '{$genreName}'. It might have associated tracks.");
             }
         } catch (\Exception $e) {
             $currentRequest = $request ?? request();
-            $this->loggingService->logError($e, $currentRequest, 'GenreController@destroy', $genre->id);
+            $this->loggingService->logErrorMessage('Error in GenreController@destroy', [
+                 'genre_id' => $genre->id,
+                 'error' => $e->getMessage(),
+                 'trace' => substr($e->getTraceAsString(), 0, 500),
+                 'user_id' => auth()->id(),
+             ]);
             return redirect()->route('genres.index')->with('error', 'Failed to delete genre: ' . $e->getMessage());
         }
     }
