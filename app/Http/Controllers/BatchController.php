@@ -9,13 +9,15 @@ use Illuminate\Support\Facades\Log;
 use App\Models\Track;
 use App\Models\Genre;
 use App\Models\Playlist;
+use Illuminate\View\View;
+use Illuminate\Http\RedirectResponse;
 
 final class BatchController extends Controller
 {
     /**
      * Display a listing of all batches
      */
-    public function index()
+    public function index(): View
     {
         $tracks = Track::with('genres')->orderBy('title')->get();
         $genres = Genre::orderBy('name')->get();
@@ -27,7 +29,7 @@ final class BatchController extends Controller
     /**
      * Show the batch import form with examples and tab data
      */
-    public function import()
+    public function import(): RedirectResponse
     {
         Log::info('Accessed batch import page');
         return redirect()->route('dashboard')->with('success', 'Import feature temporarily disabled');
@@ -36,7 +38,7 @@ final class BatchController extends Controller
     /**
      * Process batch import form
      */
-    public function processImport(Request $request)
+    public function processImport(Request $request): RedirectResponse
     {
         Log::info('Starting batch import process');
         return redirect()->route('dashboard')->with('success', 'Import process temporarily disabled');
@@ -45,7 +47,7 @@ final class BatchController extends Controller
     /**
      * Import tracks in batch
      */
-    public function importTracks(Request $request)
+    public function importTracks(Request $request): RedirectResponse
     {
         Log::info('Starting tracks import');
         return redirect()->route('dashboard')->with('success', 'Track import temporarily disabled');
@@ -54,7 +56,7 @@ final class BatchController extends Controller
     /**
      * Import playlists in batch
      */
-    public function importPlaylists(Request $request)
+    public function importPlaylists(Request $request): RedirectResponse
     {
         Log::info('Starting playlists import');
         return redirect()->route('dashboard')->with('success', 'Playlist import temporarily disabled');
@@ -63,7 +65,7 @@ final class BatchController extends Controller
     /**
      * Import genres in batch
      */
-    public function importGenres(Request $request)
+    public function importGenres(Request $request): RedirectResponse
     {
         Log::info('Starting genres import');
         return redirect()->route('dashboard')->with('success', 'Genre import temporarily disabled');
@@ -72,7 +74,7 @@ final class BatchController extends Controller
     /**
      * Show batch actions page
      */
-    public function actions()
+    public function actions(): RedirectResponse
     {
         Log::info('Accessing batch actions page');
         return redirect()->route('dashboard')->with('success', 'Batch actions temporarily disabled');
@@ -81,7 +83,7 @@ final class BatchController extends Controller
     /**
      * Process batch actions
      */
-    public function processActions(Request $request)
+    public function processActions(Request $request): RedirectResponse
     {
         Log::info('Processing batch actions');
         return redirect()->route('dashboard')->with('success', 'Batch actions temporarily disabled');
@@ -90,7 +92,7 @@ final class BatchController extends Controller
     /**
      * Assign genres to tracks in batch
      */
-    public function assignGenres(Request $request)
+    public function assignGenres(Request $request): RedirectResponse
     {
         Log::info('Assigning genres to tracks in batch');
         return redirect()->route('dashboard')->with('success', 'Genre assignment temporarily disabled');
@@ -99,7 +101,7 @@ final class BatchController extends Controller
     /**
      * Add tracks to playlist in batch
      */
-    public function addToPlaylist(Request $request)
+    public function addToPlaylist(Request $request): RedirectResponse
     {
         Log::info('Adding tracks to playlist in batch');
         return redirect()->route('dashboard')->with('success', 'Playlist addition temporarily disabled');
