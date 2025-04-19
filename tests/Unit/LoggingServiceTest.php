@@ -2,7 +2,7 @@
 
 namespace Tests\Unit;
 
-use App\Services\Logging\ErrorLogService;
+use App\Services\Logging\LoggingService;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -11,7 +11,7 @@ use Mockery;
 use Symfony\Component\HttpFoundation\Response;
 use Tests\TestCase;
 
-class ErrorLogServiceTest extends TestCase
+class LoggingServiceTest extends TestCase
 {
     protected function setUp(): void
     {
@@ -39,7 +39,7 @@ class ErrorLogServiceTest extends TestCase
                     isset($context['trace']);
             });
 
-        $service = new ErrorLogService();
+        $service = new LoggingService();
 
         // Act
         $service->logError($exception, null, 'Test context');
@@ -68,7 +68,7 @@ class ErrorLogServiceTest extends TestCase
                     $context['request_url'] === 'http://example.com/api/test';
             });
 
-        $service = new ErrorLogService();
+        $service = new LoggingService();
 
         // Act
         $service->logApiError($exception, $request, null, 'API test');
@@ -105,7 +105,7 @@ class ErrorLogServiceTest extends TestCase
                     $context['request_data']['credit_card'] === '[FILTERED]';
             });
 
-        $service = new ErrorLogService();
+        $service = new LoggingService();
 
         // Act
         $service->logApiError($exception, $request);
@@ -129,7 +129,7 @@ class ErrorLogServiceTest extends TestCase
                     $context['bindings'] === $bindings;
             });
 
-        $service = new ErrorLogService();
+        $service = new LoggingService();
 
         // Act
         $service->logDatabaseError($exception, $query, $bindings, 'DB test');

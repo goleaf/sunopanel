@@ -4,22 +4,22 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Services\Logging;
 
-use App\Services\Logging\ErrorLogService;
+use App\Services\Logging\LoggingService;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use PHPUnit\Framework\TestCase;
 use Mockery;
 
-final class ErrorLogServiceTest extends TestCase
+final class LoggingServiceTest extends TestCase
 {
-    private ErrorLogService $errorLogService;
+    private LoggingService $loggingService;
 
     protected function setUp(): void
     {
         parent::setUp();
         
-        $this->errorLogService = new ErrorLogService();
+        $this->loggingService = new LoggingService();
         
         // Mock the Log facade
         Log::shouldReceive('error')
@@ -54,7 +54,7 @@ final class ErrorLogServiceTest extends TestCase
             });
         
         // When
-        $this->errorLogService->logError($exception, null, $context);
+        $this->loggingService->logError($exception, null, $context);
     }
 
     /** @test */
@@ -85,7 +85,7 @@ final class ErrorLogServiceTest extends TestCase
             });
         
         // When
-        $this->errorLogService->logApiError($exception, $request, null, 'API test');
+        $this->loggingService->logApiError($exception, $request, null, 'API test');
     }
 
     /** @test */
@@ -110,7 +110,7 @@ final class ErrorLogServiceTest extends TestCase
             });
         
         // When
-        $this->errorLogService->logDatabaseError($exception, $query, $bindings, 'DB test');
+        $this->loggingService->logDatabaseError($exception, $query, $bindings, 'DB test');
     }
 
     /** @test */
@@ -144,6 +144,6 @@ final class ErrorLogServiceTest extends TestCase
             });
         
         // When
-        $this->errorLogService->logApiError($exception, $request);
+        $this->loggingService->logApiError($exception, $request);
     }
 } 
