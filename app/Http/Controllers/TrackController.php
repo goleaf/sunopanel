@@ -157,7 +157,7 @@ final class TrackController extends Controller
     /**
      * Process bulk upload of tracks.
      */
-    public function processBulkUpload(TrackStoreRequest $request): RedirectResponse
+    public function processBulkUpload(BulkTrackRequest $request): RedirectResponse
     {
         try {
             // Get bulk tracks data from the request
