@@ -20,7 +20,9 @@ class BladeViewTest extends TestCase
         $response->assertViewHas('tracks');
         foreach ($tracks as $track) {
             $trackId = $track->id;
-            $response->assertViewHas('tracks', function ($viewTracks)             });
+            $response->assertViewHas('tracks', function ($viewTracks) use ($trackId) {
+                return $viewTracks->contains('id', $trackId);
+            });
         }
     }
 

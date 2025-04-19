@@ -61,9 +61,9 @@ class GenreRequestTest extends TestCase
 
         $track = Track::create([
             'title' => 'Test Track',
-            'audio_url' => 'https:
-            'image_url' => 'https:
-            'unique_id' => 'track1',
+            'audio_url' => 'https://example.com/audio.mp3',
+            'image_url' => 'https://example.com/image.jpg',
+            'unique_id' => 'test-track',
             'duration' => '3:00',
         ]);
         $genre->tracks()->attach($track->id);

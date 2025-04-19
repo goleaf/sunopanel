@@ -17,8 +17,9 @@ class GenreRoutesTest extends TestCase
         $genre = Genre::factory()->create(['name' => 'Bubblegum bass']);
         $track = Track::factory()->create([
             'title' => 'Test Track',
-            'audio_url' => 'https:
-            'image_url' => 'https:
+            'audio_url' => 'https://example.com/audio.mp3',
+            'image_url' => 'https://example.com/image.jpg',
+            'unique_id' => 'test-track',
         ]);
 
         $track->genres()->attach($genre->id);
@@ -128,8 +129,9 @@ public function genre_shows_associated_tracks()
         $genre = Genre::first();
         $track2 = Track::factory()->create([
             'title' => 'Another Test Track',
-            'audio_url' => 'https:
-            'image_url' => 'https:
+            'audio_url' => 'https://example.com/track.mp3',
+            'image_url' => 'https://example.com/track.jpg',
+            'unique_id' => 'test-track-' . time(),
         ]);
         $track2->genres()->attach($genre->id);
 

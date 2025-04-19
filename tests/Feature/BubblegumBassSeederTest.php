@@ -50,8 +50,8 @@ class BubblegumBassSeederTest extends TestCase
         foreach ($genreVariations as $index => $variant) {
             $track = Track::create([
                 'title' => "Test Track {$index}",
-                'audio_url' => 'https:
-                'image_url' => 'https:
+                'audio_url' => 'https://example.com/audio.mp3',
+                'image_url' => 'https://example.com/image.jpg',
                 'unique_id' => "test-track-{$index}",
             ]);
             $track->assignGenres($variant);
@@ -85,8 +85,8 @@ class BubblegumBassSeederTest extends TestCase
         foreach ($testCases as $input => $expected) {
             $track = Track::create([
                 'title' => "Track with {$input}",
-                'audio_url' => 'https:
-                'image_url' => 'https:
+                'audio_url' => 'https://example.com/audio.mp3',
+                'image_url' => 'https://example.com/image.jpg',
                 'unique_id' => md5($input.time()),
             ]);
             $track->assignGenres($input);
