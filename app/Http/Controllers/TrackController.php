@@ -128,11 +128,17 @@ final class TrackController extends Controller
                 'unique_id' => Track::generateUniqueId($request->validated('title')),
             ]);
             
-            if ($request->has('genres')) {
+            // Handle either genres string or genre_ids array
+            if ($request->has('genres') && !empty($request->validated('genres'))) {
                 $track->syncGenres($request->validated('genres'));
+            } elseif ($request->has('genre_ids') && !empty($request->validated('genre_ids'))) {
+                $genresCollection = Genre::whereIn('id', $request->validated('genre_ids'))->get();
+                $genreNames = $genresCollection->pluck('name')->implode(', ');
+                $track->syncGenres($genreNames);
             }
             
-            if ($request->has('playlists')) {
+            // Attach playlists if provided
+            if ($request->has('playlists') && !empty($request->validated('playlists'))) {
                 $track->playlists()->attach($request->validated('playlists'));
             }
             
@@ -152,11 +158,11 @@ final class TrackController extends Controller
     /**
      * Process bulk upload of tracks.
      */
-    public function processBulkUpload(Request $request): RedirectResponse
+    public function processBulkUpload(BulkTrackRequest $request): RedirectResponse
     {
         try {
             // Get bulk tracks data from the request
-            $bulkTracks = $request->input('bulk_tracks');
+            $bulkTracks = $request->validated('bulk_tracks');
             
             if (empty($bulkTracks)) {
                 throw new \Exception('No bulk tracks data provided');
@@ -276,22 +282,28 @@ final class TrackController extends Controller
     public function update(TrackUpdateRequest $request, Track $track): RedirectResponse
     {
         try {
-            $this->loggingService->info('TrackController: update method called', [
-                'track_id' => $track->id,
-                'request' => $request->validated()
+            $track->update([
+                'title' => $request->validated('title'),
+                'audio_url' => $request->validated('audio_url'),
+                'image_url' => $request->validated('image_url'),
+                'duration' => $request->validated('duration'),
             ]);
             
-            $track->update($request->validated());
-            
-            if ($request->has('genres')) {
+            // Handle either genres string or genre_ids array
+            if ($request->has('genres') && !empty($request->validated('genres'))) {
                 $track->syncGenres($request->validated('genres'));
+            } elseif ($request->has('genre_ids') && !empty($request->validated('genre_ids'))) {
+                $genresCollection = Genre::whereIn('id', $request->validated('genre_ids'))->get();
+                $genreNames = $genresCollection->pluck('name')->implode(', ');
+                $track->syncGenres($genreNames);
             }
             
+            // Sync playlists if provided
             if ($request->has('playlists')) {
                 $track->playlists()->sync($request->validated('playlists'));
             }
             
-            $this->loggingService->info('TrackController: track updated successfully', ['track_id' => $track->id]);
+            $this->loggingService->info('Track updated', ['id' => $track->id, 'title' => $track->title]);
             
             return redirect()->route('tracks.index')
                 ->with('success', 'Track updated successfully.');

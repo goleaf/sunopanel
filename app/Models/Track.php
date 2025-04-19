@@ -11,6 +11,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\App;
 use App\Services\Logging\LoggingService;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 final class Track extends Model
 {
@@ -38,6 +39,13 @@ final class Track extends Model
         'genres_list',
         'duration_seconds',
     ];
+
+    /**
+     * The relationships that should always be loaded.
+     *
+     * @var array
+     */
+    protected $with = ['genres'];
 
     /**
      * The "booted" method of the model.
@@ -93,49 +101,33 @@ final class Track extends Model
     }
 
     /**
-     * Assign genres to the track.
-     *
-     * @param string $genresString Comma-separated list of genre names
+     * Sync genres based on a comma-separated string.
+     * This will create genres that don't exist and attach them to the track.
      */
-    public function assignGenres(string $genresString): void
+    public function syncGenres(string $genresString): void
     {
-        App::make(LoggingService::class)->info('Assigning genres to track', [
-            'track_id' => $this->id,
-            'track_title' => $this->title,
-            'genres_string' => $genresString
-        ]);
-        
-        // Clear current genres
-        $this->genres()->detach();
-        
-        // Skip if empty
         if (empty($genresString)) {
+            $this->genres()->detach();
             return;
         }
-        
-        // Split into array and trim each value
+
         $genreNames = array_map('trim', explode(',', $genresString));
-        
-        // Find or create each genre and attach to track
+        $genreIds = [];
+
         foreach ($genreNames as $name) {
             if (empty($name)) {
                 continue;
             }
 
-            // Use Genre::findOrCreateByName to handle capitalization properly
+            // Find or create the genre with proper capitalization
             $genre = Genre::findOrCreateByName($name);
-            $this->genres()->attach($genre->id);
-            
-            App::make(LoggingService::class)->info('Genre attached to track', [
-                'track_id' => $this->id,
-                'track_title' => $this->title,
-                'genre_id' => $genre->id,
-                'genre_name' => $genre->name,
-                'original_name' => $name
-            ]);
+            $genreIds[] = $genre->id;
         }
+
+        // Sync the genres to the track
+        $this->genres()->sync($genreIds);
     }
-    
+
     /**
      * Get comma-separated list of genre names.
      */
@@ -202,63 +194,20 @@ final class Track extends Model
     }
 
     /**
-     * Generate a unique identifier for the track
+     * Generate a unique ID for the track.
      */
     public static function generateUniqueId(string $title): string
     {
-        return md5($title . time());
-    }
+        $baseSlug = Str::slug($title);
+        $uniqueId = $baseSlug;
+        $counter = 1;
 
-    /**
-     * Sync genres from an array or comma-separated string
-     * 
-     * @param string|array<int, string> $genresInput
-     */
-    public function syncGenres(string|array $genresInput): void
-    {
-        App::make(LoggingService::class)->info('Syncing genres for track', [
-            'track_id' => $this->id,
-            'track_title' => $this->title,
-            'genres_input' => $genresInput
-        ]);
-        
-        // If it's a string, convert to array
-        if (is_string($genresInput)) {
-            $genreNames = array_map('trim', explode(',', $genresInput));
-        } else {
-            $genreNames = $genresInput;
+        // Make sure the ID is unique
+        while (self::where('unique_id', $uniqueId)->exists()) {
+            $uniqueId = $baseSlug . '-' . $counter++;
         }
 
-        $genreIds = [];
-
-        foreach ($genreNames as $name) {
-            if (empty($name)) {
-                continue;
-            }
-
-            // Use Genre::findOrCreateByName to handle capitalization consistently
-            $genre = Genre::findOrCreateByName($name);
-            $genreIds[] = $genre->id;
-            
-            App::make(LoggingService::class)->info('Genre processed for syncing', [
-                'track_id' => $this->id,
-                'track_title' => $this->title,
-                'genre_id' => $genre->id,
-                'genre_name' => $genre->name
-            ]);
-        }
-
-        // Sync with the pivot table
-        $this->genres()->sync($genreIds);
-        
-        App::make(LoggingService::class)->info('Genres synced for track', [
-            'track_id' => $this->id,
-            'track_title' => $this->title,
-            'genre_count' => count($genreIds)
-        ]);
-
-        // Refresh the genres relationship
-        $this->load('genres');
+        return $uniqueId;
     }
 
     /**
