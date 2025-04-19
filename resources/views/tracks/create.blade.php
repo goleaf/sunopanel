@@ -56,7 +56,7 @@
             <div x-show="activeTab === 'bulk'" class="mt-4">
                 <div class="card bg-base-100 shadow-xl">
                     <div class="card-body">
-                        <form action="{{ route('tracks.store') }}" method="POST">
+                        <form action="{{ route('tracks.bulk-upload') }}" method="POST">
                             @csrf
                             <div class="mb-4">
                                 <label for="bulk_tracks" class="label">

@@ -31,10 +31,10 @@ final class TrackUpdateRequest extends FormRequest
                 'max:255', 
                 Rule::unique('tracks')->ignore($this->route('track'))
             ],
-            'url' => ['sometimes', 'url'],
-            'cover_image' => ['nullable', 'url'],
-            'genres' => ['nullable', 'array'],
-            'genres.*' => ['exists:genres,id'],
+            'audio_url' => ['sometimes', 'url'],
+            'image_url' => ['required', 'url'],
+            'duration' => ['nullable', 'string', 'max:10'],
+            'genres' => ['nullable', 'string'],
             'playlists' => ['nullable', 'array'],
             'playlists.*' => ['exists:playlists,id'],
         ];

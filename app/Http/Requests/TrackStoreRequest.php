@@ -25,12 +25,13 @@ final class TrackStoreRequest extends FormRequest
     {
         return [
             'title' => ['required', 'string', 'max:255', 'unique:tracks'],
-            'url' => ['required', 'url'],
-            'cover_image' => ['nullable', 'url'],
-            'genres' => ['nullable', 'array'],
-            'genres.*' => ['exists:genres,id'],
+            'audio_url' => ['required', 'url'],
+            'image_url' => ['required', 'url'],
+            'duration' => ['nullable', 'string', 'max:10'],
+            'genres' => ['nullable', 'string'],
             'playlists' => ['nullable', 'array'],
             'playlists.*' => ['exists:playlists,id'],
+            'bulk_tracks' => ['nullable', 'string'],
         ];
     }
 } 

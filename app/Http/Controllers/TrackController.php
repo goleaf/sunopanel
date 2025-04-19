@@ -110,10 +110,16 @@ final class TrackController extends Controller
         try {
             Log::info('TrackController: store method called', ['request' => $request->validated()]);
             
+            // Check if this is a bulk upload request
+            if ($request->has('bulk_tracks') && !empty($request->validated('bulk_tracks'))) {
+                return $this->processBulkUpload($request);
+            }
+            
             $track = Track::create([
                 'title' => $request->validated('title'),
-                'url' => $request->validated('url'),
-                'cover_image' => $request->validated('cover_image', null),
+                'audio_url' => $request->validated('audio_url'),
+                'image_url' => $request->validated('image_url'),
+                'duration' => $request->validated('duration'),
                 'unique_id' => Track::generateUniqueId($request->validated('title')),
             ]);
             
@@ -327,7 +333,7 @@ final class TrackController extends Controller
         try {
             $track = Track::findOrFail($id);
             Log::info('Track played', ['id' => $id, 'title' => $track->title]);
-            return redirect()->away($track->audio_url);
+            return redirect()->away($track->url);
         } catch (\Exception $e) {
             Log::error('Error playing track', ['id' => $id, 'error' => $e->getMessage()]);
             abort(404);

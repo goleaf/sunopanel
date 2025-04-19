@@ -21,8 +21,6 @@ final class Track extends Model
      */
     protected $fillable = [
         'title',
-        'url',
-        'cover_image',
         'audio_url',
         'image_url',
         'unique_id',
