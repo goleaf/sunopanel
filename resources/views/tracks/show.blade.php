@@ -164,7 +164,7 @@
                             @foreach($track->playlists as $playlist)
                                 <li>
                                     <a href="{{ route('playlists.show', $playlist) }}" class="btn btn-outline btn-sm w-full justify-start">
-                                        <span class="truncate">{{ $playlist->name }}</span>
+                                        <span class="truncate">{{ $playlist->title }}</span>
                                         <span class="badge badge-neutral">Position: {{ $playlist->pivot->position }}</span>
                                     </a>
                                 </li>

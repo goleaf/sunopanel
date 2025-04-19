@@ -125,7 +125,7 @@ class TrackSeeder extends Seeder
                     'genres' => ['Chillwave', 'Bubblegum bass']
                 ],
                 [
-                    'title' => 'Supply, как сопли Ха!',
+                    'title' => 'Supply, como сопли Ха!',
                     'audio_url' => 'https://cdn1.suno.ai/7ac7b9c8-c705-4174-843d-424e1deb1c25.mp3',
                     'image_url' => 'https://cdn2.suno.ai/image_7ac7b9c8-c705-4174-843d-424e1deb1c25.jpeg',
                     'genres' => ['Bubblegum bass', 'Symphonic metal']
@@ -217,32 +217,32 @@ class TrackSeeder extends Seeder
             // Create sample playlists
             $playlists = [
                 [
-                    'name' => 'Bubblegum Bass Favorites',
+                    'title' => 'Bubblegum Bass Favorites',
                     'description' => 'A collection of the best bubblegum bass tracks',
                     'genre' => 'Bubblegum bass'
                 ],
                 [
-                    'name' => 'Chillwave Mix',
+                    'title' => 'Chillwave Mix',
                     'description' => 'Relaxing chillwave tracks for your downtime',
                     'genre' => 'Chillwave'
                 ],
                 [
-                    'name' => 'Metal Madness',
+                    'title' => 'Metal Madness',
                     'description' => 'Heavy symphonic metal tracks',
                     'genre' => 'Symphonic metal'
                 ],
                 [
-                    'name' => 'Electronic Fusion',
+                    'title' => 'Electronic Fusion',
                     'description' => 'A mix of various electronic music styles',
                     'genres' => ['Electrohouse', 'EDM', 'Tech-house']
                 ],
                 [
-                    'name' => 'Global Vibes',
+                    'title' => 'Global Vibes',
                     'description' => 'Music with international influences',
                     'genres' => ['K-pop', 'Afrobeat', 'Urban-pop']
                 ],
                 [
-                    'name' => 'Lo-Fi Study Session',
+                    'title' => 'Lo-Fi Study Session',
                     'description' => 'Perfect background music for studying or working',
                     'genre' => 'Lo-fi'
                 ]
@@ -250,13 +250,13 @@ class TrackSeeder extends Seeder
             
             foreach ($playlists as $playlistData) {
                 $playlist = Playlist::firstOrCreate(
-                    ['name' => $playlistData['name']],
+                    ['title' => $playlistData['title']],
                     ['description' => $playlistData['description']]
                 );
                 
                 Log::info("Playlist created or found", [
                     'id' => $playlist->id,
-                    'name' => $playlist->name
+                    'title' => $playlist->title
                 ]);
                 
                 // Find tracks by genre and attach to playlist
@@ -280,7 +280,7 @@ class TrackSeeder extends Seeder
                         
                         Log::info("Tracks attached to playlist from genre", [
                             'playlist_id' => $playlist->id,
-                            'playlist_name' => $playlist->name,
+                            'playlist_title' => $playlist->title,
                             'genre' => $genreName,
                             'track_count' => $tracks->count()
                         ]);
@@ -313,7 +313,7 @@ class TrackSeeder extends Seeder
                     
                     Log::info("Tracks attached to playlist from multiple genres", [
                         'playlist_id' => $playlist->id,
-                        'playlist_name' => $playlist->name,
+                        'playlist_title' => $playlist->title,
                         'genres' => $playlistData['genres'],
                         'track_count' => $trackCount
                     ]);

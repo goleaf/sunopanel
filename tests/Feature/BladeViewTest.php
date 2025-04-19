@@ -119,11 +119,11 @@ class BladeViewTest extends TestCase
      *
      * @return void
      */
-    public function test_playlist_show_view_renders_with_tracks()
+    public function test_playlist_show_view_renders_correctly()
     {
         // Create a playlist
         $playlist = Playlist::factory()->create([
-            'name' => 'Test Playlist',
+            'title' => 'Test Playlist',
             'description' => 'This is a test playlist'
         ]);
         

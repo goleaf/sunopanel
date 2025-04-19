@@ -61,7 +61,7 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                             @forelse ($playlists as $playlist)
                                 <div class="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg">
-                                    <h3 class="font-semibold">{{ $playlist->name }}</h3>
+                                    <h3 class="font-semibold">{{ $playlist->title }}</h3>
                                     <p class="text-sm text-gray-600 dark:text-gray-400">{{ $playlist->tracks_count ?? 0 }} tracks</p>
                                     <a href="{{ route('playlists.show', $playlist) }}" class="text-blue-600 dark:text-blue-400 hover:underline text-sm">View</a>
                                 </div>

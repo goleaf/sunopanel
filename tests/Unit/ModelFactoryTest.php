@@ -138,4 +138,26 @@ class ModelFactoryTest extends TestCase
     {
         $this->markTestSkipped('File download functionality has been removed and merged into tracks');
     }
+
+    /**
+     * Test that Playlist factory creates a valid playlist.
+     *
+     * @return void
+     */
+    public function test_playlist_factory_creates_valid_playlist()
+    {
+        // Create a playlist
+        $playlist = Playlist::factory()->create();
+        
+        // Assert playlist has required attributes
+        $this->assertNotNull($playlist->id);
+        $this->assertNotNull($playlist->title);
+        $this->assertNotNull($playlist->created_at);
+        
+        // Assert playlist can be found in database
+        $this->assertDatabaseHas('playlists', [
+            'id' => $playlist->id,
+            'title' => $playlist->title,
+        ]);
+    }
 } 
