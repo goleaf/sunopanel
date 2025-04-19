@@ -38,3 +38,8 @@ Route::post('genres/{genre}/create-playlist', [PlaylistController::class, 'creat
 
 // System Stats
 Route::get('/system-stats', [DashboardController::class, 'systemStats'])->name('system.stats');
+
+// Add this route with the other dashboard or demo routes
+Route::get('/dashboard-widgets-demo', function () {
+    return view('dashboard-widgets-demo');
+})->name('dashboard-widgets-demo');
