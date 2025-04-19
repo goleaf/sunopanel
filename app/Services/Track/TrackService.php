@@ -4,174 +4,248 @@ declare(strict_types=1);
 
 namespace App\Services\Track;
 
+use App\Http\Requests\BulkTrackRequest;
 use App\Http\Requests\TrackStoreRequest;
 use App\Http\Requests\TrackUpdateRequest;
 use App\Models\Genre;
 use App\Models\Track;
-use Illuminate\Http\UploadedFile;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
+use Throwable;
 
 final readonly class TrackService
 {
-    /**
-     * Store a new track
-     */
-    public function store(TrackStoreRequest $request): Track
+    public function __construct(private LoggingService $loggingService)
     {
-        $validatedData = $request->validated();
+        // Optionally inject LoggingService if needed within the service itself
+    }
 
-        // Handle file upload if provided
-        if (isset($validatedData['file']) && $validatedData['file'] instanceof UploadedFile) {
-            $filePath = $this->storeTrackFile($validatedData['file']);
-            $validatedData['file_path'] = $filePath;
-            unset($validatedData['file']);
+    /**
+     * Get paginated tracks with filtering and sorting.
+     */
+    public function getPaginatedTracks(Request $request): LengthAwarePaginator
+    {
+        $query = Track::with('genres');
+
+        // Search functionality
+        if ($request->filled('search')) {
+            $searchTerm = $request->search;
+            $query->where(function (Builder $q) use ($searchTerm) {
+                $q->where('title', 'like', "%{$searchTerm}%")
+                  ->orWhereHas('genres', function (Builder $gq) use ($searchTerm) {
+                      $gq->where('name', 'like', "%{$searchTerm}%");
+                  });
+            });
         }
 
-        // Create the track
+        // Genre filter
+        if ($request->filled('genre') && $request->genre) {
+            $query->whereHas('genres', fn(Builder $gq) => $gq->where('genres.id', $request->genre));
+        }
+
+        // Sorting
+        $sortField = $request->input('sort', 'title');
+        $direction = $request->input('direction', 'asc');
+
+        // Validate sort field
+        $allowedSortFields = ['title', 'created_at', 'duration']; // Add duration if sortable
+        $sortField = in_array($sortField, $allowedSortFields) ? $sortField : 'title';
+        $direction = in_array($direction, ['asc', 'desc']) ? $direction : 'asc';
+
+        $query->orderBy($sortField, $direction);
+
+        $perPage = (int) $request->input('per_page', 15);
+        return $query->paginate($perPage)->withQueryString();
+    }
+
+    /**
+     * Store a new track from request data.
+     */
+    public function storeTrack(TrackStoreRequest $request): Track
+    {
+        $validated = $request->validated();
+
+        // Create track
         $track = Track::create([
-            'title' => $validatedData['title'],
-            'artist' => $validatedData['artist'] ?? null,
-            'album' => $validatedData['album'] ?? null,
-            'year' => $validatedData['year'] ?? null,
-            'file_path' => $validatedData['file_path'] ?? null,
-            'genre_id' => $validatedData['genre_id'] ?? null,
-            'duration' => $validatedData['duration'] ?? null,
-            'description' => $validatedData['description'] ?? null,
+            'title' => $validated['title'],
+            'audio_url' => $validated['audio_url'],
+            'image_url' => $validated['image_url'] ?? null,
+            'duration' => $validated['duration'] ?? null,
+            'unique_id' => Track::generateUniqueId($validated['title']), // Assuming this helper exists
         ]);
 
-        Log::info('Track created successfully', [
-            'track_id' => $track->id,
-            'title' => $track->title,
-        ]);
+        // Sync genres
+        if (isset($validated['genre_ids'])) {
+            $track->genres()->sync(Arr::wrap($validated['genre_ids']));
+        }
+
+        // Attach playlists
+        if (isset($validated['playlists'])) {
+            $track->playlists()->attach(Arr::wrap($validated['playlists']));
+        }
+
+        Log::info('Track stored successfully', ['track_id' => $track->id, 'title' => $track->title]);
 
         return $track;
     }
 
     /**
-     * Update an existing track
+     * Update an existing track from request data.
      */
-    public function update(TrackUpdateRequest $request, Track $track): Track
+    public function updateTrack(TrackUpdateRequest $request, Track $track): Track
     {
-        $validatedData = $request->validated();
+        $validated = $request->validated();
 
-        // Handle file upload if provided
-        if (isset($validatedData['file']) && $validatedData['file'] instanceof UploadedFile) {
-            // Delete old file if exists
-            if ($track->file_path) {
-                Storage::disk('private')->delete($track->file_path);
+        // Update track fields
+        $track->update([
+            'title' => $validated['title'],
+            'audio_url' => $validated['audio_url'],
+            'image_url' => $validated['image_url'] ?? $track->image_url,
+            'duration' => $validated['duration'] ?? $track->duration,
+            // unique_id usually shouldn't change, but handle if needed
+        ]);
+
+        // Sync genres
+        if ($request->has('genre_ids')) { // Check if the key exists, even if null/empty
+            $track->genres()->sync(Arr::wrap($validated['genre_ids'] ?? []));
+        }
+
+        // Sync playlists (assuming playlists can be updated this way)
+        if ($request->has('playlists')) { // Check if the key exists
+             $track->playlists()->sync(Arr::wrap($validated['playlists'] ?? []));
+        }
+
+        Log::info('Track updated successfully', ['track_id' => $track->id, 'title' => $track->title]);
+
+        return $track->fresh(['genres', 'playlists']); // Return fresh model with relations
+    }
+
+    /**
+     * Delete a track and detach relationships.
+     */
+    public function deleteTrack(Track $track): bool
+    {
+        $trackId = $track->id;
+        $trackTitle = $track->title;
+
+        try {
+            return DB::transaction(function () use ($track) {
+                // Detach from genres and playlists
+                $track->genres()->detach();
+                $track->playlists()->detach();
+
+                // Delete the track
+                $deleted = $track->delete();
+
+                Log::info('Track deleted successfully', ['track_id' => $track->id, 'title' => $track->title]);
+                return (bool) $deleted;
+            });
+        } catch (Throwable $e) {
+            Log::error('Error deleting track', [
+                'track_id' => $trackId,
+                'title' => $trackTitle,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * Process bulk track upload from text data.
+     * Returns [processedCount, errors[]]
+     */
+    public function processBulkImport(string $bulkTracksData, LoggingService $loggingService): array
+    {
+        $lines = explode(PHP_EOL, trim($bulkTracksData));
+        $processedCount = 0;
+        $errors = [];
+
+        foreach ($lines as $index => $line) {
+            $line = trim($line);
+            if (empty($line)) {
+                continue;
             }
 
-            $filePath = $this->storeTrackFile($validatedData['file']);
-            $validatedData['file_path'] = $filePath;
-            unset($validatedData['file']);
+            $lineNumber = $index + 1;
+
+            try {
+                // Split only by pipe character
+                $parts = explode('|', $line);
+                if (count($parts) < 4) {
+                    $errors[] = "Line {$lineNumber}: Invalid format - expected at least 4 parts separated by |";
+                    continue;
+                }
+
+                // Sanitize all input data
+                $title = htmlspecialchars(trim($parts[0]), ENT_QUOTES, 'UTF-8');
+                $audioUrl = filter_var(trim($parts[1]), FILTER_SANITIZE_URL);
+                $imageUrl = filter_var(trim($parts[2]), FILTER_SANITIZE_URL);
+                $genresRaw = htmlspecialchars(trim($parts[3]), ENT_QUOTES, 'UTF-8');
+                $duration = isset($parts[4]) ? htmlspecialchars(trim($parts[4]), ENT_QUOTES, 'UTF-8') : '3:00'; // Default duration
+
+                // Basic Validation
+                if (empty($title)) {
+                     $errors[] = "Line {$lineNumber}: Title cannot be empty.";
+                     continue;
+                }
+                if (! filter_var($audioUrl, FILTER_VALIDATE_URL)) {
+                    $errors[] = "Line {$lineNumber}: Invalid audio URL format: {$audioUrl}";
+                    continue;
+                }
+                if (! filter_var($imageUrl, FILTER_VALIDATE_URL)) {
+                    $errors[] = "Line {$lineNumber}: Invalid image URL format: {$imageUrl}";
+                    continue;
+                }
+
+                // Check existence (optional, could update instead)
+                if (Track::where('title', $title)->exists()) {
+                    $errors[] = "Line {$lineNumber}: Track '{$title}' already exists. Skipping.";
+                    continue;
+                }
+
+                // Create the track within a transaction
+                DB::transaction(function () use ($title, $audioUrl, $imageUrl, $duration, $genresRaw, &$processedCount) {
+                    $track = Track::create([
+                        'title' => $title,
+                        'audio_url' => $audioUrl,
+                        'image_url' => $imageUrl,
+                        'duration' => $duration,
+                        'unique_id' => Track::generateUniqueId($title),
+                    ]);
+
+                    // Assuming syncGenres method exists on Track model
+                    $track->syncGenres($genresRaw);
+                    $processedCount++;
+                    Log::debug("Bulk processed track: {$title}", ['track_id' => $track->id]);
+                });
+
+            } catch (Throwable $e) {
+                DB::rollBack(); // Ensure rollback if transaction fails mid-way
+                $trackTitleForError = $title ?? '[unknown title]';
+                $errorMsg = "Line {$lineNumber}: Error processing track '{$trackTitleForError}': " . $e->getMessage();
+                $errors[] = $errorMsg;
+                $loggingService->error('Error during bulk track processing', [
+                    'line' => $lineNumber,
+                    'data' => $line,
+                     'error' => $e->getMessage(),
+                     'trace' => $e->getTraceAsString(),
+                 ]);
+            }
         }
 
-        // Update the track
-        $track->update([
-            'title' => $validatedData['title'] ?? $track->title,
-            'artist' => $validatedData['artist'] ?? $track->artist,
-            'album' => $validatedData['album'] ?? $track->album,
-            'year' => $validatedData['year'] ?? $track->year,
-            'file_path' => $validatedData['file_path'] ?? $track->file_path,
-            'genre_id' => $validatedData['genre_id'] ?? $track->genre_id,
-            'duration' => $validatedData['duration'] ?? $track->duration,
-            'description' => $validatedData['description'] ?? $track->description,
-        ]);
-
-        Log::info('Track updated successfully', [
-            'track_id' => $track->id,
-            'title' => $track->title,
-        ]);
-
-        return $track;
+        return [$processedCount, $errors];
     }
 
     /**
-     * Delete a track
+     * Get genres suitable for a filter dropdown.
      */
-    public function delete(Track $track): bool
+    public function getGenresForFilter(): \Illuminate\Database\Eloquent\Collection
     {
-        // Check if the track is associated with any playlists
-        $playlistCount = $track->playlists()->count();
-
-        if ($playlistCount > 0) {
-            // Detach from all playlists first
-            $track->playlists()->detach();
-            Log::info('Track detached from playlists before deletion', [
-                'track_id' => $track->id,
-                'playlist_count' => $playlistCount,
-            ]);
-        }
-
-        // Delete the file if it exists
-        if ($track->file_path) {
-            Storage::disk('private')->delete($track->file_path);
-            Log::info('Track file deleted', [
-                'track_id' => $track->id,
-                'file_path' => $track->file_path,
-            ]);
-        }
-
-        // Delete the track
-        $deleted = $track->delete();
-
-        Log::info('Track deleted', [
-            'track_id' => $track->id,
-            'title' => $track->title,
-            'success' => $deleted,
-        ]);
-
-        return $deleted;
-    }
-
-    /**
-     * Get tracks by genre
-     */
-    public function getByGenre(Genre $genre, int $limit = 20, int $offset = 0): array
-    {
-        $tracks = $genre->tracks()->skip($offset)->take($limit)->get();
-
-        Log::info('Retrieved tracks by genre', [
-            'genre_id' => $genre->id,
-            'track_count' => $tracks->count(),
-            'limit' => $limit,
-            'offset' => $offset,
-        ]);
-
-        return $tracks->toArray();
-    }
-
-    /**
-     * Get tracks with their genres
-     */
-    public function getWithGenres(int $limit = 20, int $offset = 0): array
-    {
-        $tracks = Track::with('genre')->skip($offset)->take($limit)->get();
-
-        Log::info('Retrieved tracks with genres', [
-            'track_count' => $tracks->count(),
-            'limit' => $limit,
-            'offset' => $offset,
-        ]);
-
-        return $tracks->toArray();
-    }
-
-    /**
-     * Store a track file and return the file path
-     */
-    private function storeTrackFile(UploadedFile $file): string
-    {
-        $filename = Str::uuid().'.'.$file->getClientOriginalExtension();
-        $path = $file->storeAs('uploads/tracks', $filename, 'private');
-
-        Log::info('Track file stored', [
-            'original_name' => $file->getClientOriginalName(),
-            'stored_path' => $path,
-        ]);
-
-        return $path;
+        return Genre::orderBy('name')->get(['id', 'name']);
     }
 }
