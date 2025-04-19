@@ -76,8 +76,20 @@ class GenreServiceTest extends TestCase
             'description' => 'Updated Description'
         ];
         
-        $updateRequest = $this->createMock(GenreUpdateRequest::class);
-        $updateRequest->method('validated')->willReturn($requestData);
+        // Create a mocked request that isn't a final class
+        $updateRequest = new class($requestData) extends \Illuminate\Foundation\Http\FormRequest {
+            protected $validatedData;
+            
+            public function __construct(array $data)
+            {
+                $this->validatedData = $data;
+            }
+            
+            public function validated($key = null, $default = null)
+            {
+                return $this->validatedData;
+            }
+        };
         
         // Act
         $updatedGenre = $this->genreService->update($updateRequest, $genre);
@@ -154,12 +166,17 @@ class GenreServiceTest extends TestCase
         $this->assertIsArray($result);
         $this->assertCount(2, $result);
         
+        // Convert the result to a collection for easier testing
+        $resultCollection = collect($result);
+        
         // Find genre A in results and check its track count
-        $genreA = collect($result)->firstWhere('name', 'Genre A');
+        $genreA = $resultCollection->firstWhere('name', 'Genre A');
+        $this->assertNotNull($genreA, 'Genre A not found in results');
         $this->assertEquals(2, $genreA['tracks_count']);
         
         // Find genre B in results and check its track count
-        $genreB = collect($result)->firstWhere('name', 'Genre B');
+        $genreB = $resultCollection->firstWhere('name', 'Genre B');
+        $this->assertNotNull($genreB, 'Genre B not found in results');
         $this->assertEquals(1, $genreB['tracks_count']);
     }
     
