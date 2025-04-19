@@ -47,8 +47,9 @@
 
 ## Critical Fixes Needed
 - [ ] Fix undefined variable $genres in playlists/add-tracks.blade.php view
+- [ ] Fix variable name in playlists/add-tracks.blade.php view: use $tracks instead of $availableTracks
 - [ ] Fix failing tests in PlaylistControllerTest:
-  - [ ] Update PlaylistController@addTracks to properly pass $availableTracks instead of $tracks
+  - [ ] Update PlaylistController@addTracks to properly pass $tracks instead of $availableTracks
   - [ ] Fix test_add_tracks_to_playlist test with correct variable names
 - [ ] Fix failing tests in PlaylistRoutesTest:
   - [ ] Update create and update methods to use 'title' field instead of 'name'
@@ -63,4 +64,14 @@
   - [ ] Consolidate 'name' and 'title' fields to use only 'title'
   - [ ] Create migration to remove redundant columns from playlists table
 - [ ] Update test factories to use consistent field names
-- [ ] Update form request validation for playlist creation and editing  
+- [ ] Update form request validation for playlist creation and editing
+
+## Laravel/PHP Code Structure Improvements
+- [ ] Make controllers final classes per Laravel standards
+- [ ] Make model classes final per Laravel standards
+- [ ] Add strict typing declarations to PHP files: `declare(strict_types=1);`
+- [ ] Implement proper return type hints for all methods
+- [ ] Ensure controllers are thin and delegate business logic to services
+- [ ] Create service classes for complex operations
+- [ ] Implement proper error handling using try-catch blocks
+- [ ] Update all classes to follow PSR-12 coding standards  

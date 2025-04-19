@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Add Tracks to Playlist') }}: {{ $playlist->name }}
+            {{ __('Add Tracks to Playlist') }}: {{ $playlist->title }}
         </h2>
     </x-slot>
 
@@ -53,7 +53,7 @@
                             <x-th>Genres</x-th>
                         </x-slot>
                         <x-slot name="body">
-                            @foreach($availableTracks as $track)
+                            @foreach($tracks as $track)
                                 <tr class="track-row hover:bg-gray-50" 
                                     data-name="{{ strtolower($track->title) }}"
                                     data-genres="{{ $track->genres->pluck('id')->join(',') }}">
@@ -112,7 +112,7 @@
                 </form>
 
                 <div class="mt-6">
-                    {{ $availableTracks->links('components.pagination-links') }}
+                    {{ $tracks->links('components.pagination-links') }}
                 </div>
             </x-card>
         </div>
