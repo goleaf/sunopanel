@@ -58,11 +58,11 @@ final class Genre extends Model
 
         self::creating(function ($genre): void {
             $genre->slug = Str::slug($genre->name);
-            $logger = App::make(LoggingService::class);
-            $logger->info('Creating new genre', [
-                'name' => $genre->name,
-                'slug' => $genre->slug,
-            ]);
+            // $logger = App::make(LoggingService::class); // TODO: Refactor logging to events/listeners
+            // $logger->info('Creating new genre', [
+            //     'name' => $genre->name,
+            //     'slug' => $genre->slug,
+            // ]);
         });
     }
 
@@ -88,8 +88,8 @@ final class Genre extends Model
     public static function findOrCreateByName(string $name): self
     {
         $name = trim($name);
-        $logger = App::make(LoggingService::class);
-        $logger->info("Finding or creating genre: {$name}");
+        // $logger = App::make(LoggingService::class); // TODO: Refactor logging
+        // $logger->info("Finding or creating genre: {$name}");
 
         // Format the name with proper capitalization
         $formattedName = self::formatGenreName($name);
@@ -98,20 +98,20 @@ final class Genre extends Model
         $existingGenre = self::whereRaw('LOWER(name) = ?', [strtolower($formattedName)])->first();
 
         if ($existingGenre) {
-            $logger->info("Found existing genre: {$existingGenre->name}", [
-                'id' => $existingGenre->id,
-                'slug' => $existingGenre->slug,
-            ]);
+            // $logger->info("Found existing genre: {$existingGenre->name}", [
+            //     'id' => $existingGenre->id,
+            //     'slug' => $existingGenre->slug,
+            // ]);
 
             // Ensure the existing genre has the proper capitalization
             if ($existingGenre->name !== $formattedName) {
                 $existingGenre->name = $formattedName;
                 $existingGenre->save();
-                $logger->info('Updated genre name capitalization', [
-                    'id' => $existingGenre->id,
-                    'old_name' => $existingGenre->name,
-                    'new_name' => $formattedName,
-                ]);
+                // $logger->info('Updated genre name capitalization', [
+                //     'id' => $existingGenre->id,
+                //     'old_name' => $existingGenre->name,
+                //     'new_name' => $formattedName,
+                // ]);
             }
 
             return $existingGenre;
@@ -122,20 +122,20 @@ final class Genre extends Model
         $existingBySlug = self::where('slug', $slug)->first();
 
         if ($existingBySlug) {
-            $logger->info("Found existing genre by slug: {$existingBySlug->name}", [
-                'id' => $existingBySlug->id,
-                'slug' => $existingBySlug->slug,
-            ]);
+            // $logger->info("Found existing genre by slug: {$existingBySlug->name}", [
+            //     'id' => $existingBySlug->id,
+            //     'slug' => $existingBySlug->slug,
+            // ]);
 
             // Ensure the existing genre has the proper capitalization
             if ($existingBySlug->name !== $formattedName) {
                 $existingBySlug->name = $formattedName;
                 $existingBySlug->save();
-                $logger->info('Updated genre name capitalization', [
-                    'id' => $existingBySlug->id,
-                    'old_name' => $existingBySlug->name,
-                    'new_name' => $formattedName,
-                ]);
+                // $logger->info('Updated genre name capitalization', [
+                //     'id' => $existingBySlug->id,
+                //     'old_name' => $existingBySlug->name,
+                //     'new_name' => $formattedName,
+                // ]);
             }
 
             return $existingBySlug;
@@ -148,11 +148,11 @@ final class Genre extends Model
             'description' => "Genre for {$formattedName} music",
         ]);
 
-        $logger->info('Created new genre', [
-            'id' => $genre->id,
-            'name' => $genre->name,
-            'slug' => $genre->slug,
-        ]);
+        // $logger->info('Created new genre', [
+        //     'id' => $genre->id,
+        //     'name' => $genre->name,
+        //     'slug' => $genre->slug,
+        // ]);
 
         return $genre;
     }
@@ -166,12 +166,12 @@ final class Genre extends Model
         $this->attributes['name'] = $formattedName;
         $this->attributes['slug'] = Str::slug($formattedName);
 
-        $logger = App::make(LoggingService::class);
-        $logger->info('Setting genre name attribute', [
-            'name' => $this->attributes['name'],
-            'slug' => $this->attributes['slug'],
-            'original_value' => $value,
-        ]);
+        // $logger = App::make(LoggingService::class); // TODO: Refactor logging
+        // $logger->info('Setting genre name attribute', [
+        //     'name' => $this->attributes['name'],
+        //     'slug' => $this->attributes['slug'],
+        //     'original_value' => $value,
+        // ]);
     }
 
     /**

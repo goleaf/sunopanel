@@ -1,65 +1,87 @@
-@props(['genre' => null, 'submitRoute', 'submitMethod' => 'POST'])
+@extends('layouts.app')
 
-<div class="bg-white rounded-lg shadow-md p-6">
-    <x-heading :level="2" class="mb-4">
-        {{ $genre ? 'Edit Genre' : 'Add New Genre' }}
-    </x-heading>
+@section('content')
+{{-- Determine if we are editing or creating --}}
+@php
+    $isEditing = isset($genre) && $genre->exists;
+    $formAction = $isEditing ? route('genres.update', $genre) : route('genres.store');
+    $pageTitle = $isEditing ? 'Edit Genre: ' . Str::limit($genre->name, 50) : 'Add New Genre';
+    $buttonText = $isEditing ? 'Update Genre' : 'Save Genre';
+    $buttonIcon = $isEditing ? 'save' : 'plus';
+@endphp
 
-    @if ($errors->any())
-        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            <ul class="list-disc pl-5">
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
+{{-- Page Header --}}
+<div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-semibold text-base-content truncate" @if($isEditing) title="{{ $genre->name }}" @endif>{{ $pageTitle }}</h1>
+    <x-button 
+        href="{{ route('genres.index') }}" 
+        variant="outline"
+        size="sm"
+    >
+        <x-icon name="arrow-sm-left" size="4" class="mr-1" />
+        Back to Genres
+    </x-button>
+</div>
 
-    <form action="{{ $submitRoute }}" method="POST">
+{{-- Form Card --}}
+<div class="card bg-base-100 shadow-xl max-w-3xl mx-auto"> {{-- Centered form with max width --}}
+    <form action="{{ $formAction }}" method="POST" class="card-body space-y-6">
         @csrf
-        @if($submitMethod !== 'POST')
-            @method($submitMethod)
+        @if($isEditing)
+            @method('PUT')
         @endif
 
-        <div class="mb-4">
-            <x-label for="name" value="Genre Name" required />
-            <x-input 
-                id="name" 
-                name="name" 
-                type="text" 
-                value="{{ old('name', $genre?->name) }}" 
-                class="w-full mt-1 @error('name') border-red-500 @enderror" 
-                required 
+        <h2 class="card-title text-lg">{{ $isEditing ? 'Genre Details' : 'Enter Genre Details' }}</h2>
+
+        <x-form-validation-summary :errors="$errors" />
+
+        {{-- Genre Name --}}
+        <div class="form-control">
+            <x-input
+                id="name"
+                name="name"
+                type="text"
+                label="Genre Name"
+                value="{{ old('name', isset($genre) ? $genre?->name : null) }}"
+                required
+                helpText="Enter a unique genre name (e.g., Rock, Jazz, Electronic)"
+                :error="$errors->first('name')"
             />
-            @error('name')
-                <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-            @enderror
-            @if(!$genre)
-                <p class="text-gray-600 text-sm mt-1">Enter a unique genre name (e.g., Rock, Jazz, Electronic)</p>
-            @endif
         </div>
 
-        <div class="mb-4">
-            <x-label for="description" value="Description" />
-            <x-textarea 
-                id="description" 
-                name="description" 
+        {{-- Genre Description --}}
+        <div class="form-control">
+            <x-textarea
+                id="description"
+                name="description"
+                label="Description"
                 rows="4"
-                class="w-full mt-1 @error('description') border-red-500 @enderror"
-            >{{ old('description', $genre?->description) }}</x-textarea>
-            @error('description')
-                <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-            @enderror
-            <p class="text-gray-600 text-sm mt-1">Provide a brief description of this genre (optional)</p>
+                helpText="Provide a brief description of this genre (optional)"
+                :error="$errors->first('description')"
+            >{{ old('description', isset($genre) ? $genre?->description : null) }}</x-textarea> {{-- Use slot for value --}}
         </div>
 
-        <div class="flex justify-end">
-            <x-button href="{{ route('genres.index') }}" color="ghost" class="mr-2">
+        {{-- Action Buttons --}}
+        <div class="card-actions justify-end pt-4">
+             <x-button
+                href="{{ route('genres.index') }}"
+                variant="ghost"
+                size="sm"
+            >
+                 <x-icon name="x-mark" class="mr-1 h-4 w-4" />
                 Cancel
             </x-button>
-            <x-button type="submit" color="primary">
-                {{ $genre ? 'Update Genre' : 'Save Genre' }}
-            </x-button>
+            <x-tooltip text="{{ $isEditing ? 'Update' : 'Save' }} this genre" position="top">
+                <x-button
+                    type="submit"
+                    variant="primary"
+                    size="sm"
+                >
+                     <x-icon name="{{ $buttonIcon }}" class="mr-1 h-4 w-4" />
+                    {{ $buttonText }}
+                </x-button>
+            </x-tooltip>
         </div>
     </form>
-</div> 
+</div>
+@endsection 

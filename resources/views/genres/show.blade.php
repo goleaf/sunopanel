@@ -6,21 +6,33 @@
     </x-slot>
 
     <div class="container mx-auto px-4 py-6">
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-3xl font-bold text-primary">{{ $genre->name }}</h1>
-            <div class="flex gap-2">
-                <x-button href="{{ route('genres.edit', $genre->id) }}" color="primary" size="sm">
-                    <x-icon name="pencil" size="5" class="mr-1" />
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+            <div class="breadcrumbs text-sm">
+                <ul>
+                    <li><a href="{{ route('genres.index') }}">Genres</a></li> 
+                    <li class="truncate" title="{{ $genre->name }}">{{ Str::limit($genre->name, 40) }}</li>
+                </ul>
+            </div>
+            <div class="flex space-x-2">
+                <x-button href="{{ route('genres.edit', $genre) }}" variant="outline" size="sm">
+                    <x-icon name="pencil" size="4" class="mr-1" />
                     Edit Genre
                 </x-button>
-                
-                <form action="{{ route('playlists.create-from-genre', $genre->id) }}" method="POST" class="inline-block">
+                <form action="{{ route('playlists.create-from-genre', $genre) }}" method="POST" class="inline-block">
                     @csrf
-                    <x-button type="submit" color="success" size="sm">
-                        <x-icon name="music" size="5" class="mr-1" />
+                    <x-button type="submit" variant="primary" size="sm">
+                        <x-icon name="collection" size="4" class="mr-1" />
                         Create Playlist
                     </x-button>
                 </form>
+                <x-button 
+                    href="{{ route('genres.index') }}" 
+                    variant="ghost"
+                    size="sm"
+                >
+                    <x-icon name="arrow-sm-left" size="4" class="mr-1" />
+                    Back
+                </x-button>
             </div>
         </div>
 
@@ -38,107 +50,131 @@
             </div>
         @endif
 
-        <div class="card bg-base-100 shadow-xl mb-6">
-            <div class="card-body">
-                <h2 class="card-title border-b pb-4 mb-4">Tracks in this Genre</h2>
-                
-                @if($tracks->isEmpty())
-                    <div class="text-base-content/60">No tracks in this genre yet.</div>
-                @else
-                    <div class="overflow-x-auto">
-                        <table class="table table-zebra w-full">
-                            <thead>
-                                <tr>
-                                    <th>Image</th>
-                                    <th>
-                                        <div class="flex items-center">
-                                            Track
-                                            <a href="{{ route('genres.show', ['genre' => $genre->id, 'sort' => 'name', 'order' => ($sortField == 'name' && $sortOrder == 'asc') ? 'desc' : 'asc']) }}">
-                                                <x-icon name="{{ ($sortField == 'name' && $sortOrder == 'asc') ? 'chevron-up' : 'chevron-down' }}" size="4" class="ml-1" />
-                                            </a>
-                                        </div>
-                                    </th>
-                                    <th>
-                                        <div class="flex items-center">
-                                            Duration
-                                            <a href="{{ route('genres.show', ['genre' => $genre->id, 'sort' => 'duration', 'order' => ($sortField == 'duration' && $sortOrder == 'asc') ? 'desc' : 'asc']) }}">
-                                                <x-icon name="{{ ($sortField == 'duration' && $sortOrder == 'asc') ? 'chevron-up' : 'chevron-down' }}" size="4" class="ml-1" />
-                                            </a>
-                                        </div>
-                                    </th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($tracks as $track)
-                                    <tr>
-                                        <td>
-                                            <div class="avatar">
-                                                <div class="mask mask-squircle w-10 h-10">
-                                                    <img src="{{ $track->image_url }}" alt="{{ $track->title }}">
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <a href="{{ route('tracks.show', $track) }}" class="font-bold text-primary hover:underline">{{ $track->title }}</a>
-                                        </td>
-                                        <td>{{ $track->duration ?? '0:00' }}</td>
-                                        <td>
-                                            <div class="flex gap-2 justify-end">
-                                                <x-button href="{{ route('tracks.show', $track) }}" color="ghost" size="sm" icon>
-                                                    <x-icon name="eye" size="5" />
-                                                </x-button>
-                                                <x-button href="{{ route('tracks.play', $track) }}" color="success" size="sm" icon>
-                                                    <x-icon name="play" size="5" />
-                                                </x-button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-1 space-y-6">
+                <div class="card bg-base-100 shadow-xl">
+                    <div class="card-body">
+                        <h2 class="card-title text-xl mb-4">Genre Info</h2>
+                        <dl class="divide-y divide-base-200 text-sm">
+                            <div class="py-3 grid grid-cols-3 gap-4">
+                                <dt class="font-medium text-base-content/70">Name</dt>
+                                <dd class="text-base-content col-span-2">{{ $genre->name }}</dd>
+                            </div>
+                            <div class="py-3 grid grid-cols-3 gap-4">
+                                <dt class="font-medium text-base-content/70">Slug</dt>
+                                <dd class="text-base-content col-span-2">{{ $genre->slug }}</dd>
+                            </div>
+                            <div class="py-3 grid grid-cols-3 gap-4">
+                                <dt class="font-medium text-base-content/70">Tracks</dt>
+                                <dd class="text-base-content col-span-2">{{ $tracks->total() }}</dd>
+                            </div>
+                            <div class="py-3 grid grid-cols-3 gap-4">
+                                <dt class="font-medium text-base-content/70">Description</dt>
+                                <dd class="text-base-content col-span-2">{{ $genre->description ?: '-' }}</dd>
+                            </div>
+                            <div class="py-3 grid grid-cols-3 gap-4">
+                                <dt class="font-medium text-base-content/70">Created</dt>
+                                <dd class="text-base-content col-span-2" title="{{ $genre->created_at->format('Y-m-d H:i:s') }}">{{ $genre->created_at->diffForHumans() }}</dd>
+                            </div>
+                            <div class="py-3 grid grid-cols-3 gap-4">
+                                <dt class="font-medium text-base-content/70">Updated</dt>
+                                <dd class="text-base-content col-span-2" title="{{ $genre->updated_at->format('Y-m-d H:i:s') }}">{{ $genre->updated_at->diffForHumans() }}</dd>
+                            </div>
+                        </dl>
                     </div>
-                    
-                    <div class="mt-4">
-                        {{ $tracks->links() }}
-                    </div>
-                @endif
-            </div>
-        </div>
-
-        <div class="card bg-base-100 shadow-xl mb-6">
-            <div class="card-body">
-                <h2 class="card-title border-b pb-4 mb-4">Genre Information</h2>
-                <div class="overflow-x-auto">
-                    <table class="table w-full">
-                        <tbody>
-                            <tr>
-                                <td class="font-medium w-40">Name:</td>
-                                <td>{{ $genre->name }}</td>
-                            </tr>
-                            <tr>
-                                <td class="font-medium">Slug:</td>
-                                <td>{{ $genre->slug }}</td>
-                            </tr>
-                            <tr>
-                                <td class="font-medium">Track Count:</td>
-                                <td>{{ $tracks->total() }}</td>
-                            </tr>
-                            <tr>
-                                <td class="font-medium">Created:</td>
-                                <td>{{ $genre->created_at->format('M d, Y') }}</td>
-                            </tr>
-                        </tbody>
-                    </table>
                 </div>
             </div>
-        </div>
 
-        <div class="mt-6">
-            <x-button href="{{ route('genres.index') }}" color="ghost">
-                <x-icon name="arrow-left" size="5" class="mr-2" />
-                Back to Genres
-            </x-button>
+            <div class="lg:col-span-2">
+                <div class="card bg-base-100 shadow-xl">
+                    <div class="card-body">
+                        <h2 class="card-title text-xl mb-4">Tracks in {{ $genre->name }} ({{ $tracks->total() }})</h2>
+                        
+                        @if($tracks->isEmpty())
+                            <div class="text-center py-10 text-base-content/70 italic">
+                                No tracks found in this genre.
+                            </div>
+                        @else
+                            <div class="overflow-x-auto">
+                                <table class="table table-zebra table-sm w-full">
+                                    <thead>
+                                        <tr>
+                                            <th>Title</th>
+                                            <th>Other Genres</th>
+                                            <th><x-sort-link routeName="genres.show" :routeParams="['genre' => $genre]" column="duration">Duration</x-sort-link></th>
+                                            <th><x-sort-link routeName="genres.show" :routeParams="['genre' => $genre]" column="created_at">Added</x-sort-link></th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($tracks as $track)
+                                            <tr>
+                                                <td>
+                                                    <div class="flex items-center space-x-3">
+                                                        <div class="avatar">
+                                                            <div class="mask mask-squircle w-10 h-10">
+                                                                <img src="{{ $track->image_url }}" 
+                                                                     alt="{{ $track->title }}" 
+                                                                     onerror="this.src='{{ asset('images/no-image.jpg') }}'" />
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <a href="{{ route('tracks.show', $track) }}" class="font-bold hover:text-primary transition duration-150 ease-in-out">
+                                                                {{ Str::limit($track->title, 40) }}
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="flex flex-wrap gap-1">
+                                                        @foreach($track->genres->where('id', '!=', $genre->id)->take(2) as $otherGenre)
+                                                            <a href="{{ route('genres.show', $otherGenre) }}" class="badge badge-ghost badge-sm hover:bg-base-300">{{ $otherGenre->name }}</a>
+                                                        @endforeach
+                                                        @if($track->genres->count() > 3)
+                                                            <div class="badge badge-ghost badge-sm">...</div>
+                                                        @endif
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    {{ formatDuration($track->duration_seconds ?: $track->duration) }}
+                                                </td>
+                                                <td>
+                                                    <span title="{{ $track->created_at->format('Y-m-d H:i:s') }}">
+                                                        {{ $track->created_at->diffForHumans(null, true) }} ago
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <div class="flex items-center space-x-1">
+                                                        <x-tooltip text="Play Track" position="top">
+                                                            <x-button href="{{ route('tracks.play', $track) }}" variant="ghost" size="xs" icon>
+                                                                <x-icon name="play" />
+                                                            </x-button>
+                                                        </x-tooltip>
+                                                        <x-tooltip text="View Track Details" position="top">
+                                                            <x-button href="{{ route('tracks.show', $track) }}" variant="ghost" size="xs" icon>
+                                                                <x-icon name="eye" />
+                                                            </x-button>
+                                                        </x-tooltip>
+                                                        <x-tooltip text="Edit Track" position="top">
+                                                            <x-button href="{{ route('tracks.edit', $track) }}" variant="ghost" size="xs" icon>
+                                                                <x-icon name="pencil" />
+                                                            </x-button>
+                                                        </x-tooltip>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <div class="mt-6">
+                                {{ $tracks->links() }}
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </x-app-layout>

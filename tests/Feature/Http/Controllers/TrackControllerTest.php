@@ -27,8 +27,8 @@ class TrackControllerTest extends TestCase
     #[Test]
     public function testIndexWithSearch(): void
     {
-        Track::factory()->create(['title' => 'Test Track']);
-        Track::factory()->create(['title' => 'Another Track']);
+        Track::factory()->create(['title' => 'Test Track', 'audio_url' => 'https://example.com/search_audio1.mp3', 'image_url' => 'https://example.com/search_image1.jpg']);
+        Track::factory()->create(['title' => 'Another Track', 'audio_url' => 'https://example.com/search_audio2.mp3', 'image_url' => 'https://example.com/search_image2.jpg']);
         $response = $this->get(route('tracks.index', ['search' => 'Test']));
         $response->assertStatus(200);
         $response->assertViewIs('tracks.index');
@@ -44,7 +44,7 @@ class TrackControllerTest extends TestCase
         Genre::factory()->count(3)->create();
         $response = $this->get(route('tracks.create'));
         $response->assertStatus(200);
-        $response->assertViewIs('tracks.create');
+        $response->assertViewIs('tracks.form');
         $response->assertViewHas('genres');
     }
 
@@ -54,17 +54,17 @@ class TrackControllerTest extends TestCase
         $genre = Genre::factory()->create();
         $trackData = [
             'title' => 'New Test Track',
-            'audio_url' => 'https:
-            'image_url' => 'https:
+            'audio_url' => 'https://example.com/audio.mp3',
+            'image_url' => 'https://example.com/image.jpg',
             'duration' => '3:45',
-            'genres' => $genre->name
+            'genre_ids' => [$genre->id]
         ];
         $response = $this->post(route('tracks.store'), $trackData);
         $response->assertRedirect(route('tracks.index'));
         $response->assertSessionHas('success');
         $this->assertDatabaseHas('tracks', [
             'title' => 'New Test Track',
-            'audio_url' => 'https:
+            'audio_url' => 'https://example.com/audio.mp3'
         ]);
         $track = Track::where('title', 'New Test Track')->first();
         $this->assertCount(1, $track->genres);
@@ -75,15 +75,15 @@ class TrackControllerTest extends TestCase
     public function testProcessBulkUpload(): void
     {
         $bulkData = [
-            'bulk_tracks' => "Test Track 1|https:
-                          "Test Track 2|https:
+            'bulk_tracks' => <<<EOD
+Test Track 1|https://example.com/audio1.mp3|https://example.com/image1.jpg|Rock|3:30 
+Test Track 2|https://example.com/audio2.mp3|https://example.com/image2.jpg|Pop,Jazz|4:00 
+EOD
         ];
-        $response = $this->post(route('tracks.store'), $bulkData);
-        $response->assertRedirect();
-        $this->assertTrue(str_contains($response->headers->get('Location'), route('tracks.bulk-upload')));
-        $bulkResponse = $this->post(route('tracks.bulk-upload'), $bulkData);
-        $bulkResponse->assertRedirect(route('tracks.index'));
-        $bulkResponse->assertSessionHas('success');
+
+        $response = $this->post(route('tracks.bulk-upload'), $bulkData);
+        $response->assertRedirect(route('tracks.index'));
+        $response->assertSessionHas('success');
         $this->assertDatabaseHas('tracks', ['title' => 'Test Track 1']);
         $this->assertDatabaseHas('tracks', ['title' => 'Test Track 2']);
         $track1 = Track::where('title', 'Test Track 1')->first();
@@ -99,7 +99,7 @@ class TrackControllerTest extends TestCase
     #[Test]
     public function testShow(): void
     {
-        $track = Track::factory()->create();
+        $track = Track::factory()->create(['audio_url' => 'https://example.com/show_audio.mp3', 'image_url' => 'https://example.com/show_image.jpg']);
         $response = $this->get(route('tracks.show', $track->id));
         $response->assertStatus(200);
         $response->assertViewIs('tracks.show');
@@ -110,10 +110,10 @@ class TrackControllerTest extends TestCase
     #[Test]
     public function testEdit(): void
     {
-        $track = Track::factory()->create();
+        $track = Track::factory()->create(['audio_url' => 'https://example.com/edit_audio.mp3', 'image_url' => 'https://example.com/edit_image.jpg']);
         $response = $this->get(route('tracks.edit', $track->id));
         $response->assertStatus(200);
-        $response->assertViewIs('tracks.edit');
+        $response->assertViewIs('tracks.form');
         $response->assertViewHas('track');
         $response->assertViewHas('genres');
     }
@@ -121,23 +121,23 @@ class TrackControllerTest extends TestCase
     #[Test]
     public function testUpdate(): void
     {
-        $track = Track::factory()->create(['title' => 'Original Title']);
+        $track = Track::factory()->create(['title' => 'Original Title', 'audio_url' => 'https://example.com/orig_audio.mp3', 'image_url' => 'https://example.com/orig_image.jpg']);
         $genre = Genre::factory()->create();
         
         $updateData = [
             'title' => 'Updated Title',
-            'audio_url' => 'https:
-            'image_url' => 'https:
+            'audio_url' => 'https://example.com/new_audio.mp3',
+            'image_url' => 'https://example.com/new_image.jpg',
             'duration' => '4:30',
-            'genres' => $genre->name
+            'genre_ids' => [$genre->id]
         ];
         $response = $this->put(route('tracks.update', $track->id), $updateData);
-        $response->assertRedirect(route('tracks.index'));
+        $response->assertRedirect(route('tracks.show', $track));
         $response->assertSessionHas('success');
         $this->assertDatabaseHas('tracks', [
             'id' => $track->id,
             'title' => 'Updated Title',
-            'audio_url' => 'https:
+            'audio_url' => 'https://example.com/new_audio.mp3'
         ]);
         $track->refresh();
         $this->assertCount(1, $track->genres);
@@ -147,7 +147,7 @@ class TrackControllerTest extends TestCase
     #[Test]
     public function testDestroy(): void
     {
-        $track = Track::factory()->create();
+        $track = Track::factory()->create(['audio_url' => 'https://example.com/del_audio.mp3', 'image_url' => 'https://example.com/del_image.jpg']);
         $response = $this->delete(route('tracks.destroy', $track->id));
         $response->assertRedirect(route('tracks.index'));
         $response->assertSessionHas('success');
@@ -157,7 +157,7 @@ class TrackControllerTest extends TestCase
     #[Test]
     public function testPlay(): void
     {
-        $track = Track::factory()->create(['audio_url' => 'https:
+        $track = Track::factory()->create(['audio_url' => 'https://example.com/play_audio.mp3']);
 
         $response = $this->get(route('tracks.play', $track->id));
         $response->assertRedirect($track->audio_url);

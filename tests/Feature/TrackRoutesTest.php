@@ -17,8 +17,8 @@ class TrackRoutesTest extends TestCase
         $genre = Genre::factory()->create(['name' => 'Bubblegum bass']);
         $track = Track::factory()->create([
             'title' => 'Test Track',
-            'audio_url' => 'https:
-            'image_url' => 'https:
+            'audio_url' => 'https://example.com/setup_audio.mp3',
+            'image_url' => 'https://example.com/setup_image.jpg',
         ]);
 
         $track->genres()->attach($genre->id);
@@ -35,7 +35,9 @@ public function tracks_index_page_loads_correctly()
         $response->assertStatus(200);
         $response->assertViewIs('tracks.index');
         $response->assertViewHas('tracks');
-        $response->assertViewHas('tracks', function ($tracks)         });
+        $response->assertViewHas('tracks', function ($tracks) use ($track) {
+            return $tracks->contains($track);
+        });
     }
 
     #[Test]
@@ -57,7 +59,7 @@ public function track_create_page_loads_correctly()
 
         $response->assertStatus(200);
         $response->assertSee('Add New Track');
-        $response->assertViewIs('tracks.create');
+        $response->assertViewIs('tracks.form');
     }
 
     #[Test]
@@ -69,7 +71,7 @@ public function track_edit_page_loads_correctly()
 
         $response->assertStatus(200);
         $response->assertSee($track->title);
-        $response->assertViewIs('tracks.edit');
+        $response->assertViewIs('tracks.form');
     }
 
     #[Test]
@@ -79,9 +81,9 @@ public function track_can_be_created()
 
         $response = $this->post(route('tracks.store'), [
             'title' => 'New Test Track',
-            'audio_url' => 'https:
-            'image_url' => 'https:
-            'genres' => 'Bubblegum bass',
+            'audio_url' => 'https://example.com/new_audio.mp3',
+            'image_url' => 'https://example.com/new_image.jpg',
+            'genre_ids' => [$genre->id],
         ]);
 
         $response->assertRedirect(route('tracks.index'));
@@ -101,7 +103,7 @@ public function track_can_be_updated()
             'title' => 'Updated Track Title',
             'audio_url' => $track->audio_url,
             'image_url' => $track->image_url,
-            'genres' => 'Bubblegum bass',
+            'genre_ids' => [$genre->id],
         ]);
 
         $response->assertRedirect(route('tracks.index'));
@@ -122,7 +124,7 @@ public function track_can_be_deleted()
     #[Test]
 public function track_can_be_searched()
     {
-        Track::factory()->create(['title' => 'Another Track']);
+        Track::factory()->create(['title' => 'Another Track', 'audio_url' => 'https://example.com/another_audio.mp3', 'image_url' => 'https://example.com/another_image.jpg']);
 
         $response = $this->get(route('tracks.index', ['search' => 'Test']));
 
@@ -137,7 +139,7 @@ public function track_can_be_searched()
 public function tracks_can_be_filtered_by_genre()
     {
         $otherGenre = Genre::factory()->create(['name' => 'Rock']);
-        $otherTrack = Track::factory()->create(['title' => 'Rock Track']);
+        $otherTrack = Track::factory()->create(['title' => 'Rock Track', 'audio_url' => 'https://example.com/rock_audio.mp3', 'image_url' => 'https://example.com/rock_image.jpg']);
         $otherTrack->genres()->attach($otherGenre->id);
 
         $bubblegumGenre = Genre::where('name', 'Bubblegum bass')->first();

@@ -46,8 +46,8 @@ final class TrackStoreRequest extends FormRequest
             'image_url' => ['required', 'url'],
             'duration' => ['nullable', 'string', 'max:10'],
             // Make genres validation more flexible
-            'genres' => ['nullable', 'string'],
-            'genre_ids' => ['nullable', 'array'],
+            'genres' => ['nullable', 'string', 'required_without:genre_ids'],
+            'genre_ids' => ['nullable', 'array', 'required_without:genres'],
             'genre_ids.*' => ['exists:genres,id'],
             'playlists' => ['nullable', 'array'],
             'playlists.*' => ['exists:playlists,id'],

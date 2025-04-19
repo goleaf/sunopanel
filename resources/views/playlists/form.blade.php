@@ -1,109 +1,137 @@
-@props(['playlist' => null, 'submitRoute', 'submitMethod' => 'POST'])
+@extends('layouts.app')
 
-<div class="bg-white rounded-lg shadow-md p-6">
-    <x-heading :level="2" class="mb-4">
-        {{ $playlist ? 'Edit Playlist' : 'Create New Playlist' }}
-    </x-heading>
+@section('content')
+{{-- Determine if we are editing or creating --}}
+@php
+    $isEditing = isset($playlist) && $playlist->exists;
+    $formAction = $isEditing ? route('playlists.update', $playlist) : route('playlists.store');
+    $pageTitle = $isEditing ? 'Edit Playlist: ' . Str::limit($playlist->title, 50) : 'Create New Playlist';
+    $buttonText = $isEditing ? 'Update Playlist' : 'Save Playlist';
+    $buttonIcon = $isEditing ? 'save' : 'plus';
+@endphp
 
-    @if ($errors->any())
-        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            <ul class="list-disc pl-5">
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
+{{-- Page Header --}}
+<div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-semibold text-base-content truncate" @if($isEditing) title="{{ $playlist->title }}" @endif>{{ $pageTitle }}</h1>
+    <x-button 
+        href="{{ $isEditing ? route('playlists.show', $playlist) : route('playlists.index') }}" 
+        variant="outline"
+        size="sm"
+    >
+        <x-icon name="arrow-sm-left" size="4" class="mr-1" />
+        Back
+    </x-button>
+</div>
 
-    <form action="{{ $submitRoute }}" method="POST">
+{{-- Form Card --}}
+<div class="card bg-base-100 shadow-xl max-w-3xl mx-auto">
+    <form action="{{ $formAction }}" method="POST" class="card-body space-y-6">
         @csrf
-        @if($submitMethod !== 'POST')
-            @method($submitMethod)
+        @if($isEditing)
+            @method('PUT')
         @endif
 
-        <div class="space-y-6">
-            <div>
-                <x-label for="title" :value="__('Title')" />
-                <x-input 
-                    id="title" 
-                    class="block mt-1 w-full" 
-                    type="text" 
-                    name="title" 
-                    :value="old('title', $playlist->title ?? '')" 
-                    required 
-                    autofocus 
-                />
-                @error('title')
-                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                @enderror
-            </div>
+        <h2 class="card-title text-lg">{{ $isEditing ? 'Playlist Details' : 'Enter Playlist Details' }}</h2>
 
-            <div>
-                <x-label for="description" :value="__('Description')" />
-                <x-textarea 
-                    id="description" 
-                    class="block mt-1 w-full" 
-                    name="description" 
-                    :value="old('description', $playlist->description ?? '')" 
-                />
-                @error('description')
-                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                @enderror
-            </div>
+        <x-form-validation-summary :errors="$errors" />
 
-            <div>
-                <x-label for="genre_id" :value="__('Genre (Optional)')" />
-                <x-select 
-                    id="genre_id" 
-                    class="block mt-1 w-full" 
-                    name="genre_id"
-                >
-                    <option value="">-- Select Genre --</option>
-                    @foreach($genres as $genre)
-                        <option 
-                            value="{{ $genre->id }}" 
-                            {{ (old('genre_id', $playlist->genre_id ?? '') == $genre->id) ? 'selected' : '' }}
-                        >
-                            {{ $genre->name }}
-                        </option>
-                    @endforeach
-                </x-select>
-                @error('genre_id')
-                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                @enderror
-            </div>
-
-            <div>
-                <x-label for="cover_image" :value="__('Cover Image (Optional)')" />
-                <div class="mt-1 flex items-center">
-                    @if(isset($playlist) && $playlist->cover_image)
-                    <div class="mr-4">
-                        <img src="{{ $playlist->cover_image }}" alt="{{ $playlist->title }}" class="h-32 w-32 object-cover rounded">
-                    </div>
-                    @endif
-                    <x-input 
-                        id="cover_image" 
-                        class="flex-1" 
-                        type="text" 
-                        name="cover_image" 
-                        placeholder="https://example.com/image.jpg"
-                        :value="old('cover_image', $playlist->cover_image ?? '')" 
-                    />
-                </div>
-                @error('cover_image')
-                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                @enderror
-                <p class="text-gray-500 text-xs mt-1">Enter a URL to an image</p>
-            </div>
+        {{-- Playlist Title --}}
+        <div class="form-control">
+            <x-input
+                id="title"
+                name="title"
+                type="text"
+                label="Playlist Title"
+                value="{{ old('title', $playlist?->title) }}"
+                required
+                autofocus
+                helpText="The main name for this playlist."
+                :error="$errors->first('title')"
+            />
         </div>
 
-        <div class="flex justify-end">
-            <x-button href="{{ $playlist ? route('playlists.show', $playlist) : route('playlists.index') }}" color="ghost" class="mr-2">
+        {{-- Playlist Description --}}
+        <div class="form-control">
+            <x-textarea
+                id="description"
+                name="description"
+                label="Description"
+                rows="4"
+                helpText="A short description of the playlist (optional)."
+                :error="$errors->first('description')"
+            >{{ old('description', $playlist?->description) }}</x-textarea>
+        </div>
+
+         {{-- Cover Image --}}
+        <div class="form-control">
+             <x-input
+                 id="cover_image"
+                 name="cover_image"
+                 type="url" {{-- Assuming URL for now, adjust if using file upload --}}
+                 label="Cover Image URL"
+                 value="{{ old('cover_image', $playlist?->cover_image) }}"
+                 placeholder="https://example.com/image.jpg"
+                 helpText="URL for the playlist cover art (optional)."
+                 :error="$errors->first('cover_image')"
+             />
+             {{-- Display current image if editing --}}
+             @if ($isEditing && $playlist?->cover_image)
+                 <div class="mt-2">
+                     <img src="{{ $playlist->cover_image }}" alt="Current cover" class="h-20 w-20 object-cover rounded">
+                 </div>
+             @endif
+        </div>
+
+        {{-- Genre --}}
+        <div class="form-control">
+            <x-label for="genre_id" value="Genre (Optional)" />
+            <x-select 
+                id="genre_id" 
+                name="genre_id" 
+                class="select-bordered w-full"
+                :error="$errors->first('genre_id')"
+            >
+                <option value="">-- Select Genre --</option>
+                @php
+                    // Ensure $genres is available (passed from controller)
+                    $availableGenres = $genres ?? \App\Models\Genre::orderBy('name')->get();
+                @endphp
+                @foreach($availableGenres as $genre)
+                    <option 
+                        value="{{ $genre->id }}" 
+                        {{ old('genre_id', isset($playlist) ? $playlist?->genre_id : null) == $genre->id ? 'selected' : '' }}
+                    >
+                        {{ $genre->name }}
+                    </option>
+                @endforeach
+            </x-select>
+             <x-input-error :messages="$errors->get('genre_id')" for="genre_id" class="mt-2" />
+             <label class="label">
+                <span class="label-text-alt text-base-content/70">Associate this playlist with a primary genre.</span>
+             </label>
+        </div>
+
+        {{-- Action Buttons --}}
+        <div class="card-actions justify-end pt-4">
+             <x-button
+                href="{{ $isEditing ? route('playlists.show', $playlist) : route('playlists.index') }}"
+                variant="ghost"
+                size="sm"
+            >
+                 <x-icon name="x-mark" class="mr-1 h-4 w-4" />
                 Cancel
             </x-button>
-            <x-button type="submit" color="primary">
-                {{ $playlist ? 'Update Playlist' : 'Create Playlist' }}
-            </x-button>
+            <x-tooltip text="{{ $isEditing ? 'Update' : 'Save' }} this playlist" position="top">
+                <x-button
+                    type="submit"
+                    variant="primary"
+                    size="sm"
+                >
+                     <x-icon name="{{ $buttonIcon }}" class="mr-1 h-4 w-4" />
+                    {{ $buttonText }}
+                </x-button>
+            </x-tooltip>
         </div>
     </form>
-</div> 
+</div>
+@endsection 

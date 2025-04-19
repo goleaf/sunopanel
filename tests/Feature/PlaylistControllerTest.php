@@ -33,7 +33,7 @@ class PlaylistControllerTest extends TestCase
         $response = $this->get('/playlists/create');
 
         $response->assertStatus(200);
-        $response->assertViewIs('playlists.create');
+        $response->assertViewIs('playlists.form');
     }
 
     public function test_store_playlist(): void
@@ -85,7 +85,7 @@ class PlaylistControllerTest extends TestCase
         $response = $this->get("/playlists/{$playlist->id}/edit");
 
         $response->assertStatus(200);
-        $response->assertViewIs('playlists.edit');
+        $response->assertViewIs('playlists.form');
         $response->assertViewHas('playlist');
         $response->assertSee($playlist->title);
     }

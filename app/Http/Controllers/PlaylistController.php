@@ -64,8 +64,8 @@ final class PlaylistController extends Controller
     {
         $this->loggingService->logInfoMessage('Playlist create form accessed');
         $genres = Genre::orderBy('name')->get();
-
-        return view('playlists.form', compact('genres'));
+        $playlist = null;
+        return view('playlists.form', compact('genres', 'playlist'));
     }
 
     /**

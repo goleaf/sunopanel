@@ -1,187 +1,140 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="container mx-auto px-4 py-8">
-        <!-- Back button and heading -->
-        <div class="flex justify-between items-center mb-6">
-            <x-heading.h1>{{ $track->title }}</x-heading.h1>
-            <x-button href="{{ route('tracks.index') }}" color="ghost">
-                <x-icon name="back" size="5" class="mr-1" />
-                Back to Tracks
-            </x-button>
+{{-- Page Header --}}
+<div class="flex justify-between items-center mb-6">
+    {{-- Use breadcrumbs for better context --}}
+    <div class="breadcrumbs text-sm">
+        <ul>
+            <li><a href="{{ route('tracks.index') }}">Tracks</a></li> 
+            <li class="truncate" title="{{ $track->title }}">{{ Str::limit($track->title, 40) }}</li>
+        </ul>
+    </div>
+    <x-button 
+        href="{{ route('tracks.index') }}" 
+        variant="outline"
+        size="sm"
+    >
+        <x-icon name="arrow-sm-left" size="4" class="mr-1" />
+        Back to Tracks
+    </x-button>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    {{-- Left Column: Cover Art & Primary Actions --}}
+    <div class="md:col-span-1 space-y-6">
+        {{-- Cover Art Card --}}
+        <div class="card bg-base-100 shadow-xl overflow-hidden">
+             @if($track->image_url)
+                <figure><img src="{{ $track->image_url }}" alt="{{ $track->title }}" class="w-full h-auto object-cover" onerror="this.style.display='none'; this.parentElement.innerHTML = '<div class=\"aspect-square flex items-center justify-center bg-base-200\"><x-icon name=\"photo\" class=\"h-16 w-16 text-base-content/30\" /></div>'"></figure>
+            @else
+                <div class="aspect-square flex items-center justify-center bg-base-200">
+                    <x-icon name="photo" class="h-16 w-16 text-base-content/30" />
+                </div>
+            @endif
         </div>
 
-        <!-- Success/Error messages -->
-        @if(session('success'))
-            <div class="alert alert-success mb-4">
-                {{ session('success') }}
-            </div>
-        @endif
-
-        @if(session('error'))
-            <div class="alert alert-error mb-4">
-                {{ session('error') }}
-            </div>
-        @endif
-
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- Track Information -->
-            <div class="lg:col-span-2">
-                <div class="card bg-base-100 shadow-lg">
-                    <div class="card-body">
-                        <div class="flex flex-col md:flex-row gap-6">
-                            <!-- Album Art -->
-                            <div class="w-full md:w-48 flex-shrink-0">
-                                @if($track->artwork_url)
-                                    <img src="{{ $track->artwork_url }}" alt="{{ $track->title }}" class="w-full h-auto rounded-lg shadow-md">
-                                @else
-                                    <div class="w-full aspect-square bg-base-200 rounded-lg shadow-md flex items-center justify-center">
-                                        <x-icon name="music" size="16" class="text-base-content/30" />
-                                    </div>
-                                @endif
-                            </div>
-
-                            <!-- Track Details -->
-                            <div class="flex-1">
-                                <h2 class="text-xl font-bold mb-2">{{ $track->title }}</h2>
-                                
-                                <div class="mb-4">
-                                    @if($track->genres->count() > 0)
-                                        <div class="flex flex-wrap gap-2 mb-2">
-                                            @foreach($track->genres as $genre)
-                                                <span class="badge badge-primary">{{ $genre->name }}</span>
-                                            @endforeach
-                                        </div>
-                                    @endif
-                                </div>
-                                
-                                <!-- Media Player -->
-                                <div class="mb-4">
-                                    <x-audio-player :track="$track" />
-                                </div>
-                                
-                                <!-- Action Buttons -->
-                                <div class="flex flex-wrap gap-2">
-                                    <x-button 
-                                        href="{{ route('tracks.edit', $track) }}" 
-                                        color="primary"
-                                    >
-                                        <x-icon name="pencil" size="5" class="mr-1" />
-                                        Edit Track
-                                    </x-button>
-                                    
-                                    <form action="{{ route('tracks.destroy', $track) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this track?');">
-                                        @csrf
-                                        @method('DELETE')
-                                        <x-button 
-                                            type="submit" 
-                                            color="error"
-                                        >
-                                            <x-icon name="trash" size="5" class="mr-1" />
-                                            Delete Track
-                                        </x-button>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Media Details -->
-                <div class="card bg-base-100 shadow-lg mt-8">
-                    <div class="card-body">
-                        <h2 class="card-title">Media Details</h2>
-                        <div class="overflow-x-auto">
-                            <table class="table w-full">
-                                <tbody>
-                                    <tr>
-                                        <td class="font-semibold">Title</td>
-                                        <td>{{ $track->title }}</td>
-                                    </tr>
-                                    @if($track->artist)
-                                    <tr>
-                                        <td class="font-semibold">Artist</td>
-                                        <td>{{ $track->artist }}</td>
-                                    </tr>
-                                    @endif
-                                    @if($track->album)
-                                    <tr>
-                                        <td class="font-semibold">Album</td>
-                                        <td>{{ $track->album }}</td>
-                                    </tr>
-                                    @endif
-                                    <tr>
-                                        <td class="font-semibold">File Path</td>
-                                        <td>{{ $track->file_path }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="font-semibold">File Size</td>
-                                        <td>{{ $track->formatted_file_size }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="font-semibold">Duration</td>
-                                        <td>{{ $track->formatted_duration }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="font-semibold">Uploaded</td>
-                                        <td>{{ $track->created_at->format('M d, Y \a\t h:i A') }}</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Playlists -->
-            <div class="lg:col-span-1">
-                <div class="card bg-base-100 shadow-lg">
-                    <div class="card-body">
-                        <h2 class="card-title flex justify-between items-center">
-                            <span>Playlists</span>
-                            <span class="badge badge-primary">{{ $track->playlists->count() }}</span>
-                        </h2>
-                        @if($track->playlists->isEmpty())
-                            <div class="text-center py-4">
-                                <p class="text-base-content/60">This track is not in any playlists yet.</p>
-                                <x-button 
-                                    href="{{ route('playlists.create') }}" 
-                                    color="primary"
-                                    class="mt-4"
-                                >
-                                    Create a Playlist
-                                </x-button>
-                            </div>
-                        @else
-                            <div class="overflow-x-auto">
-                                <table class="table">
-                                    <tbody>
-                                        @foreach($track->playlists as $playlist)
-                                            <tr>
-                                                <td>
-                                                    <a href="{{ route('playlists.show', $playlist) }}" class="flex items-center">
-                                                        <div class="w-10 h-10 bg-base-200 rounded-md flex items-center justify-center mr-3">
-                                                            @if($playlist->artwork_url)
-                                                                <img src="{{ $playlist->artwork_url }}" class="w-full h-full object-cover rounded-md" alt="{{ $playlist->title }}">
-                                                            @else
-                                                                <x-icon name="music" size="6" class="text-base-content/30" />
-                                                            @endif
-                                                        </div>
-                                                        <div>
-                                                            <div class="font-semibold">{{ $playlist->title }}</div>
-                                                            <div class="text-xs text-base-content/60">{{ $playlist->tracks->count() }} tracks</div>
-                                                        </div>
-                                                    </a>
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                        @endif
-                    </div>
-                </div>
+        {{-- Primary Actions Card --}}
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body items-center text-center p-4 space-y-2">
+                 <x-audio-player :track="$track" /> {{-- Moved audio player here --}}
+                 <div class="card-actions justify-center w-full pt-2">
+                     <x-tooltip text="Edit Track" position="top">
+                        <x-button href="{{ route('tracks.edit', $track) }}" variant="outline" size="sm" icon>
+                            <x-icon name="pencil" />
+                        </x-button>
+                     </x-tooltip>
+                     <x-tooltip text="Delete Track" position="top">
+                        <form action="{{ route('tracks.destroy', $track) }}" method="POST" onsubmit="return confirm('Delete track: {{ addslashes($track->title) }}?')" class="inline">
+                            @csrf
+                            @method('DELETE')
+                            <x-button type="submit" variant="outline" color="error" size="sm" icon>
+                                <x-icon name="trash" />
+                            </x-button>
+                        </form>
+                     </x-tooltip>
+                 </div>
             </div>
         </div>
     </div>
+
+    {{-- Right Column: Details & Playlists --}}
+    <div class="md:col-span-2 space-y-6">
+        {{-- Track Details Card --}}
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <h1 class="card-title text-3xl mb-2">{{ $track->title }}</h1>
+                {{-- Genre Badges --}}
+                @if($track->genres->count() > 0)
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        @foreach($track->genres as $genre)
+                            <div class="badge badge-outline">{{ $genre->name }}</div>
+                        @endforeach
+                    </div>
+                @endif
+
+                {{-- Using Definition List for details --}}
+                <dl class="divide-y divide-base-200 text-sm">
+                    <div class="py-3 grid grid-cols-3 gap-4">
+                        <dt class="font-medium text-base-content/70">Duration</dt>
+                        <dd class="text-base-content col-span-2">{{ formatDuration($track->duration_seconds ?: $track->duration) }}</dd>
+                    </div>
+                     <div class="py-3 grid grid-cols-3 gap-4">
+                        <dt class="font-medium text-base-content/70">Audio URL</dt>
+                        <dd class="text-base-content col-span-2 truncate">
+                            <a href="{{ $track->audio_url }}" target="_blank" class="link link-hover link-primary" title="{{ $track->audio_url }}">
+                                {{ $track->audio_url }}
+                            </a>
+                        </dd>
+                    </div>
+                     <div class="py-3 grid grid-cols-3 gap-4">
+                        <dt class="font-medium text-base-content/70">Added</dt>
+                        <dd class="text-base-content col-span-2" title="{{ $track->created_at->format('Y-m-d H:i:s') }}">{{ $track->created_at->diffForHumans() }}</dd>
+                    </div>
+                    <div class="py-3 grid grid-cols-3 gap-4">
+                        <dt class="font-medium text-base-content/70">Last Updated</dt>
+                        <dd class="text-base-content col-span-2" title="{{ $track->updated_at->format('Y-m-d H:i:s') }}">{{ $track->updated_at->diffForHumans() }}</dd>
+                    </div>
+                    {{-- Add more fields as needed (e.g., Artist, Album) --}}
+                </dl>
+            </div>
+        </div>
+
+        {{-- Playlists Card --}}
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <h2 class="card-title">Part of Playlists ({{ $track->playlists->count() }})</h2>
+                @if($track->playlists->isEmpty())
+                    <div class="text-center py-6 text-base-content/70 italic">
+                        This track hasn't been added to any playlists yet.
+                    </div>
+                @else
+                    <ul class="divide-y divide-base-200">
+                        @foreach($track->playlists as $playlist)
+                            <li class="py-3">
+                                <a href="{{ route('playlists.show', $playlist) }}" class="flex items-center space-x-3 group">
+                                    <div class="avatar">
+                                        <div class="mask mask-squircle w-10 h-10">
+                                            @if($playlist->artwork_url)
+                                                <img src="{{ $playlist->artwork_url }}" alt="{{ $playlist->title }}" onerror="this.style.display='none'; this.parentElement.innerHTML = '<div class=\"flex items-center justify-center w-full h-full bg-base-200\"><x-icon name=\"collection\" class=\"h-5 w-5 text-base-content/30\" /></div>'" />
+                                            @else
+                                                 <div class="flex items-center justify-center w-full h-full bg-base-200">
+                                                    <x-icon name="collection" class="h-5 w-5 text-base-content/30" />
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <p class="font-medium group-hover:text-primary transition duration-150">{{ $playlist->title }}</p>
+                                        <p class="text-xs text-base-content/70">{{ $playlist->tracks_count }} tracks</p>
+                                    </div>
+                                </a>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+            </div>
+        </div>
+    </div>
+</div>
 @endsection

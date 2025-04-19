@@ -1,212 +1,218 @@
-<x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Add Tracks to Playlist') }}: {{ $playlist->title }}
-        </h2>
-    </x-slot>
+@extends('layouts.app')
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="mb-6">
-                <x-button href="{{ route('playlists.show', $playlist) }}" color="gray">
-                    <x-icon name="arrow-left" class="h-5 w-5 mr-1" />
-                    Back to Playlist
-                </x-button>
+@section('content')
+{{-- Page Header --}}
+<div class="flex justify-between items-center mb-6">
+    <div class="breadcrumbs text-sm">
+        <ul>
+            <li><a href="{{ route('playlists.index') }}">Playlists</a></li>
+            <li><a href="{{ route('playlists.show', $playlist) }}" class="truncate" title="{{ $playlist->title }}">{{ Str::limit($playlist->title, 30) }}</a></li>
+            <li>Add Tracks</li>
+        </ul>
+    </div>
+    <x-button href="{{ route('playlists.show', $playlist) }}" variant="outline" size="sm">
+        <x-icon name="arrow-sm-left" size="4" class="mr-1" />
+        Back to Playlist
+    </x-button>
+</div>
+
+{{-- Main Content Card --}}
+<div class="card bg-base-100 shadow-xl">
+    <div class="card-body">
+        <form action="{{ route('playlists.store-tracks', $playlist) }}" method="POST">
+            @csrf
+            <h2 class="card-title text-xl mb-4">Select Tracks to Add</h2>
+
+            {{-- Filters --}}
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 p-4 bg-base-200/50 rounded-lg">
+                {{-- Search Input --}}
+                <div class="form-control md:col-span-2">
+                    <label class="label pb-1"><span class="label-text">Search Tracks</span></label>
+                    <div class="join w-full">
+                        <input type="text" id="search" placeholder="Search by title..." class="input input-sm input-bordered join-item w-full" />
+                        <button type="button" id="clearSearch" class="btn btn-sm join-item btn-ghost">
+                            <x-icon name="x-mark" class="w-4 h-4"/>
+                        </button>
+                    </div>
+                </div>
+                {{-- Genre Filter --}}
+                <div class="form-control">
+                     <label for="genre-filter" class="label pb-1"><span class="label-text">Filter by Genre</span></label>
+                     <select id="genre-filter-select" class="select select-sm select-bordered w-full">
+                         <option value="" selected>All Genres</option>
+                         @foreach($genres as $genre)
+                             <option value="{{ $genre->id }}">{{ $genre->name }}</option>
+                         @endforeach
+                     </select>
+                </div>
             </div>
 
-            <x-card rounded="lg">
-                <form action="{{ route('playlists.store-tracks', $playlist) }}" method="POST">
-                    @csrf
-
-                    <div class="mb-6 space-y-4">
-                        <div class="flex flex-wrap items-center gap-4">
-                            <div class="flex-1">
-                                <x-search-input placeholder="Search tracks..." id="search" />
-                            </div>
-                            <x-button type="button" id="clearSearch" color="gray">
-                                Clear
-                            </x-button>
-                        </div>
-
-                        <div>
-                            <x-label for="genre-filter" value="Filter by Genre" />
-                            <div class="flex flex-wrap gap-2 mt-2" id="genre-filter">
-                                <button type="button" data-genre="" 
-                                    class="genre-filter px-3 py-1 text-sm rounded-full border border-gray-300 bg-indigo-100 text-indigo-800 font-medium">
-                                    All
-                                </button>
-                                @foreach($genres as $genre)
-                                    <button type="button" data-genre="{{ $genre->id }}" 
-                                        class="genre-filter px-3 py-1 text-sm rounded-full border border-gray-300 hover:bg-gray-100">
-                                        {{ $genre->name }}
-                                    </button>
-                                @endforeach
-                            </div>
-                        </div>
-                    </div>
-
-                    <x-data-table>
-                        <x-slot name="header">
-                            <x-th>Select</x-th>
-                            <x-th>Track</x-th>
-                            <x-th>Audio</x-th>
-                            <x-th>Genres</x-th>
-                        </x-slot>
-                        <x-slot name="body">
-                            @foreach($tracks as $track)
-                                <tr class="track-row hover:bg-gray-50" 
-                                    data-name="{{ strtolower($track->title) }}"
-                                    data-genres="{{ $track->genres->pluck('id')->join(',') }}">
-                                    <x-td>
+            {{-- Tracks Table --}}
+            <div class="overflow-x-auto">
+                <table class="table table-zebra table-sm w-full">
+                    <thead>
+                        <tr>
+                            <th>
+                                {{-- Checkbox for select/deselect all visible --}}
+                                <label>
+                                     <input type="checkbox" id="selectAllVisibleCheckbox" class="checkbox checkbox-primary checkbox-xs" title="Select/Deselect All Visible"/>
+                                </label>
+                            </th>
+                            <th>Title</th>
+                            <th>Genres</th>
+                            <th>Duration</th>
+                             {{-- <th>Audio</th> --}}
+                        </tr>
+                    </thead>
+                    <tbody id="tracks-tbody">
+                        @foreach($tracks as $track)
+                            <tr class="track-row hover" 
+                                data-title="{{ strtolower($track->title) }}"
+                                data-genres="{{ $track->genres->pluck('id')->join(',') }}">
+                                <td>
+                                    <label>
                                         <input type="checkbox" name="track_ids[]" value="{{ $track->id }}"
                                             {{ in_array($track->id, $playlistTrackIds ?? []) ? 'disabled checked' : '' }}
-                                            class="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                                    </x-td>
-                                    <x-td>
-                                        <div class="flex items-center">
-                                            <img src="{{ $track->image_url }}" alt="{{ $track->title }}" class="h-10 w-10 object-cover rounded mr-3">
-                                            <div class="font-medium text-gray-900">{{ $track->title }}</div>
-                                        </div>
-                                    </x-td>
-                                    <x-td>
-                                        <x-audio-player :track="$track" />
-                                    </x-td>
-                                    <x-td>
-                                        @if($track->genres->isNotEmpty())
-                                            <div class="flex flex-wrap gap-1">
-                                                @foreach($track->genres as $genre)
-                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                                                        {{ $genre->name }}
-                                                    </span>
-                                                @endforeach
+                                            class="checkbox checkbox-primary checkbox-xs track-checkbox">
+                                    </label>
+                                </td>
+                                <td>
+                                     <div class="flex items-center space-x-3">
+                                        <div class="avatar">
+                                            <div class="mask mask-squircle w-8 h-8"> {{-- Slightly smaller avatar --}}
+                                                <img src="{{ $track->image_url ?? asset('images/no-image.jpg') }}" 
+                                                     alt="{{ $track->title }}" 
+                                                     onerror="this.src='{{ asset('images/no-image.jpg') }}'" />
                                             </div>
-                                        @else
-                                            <span class="text-gray-500 text-xs">No genres</span>
+                                        </div>
+                                        <div>
+                                            <div class="font-medium">{{ Str::limit($track->title, 50) }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                 <td>
+                                    <div class="flex flex-wrap gap-1">
+                                        @foreach($track->genres->take(2) as $genre)
+                                            <div class="badge badge-ghost badge-xs">{{ $genre->name }}</div>
+                                        @endforeach
+                                        @if($track->genres->count() > 2)
+                                            <div class="badge badge-ghost badge-xs">...</div>
                                         @endif
-                                    </x-td>
-                                </tr>
-                            @endforeach
-                        </x-slot>
-                    </x-data-table>
+                                    </div>
+                                </td>
+                                <td>
+                                    {{ formatDuration($track->duration_seconds ?: $track->duration) }}
+                                </td>
+                                 {{-- <td class="w-1/4">
+                                     <x-audio-player :track="$track" :minimal="true" /> 
+                                </td> --}} 
+                            </tr>
+                        @endforeach
+                         <tr id="no-results-row" class="hidden">
+                             <td colspan="4" class="text-center py-6 text-base-content/70 italic">
+                                 No tracks match the current filters.
+                             </td>
+                         </tr>
+                    </tbody>
+                </table>
+            </div>
 
-                    <div class="mt-4 mb-6">
-                        <span class="bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full text-sm font-medium">
-                            <span id="selectedCount">0</span> tracks selected
-                        </span>
-                    </div>
-
-                    <div class="flex flex-wrap justify-between gap-4">
-                        <div class="flex flex-wrap gap-2">
-                            <x-button type="button" id="selectAll" color="gray">
-                                Select All Visible
-                            </x-button>
-                            <x-button type="button" id="deselectAll" color="gray">
-                                Deselect All
-                            </x-button>
-                        </div>
-                        <x-button type="submit" color="indigo">
-                            <x-icon name="plus" class="h-5 w-5 mr-1" />
-                            Add Selected Tracks
-                        </x-button>
-                    </div>
-                </form>
-
-                <div class="mt-6">
-                    {{ $tracks->links('components.pagination-links') }}
+             {{-- Selected Count & Actions --}}
+            <div class="mt-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div class="text-sm font-medium">
+                     Selected: <span id="selectedCount" class="badge badge-primary">0</span>
                 </div>
-            </x-card>
+                <div class="flex flex-wrap gap-2">
+                     <x-button type="button" id="deselectAll" variant="ghost" size="sm">
+                        <x-icon name="minus-circle" class="w-4 h-4 mr-1"/> Deselect All
+                    </x-button>
+                    <x-button type="submit" variant="primary" size="sm">
+                        <x-icon name="plus" class="w-4 h-4 mr-1" />
+                        Add Selected Tracks (<span id="selectedCountSubmit">0</span>)
+                    </x-button>
+                </div>
+            </div>
+        </form>
+
+         {{-- Pagination --}}
+         <div class="mt-6">
+            {{-- Note: Pagination might not work correctly with JS filtering unless using AJAX/Livewire --}}
+            {{ $tracks->links() }} 
         </div>
     </div>
-</x-app-layout>
+</div>
+@endsection
 
+@push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const searchInput = document.getElementById('search');
         const clearButton = document.getElementById('clearSearch');
-        const genreFilters = document.querySelectorAll('.genre-filter');
-        const trackRows = document.querySelectorAll('.track-row');
-        const selectAllBtn = document.getElementById('selectAll');
+        const genreFilterSelect = document.getElementById('genre-filter-select');
+        const trackRows = document.querySelectorAll('#tracks-tbody .track-row');
+        const noResultsRow = document.getElementById('no-results-row');
+        const selectAllVisibleCheckbox = document.getElementById('selectAllVisibleCheckbox');
         const deselectAllBtn = document.getElementById('deselectAll');
-        const selectedCountElement = document.getElementById('selectedCount');
-        let activeGenre = '';
+        const selectedCountElements = [document.getElementById('selectedCount'), document.getElementById('selectedCountSubmit')];
+        const trackCheckboxes = document.querySelectorAll('.track-checkbox:not([disabled])');
+        let visibleRowCount = trackRows.length;
 
-        // Function to update the selected count
         function updateSelectedCount() {
-            const checkedBoxes = document.querySelectorAll('input[name="track_ids[]"]:checked:not([disabled])');
-            selectedCountElement.textContent = checkedBoxes.length;
+            const count = document.querySelectorAll('.track-checkbox:checked:not([disabled])').length;
+            selectedCountElements.forEach(el => el.textContent = count);
+            // Update master checkbox state
+            const allVisibleChecked = Array.from(trackCheckboxes).filter(cb => !cb.closest('tr').classList.contains('hidden')).every(cb => cb.checked);
+            const anyVisibleChecked = Array.from(trackCheckboxes).filter(cb => !cb.closest('tr').classList.contains('hidden')).some(cb => cb.checked);
+            selectAllVisibleCheckbox.checked = allVisibleChecked && visibleRowCount > 0;
+            selectAllVisibleCheckbox.indeterminate = !allVisibleChecked && anyVisibleChecked;
+            
         }
 
-        // Initial count
-        updateSelectedCount();
-
-        // Function to filter tracks
         function filterTracks() {
             const searchTerm = searchInput.value.toLowerCase();
+            const activeGenre = genreFilterSelect.value;
+            visibleRowCount = 0;
 
             trackRows.forEach(row => {
-                const name = row.dataset.name;
+                const title = row.dataset.title;
                 const genres = row.dataset.genres.split(',');
-
-                // Check if it matches both search term and genre filter
-                const matchesSearch = name.includes(searchTerm);
+                const matchesSearch = title.includes(searchTerm);
                 const matchesGenre = activeGenre === '' || genres.includes(activeGenre);
-
-                row.style.display = matchesSearch && matchesGenre ? '' : 'none';
+                const isVisible = matchesSearch && matchesGenre;
+                row.classList.toggle('hidden', !isVisible);
+                if (isVisible) visibleRowCount++;
             });
+            noResultsRow.classList.toggle('hidden', visibleRowCount > 0);
+            updateSelectedCount(); // Re-evaluate master checkbox
         }
 
-        // Search input event
+        // Initial setup
+        updateSelectedCount();
+        filterTracks(); // Apply initial filter state if needed (e.g., from query params)
+
+        // Event Listeners
         searchInput.addEventListener('input', filterTracks);
+        clearButton.addEventListener('click', () => { searchInput.value = ''; filterTracks(); });
+        genreFilterSelect.addEventListener('change', filterTracks);
 
-        // Clear search
-        clearButton.addEventListener('click', function() {
-            searchInput.value = '';
-            filterTracks();
+        selectAllVisibleCheckbox.addEventListener('change', (e) => {
+             trackRows.forEach(row => {
+                 if (!row.classList.contains('hidden')) {
+                     const checkbox = row.querySelector('.track-checkbox:not([disabled])');
+                     if(checkbox) checkbox.checked = e.target.checked;
+                 }
+             });
+             updateSelectedCount();
         });
-
-        // Genre filter buttons
-        genreFilters.forEach(button => {
-            button.addEventListener('click', function() {
-                // Update active state of buttons
-                genreFilters.forEach(btn => {
-                    btn.classList.remove('bg-indigo-100', 'text-indigo-800', 'font-medium');
-                    btn.classList.add('hover:bg-gray-100');
-                });
-                this.classList.add('bg-indigo-100', 'text-indigo-800', 'font-medium');
-                this.classList.remove('hover:bg-gray-100');
-
-                // Set active genre
-                activeGenre = this.dataset.genre;
-
-                // Filter tracks
-                filterTracks();
-            });
-        });
-
-        // Select all visible tracks
-        selectAllBtn.addEventListener('click', function() {
-            trackRows.forEach(row => {
-                if (row.style.display !== 'none') {
-                    const checkbox = row.querySelector('input[type="checkbox"]');
-                    if (!checkbox.disabled) {
-                        checkbox.checked = true;
-                    }
-                }
-            });
+        
+        deselectAllBtn.addEventListener('click', () => {
+            trackCheckboxes.forEach(checkbox => checkbox.checked = false);
             updateSelectedCount();
         });
 
-        // Deselect all tracks
-        deselectAllBtn.addEventListener('click', function() {
-            document.querySelectorAll('input[name="track_ids[]"]:not([disabled])').forEach(checkbox => {
-                checkbox.checked = false;
-            });
-            updateSelectedCount();
-        });
-
-        // Listen for checkbox changes to update count
-        document.querySelectorAll('input[name="track_ids[]"]').forEach(checkbox => {
+        trackCheckboxes.forEach(checkbox => {
             checkbox.addEventListener('change', updateSelectedCount);
         });
     });
 </script>
+@endpush

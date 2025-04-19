@@ -19,7 +19,7 @@ class PlaylistRequestTest extends TestCase
         $validData = [
             'title' => 'Test Playlist',
             'description' => 'Test Description',
-            'cover_image' => 'https:
+            'cover_image' => 'https://example.com/cover.jpg'
         ];
 
         $response = $this->post(route('playlists.store'), $validData);
@@ -63,16 +63,16 @@ class PlaylistRequestTest extends TestCase
 
         $track1 = Track::create([
             'title' => 'Test Track 1',
-            'audio_url' => 'https:
-            'image_url' => 'https:
+            'audio_url' => 'https://example.com/track1_audio.mp3',
+            'image_url' => 'https://example.com/track1_image.jpg',
             'unique_id' => 'track1',
             'duration' => '3:00',
         ]);
 
         $track2 = Track::create([
             'title' => 'Test Track 2',
-            'audio_url' => 'https:
-            'image_url' => 'https:
+            'audio_url' => 'https://example.com/track2_audio.mp3',
+            'image_url' => 'https://example.com/track2_image.jpg',
             'unique_id' => 'track2',
             'duration' => '3:30',
         ]);
@@ -105,8 +105,8 @@ class PlaylistRequestTest extends TestCase
 
         $track = Track::create([
             'title' => 'Test Track',
-            'audio_url' => 'https:
-            'image_url' => 'https:
+            'audio_url' => 'https://example.com/rem_audio.mp3',
+            'image_url' => 'https://example.com/rem_image.jpg',
             'unique_id' => 'track1',
             'duration' => '3:00',
         ]);
@@ -143,16 +143,16 @@ class PlaylistRequestTest extends TestCase
 
         $track1 = Track::create([
             'title' => 'Test Track 1',
-            'audio_url' => 'https:
-            'image_url' => 'https:
+            'audio_url' => 'https://example.com/genre_audio1.mp3',
+            'image_url' => 'https://example.com/genre_image1.jpg',
             'unique_id' => 'track1',
             'duration' => '3:00',
         ]);
 
         $track2 = Track::create([
             'title' => 'Test Track 2',
-            'audio_url' => 'https:
-            'image_url' => 'https:
+            'audio_url' => 'https://example.com/genre_audio2.mp3',
+            'image_url' => 'https://example.com/genre_image2.jpg',
             'unique_id' => 'track2',
             'duration' => '3:30',
         ]);

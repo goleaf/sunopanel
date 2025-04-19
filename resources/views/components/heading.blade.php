@@ -1,4 +1,6 @@
 @props([
+    'title' => '',
+    'breadcrumbs' => [],
     'level' => 2,
 ])
 

@@ -1,111 +1,104 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="text-xl font-semibold text-base-content">
-            {{ __('Genres') }}
-        </h2>
-    </x-slot>
+    {{-- Page Header --}}
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+        <h1 class="text-2xl font-semibold text-base-content">Genres</h1>
+        <div class="flex space-x-2 w-full sm:w-auto">
+             {{-- Search Form --}}
+             <form method="GET" action="{{ route('genres.index') }}" class="join flex-grow">
+                 <input type="text" name="search" placeholder="Search genres..." value="{{ request('search') }}" class="input input-bordered join-item input-sm w-full" />
+                 <button type="submit" class="btn btn-primary join-item btn-sm">
+                     <x-icon name="search" size="4" />
+                 </button>
+             </form>
+             {{-- Add New Button --}}
+             <x-button href="{{ route('genres.create') }}" variant="primary" size="sm" class="flex-shrink-0">
+                <x-icon name="plus" size="4" class="mr-1" />
+                 Add Genre
+            </x-button>
+        </div>
+    </div>
 
-    <div class="container mx-auto px-4">
-        @if (session('success'))
-            <div class="alert alert-success mb-4">
-                <x-icon name="check" size="6" />
-                <span>{{ session('success') }}</span>
-            </div>
-        @endif
-
-        @if (session('error'))
-            <div class="alert alert-error mb-4">
-                <x-icon name="x" size="6" />
-                <span>{{ session('error') }}</span>
-            </div>
-        @endif
-        
-        <div class="card bg-base-100 shadow-md">
-            <div class="card-body">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-                    <div class="w-full md:w-1/2">
-                        <form method="GET" action="{{ route('genres.index') }}" class="join">
-                            <input type="text" name="search" placeholder="Search genres..." value="{{ request('search') }}" class="input input-bordered join-item w-full" />
-                            <x-button type="submit" color="primary" class="join-item">
-                                <x-icon name="search" size="5" class="mr-1" />
-                                Search
-                            </x-button>
-                        </form>
-                    </div>
-                    <div>
-                        <x-button href="{{ route('genres.create') }}" color="primary">
-                            <x-icon name="plus" size="5" class="mr-1" />
-                            {{ __('Create Genre') }}
-                        </x-button>
-                    </div>
-                </div>
-
-                <div class="overflow-x-auto">
-                    <x-table.responsive-table :columns="[
-                        'Name' => __('Name'),
-                        'Description' => __('Description'),
-                        'Tracks Count' => __('Tracks Count'),
-                        'Created At' => __('Created At'),
-                        'Actions' => __('Actions')
-                    ]" compact="true">
+    {{-- Main Content Card --}}
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+            <div class="overflow-x-auto">
+                <table class="table table-zebra table-sm w-full">
+                    <thead>
+                        <tr>
+                            <th><x-sort-link :sortField="$sortField" :direction="$direction" field="name">Name</x-sort-link></th>
+                            <th>Description</th>
+                            <th><x-sort-link :sortField="$sortField" :direction="$direction" field="tracks_count">Tracks</x-sort-link></th>
+                            <th><x-sort-link :sortField="$sortField" :direction="$direction" field="created_at">Created</x-sort-link></th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
                         @forelse($genres as $genre)
-                            <x-table.responsive-row>
-                                <x-table.responsive-cell label="{{ __('Name') }}">
-                                    <a href="{{ route('genres.show', $genre) }}" class="font-bold text-primary hover:underline">
+                            <tr>
+                                <td>
+                                    <a href="{{ route('genres.show', $genre) }}" class="font-bold hover:text-primary transition duration-150 ease-in-out">
                                         {{ $genre->name }}
                                     </a>
-                                </x-table.responsive-cell>
-                                <x-table.responsive-cell label="{{ __('Description') }}">
-                                    {{ Str::limit($genre->description, 50) }}
-                                </x-table.responsive-cell>
-                                <x-table.responsive-cell label="{{ __('Tracks Count') }}">
-                                    <span class="badge badge-accent">{{ $genre->tracks_count }}</span>
-                                </x-table.responsive-cell>
-                                <x-table.responsive-cell label="{{ __('Created At') }}">
-                                    {{ $genre->created_at->format('Y-m-d') }}
-                                </x-table.responsive-cell>
-                                <x-table.responsive-cell label="{{ __('Actions') }}">
-                                    <div class="flex flex-col md:flex-row gap-2 action-buttons">
-                                        <x-button href="{{ route('genres.show', $genre) }}" color="info" size="xs">
-                                            <x-icon name="eye" size="4" class="mr-1" />
-                                            View
-                                        </x-button>
-                                        
-                                        <x-button href="{{ route('genres.edit', $genre) }}" color="warning" size="xs">
-                                            <x-icon name="pencil" size="4" class="mr-1" />
-                                            Edit
-                                        </x-button>
-                                        
-                                        <form method="POST" action="{{ route('genres.destroy', $genre) }}" class="inline-block">
-                                            @csrf
-                                            @method('DELETE')
-                                            <x-button type="submit" color="error" size="xs" 
-                                                onclick="return confirm('{{ __('Are you sure you want to delete this genre?') }}')">
-                                                <x-icon name="trash" size="4" class="mr-1" />
-                                                Delete
+                                </td>
+                                <td class="text-sm text-base-content/70">
+                                    {{ Str::limit($genre->description, 60) }}
+                                </td>
+                                <td>
+                                    <span class="badge badge-ghost badge-sm">{{ $genre->tracks_count }}</span>
+                                </td>
+                                <td>
+                                    <span title="{{ $genre->created_at->format('Y-m-d H:i:s') }}">
+                                        {{ $genre->created_at->diffForHumans(null, true) }} ago
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="flex items-center space-x-1">
+                                        <x-tooltip text="View Genre" position="top">
+                                            <x-button href="{{ route('genres.show', $genre) }}" variant="ghost" size="xs" icon>
+                                                <x-icon name="eye" />
                                             </x-button>
-                                        </form>
-                                        
-                                        <x-button href="{{ route('playlists.create-from-genre', $genre) }}" color="accent" size="xs">
-                                            <x-icon name="music" size="4" class="mr-1" />
-                                            {{ __('Create Playlist') }}
+                                        </x-tooltip>
+                                        <x-tooltip text="Edit Genre" position="top">
+                                            <x-button href="{{ route('genres.edit', $genre) }}" variant="ghost" size="xs" icon>
+                                                <x-icon name="pencil" />
+                                            </x-button>
+                                        </x-tooltip>
+                                        <x-tooltip text="Create Playlist from Genre" position="top">
+                                            <x-button href="{{ route('playlists.create-from-genre', $genre) }}" variant="ghost" size="xs" icon>
+                                                <x-icon name="collection" />
+                                            </x-button>
+                                        </x-tooltip>
+                                        <x-tooltip text="Delete Genre" position="top">
+                                            <form action="{{ route('genres.destroy', $genre) }}" method="POST" onsubmit="return confirm('Delete genre: {{ addslashes($genre->name) }}? This will NOT delete associated tracks.')" class="inline">
+                                                @csrf
+                                                @method('DELETE')
+                                                <x-button type="submit" variant="ghost" color="error" size="xs" icon>
+                                                    <x-icon name="trash" />
+                                                </x-button>
+                                            </form>
+                                         </x-tooltip>
+                                    </div>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="5" class="text-center py-10">
+                                    <div class="text-base-content/70">
+                                        <p class="text-lg mb-2">No genres found.</p>
+                                        <x-button href="{{ route('genres.create') }}" variant="primary" size="sm">
+                                            <x-icon name="plus" class="mr-1" /> Add Your First Genre
                                         </x-button>
                                     </div>
-                                </x-table.responsive-cell>
-                            </x-table.responsive-row>
-                        @empty
-                            <x-table.responsive-row>
-                                <x-table.responsive-cell label="" colspan="5" class="text-center py-4">
-                                    <div class="text-base-content/60">{{ __('No genres found') }}</div>
-                                </x-table.responsive-cell>
-                            </x-table.responsive-row>
+                                </td>
+                            </tr>
                         @endforelse
-                    </x-table.responsive-table>
-                </div>
+                    </tbody>
+                </table>
+            </div>
 
-                <div class="mt-4">
-                    {{ $genres->links() }}
-                </div>
+            {{-- Pagination --}}
+            <div class="mt-6">
+                {{ $genres->links() }}
             </div>
         </div>
     </div>

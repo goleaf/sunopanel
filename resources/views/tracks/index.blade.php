@@ -1,138 +1,152 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="text-xl font-semibold text-base-content">
-            {{ __('Tracks') }}
-        </h2>
-    </x-slot>
-
-    <div class="container mx-auto px-4">
-        @if (session('success'))
-            <div class="alert alert-success mb-4">
-                <x-icon name="check" size="6" />
-                <span>{{ session('success') }}</span>
-            </div>
-        @endif
-
-        @if (session('error'))
-            <div class="alert alert-error mb-4">
-                <x-icon name="x" size="6" />
-                <span>{{ session('error') }}</span>
-            </div>
-        @endif
-
-        <div class="card bg-base-100 shadow-md">
-            <div class="card-body">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-                    <div class="w-full md:w-2/3">
-                        <form action="{{ route('tracks.index') }}" method="GET" class="join">
-                            <input type="text" name="search" placeholder="Search tracks..." value="{{ request('search') }}" class="input input-bordered join-item w-full" />
-                            <select name="genre" class="select select-bordered join-item">
-                                <option value="">All Genres</option>
-                                @foreach($genres as $genre)
-                                    <option value="{{ $genre->id }}" {{ request('genre') == $genre->id ? 'selected' : '' }}>
-                                        {{ $genre->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            <x-button type="submit" color="primary" class="join-item">
-                                <x-icon name="search" size="5" class="mr-1" />
-                                Search
-                            </x-button>
-                        </form>
-                    </div>
-                    <div class="flex space-x-2">
-                        <x-button href="{{ route('tracks.create') }}" color="primary">
-                            <x-icon name="plus" size="5" class="mr-1" />
-                            Add New Track
-                        </x-button>
-                    </div>
+    {{-- Page Header --}}
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+        <h1 class="text-2xl font-semibold text-base-content">Tracks</h1>
+        <div class="flex space-x-2">
+             {{-- Search Form using DaisyUI join component --}}
+             <form action="{{ route('tracks.index') }}" method="GET" class="join">
+                <div> {{-- Wrapper div for input --}}
+                    <input type="text" name="search" placeholder="Search title..." value="{{ request('search') }}" class="input input-bordered join-item input-sm w-48" />
                 </div>
+                 <select name="genre" class="select select-bordered join-item select-sm">
+                     <option value="">All Genres</option>
+                     @foreach($genres as $genre)
+                         <option value="{{ $genre->id }}" {{ request('genre') == $genre->id ? 'selected' : '' }}>
+                             {{ $genre->name }}
+                         </option>
+                     @endforeach
+                 </select>
+                 <div class="indicator"> {{-- Wrapper div for button --}}
+                     <button type="submit" class="btn btn-primary join-item btn-sm">
+                         <x-icon name="search" size="4" />
+                     </button>
+                 </div>
+             </form>
+             {{-- Add New Track Button --}}
+             <x-button href="{{ route('tracks.create') }}" variant="primary" size="sm">
+                <x-icon name="plus" size="4" class="mr-1" />
+                 Add New Track
+            </x-button>
+        </div>
+    </div>
 
-                <div class="overflow-x-auto">
-                    <x-table adaptiveLayout="true" tableClasses="tracks-table">
-                        <x-slot name="header">
-                            <x-table.heading>Title</x-table.heading>
-                            <x-table.heading>Genres</x-table.heading>
-                            <x-table.heading>Duration</x-table.heading>
-                            <x-table.heading>Added</x-table.heading>
-                            <x-table.heading>Actions</x-table.heading>
-                        </x-slot>
-                        
-                        <x-slot name="body">
-                            @forelse($tracks as $track)
-                                <x-table.row>
-                                    <x-table.cell label="Title">
-                                        <div class="flex items-center">
-                                            <div class="flex-shrink-0 h-10 w-10 mr-2">
-                                                <img class="h-10 w-10 rounded-md object-cover" 
-                                                    src="{{ $track->image_url }}" 
-                                                    alt="{{ $track->title }}" 
-                                                    onerror="this.src='{{ asset('images/no-image.jpg') }}'" 
-                                                />
-                                            </div>
-                                            <div>
-                                                <a href="{{ route('tracks.show', $track->id) }}" class="text-primary-600 hover:text-primary-900">
-                                                    {{ $track->title }}
-                                                </a>
+    {{-- Main Content Card --}}
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+            {{-- Removed inner flex container, handled by page header --}}
+            {{-- Removed card-title, using page header --}}
+
+            <div class="overflow-x-auto">
+                {{-- Using DaisyUI table classes directly for clarity --}}
+                <table class="table table-zebra table-sm w-full">
+                    <thead>
+                        <tr>
+                            <th></th> {{-- Checkbox column --}}
+                            <th>Title</th>
+                            <th>Genres</th>
+                            <th>Duration</th>
+                            <th>Added</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($tracks as $track)
+                            <tr>
+                                <td>
+                                    <label>
+                                        <input type="checkbox" class="checkbox checkbox-primary checkbox-xs" />
+                                    </label>
+                                </td>
+                                <td>
+                                    <div class="flex items-center space-x-3">
+                                        <div class="avatar">
+                                            <div class="mask mask-squircle w-10 h-10">
+                                                <img src="{{ $track->image_url }}" 
+                                                     alt="{{ $track->title }}" 
+                                                     onerror="this.src='{{ asset('images/no-image.jpg') }}'" />
                                             </div>
                                         </div>
-                                    </x-table.cell>
-                                    <x-table.cell label="Genres">
-                                        <div class="flex flex-wrap gap-1">
-                                            @foreach($track->genres as $genre)
-                                                <x-badge>{{ $genre->name }}</x-badge>
-                                            @endforeach
-                                        </div>
-                                    </x-table.cell>
-                                    <x-table.cell label="Duration">
-                                        {{ formatDuration($track->duration_seconds ?: $track->duration) }}
-                                    </x-table.cell>
-                                    <x-table.cell label="Added">
-                                        {{ $track->created_at->diffForHumans() }}
-                                    </x-table.cell>
-                                    <x-table.cell label="Actions">
-                                        <div class="flex items-center space-x-1">
-                                            <x-button href="{{ route('tracks.edit', $track->id) }}" size="xs" color="secondary" icon title="Edit">
-                                                <x-icon name="pencil" />
-                                            </x-button>
-                                            
-                                            <a href="{{ $track->audio_url }}" target="_blank" class="btn btn-xs btn-ghost" title="Open in new tab">
-                                                <x-icon name="external-link" />
+                                        <div>
+                                            <a href="{{ route('tracks.show', $track->id) }}" class="font-bold hover:text-primary transition duration-150 ease-in-out">
+                                                {{ Str::limit($track->title, 40) }}
                                             </a>
-                                            
-                                            <x-button href="{{ route('tracks.play', $track->id) }}" size="xs" color="success" icon title="Play">
+                                            {{-- Optional: Add artist/album info here if available --}}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="flex flex-wrap gap-1">
+                                        @foreach($track->genres->take(3) as $genre)
+                                            <div class="badge badge-ghost badge-sm">{{ $genre->name }}</div>
+                                        @endforeach
+                                        @if($track->genres->count() > 3)
+                                            <div class="badge badge-ghost badge-sm">...</div>
+                                        @endif
+                                    </div>
+                                </td>
+                                <td>
+                                    {{ formatDuration($track->duration_seconds ?: $track->duration) }}
+                                </td>
+                                <td>
+                                    <span title="{{ $track->created_at->format('Y-m-d H:i:s') }}">
+                                        {{ $track->created_at->diffForHumans() }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="flex items-center space-x-1">
+                                        <x-tooltip text="Play Track" position="top">
+                                            <x-button href="{{ route('tracks.play', $track->id) }}" variant="ghost" size="xs" icon>
                                                 <x-icon name="play" />
                                             </x-button>
-                                            
-                                            <form action="{{ route('tracks.destroy', $track->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this track?')">
+                                        </x-tooltip>
+                                        <x-tooltip text="Edit Track" position="top">
+                                            <x-button href="{{ route('tracks.edit', $track->id) }}" variant="ghost" size="xs" icon>
+                                                <x-icon name="pencil" />
+                                            </x-button>
+                                        </x-tooltip>
+                                        <x-tooltip text="View Details" position="top">
+                                            <x-button href="{{ route('tracks.show', $track->id) }}" variant="ghost" size="xs" icon>
+                                                <x-icon name="eye" />
+                                            </x-button>
+                                        </x-tooltip>
+                                        <x-tooltip text="Delete Track" position="top">
+                                            <form action="{{ route('tracks.destroy', $track->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this track: {{ addslashes($track->title) }}?')" class="inline">
                                                 @csrf
                                                 @method('DELETE')
-                                                <x-button type="submit" size="xs" color="error" icon title="Delete">
+                                                <x-button type="submit" variant="ghost" color="error" size="xs" icon>
                                                     <x-icon name="trash" />
                                                 </x-button>
                                             </form>
-                                        </div>
-                                    </x-table.cell>
-                                </x-table.row>
-                            @empty
-                                <x-table.row>
-                                    <x-table.cell colspan="5" class="text-center py-6">
-                                        <div class="text-gray-500">No tracks found</div>
-                                        <div class="mt-2">
-                                            <x-button href="{{ route('tracks.create') }}" color="primary" size="sm">
-                                                <x-icon name="plus" class="mr-1" /> Add Track
-                                            </x-button>
-                                        </div>
-                                    </x-table.cell>
-                                </x-table.row>
-                            @endforelse
-                        </x-slot>
-                    </x-table>
-                </div>
+                                         </x-tooltip>
+                                    </div>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="6" class="text-center py-10">
+                                    <div class="text-base-content/70">
+                                        <p class="text-lg mb-2">No tracks found matching your criteria.</p>
+                                        <x-button href="{{ route('tracks.create') }}" variant="primary" size="sm">
+                                            <x-icon name="plus" class="mr-1" /> Add Your First Track
+                                        </x-button>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                     {{-- Optional: Add table footer for bulk actions --}}
+                    {{-- <tfoot>
+                        <tr>
+                            <th></th>
+                            <th colspan="5">Bulk Actions Placeholder</th>
+                        </tr>
+                    </tfoot> --}}
+                </table>
+            </div>
 
-                <div class="mt-4">
-                    {{ $tracks->links() }}
-                </div>
+            {{-- Pagination --}}
+            <div class="mt-6">
+                {{ $tracks->links() }} {{-- Assumes default Laravel/Tailwind pagination views are styled --}}
             </div>
         </div>
     </div>

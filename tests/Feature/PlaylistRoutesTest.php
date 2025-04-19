@@ -24,8 +24,8 @@ class PlaylistRoutesTest extends TestCase
 
         $track = Track::factory()->create([
             'title' => 'Test Track',
-            'audio_url' => 'https:
-            'image_url' => 'https:
+            'audio_url' => 'https://example.com/setup_audio.mp3',
+            'image_url' => 'https://example.com/setup_image.jpg',
         ]);
 
         $track->genres()->attach($genre->id);
@@ -164,8 +164,8 @@ public function tracks_can_be_added_to_playlist()
         $playlist = Playlist::first();
         $newTrack = Track::factory()->create([
             'title' => 'New Track',
-            'audio_url' => 'https:
-            'image_url' => 'https:
+            'audio_url' => 'https://example.com/new_audio.mp3',
+            'image_url' => 'https://example.com/new_image.jpg',
         ]);
 
         $response = $this->post(route('playlists.store-tracks', $playlist), [

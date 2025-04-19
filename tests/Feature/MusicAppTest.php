@@ -49,8 +49,8 @@ class MusicAppTest extends TestCase
 
         $trackData = [
             'title' => 'Test Track',
-            'audio_url' => 'https:
-            'image_url' => 'https:
+            'audio_url' => 'https://example.com/test_audio.mp3',
+            'image_url' => 'https://example.com/test_image.jpg',
             'genres' => 'Rock, Pop',
         ];
 

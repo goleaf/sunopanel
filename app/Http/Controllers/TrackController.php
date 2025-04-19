@@ -125,7 +125,7 @@ final class TrackController extends Controller
             if (! empty($errors)) {
                 $errorMessage = "Bulk upload completed with errors: \n" . implode("\n", $errors);
                 $this->loggingService->logErrorMessage('Bulk upload completed with errors (warning)', ['error_count' => count($errors), 'errors' => $errors]);
-                return redirect()->route('tracks.bulk-upload.form')
+                return redirect()->route('tracks.index')
                     ->with('warning', $message)
                     ->with('bulk_errors', $errors);
             } else {
@@ -139,7 +139,7 @@ final class TrackController extends Controller
                 'trace' => substr($e->getTraceAsString(), 0, 500),
                 'user_id' => auth()->id(),
             ]);
-            return redirect()->route('tracks.bulk-upload.form')
+            return redirect()->route('tracks.index')
                 ->with('error', 'An unexpected error occurred during bulk upload: ' . $e->getMessage());
         }
     }
@@ -246,6 +246,6 @@ final class TrackController extends Controller
     public function play(Track $track): RedirectResponse
     {
         $this->loggingService->logInfoMessage('Track play action triggered', ['track_id' => $track->id, 'title' => $track->title]);
-        return redirect()->back()->with('info', "Playing track '{$track->title}'...");
+        return redirect()->away($track->audio_url);
     }
 }

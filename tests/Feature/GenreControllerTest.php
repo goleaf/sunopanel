@@ -11,6 +11,7 @@ use Tests\TestCase;
 
 class GenreControllerTest extends TestCase
 {
+    use RefreshDatabase;
     
     protected function setUp(): void
     {
