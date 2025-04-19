@@ -41,97 +41,66 @@
                 </div>
 
                 <div class="overflow-x-auto">
-                    <table class="table table-zebra w-full">
-                        <thead>
-                            <tr>
-                                <th>
-                                    <a href="{{ route('genres.index', array_merge(request()->query(), [
-                                        'sort' => 'name',
-                                        'direction' => request('sort') === 'name' && request('direction') === 'asc' ? 'desc' : 'asc'
-                                    ])) }}" class="flex items-center">
-                                        {{ __('Name') }}
-                                        @if(request('sort') === 'name')
-                                            <x-icon name="{{ request('direction') === 'asc' ? 'chevron-up' : 'chevron-down' }}" size="4" class="ml-1" />
-                                        @endif
+                    <x-table.responsive-table :columns="[
+                        'Name' => __('Name'),
+                        'Description' => __('Description'),
+                        'Tracks Count' => __('Tracks Count'),
+                        'Created At' => __('Created At'),
+                        'Actions' => __('Actions')
+                    ]" compact="true">
+                        @forelse($genres as $genre)
+                            <x-table.responsive-row>
+                                <x-table.responsive-cell label="{{ __('Name') }}">
+                                    <a href="{{ route('genres.show', $genre) }}" class="font-bold text-primary hover:underline">
+                                        {{ $genre->name }}
                                     </a>
-                                </th>
-                                <th>
-                                    <a href="{{ route('genres.index', array_merge(request()->query(), [
-                                        'sort' => 'tracks_count',
-                                        'direction' => request('sort') === 'tracks_count' && request('direction') === 'asc' ? 'desc' : 'asc'
-                                    ])) }}" class="flex items-center">
-                                        {{ __('Tracks Count') }}
-                                        @if(request('sort') === 'tracks_count')
-                                            <x-icon name="{{ request('direction') === 'asc' ? 'chevron-up' : 'chevron-down' }}" size="4" class="ml-1" />
-                                        @endif
-                                    </a>
-                                </th>
-                                <th>
-                                    <a href="{{ route('genres.index', array_merge(request()->query(), [
-                                        'sort' => 'created_at',
-                                        'direction' => request('sort') === 'created_at' && request('direction') === 'asc' ? 'desc' : 'asc'
-                                    ])) }}" class="flex items-center">
-                                        {{ __('Created At') }}
-                                        @if(request('sort') === 'created_at')
-                                            <x-icon name="{{ request('direction') === 'asc' ? 'chevron-up' : 'chevron-down' }}" size="4" class="ml-1" />
-                                        @endif
-                                    </a>
-                                </th>
-                                <th>{{ __('Actions') }}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($genres as $genre)
-                                <tr>
-                                    <td>
-                                        <a href="{{ route('genres.show', $genre) }}" class="font-bold text-primary hover:underline">
-                                            {{ $genre->name }}
-                                        </a>
-                                    </td>
-                                    <td>
-                                        <div class="badge">{{ $genre->tracks_count }}</div>
-                                    </td>
-                                    <td>
-                                        {{ $genre->created_at->format('Y-m-d') }}
-                                    </td>
-                                    <td>
-                                        <div class="flex flex-col md:flex-row gap-2">
-                                            <x-button href="{{ route('genres.show', $genre) }}" color="info" size="xs">
-                                                <x-icon name="eye" size="4" class="mr-1" />
-                                                View
+                                </x-table.responsive-cell>
+                                <x-table.responsive-cell label="{{ __('Description') }}">
+                                    {{ Str::limit($genre->description, 50) }}
+                                </x-table.responsive-cell>
+                                <x-table.responsive-cell label="{{ __('Tracks Count') }}">
+                                    <span class="badge badge-accent">{{ $genre->tracks_count }}</span>
+                                </x-table.responsive-cell>
+                                <x-table.responsive-cell label="{{ __('Created At') }}">
+                                    {{ $genre->created_at->format('Y-m-d') }}
+                                </x-table.responsive-cell>
+                                <x-table.responsive-cell label="{{ __('Actions') }}">
+                                    <div class="flex flex-col md:flex-row gap-2 action-buttons">
+                                        <x-button href="{{ route('genres.show', $genre) }}" color="info" size="xs">
+                                            <x-icon name="eye" size="4" class="mr-1" />
+                                            View
+                                        </x-button>
+                                        
+                                        <x-button href="{{ route('genres.edit', $genre) }}" color="warning" size="xs">
+                                            <x-icon name="pencil" size="4" class="mr-1" />
+                                            Edit
+                                        </x-button>
+                                        
+                                        <form method="POST" action="{{ route('genres.destroy', $genre) }}" class="inline-block">
+                                            @csrf
+                                            @method('DELETE')
+                                            <x-button type="submit" color="error" size="xs" 
+                                                onclick="return confirm('{{ __('Are you sure you want to delete this genre?') }}')">
+                                                <x-icon name="trash" size="4" class="mr-1" />
+                                                Delete
                                             </x-button>
-                                            
-                                            <x-button href="{{ route('genres.edit', $genre) }}" color="warning" size="xs">
-                                                <x-icon name="pencil" size="4" class="mr-1" />
-                                                Edit
-                                            </x-button>
-                                            
-                                            <form method="POST" action="{{ route('genres.destroy', $genre) }}" class="inline-block">
-                                                @csrf
-                                                @method('DELETE')
-                                                <x-button type="submit" color="error" size="xs" 
-                                                    onclick="return confirm('{{ __('Are you sure you want to delete this genre?') }}')">
-                                                    <x-icon name="trash" size="4" class="mr-1" />
-                                                    Delete
-                                                </x-button>
-                                            </form>
-                                            
-                                            <x-button href="{{ route('playlists.create-from-genre', $genre) }}" color="accent" size="xs">
-                                                <x-icon name="music" size="4" class="mr-1" />
-                                                {{ __('Create Playlist') }}
-                                            </x-button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="4" class="text-center py-4">
-                                        <div class="text-base-content/60">{{ __('No genres found') }}</div>
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
+                                        </form>
+                                        
+                                        <x-button href="{{ route('playlists.create-from-genre', $genre) }}" color="accent" size="xs">
+                                            <x-icon name="music" size="4" class="mr-1" />
+                                            {{ __('Create Playlist') }}
+                                        </x-button>
+                                    </div>
+                                </x-table.responsive-cell>
+                            </x-table.responsive-row>
+                        @empty
+                            <x-table.responsive-row>
+                                <x-table.responsive-cell label="" colspan="5" class="text-center py-4">
+                                    <div class="text-base-content/60">{{ __('No genres found') }}</div>
+                                </x-table.responsive-cell>
+                            </x-table.responsive-row>
+                        @endforelse
+                    </x-table.responsive-table>
                 </div>
 
                 <div class="mt-4">

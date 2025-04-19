@@ -49,89 +49,71 @@
                 </div>
 
                 <div class="overflow-x-auto">
-                    <table class="table table-zebra w-full">
-                        <thead>
-                            <tr>
-                                <th>
-                                    <a href="{{ route('tracks.index', array_merge(request()->query(), [
-                                        'sort' => 'title',
-                                        'direction' => request('sort') === 'title' && request('direction') === 'asc' ? 'desc' : 'asc'
-                                    ])) }}" class="flex items-center">
-                                        Title
-                                        @if(request('sort') === 'title')
-                                            <x-icon name="{{ request('direction') === 'asc' ? 'chevron-up' : 'chevron-down' }}" size="4" class="ml-1" />
-                                        @endif
+                    <x-table.responsive-table :columns="[
+                        'Title' => __('Title'),
+                        'Artist' => __('Artist'),
+                        'Genre' => __('Genre'),
+                        'Duration' => __('Duration'),
+                        'Created At' => __('Created At'),
+                        'Actions' => __('Actions')
+                    ]" compact="true">
+                        @forelse($tracks as $track)
+                            <x-table.responsive-row>
+                                <x-table.responsive-cell label="{{ __('Title') }}">
+                                    <a href="{{ route('tracks.show', $track) }}" class="font-bold text-primary hover:underline">
+                                        {{ $track->title }}
                                     </a>
-                                </th>
-                                <th>Genres</th>
-                                <th>
-                                    <a href="{{ route('tracks.index', array_merge(request()->query(), [
-                                        'sort' => 'created_at',
-                                        'direction' => request('sort') === 'created_at' && request('direction') === 'asc' ? 'desc' : 'asc'
-                                    ])) }}" class="flex items-center">
-                                        Added
-                                        @if(request('sort') === 'created_at')
-                                            <x-icon name="{{ request('direction') === 'asc' ? 'chevron-up' : 'chevron-down' }}" size="4" class="ml-1" />
-                                        @endif
-                                    </a>
-                                </th>
-                                <th>Audio</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($tracks as $track)
-                                <tr>
-                                    <td>
-                                        <div class="flex items-center gap-3">
-                                            <div class="avatar">
-                                                <div class="mask mask-squircle w-12 h-12">
-                                                    <img src="{{ $track->image_url }}" alt="{{ $track->title }}" />
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <a href="{{ route('tracks.show', $track) }}" class="font-bold text-primary hover:underline">
-                                                    {{ $track->title }}
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div class="flex flex-wrap gap-1">
-                                            @foreach($track->genres as $genre)
-                                                <a href="{{ route('genres.show', $genre) }}" class="badge badge-primary">
-                                                    {{ $genre->name }}
-                                                </a>
-                                            @endforeach
-                                        </div>
-                                    </td>
-                                    <td>
-                                        {{ $track->created_at->format('Y-m-d') }}
-                                    </td>
-                                    <td>
-                                        <x-audio-player 
-                                            src="{{ $track->audio_url }}" 
-                                            showDownload="false"
-                                        />
-                                    </td>
-                                    <td>
-                                        <x-action-buttons
-                                            :view="route('tracks.show', $track)"
-                                            :edit="route('tracks.edit', $track)"
-                                            :delete="route('tracks.destroy', $track)"
-                                            confirmMessage="Are you sure you want to delete this track?"
-                                        />
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="5" class="text-center py-4">
-                                        <div class="text-base-content/60">No tracks found</div>
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
+                                </x-table.responsive-cell>
+                                <x-table.responsive-cell label="{{ __('Artist') }}">
+                                    {{ $track->artist }}
+                                </x-table.responsive-cell>
+                                <x-table.responsive-cell label="{{ __('Genre') }}">
+                                    @if($track->genre)
+                                        <a href="{{ route('genres.show', $track->genre) }}" class="badge badge-accent">
+                                            {{ $track->genre->name }}
+                                        </a>
+                                    @else
+                                        <span class="opacity-50">-</span>
+                                    @endif
+                                </x-table.responsive-cell>
+                                <x-table.responsive-cell label="{{ __('Duration') }}">
+                                    {{ formatDuration($track->duration) }}
+                                </x-table.responsive-cell>
+                                <x-table.responsive-cell label="{{ __('Created At') }}">
+                                    {{ $track->created_at->format('Y-m-d') }}
+                                </x-table.responsive-cell>
+                                <x-table.responsive-cell label="{{ __('Actions') }}">
+                                    <div class="flex flex-col md:flex-row gap-2 action-buttons">
+                                        <x-button href="{{ route('tracks.show', $track) }}" color="info" size="xs">
+                                            <x-icon name="eye" size="4" class="mr-1" />
+                                            View
+                                        </x-button>
+                                        
+                                        <x-button href="{{ route('tracks.edit', $track) }}" color="warning" size="xs">
+                                            <x-icon name="pencil" size="4" class="mr-1" />
+                                            Edit
+                                        </x-button>
+                                        
+                                        <form method="POST" action="{{ route('tracks.destroy', $track) }}" class="inline-block">
+                                            @csrf
+                                            @method('DELETE')
+                                            <x-button type="submit" color="error" size="xs" 
+                                                onclick="return confirm('{{ __('Are you sure you want to delete this track?') }}')">
+                                                <x-icon name="trash" size="4" class="mr-1" />
+                                                Delete
+                                            </x-button>
+                                        </form>
+                                    </div>
+                                </x-table.responsive-cell>
+                            </x-table.responsive-row>
+                        @empty
+                            <x-table.responsive-row>
+                                <x-table.responsive-cell label="" colspan="6" class="text-center py-4">
+                                    <div class="text-base-content/60">{{ __('No tracks found') }}</div>
+                                </x-table.responsive-cell>
+                            </x-table.responsive-row>
+                        @endforelse
+                    </x-table.responsive-table>
                 </div>
 
                 <div class="mt-4">

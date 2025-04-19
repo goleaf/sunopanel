@@ -2,17 +2,17 @@
 
 namespace Tests\Unit;
 
-use App\Http\Middleware\ErrorLoggingMiddleware;
-use App\Services\Logging\ErrorLogService;
+use App\Http\Middleware\LoggingMiddleware;
+use App\Services\Logging\LoggingService;
 use Exception;
 use Illuminate\Http\Request;
 use Mockery;
 use Symfony\Component\HttpFoundation\Response;
 use Tests\TestCase;
 
-class ErrorLoggingMiddlewareTest extends TestCase
+class LoggingMiddlewareTest extends TestCase
 {
-    protected $errorLogService;
+    protected $loggingService;
     protected $middleware;
     protected $request;
 
@@ -20,8 +20,8 @@ class ErrorLoggingMiddlewareTest extends TestCase
     {
         parent::setUp();
 
-        $this->errorLogService = Mockery::mock(ErrorLogService::class);
-        $this->middleware = new ErrorLoggingMiddleware($this->errorLogService);
+        $this->loggingService = Mockery::mock(LoggingService::class);
+        $this->middleware = new LoggingMiddleware($this->loggingService);
         $this->request = Mockery::mock(Request::class);
         
         // Common request method expectations
@@ -56,17 +56,12 @@ class ErrorLoggingMiddlewareTest extends TestCase
             throw $exception;
         };
 
-        $this->errorLogService->shouldReceive('logException')
+        $this->loggingService->shouldReceive('logError')
             ->once()
             ->with(
                 $exception, 
-                'HTTP Request', 
-                [
-                    'url' => 'http://example.com/test',
-                    'method' => 'GET',
-                    'ip' => '127.0.0.1',
-                    'user_id' => 'guest',
-                ]
+                $this->request,
+                'Middleware exception handler'
             );
 
         // Assert

@@ -126,7 +126,7 @@ class BubblegumBassSeederTest extends TestCase
             'techno' => 'Techno',
             'house' => 'House', 
             'drum and bass' => 'Drum and bass',
-            'edm' => 'Edm',
+            'edm' => 'EDM',
             'bubblegum bass,rock,pop' => ['Bubblegum bass', 'Rock', 'Pop']
         ];
         
