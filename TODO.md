@@ -1,13 +1,93 @@
 # SunoPanel Update Tasks
 
-## Progress Summary
+## Current Status Assessment
 - [x] Fixed all issues related to Playlist title/name consolidation
 - [x] All Playlist-related tests now pass 
 - [x] Fixed test failures in PlaylistControllerTest and PlaylistRoutesTest
 - [x] Created migration to remove redundant name column from playlists table
 - [x] Created FormRequest classes for all controller methods
 - [x] Added comprehensive tests for all FormRequest classes
+- [x] Verified UI framework implementation (TailwindCSS + DaisyUI)
+- [x] Confirmed Bootstrap has been completely removed
+- [x] Centralized error logging using LoggingService
+- [x] Removed direct Log::error calls from controllers
 - [ ] Several other test failures still exist in other test classes (TrackRequestTest, GenreControllerTest, etc.)
+
+## Action Plan
+
+### 1. Fix Remaining Test Failures
+1. [ ] Fix genre capitalization issues:
+   - [ ] Review and fix Genre model's naming conventions
+   - [ ] Ensure consistent capitalization in BubblegumBassSeederTest
+   - [ ] Update Genre model's findOrCreateByName and syncGenres methods
+   - [ ] Verify that all genre capitalizations are consistent
+
+2. [ ] Fix TrackRequestTest issues:
+   - [ ] Investigate session validation errors in TrackRequestTest
+   - [ ] Ensure FormRequest validation rules are correctly implemented
+   - [ ] Check TrackStoreRequest and TrackUpdateRequest for proper validation
+   - [ ] Validate bulk upload functionality
+
+3. [ ] Review all controller validation:
+   - [ ] Ensure all controllers use FormRequest classes consistently
+   - [ ] Verify validation error handling is consistent
+
+### 2. Clean Up Logger Implementation
+1. [ ] Fix LoggingMiddleware issues:
+   - [ ] Create new LoggingMiddleware class to replace the deleted one
+   - [ ] Ensure it properly integrates with the LoggingService
+   - [ ] Register the middleware in the Kernel
+
+2. [ ] Standardize logging formats:
+   - [ ] Ensure consistent log message format across the application
+   - [ ] Remove any remaining direct references to Log facade
+   - [ ] Verify LoggingService is properly injected in all controllers
+
+3. [ ] Update LoggingServiceProvider:
+   - [ ] Review and consolidate logging provider registrations
+   - [ ] Ensure proper binding of LoggingService in service container
+
+### 3. UI/UX Improvements
+1. [ ] Enhance mobile responsiveness:
+   - [ ] Improve table display on small screens
+   - [ ] Optimize form controls for mobile devices
+   - [ ] Test and refine responsive breakpoints
+
+2. [ ] Implement advanced UI features:
+   - [ ] Add loading indicators for AJAX operations
+   - [ ] Enhance form validation feedback
+   - [ ] Add tooltips for improved user guidance
+
+3. [ ] Dashboard improvements:
+   - [ ] Create widgets for key statistics
+   - [ ] Optimize dashboard layout for all screen sizes
+
+### 4. Code Quality & Performance
+1. [ ] Complete PSR-12 compliance:
+   - [ ] Review all PHP files for PSR-12 compliance
+   - [ ] Fix any formatting inconsistencies
+   - [ ] Ensure proper docblocks for all methods
+
+2. [ ] Optimize frontend assets:
+   - [ ] Implement PurgeCSS to remove unused styles
+   - [ ] Configure Vite for proper asset versioning
+   - [ ] Minify production JavaScript
+
+3. [ ] Database optimization:
+   - [ ] Review and optimize database queries
+   - [ ] Add indexes for frequently queried columns
+   - [ ] Implement eager loading where appropriate
+
+## Immediate Focus
+Based on priority and dependencies, we'll tackle these tasks in the following order:
+
+1. Fix LoggingMiddleware issues
+2. Fix genre capitalization in tests and models
+3. Resolve TrackRequestTest validation errors
+4. Standardize logging formats across the application
+5. Address PSR-12 compliance
+6. Implement mobile responsiveness improvements
+7. Optimize frontend assets
 
 ## View Templates to Update
 
@@ -43,16 +123,35 @@
 
 ## Functionality Improvements
 - [ ] Add responsive design improvements for mobile views
+  - [x] Basic mobile responsiveness implemented with TailwindCSS
+  - [x] Mobile menu implemented
+  - [ ] Enhance mobile UX for table views
+  - [ ] Improve form controls on smaller screens
 - [x] Implement better audio player controls
 - [ ] Improve search functionality UI
 - [ ] Add bulk actions for tracks and playlists
 - [ ] Implement better error handling in forms
 
+## UI/UX Improvements
+- [x] Implement TailwindCSS and DaisyUI for consistent styling
+- [x] Create custom button component with standardized styling
+- [x] Add dark/light theme toggle functionality
+- [ ] Enhance table row hover interactions
+- [ ] Add loading indicators for AJAX operations
+- [ ] Improve form validation feedback
+- [ ] Add tooltips for improved user guidance
+- [ ] Create dashboard widgets for key statistics
+- [ ] Optimize design for tablet-sized screens
+
 ## Code Cleanup
 - [x] Remove unused components and views
 - [x] Standardize naming conventions across all components
 - [x] Ensure all components follow Laravel and Tailwind best practices
+- [x] Remove all Bootstrap dependencies
 - [ ] Optimize stylesheets and scripts for performance
+  - [ ] Implement purgeCSS for unused styles
+  - [ ] Minify production JavaScript
+  - [ ] Implement asset versioning
 
 ## Critical Fixes Needed
 - [x] Fix undefined variable $genres in playlists/add-tracks.blade.php view
@@ -90,13 +189,12 @@
 - [ ] Update all classes to follow PSR-12 coding standards  
 
 ## Error Logging Implementation Tasks
-
 - [x] Create a universal error logging service
-- [x] Create middleware for global exception handling
 - [x] Register the service and middleware in the service provider
 - [x] Update the exception handler to use our logging service
 - [x] Remove error logging from controllers
 - [x] Create tests for the logging service
 - [x] Commit the changes to Git
-
-Note: Some files were not properly tracked by Git, but the service is implemented and working. The error logging is now centralized using the global error handler and middleware.  
+- [ ] Fix issues with deleted ErrorLoggingMiddleware
+- [ ] Recreate proper LoggingMiddleware
+- [ ] Update middleware registration in Kernel  

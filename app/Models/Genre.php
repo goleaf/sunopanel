@@ -9,7 +9,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Log;
+use App\Services\Logging\LoggingService;
+use Illuminate\Support\Facades\App;
 
 final class Genre extends Model
 {
@@ -27,6 +28,28 @@ final class Genre extends Model
     ];
 
     /**
+     * Special case genres with specific capitalization rules
+     *
+     * @var array<string, string>
+     */
+    private static array $specialCaseGenres = [
+        'bubblegum bass' => 'Bubblegum bass',
+        'bubblegum-bass' => 'Bubblegum bass',
+        'bubblegumbass' => 'Bubblegum bass',
+        'drum and bass' => 'Drum and bass', 
+        'drum & bass' => 'Drum and bass',
+        'dnb' => 'Drum and bass',
+        'edm' => 'EDM',
+        'uk garage' => 'UK Garage',
+        'r&b' => 'R&B',
+        'symphonic metal' => 'Symphonic metal',
+        'hypnotic trance' => 'Hypnotic trance',
+        'idm' => 'IDM',
+        'uk drill' => 'UK Drill',
+        'uk grime' => 'UK Grime',
+    ];
+
+    /**
      * Boot the model.
      */
     protected static function boot(): void
@@ -35,7 +58,8 @@ final class Genre extends Model
 
         static::creating(function ($genre): void {
             $genre->slug = Str::slug($genre->name);
-            Log::info('Creating new genre', [
+            $logger = App::make(LoggingService::class);
+            $logger->info('Creating new genre', [
                 'name' => $genre->name,
                 'slug' => $genre->slug
             ]);
@@ -59,43 +83,37 @@ final class Genre extends Model
     }
     
     /**
-     * Find or create a genre by name.
+     * Find or create a genre by name with proper capitalization
      */
     public static function findOrCreateByName(string $name): self
     {
         $name = trim($name);
-        Log::info("Finding or creating genre: {$name}");
+        $logger = App::make(LoggingService::class);
+        $logger->info("Finding or creating genre: {$name}");
         
-        // Handle special cases
-        $specialCases = [
-            'bubblegum bass' => 'Bubblegum bass',
-            'bubblegum-bass' => 'Bubblegum bass',
-            'bubblegumbass' => 'Bubblegum bass',
-            'drum and bass' => 'Drum and bass', 
-            'drum & bass' => 'Drum and bass',
-            'dnb' => 'Drum and bass',
-            'symphonic metal' => 'Symphonic metal',
-            'hypnotic trance' => 'Hypnotic trance'
-        ];
-        
-        $lowercaseValue = strtolower($name);
-        
-        if (array_key_exists($lowercaseValue, $specialCases)) {
-            $formattedName = $specialCases[$lowercaseValue];
-            Log::info("Using special case formatting for: {$name} -> {$formattedName}");
-        } else {
-            $formattedName = ucwords(strtolower($name));
-            Log::info("Standard formatting for: {$name} -> {$formattedName}");
-        }
+        // Format the name with proper capitalization
+        $formattedName = self::formatGenreName($name);
         
         // First check if a genre with this name (case-insensitive) already exists
         $existingGenre = static::whereRaw('LOWER(name) = ?', [strtolower($formattedName)])->first();
         
         if ($existingGenre) {
-            Log::info("Found existing genre: {$existingGenre->name}", [
+            $logger->info("Found existing genre: {$existingGenre->name}", [
                 'id' => $existingGenre->id,
                 'slug' => $existingGenre->slug
             ]);
+            
+            // Ensure the existing genre has the proper capitalization
+            if ($existingGenre->name !== $formattedName) {
+                $existingGenre->name = $formattedName;
+                $existingGenre->save();
+                $logger->info("Updated genre name capitalization", [
+                    'id' => $existingGenre->id,
+                    'old_name' => $existingGenre->name,
+                    'new_name' => $formattedName
+                ]);
+            }
+            
             return $existingGenre;
         }
         
@@ -104,10 +122,22 @@ final class Genre extends Model
         $existingBySlug = static::where('slug', $slug)->first();
         
         if ($existingBySlug) {
-            Log::info("Found existing genre by slug: {$existingBySlug->name}", [
+            $logger->info("Found existing genre by slug: {$existingBySlug->name}", [
                 'id' => $existingBySlug->id,
                 'slug' => $existingBySlug->slug
             ]);
+            
+            // Ensure the existing genre has the proper capitalization
+            if ($existingBySlug->name !== $formattedName) {
+                $existingBySlug->name = $formattedName;
+                $existingBySlug->save();
+                $logger->info("Updated genre name capitalization", [
+                    'id' => $existingBySlug->id,
+                    'old_name' => $existingBySlug->name,
+                    'new_name' => $formattedName
+                ]);
+            }
+            
             return $existingBySlug;
         }
         
@@ -118,7 +148,7 @@ final class Genre extends Model
             'description' => "Genre for {$formattedName} music"
         ]);
         
-        Log::info("Created new genre", [
+        $logger->info("Created new genre", [
             'id' => $genre->id,
             'name' => $genre->name,
             'slug' => $genre->slug
@@ -132,33 +162,52 @@ final class Genre extends Model
      */
     public function setNameAttribute(string $value): void
     {
-        // Handle special cases
-        $specialCases = [
-            'bubblegum bass' => 'Bubblegum bass',
-            'bubblegum-bass' => 'Bubblegum bass',
-            'bubblegumbass' => 'Bubblegum bass',
-            'drum and bass' => 'Drum and bass', 
-            'drum & bass' => 'Drum and bass',
-            'dnb' => 'Drum and bass',
-            'symphonic metal' => 'Symphonic metal',
-            'hypnotic trance' => 'Hypnotic trance'
-        ];
+        $formattedName = self::formatGenreName($value);
+        $this->attributes['name'] = $formattedName;
+        $this->attributes['slug'] = Str::slug($formattedName);
         
-        $lowercaseValue = strtolower(trim($value));
-        
-        if (array_key_exists($lowercaseValue, $specialCases)) {
-            $this->attributes['name'] = $specialCases[$lowercaseValue];
-        } else {
-            // Use ucwords to capitalize the first letter of each word instead of just the first letter
-            $this->attributes['name'] = ucwords(strtolower(trim($value)));
-        }
-        
-        $this->attributes['slug'] = Str::slug($this->attributes['name']);
-        
-        Log::info('Setting genre name attribute', [
+        $logger = App::make(LoggingService::class);
+        $logger->info('Setting genre name attribute', [
             'name' => $this->attributes['name'],
             'slug' => $this->attributes['slug'],
             'original_value' => $value
         ]);
+    }
+
+    /**
+     * Format a genre name with the proper capitalization
+     */
+    public static function formatGenreName(string $name): string
+    {
+        $name = trim($name);
+        $lowercaseValue = strtolower($name);
+        
+        // Check for special cases first
+        if (array_key_exists($lowercaseValue, self::$specialCaseGenres)) {
+            return self::$specialCaseGenres[$lowercaseValue];
+        }
+        
+        // Special handling for multi-word genres
+        if (str_contains($lowercaseValue, ' ')) {
+            // Make sure conjunctions, articles, and prepositions remain lowercase
+            $words = explode(' ', $lowercaseValue);
+            $result = [];
+            
+            $lowercase = ['and', 'or', 'the', 'in', 'on', 'at', 'by', 'for', 'with', 'a', 'an', 'of'];
+            
+            foreach ($words as $i => $word) {
+                // First word and any word not in the lowercase list should be capitalized
+                if ($i === 0 || !in_array($word, $lowercase)) {
+                    $result[] = ucfirst($word);
+                } else {
+                    $result[] = $word;
+                }
+            }
+            
+            return implode(' ', $result);
+        }
+        
+        // Single word genres are simply capitalized
+        return ucfirst($lowercaseValue);
     }
 }

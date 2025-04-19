@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\App;
+use App\Services\Logging\LoggingService;
 use Illuminate\Support\Facades\Log;
 
 final class Track extends Model
@@ -97,7 +99,7 @@ final class Track extends Model
      */
     public function assignGenres(string $genresString): void
     {
-        Log::info('Assigning genres to track', [
+        App::make(LoggingService::class)->info('Assigning genres to track', [
             'track_id' => $this->id,
             'track_title' => $this->title,
             'genres_string' => $genresString
@@ -120,21 +122,11 @@ final class Track extends Model
                 continue;
             }
 
-            // Normalize the name to lowercase for consistent comparison
-            $normalizedName = strtolower(trim($name));
-            
-            // Special handling for "bubblegum bass"
-            if ($normalizedName === 'bubblegum bass' || 
-                $normalizedName === 'bubblegum-bass' || 
-                $normalizedName === 'bubblegumbass') {
-                $genre = Genre::findOrCreateByName('Bubblegum bass');
-            } else {
-                $genre = Genre::findOrCreateByName($name);
-            }
-            
+            // Use Genre::findOrCreateByName to handle capitalization properly
+            $genre = Genre::findOrCreateByName($name);
             $this->genres()->attach($genre->id);
             
-            Log::info('Genre attached to track', [
+            App::make(LoggingService::class)->info('Genre attached to track', [
                 'track_id' => $this->id,
                 'track_title' => $this->title,
                 'genre_id' => $genre->id,
@@ -224,7 +216,7 @@ final class Track extends Model
      */
     public function syncGenres(string|array $genresInput): void
     {
-        Log::info('Syncing genres for track', [
+        App::make(LoggingService::class)->info('Syncing genres for track', [
             'track_id' => $this->id,
             'track_title' => $this->title,
             'genres_input' => $genresInput
@@ -244,22 +236,11 @@ final class Track extends Model
                 continue;
             }
 
-            // Special handling for "bubblegum bass"
-            if (strcasecmp(trim($name), 'bubblegum bass') === 0 || strcasecmp(trim($name), 'bubblegum-bass') === 0) {
-                $formattedName = 'Bubblegum bass';
-            } else {
-                // Format the genre name (capitalize first letter)
-                $formattedName = ucfirst(trim($name));
-            }
-
-            // Find or create the genre
-            $genre = Genre::firstOrCreate(
-                ['name' => $formattedName]
-            );
-
+            // Use Genre::findOrCreateByName to handle capitalization consistently
+            $genre = Genre::findOrCreateByName($name);
             $genreIds[] = $genre->id;
             
-            Log::info('Genre processed for syncing', [
+            App::make(LoggingService::class)->info('Genre processed for syncing', [
                 'track_id' => $this->id,
                 'track_title' => $this->title,
                 'genre_id' => $genre->id,
@@ -270,7 +251,7 @@ final class Track extends Model
         // Sync with the pivot table
         $this->genres()->sync($genreIds);
         
-        Log::info('Genres synced for track', [
+        App::make(LoggingService::class)->info('Genres synced for track', [
             'track_id' => $this->id,
             'track_title' => $this->title,
             'genre_count' => count($genreIds)
