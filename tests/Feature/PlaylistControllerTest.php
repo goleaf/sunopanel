@@ -151,7 +151,7 @@ class PlaylistControllerTest extends TestCase
         $response->assertStatus(200);
         $response->assertViewIs('playlists.add-tracks');
         $response->assertViewHas('playlist');
-        $response->assertViewHas('availableTracks');
+        $response->assertViewHas('tracks');
         
         // Add tracks to the playlist
         $trackIds = $tracks->pluck('id')->toArray();
