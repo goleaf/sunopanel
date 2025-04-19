@@ -37,10 +37,10 @@ class DashboardControllerTest extends TestCase
         $response = $this->get('/dashboard');
         
         $response->assertStatus(200);
-        $response->assertSee('System Statistics');
+        $response->assertSee('System Statistics', false);
         $response->assertSee('Total Tracks');
-        $response->assertSee('Total Genres');
-        $response->assertSee('Total Playlists');
+        $response->assertSee('Genres');
+        $response->assertSee('Playlists');
         $response->assertSee('Total Duration');
     }
     

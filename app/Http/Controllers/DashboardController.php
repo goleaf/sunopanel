@@ -66,17 +66,16 @@ final class DashboardController extends Controller
         $genreCount = Genre::count();
         $playlistCount = Playlist::count();
         
-        // Calculate total duration of all tracks - database agnostic approach
+        // Calculate total duration in a database-agnostic way
         $totalSeconds = 0;
-        $tracks = Track::whereNotNull('duration')->where('duration', '!=', '')->get(['duration']);
+        $tracks = Track::whereNotNull('duration')->where('duration', '!=', '')->get();
         
         foreach ($tracks as $track) {
-            // Parse from format like "3:45"
-            $parts = explode(':', $track->duration);
-            if (count($parts) === 2) {
-                $minutes = (int)$parts[0];
-                $seconds = (int)$parts[1];
-                $totalSeconds += ($minutes * 60) + $seconds;
+            if (strpos($track->duration, ':') !== false) {
+                $parts = explode(':', $track->duration);
+                if (count($parts) === 2) {
+                    $totalSeconds += (int)$parts[0] * 60 + (int)$parts[1];
+                }
             }
         }
         
