@@ -7,7 +7,7 @@ namespace App\Http\Controllers;
 use App\Models\Playlist;
 use App\Models\Genre;
 use App\Models\Track;
-use App\Services\Logging\ErrorLogService;
+use App\Services\Logging\LoggingService;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Log;
@@ -15,11 +15,11 @@ use Illuminate\View\View;
 
 final class PlaylistController extends Controller
 {
-    private ErrorLogService $errorLogService;
+    private LoggingService $loggingService;
 
-    public function __construct(ErrorLogService $errorLogService)
+    public function __construct(LoggingService $loggingService)
     {
-        $this->errorLogService = $errorLogService;
+        $this->loggingService = $loggingService;
     }
 
     /**
@@ -73,7 +73,7 @@ final class PlaylistController extends Controller
 
             return view('playlists.index', compact('playlists'));
         } catch (\Exception $e) {
-            $this->errorLogService->logError($e, $request, 'PlaylistController@index');
+            $this->loggingService->logError($e, $request, 'PlaylistController@index');
             
             return view('playlists.index', [
                 'playlists' => collect(),
@@ -125,7 +125,7 @@ final class PlaylistController extends Controller
             return redirect()->route('playlists.index')
                 ->with('success', 'Playlist created successfully.');
         } catch (\Exception $e) {
-            $this->errorLogService->logError($e, $request, 'PlaylistController@store');
+            $this->loggingService->logError($e, $request, 'PlaylistController@store');
             
             return redirect()->back()
                 ->with('error', 'Failed to create playlist: ' . $e->getMessage())
@@ -206,7 +206,7 @@ final class PlaylistController extends Controller
             return redirect()->route('playlists.index')
                 ->with('success', 'Playlist updated successfully.');
         } catch (\Exception $e) {
-            $this->errorLogService->logError($e, $request, 'PlaylistController@update', $playlist->id);
+            $this->loggingService->logError($e, $request, 'PlaylistController@update', $playlist->id);
             
             return redirect()->back()
                 ->with('error', 'Failed to update playlist: ' . $e->getMessage())
@@ -229,7 +229,7 @@ final class PlaylistController extends Controller
             return redirect()->route('playlists.index')
                 ->with('success', 'Playlist deleted successfully.');
         } catch (\Exception $e) {
-            $this->errorLogService->logError($e, request(), 'PlaylistController@destroy', $playlist->id);
+            $this->loggingService->logError($e, request(), 'PlaylistController@destroy', $playlist->id);
             
             return redirect()->back()
                 ->with('error', 'Failed to delete playlist: ' . $e->getMessage());
@@ -297,7 +297,7 @@ final class PlaylistController extends Controller
             return redirect()->route('playlists.show', $playlist->id)
                 ->with('success', count($trackIds) . ' tracks added to playlist successfully.');
         } catch (\Exception $e) {
-            $this->errorLogService->logError($e, $request, 'PlaylistController@storeTracks', $playlist->id);
+            $this->loggingService->logError($e, $request, 'PlaylistController@storeTracks', $playlist->id);
             
             return redirect()->back()
                 ->with('error', 'Failed to add tracks to playlist: ' . $e->getMessage());
@@ -335,7 +335,7 @@ final class PlaylistController extends Controller
             return redirect()->route('playlists.show', $playlist->id)
                 ->with('success', 'Track removed from playlist successfully.');
         } catch (\Exception $e) {
-            $this->errorLogService->logError($e, request(), 'PlaylistController@removeTrack', $playlist->id);
+            $this->loggingService->logError($e, request(), 'PlaylistController@removeTrack', $playlist->id);
             
             return redirect()->back()
                 ->with('error', 'Failed to remove track from playlist: ' . $e->getMessage());
@@ -384,7 +384,7 @@ final class PlaylistController extends Controller
             return redirect()->route('playlists.show', $playlist->id)
                 ->with('success', 'Playlist created from genre with ' . $tracks->count() . ' tracks.');
         } catch (\Exception $e) {
-            $this->errorLogService->logError($e, request(), 'PlaylistController@createFromGenre', $genre->id);
+            $this->loggingService->logError($e, request(), 'PlaylistController@createFromGenre', $genre->id);
             
             return redirect()->back()
                 ->with('error', 'Failed to create playlist from genre: ' . $e->getMessage());
