@@ -38,8 +38,8 @@
   - [x] `tracks/show.blade.php`
   - [x] `tracks/create.blade.php`
   - [x] `tracks/edit.blade.php`
-- [ ] Review and update genre-related views
-- [ ] Review and update playlist-related views
+- [x] Review and update genre-related views
+- [x] Review and update playlist-related views
 
 ## Functionality Improvements
 - [ ] Add responsive design improvements for mobile views
