@@ -1,73 +1,55 @@
 @props([
     'type' => 'button',
-    'color' => 'primary',
+    'variant' => 'primary',
     'size' => 'md',
-    'href' => null,
+    'icon' => null,
+    'iconPosition' => 'left',
     'disabled' => false,
-    'outline' => false,
-    'icon' => false,
     'fullWidth' => false,
-    'loading' => false,
-    'rounded' => false
 ])
 
 @php
-    // Base classes for all buttons
-    $baseClasses = 'btn inline-flex items-center transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2';
+    $baseClasses = 'inline-flex items-center justify-center font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2';
     
-    // Color variants mapping
-    $colorClasses = [
-        'primary' => 'btn-primary focus:ring-primary/50',
-        'secondary' => 'btn-secondary focus:ring-secondary/50',
-        'accent' => 'btn-accent focus:ring-accent/50',
-        'info' => 'btn-info focus:ring-info/50',
-        'success' => 'btn-success focus:ring-success/50',
-        'warning' => 'btn-warning focus:ring-warning/50',
-        'error' => 'btn-error focus:ring-error/50',
-        'ghost' => 'btn-ghost hover:bg-base-200',
-        'link' => 'btn-link hover:underline',
-        'gray' => 'btn-neutral focus:ring-neutral/50',
-        'indigo' => 'btn-primary focus:ring-primary/50', // Map indigo to primary for consistency
-        'yellow' => 'btn-warning focus:ring-warning/50', // Map yellow to warning for consistency
-        'red' => 'btn-error focus:ring-error/50', // Map red to error for consistency
-    ];
+    $variantClasses = [
+        'primary' => 'bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500',
+        'secondary' => 'bg-gray-200 hover:bg-gray-300 text-gray-800 focus:ring-gray-500',
+        'success' => 'bg-green-600 hover:bg-green-700 text-white focus:ring-green-500',
+        'danger' => 'bg-red-600 hover:bg-red-700 text-white focus:ring-red-500',
+        'warning' => 'bg-yellow-500 hover:bg-yellow-600 text-white focus:ring-yellow-500',
+        'info' => 'bg-sky-500 hover:bg-sky-600 text-white focus:ring-sky-500',
+        'light' => 'bg-gray-100 hover:bg-gray-200 text-gray-800 border border-gray-300 focus:ring-gray-300',
+        'dark' => 'bg-gray-800 hover:bg-gray-900 text-white focus:ring-gray-700',
+        'outline' => 'bg-transparent hover:bg-gray-100 text-gray-700 border border-gray-300 focus:ring-gray-300',
+        'link' => 'bg-transparent text-blue-600 hover:text-blue-700 hover:underline p-0 focus:ring-0'
+    ][$variant] ?? 'bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500';
     
-    // Size variants
     $sizeClasses = [
-        'xs' => 'btn-xs',
-        'sm' => 'btn-sm',
-        'md' => 'btn-md',
-        'lg' => 'btn-lg',
-    ];
+        'xs' => 'py-1 px-2 text-xs',
+        'sm' => 'py-1.5 px-3 text-sm',
+        'md' => 'py-2 px-4 text-sm',
+        'lg' => 'py-2.5 px-5 text-base',
+        'xl' => 'py-3 px-6 text-lg',
+    ][$size] ?? 'py-2 px-4 text-sm';
     
-    // Special states
-    $outlineClass = $outline ? 'btn-outline' : '';
-    $iconClass = $icon ? 'btn-square' : '';
-    $disabledClass = $disabled ? 'btn-disabled opacity-60 cursor-not-allowed' : '';
-    $fullWidthClass = $fullWidth ? 'w-full' : '';
-    $loadingClass = $loading ? 'loading' : '';
-    $roundedClass = $rounded ? 'rounded-full' : '';
+    $disabledClasses = $disabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : '';
+    $widthClasses = $fullWidth ? 'w-full' : '';
     
-    // Get the appropriate color class, defaulting to primary if not found
-    $colorClass = $colorClasses[$color] ?? $colorClasses['primary'];
-    
-    // Get the appropriate size class, defaulting to medium if not found
-    $sizeClass = $sizeClasses[$size] ?? $sizeClasses['md'];
-    
-    // Combined classes
-    $classes = "{$baseClasses} {$colorClass} {$sizeClass} {$outlineClass} {$iconClass} {$disabledClass} {$fullWidthClass} {$loadingClass} {$roundedClass}";
+    $classes = trim("{$baseClasses} {$variantClasses} {$sizeClasses} {$disabledClasses} {$widthClasses}");
 @endphp
 
-@if ($href && !$disabled)
-    <a href="{{ $href }}" {{ $attributes->merge(['class' => $classes]) }}>
-        {{ $slot }}
-    </a>
-@else
-    <button
-        type="{{ $type }}"
-        {{ $disabled ? 'disabled' : '' }}
-        {{ $attributes->merge(['class' => $classes]) }}
-    >
-        {{ $slot }}
-    </button>
-@endif
+<button 
+    type="{{ $type }}"
+    {{ $disabled ? 'disabled' : '' }}
+    {{ $attributes->merge(['class' => $classes]) }}
+>
+    @if($icon && $iconPosition === 'left')
+        <span class="mr-2 -ml-1 {{ $size === 'xs' || $size === 'sm' ? 'w-4 h-4' : 'w-5 h-5' }}">{!! $icon !!}</span>
+    @endif
+    
+    {{ $slot }}
+    
+    @if($icon && $iconPosition === 'right')
+        <span class="ml-2 -mr-1 {{ $size === 'xs' || $size === 'sm' ? 'w-4 h-4' : 'w-5 h-5' }}">{!! $icon !!}</span>
+    @endif
+</button>
