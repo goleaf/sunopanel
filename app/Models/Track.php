@@ -1,15 +1,24 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
 final class Track extends Model
 {
     use HasFactory;
 
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
     protected $fillable = [
         'title',
         'url',
@@ -21,11 +30,21 @@ final class Track extends Model
     ];
 
     /**
+     * The accessors to append to the model's array form.
+     *
+     * @var array<int, string>
+     */
+    protected $appends = [
+        'genres_list',
+        'duration_seconds',
+    ];
+
+    /**
      * The "booted" method of the model.
      */
     protected static function booted(): void
     {
-        static::creating(function ($track) {
+        static::creating(function ($track): void {
             // When creating, ensure that if 'name' is used in request but 'title' is empty,
             // copy the value from 'name' to 'title'
             if (empty($track->title) && !empty($track->name)) {
@@ -41,7 +60,7 @@ final class Track extends Model
     /**
      * For backward compatibility with tests that expect a 'name' field
      */
-    public function getNameAttribute()
+    public function getNameAttribute(): ?string
     {
         return $this->attributes['title'] ?? null;
     }
@@ -49,7 +68,7 @@ final class Track extends Model
     /**
      * For backward compatibility with tests that set 'name' field
      */
-    public function setNameAttribute($value)
+    public function setNameAttribute(string $value): void
     {
         // Set title since name doesn't exist in the database
         $this->attributes['title'] = $value;
@@ -58,7 +77,7 @@ final class Track extends Model
     /**
      * Get the genres for the track.
      */
-    public function genres()
+    public function genres(): BelongsToMany
     {
         return $this->belongsToMany(Genre::class);
     }
@@ -66,7 +85,7 @@ final class Track extends Model
     /**
      * Get the playlists that contain this track.
      */
-    public function playlists()
+    public function playlists(): BelongsToMany
     {
         return $this->belongsToMany(Playlist::class)
                     ->withPivot('position')
@@ -78,7 +97,7 @@ final class Track extends Model
      *
      * @param string $genresString Comma-separated list of genre names
      */
-    public function assignGenres($genresString)
+    public function assignGenres(string $genresString): void
     {
         Log::info('Assigning genres to track', [
             'track_id' => $this->id,
@@ -98,34 +117,38 @@ final class Track extends Model
         $genreNames = array_map('trim', explode(',', $genresString));
         
         // Find or create each genre and attach to track
-        foreach ($genreNames as $key => $name) {
-            if (!empty($name)) {
-                // Special handling for "bubblegum bass"
-                if (strcasecmp(trim($name), 'bubblegum bass') === 0 || strcasecmp(trim($name), 'bubblegum-bass') === 0) {
-                    $formattedName = 'Bubblegum bass';
-                    $genre = Genre::firstOrCreate(['name' => $formattedName]);
-                } else {
-                    $genre = Genre::findOrCreateByName($name);
-                }
-                $this->genres()->attach($genre->id);
-                Log::info('Genre attached to track', [
-                    'track_id' => $this->id,
-                    'track_title' => $this->title,
-                    'genre_id' => $genre->id,
-                    'genre_name' => $genre->name
-                ]);
+        foreach ($genreNames as $name) {
+            if (empty($name)) {
+                continue;
             }
+
+            // Special handling for "bubblegum bass"
+            if (strcasecmp(trim($name), 'bubblegum bass') === 0 || strcasecmp(trim($name), 'bubblegum-bass') === 0) {
+                $formattedName = 'Bubblegum bass';
+                $genre = Genre::firstOrCreate(['name' => $formattedName]);
+            } else {
+                $genre = Genre::findOrCreateByName($name);
+            }
+            
+            $this->genres()->attach($genre->id);
+            
+            Log::info('Genre attached to track', [
+                'track_id' => $this->id,
+                'track_title' => $this->title,
+                'genre_id' => $genre->id,
+                'genre_name' => $genre->name
+            ]);
         }
     }
     
     /**
      * Get comma-separated list of genre names.
      */
-    public function getGenresListAttribute()
+    public function getGenresListAttribute(): string
     {
         // Check if the relationship is loaded and is a collection
-        if ($this->relationLoaded('genres') && $this->relations['genres'] instanceof \Illuminate\Database\Eloquent\Collection) {
-            return $this->relations['genres']->pluck('name')->implode(', ');
+        if ($this->relationLoaded('genres') && $this->genres instanceof Collection) {
+            return $this->genres->pluck('name')->implode(', ');
         }
         
         // Return empty string as fallback
@@ -134,12 +157,14 @@ final class Track extends Model
 
     /**
      * Get array of genre names for backward compatibility
+     * 
+     * @return array<int, string>
      */
-    public function getGenresArray()
+    public function getGenresArray(): array
     {
         // Check if the relationship is loaded and is a collection
         if ($this->relationLoaded('genres')) {
-            return $this->relations['genres']->pluck('name')->toArray();
+            return $this->genres->pluck('name')->toArray();
         }
 
         // Check if the relationship exists in the database
@@ -147,7 +172,7 @@ final class Track extends Model
         if ($genreCount > 0) {
             // Load the relationship and return the names
             $this->load('genres');
-            return $this->relations['genres']->pluck('name')->toArray();
+            return $this->genres->pluck('name')->toArray();
         }
 
         // Fall back to the old string field if needed
@@ -161,7 +186,7 @@ final class Track extends Model
     /**
      * Get comma-separated string of genre names
      */
-    public function getGenresString()
+    public function getGenresString(): string
     {
         return implode(', ', $this->getGenresArray());
     }
@@ -169,16 +194,14 @@ final class Track extends Model
     /**
      * Format genres string method kept for backward compatibility
      */
-    public static function formatGenres($genresString)
+    public static function formatGenres(string $genresString): string
     {
         if (empty($genresString)) {
             return '';
         }
 
         $genres = array_map('trim', explode(',', $genresString));
-        $formattedGenres = array_map(function($genre) {
-            return ucfirst($genre);
-        }, $genres);
+        $formattedGenres = array_map(fn($genre) => ucfirst($genre), $genres);
 
         return implode(', ', $formattedGenres);
     }
@@ -186,15 +209,17 @@ final class Track extends Model
     /**
      * Generate a unique identifier for the track
      */
-    public static function generateUniqueId($title)
+    public static function generateUniqueId(string $title): string
     {
         return md5($title . time());
     }
 
     /**
      * Sync genres from an array or comma-separated string
+     * 
+     * @param string|array<int, string> $genresInput
      */
-    public function syncGenres($genresInput)
+    public function syncGenres(string|array $genresInput): void
     {
         Log::info('Syncing genres for track', [
             'track_id' => $this->id,
@@ -211,8 +236,10 @@ final class Track extends Model
 
         $genreIds = [];
 
-        foreach ($genreNames as $key => $name) {
-            if (empty($name)) continue;
+        foreach ($genreNames as $name) {
+            if (empty($name)) {
+                continue;
+            }
 
             // Special handling for "bubblegum bass"
             if (strcasecmp(trim($name), 'bubblegum bass') === 0 || strcasecmp(trim($name), 'bubblegum-bass') === 0) {
@@ -248,66 +275,75 @@ final class Track extends Model
 
         // Refresh the genres relationship
         $this->load('genres');
-        
-        return $this;
     }
 
     /**
-     * Get the duration in seconds 
+     * Get the track duration in seconds
      */
-    public function getDurationSecondsAttribute()
+    public function getDurationSecondsAttribute(): int
     {
-        if (!$this->duration) {
+        if (empty($this->duration)) {
             return 0;
         }
 
-        // Parse duration in format MM:SS
+        // Parse from format like "3:45"
         $parts = explode(':', $this->duration);
+        
         if (count($parts) === 2) {
             $minutes = (int)$parts[0];
             $seconds = (int)$parts[1];
             return ($minutes * 60) + $seconds;
         }
-
+        
         return 0;
     }
 
     /**
-     * Define validation rules for store requests
+     * Get the fields used for storing a track
+     * 
+     * @return array<string, mixed>
      */
-    public function getStoreFields()
+    public function getStoreFields(): array
     {
         return [
-            'title' => 'required|string|max:255',
-            'audio_url' => 'required|url',
-            'image_url' => 'required|url',
-            'genres' => 'required|string',
-            'duration' => 'nullable|string|regex:/^\d+:\d{2}$/',
-            'bulk_tracks' => 'sometimes|string'
+            'title' => $this->title,
+            'url' => $this->url,
+            'cover_image' => $this->cover_image,
+            'audio_url' => $this->audio_url,
+            'image_url' => $this->image_url,
+            'unique_id' => $this->unique_id,
+            'duration' => $this->duration,
         ];
     }
 
     /**
-     * Define validation rules for update requests
+     * Get the fields used for updating a track
+     * 
+     * @return array<string, mixed>
      */
-    public function getUpdateFields()
+    public function getUpdateFields(): array
     {
         return [
-            'title' => 'required|string|max:255',
-            'audio_url' => 'required|url',
-            'image_url' => 'required|url',
-            'genres' => 'required|string',
-            'duration' => 'nullable|string|regex:/^\d+:\d{2}$/'
+            'title' => $this->title,
+            'url' => $this->url, 
+            'cover_image' => $this->cover_image,
+            'audio_url' => $this->audio_url,
+            'image_url' => $this->image_url,
+            'duration' => $this->duration,
         ];
     }
 
     /**
-     * Define validation rules for delete requests
+     * Get fields for deletion logging
+     * 
+     * @return array<string, mixed>
      */
-    public function getDeleteFields()
+    public function getDeleteFields(): array
     {
         return [
-            'id' => 'required|exists:tracks,id'
+            'id' => $this->id,
+            'title' => $this->title,
+            'unique_id' => $this->unique_id,
         ];
     }
 }

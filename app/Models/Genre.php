@@ -1,9 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 
@@ -11,6 +15,11 @@ final class Genre extends Model
 {
     use HasFactory;
 
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
     protected $fillable = [
         'name',
         'slug',
@@ -20,11 +29,11 @@ final class Genre extends Model
     /**
      * Boot the model.
      */
-    protected static function boot()
+    protected static function boot(): void
     {
         parent::boot();
 
-        static::creating(function ($genre) {
+        static::creating(function ($genre): void {
             $genre->slug = Str::slug($genre->name);
             Log::info('Creating new genre', [
                 'name' => $genre->name,
@@ -36,7 +45,7 @@ final class Genre extends Model
     /**
      * Get the tracks for the genre.
      */
-    public function tracks()
+    public function tracks(): BelongsToMany
     {
         return $this->belongsToMany(Track::class);
     }
@@ -44,7 +53,7 @@ final class Genre extends Model
     /**
      * Get the playlists for the genre.
      */
-    public function playlists()
+    public function playlists(): HasMany
     {
         return $this->hasMany(Playlist::class);
     }
@@ -52,7 +61,7 @@ final class Genre extends Model
     /**
      * Find or create a genre by name.
      */
-    public static function findOrCreateByName($name)
+    public static function findOrCreateByName(string $name): self
     {
         $name = trim($name);
         Log::info("Finding or creating genre: {$name}");
@@ -106,7 +115,7 @@ final class Genre extends Model
     /**
      * Set the name attribute and automatically generate the slug.
      */
-    public function setNameAttribute($value)
+    public function setNameAttribute(string $value): void
     {
         // Special case for "bubblegum bass"
         if (strcasecmp(trim($value), 'bubblegum bass') === 0 || strcasecmp(trim($value), 'bubblegum-bass') === 0) {

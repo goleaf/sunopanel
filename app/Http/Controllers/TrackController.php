@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Models\Track;
@@ -17,12 +19,12 @@ use App\Models\Playlist;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
-class TrackController extends Controller
+final class TrackController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Display a listing of the tracks.
      */
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         try {
             $query = Track::with('genres');
@@ -65,7 +67,7 @@ class TrackController extends Controller
             $tracks = $query->paginate(15)->withQueryString();
             
             // Get genres for the filter dropdown
-            $genres = \App\Models\Genre::orderBy('name')->get();
+            $genres = Genre::orderBy('name')->get();
             
             Log::info('Tracks index page accessed', [
                 'search' => $request->search,
@@ -82,33 +84,48 @@ class TrackController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
             
-            return redirect()->back()->with('error', 'An error occurred while loading tracks.');
+            return redirect()->back()
+                ->with('error', 'An error occurred while loading tracks.')
+                ->with('details', app()->environment('local') ? $e->getMessage() : null)
+                ->getTargetUrl();
+                
+            return view('tracks.index', [
+                'tracks' => collect(),
+                'genres' => Genre::orderBy('name')->get(),
+                'error' => 'An error occurred while loading tracks.'
+            ]);
         }
     }
 
-    public function create()
+    /**
+     * Show the form for creating a new track.
+     */
+    public function create(): View
     {
         Log::info('Track create form accessed');
         return view('tracks.create');
     }
 
+    /**
+     * Store a newly created track in storage.
+     */
     public function store(TrackStoreRequest $request): RedirectResponse
     {
         try {
             Log::info('TrackController: store method called', ['request' => $request->validated()]);
             
             $track = Track::create([
-                'title' => $request->title,
-                'url' => $request->url,
-                'cover_image' => $request->cover_image,
+                'title' => $request->validated('title'),
+                'url' => $request->validated('url'),
+                'cover_image' => $request->validated('cover_image'),
             ]);
             
             if ($request->has('genres')) {
-                $track->genres()->attach($request->genres);
+                $track->genres()->attach($request->validated('genres'));
             }
             
             if ($request->has('playlists')) {
-                $track->playlists()->attach($request->playlists);
+                $track->playlists()->attach($request->validated('playlists'));
             }
             
             Log::info('TrackController: track created successfully', ['track_id' => $track->id]);
@@ -127,7 +144,10 @@ class TrackController extends Controller
         }
     }
 
-    public function processBulkUpload($request)
+    /**
+     * Process bulk upload of tracks.
+     */
+    public function processBulkUpload(Request $request): RedirectResponse
     {
         $request->validate([
             'bulk_tracks' => 'required|string'
@@ -200,40 +220,41 @@ class TrackController extends Controller
             return redirect()->route('tracks.index')
                 ->with('success', $message)
                 ->with('import_errors', $errors);
-        }
-
-        return redirect()->route('tracks.index')
-            ->with('error', 'No tracks were imported. Please check the format and try again.')
-            ->with('import_errors', $errors);
-    }
-
-    public function show($id)
-    {
-        try {
-            $track = Track::with('genres', 'playlists')->findOrFail($id);
-            Log::info('Track viewed', ['track_id' => $id, 'title' => $track->title]);
-            return view('tracks.show', compact('track'));
-        } catch (\Exception $e) {
-            Log::error('Error viewing track', ['id' => $id, 'error' => $e->getMessage()]);
-            return redirect()->route('tracks.index')->with('error', 'Track not found');
+        } else {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'No tracks were imported. Please check the errors.')
+                ->with('import_errors', $errors);
         }
     }
 
     /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\Models\Track  $track
-     * @return \Illuminate\Http\Response
+     * Display the specified track.
      */
-    public function edit(Track $track)
+    public function show(int $id): View
     {
-        Log::info('Accessed TrackController@edit for track: ' . $track->id);
-        $genres = Genre::orderBy('name')->get();
-        $trackGenres = $track->genres->pluck('id')->toArray();
-        
-        return view('tracks.edit', compact('track', 'genres', 'trackGenres'));
+        try {
+            $track = Track::with('genres', 'playlists')->findOrFail($id);
+            Log::info('Track viewed', ['id' => $id, 'title' => $track->title]);
+            return view('tracks.show', compact('track'));
+        } catch (\Exception $e) {
+            Log::error('Error viewing track', ['id' => $id, 'error' => $e->getMessage()]);
+            abort(404);
+        }
     }
 
+    /**
+     * Show the form for editing the specified track.
+     */
+    public function edit(Track $track): View
+    {
+        Log::info('Track edit form accessed', ['id' => $track->id, 'title' => $track->title]);
+        return view('tracks.edit', compact('track'));
+    }
+
+    /**
+     * Update the specified track in storage.
+     */
     public function update(TrackUpdateRequest $request, Track $track): RedirectResponse
     {
         try {
@@ -245,11 +266,7 @@ class TrackController extends Controller
             $track->update($request->validated());
             
             if ($request->has('genres')) {
-                $track->genres()->sync($request->genres);
-            }
-            
-            if ($request->has('playlists')) {
-                $track->playlists()->sync($request->playlists);
+                $track->syncGenres($request->validated('genres'));
             }
             
             Log::info('TrackController: track updated successfully', ['track_id' => $track->id]);
@@ -269,49 +286,52 @@ class TrackController extends Controller
         }
     }
 
-    public function destroy($id)
+    /**
+     * Remove the specified track from storage.
+     */
+    public function destroy(int $id): RedirectResponse
     {
-        Log::info('Track delete method called', ['id' => $id]);
-        
         try {
             $track = Track::findOrFail($id);
+            Log::info('TrackController: destroy method called', ['track_id' => $id, 'title' => $track->title]);
             
-            // Get track title for logging
-            $trackTitle = $track->title;
-            
-            // Delete track
-            $track->genres()->detach();
+            // Detach from any playlists
             $track->playlists()->detach();
+            
+            // Detach from genres
+            $track->genres()->detach();
+            
+            // Delete the track
             $track->delete();
             
-            Log::info('Track deleted successfully', ['id' => $id, 'title' => $trackTitle]);
+            Log::info('TrackController: track deleted successfully', ['track_id' => $id]);
             
             return redirect()->route('tracks.index')
-                ->with('success', 'Track deleted successfully!');
+                ->with('success', 'Track deleted successfully.');
         } catch (\Exception $e) {
-            Log::error('Error deleting track', [
-                'id' => $id,
-                'error' => $e->getMessage(),
+            Log::error('TrackController: Error deleting track', [
+                'track_id' => $id,
+                'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
             
-            return redirect()->route('tracks.index')
+            return redirect()->back()
                 ->with('error', 'Failed to delete track: ' . $e->getMessage());
         }
     }
 
     /**
-     * Stream the track audio
+     * Play the specified track.
      */
-    public function play($id)
+    public function play(int $id): View
     {
         try {
-            $track = Track::findOrFail($id);
-            Log::info('Track played', ['track_id' => $id, 'title' => $track->title]);
-            return redirect($track->audio_url);
+            $track = Track::with('genres')->findOrFail($id);
+            Log::info('Track played', ['id' => $id, 'title' => $track->title]);
+            return view('tracks.play', compact('track'));
         } catch (\Exception $e) {
             Log::error('Error playing track', ['id' => $id, 'error' => $e->getMessage()]);
-            return redirect()->route('tracks.index')->with('error', 'Track not found');
+            abort(404);
         }
     }
 }

@@ -1,22 +1,23 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Models\Playlist;
 use App\Models\Genre;
 use App\Models\Track;
 use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Log;
+use Illuminate\View\View;
 
-class PlaylistController extends Controller
+final class PlaylistController extends Controller
 {
     /**
-     * Display a listing of the resource.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * Display a listing of the playlists.
      */
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         try {
             Log::info('Playlist index accessed', [
@@ -29,7 +30,7 @@ class PlaylistController extends Controller
             // Handle search
             if ($request->has('search')) {
                 $searchTerm = $request->search;
-                $query->where('name', 'like', "%{$searchTerm}%")
+                $query->where('title', 'like', "%{$searchTerm}%")
                     ->orWhere('description', 'like', "%{$searchTerm}%");
                 
                 Log::info('Playlist search applied', ['term' => $searchTerm]);
@@ -46,7 +47,8 @@ class PlaylistController extends Controller
                 }
                 
                 // Validate sort field
-                if (in_array($sortField, ['name', 'created_at', 'tracks_count'])) {
+                $allowedSortFields = ['title', 'created_at', 'tracks_count'];
+                if (in_array($sortField, $allowedSortFields)) {
                     $query->orderBy($sortField, $direction);
                     
                     Log::info('Playlist sort applied', [
@@ -68,15 +70,17 @@ class PlaylistController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
             
-            return redirect()->back()
-                ->with('error', 'An error occurred while loading playlists: ' . $e->getMessage());
+            return view('playlists.index', [
+                'playlists' => collect(),
+                'error' => 'An error occurred while loading playlists.'
+            ]);
         }
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Show the form for creating a new playlist.
      */
-    public function create()
+    public function create(): View
     {
         Log::info('Playlist create form accessed');
         $genres = Genre::orderBy('name')->get();
@@ -84,28 +88,23 @@ class PlaylistController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Store a newly created playlist in storage.
      */
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
         Log::info('Playlist store method called', ['request' => $request->except(['_token'])]);
 
-        $request->validate([
-            'name' => 'required|string|max:255',
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'cover_image' => 'nullable|url',
             'genre_id' => 'nullable|exists:genres,id',
         ]);
 
         try {
-            $playlist = Playlist::create([
-                'name' => $request->name,
-                'description' => $request->description,
-                'cover_image' => $request->cover_image,
-                'genre_id' => $request->genre_id,
-            ]);
+            $playlist = Playlist::create($validated);
 
-            Log::info('Playlist created successfully', ['playlist_id' => $playlist->id, 'name' => $playlist->name]);
+            Log::info('Playlist created successfully', ['playlist_id' => $playlist->id, 'title' => $playlist->title]);
 
             return redirect()->route('playlists.index')
                 ->with('success', 'Playlist created successfully.');
@@ -122,50 +121,46 @@ class PlaylistController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * Display the specified playlist.
      */
-    public function show(Request $request, Playlist $playlist)
+    public function show(Request $request, Playlist $playlist): View
     {
-        Log::info('Playlist show page accessed', ['playlist_id' => $playlist->id, 'name' => $playlist->name]);
+        Log::info('Playlist show page accessed', ['playlist_id' => $playlist->id, 'title' => $playlist->title]);
         
         $playlist->load(['tracks.genres', 'genre']);
         return view('playlists.show', compact('playlist'));
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Show the form for editing the specified playlist.
      */
-    public function edit(Playlist $playlist)
+    public function edit(Playlist $playlist): View
     {
-        Log::info('Playlist edit form accessed', ['playlist_id' => $playlist->id, 'name' => $playlist->name]);
+        Log::info('Playlist edit form accessed', ['playlist_id' => $playlist->id, 'title' => $playlist->title]);
         
         $genres = Genre::orderBy('name')->get();
         return view('playlists.edit', compact('playlist', 'genres'));
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update the specified playlist in storage.
      */
-    public function update(Request $request, Playlist $playlist)
+    public function update(Request $request, Playlist $playlist): RedirectResponse
     {
         Log::info('Playlist update method called', [
             'playlist_id' => $playlist->id,
-            'name' => $playlist->name,
+            'title' => $playlist->title,
             'request' => $request->except(['_token'])
         ]);
 
-        $request->validate([
-            'name' => 'required|string|max:255',
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'genre_id' => 'nullable|exists:genres,id',
         ]);
 
         try {
-            $playlist->update([
-                'name' => $request->name,
-                'description' => $request->description,
-                'genre_id' => $request->genre_id,
-            ]);
+            $playlist->update($validated);
 
             // Update cover image if provided
             if ($request->hasFile('cover_image')) {
@@ -175,7 +170,7 @@ class PlaylistController extends Controller
                 $playlist->update(['cover_image' => 'covers/' . $filename]);
             }
 
-            Log::info('Playlist updated successfully', ['playlist_id' => $playlist->id, 'name' => $playlist->name]);
+            Log::info('Playlist updated successfully', ['playlist_id' => $playlist->id, 'title' => $playlist->title]);
             
             return redirect()->route('playlists.index')
                 ->with('success', 'Playlist updated successfully.');
@@ -193,18 +188,21 @@ class PlaylistController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Remove the specified playlist from storage.
      */
-    public function destroy(Playlist $playlist)
+    public function destroy(Playlist $playlist): RedirectResponse
     {
-        Log::info('Playlist delete method called', ['playlist_id' => $playlist->id, 'name' => $playlist->name]);
-        
+        Log::info('Playlist delete method called', ['playlist_id' => $playlist->id, 'title' => $playlist->title]);
+
         try {
-            $playlistName = $playlist->name;
+            // Detach all tracks from the playlist first
+            $playlist->tracks()->detach();
+            
+            // Delete the playlist
             $playlist->delete();
-
-            Log::info('Playlist deleted successfully', ['name' => $playlistName]);
-
+            
+            Log::info('Playlist deleted successfully', ['playlist_id' => $playlist->id]);
+            
             return redirect()->route('playlists.index')
                 ->with('success', 'Playlist deleted successfully.');
         } catch (\Exception $e) {
@@ -214,93 +212,69 @@ class PlaylistController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
             
-            return redirect()->route('playlists.index')
+            return redirect()->back()
                 ->with('error', 'Failed to delete playlist: ' . $e->getMessage());
         }
     }
 
     /**
-     * Show the form for adding tracks to a playlist.
-     *
-     * @param  \App\Models\Playlist  $playlist
-     * @return \Illuminate\Http\Response
+     * Show form to add tracks to the playlist.
      */
-    public function addTracks(Playlist $playlist, Request $request)
+    public function addTracks(Playlist $playlist): View
     {
-        \Illuminate\Support\Facades\Log::info('Accessed PlaylistController@addTracks for playlist: ' . $playlist->id);
+        Log::info('Add tracks to playlist form accessed', ['playlist_id' => $playlist->id, 'title' => $playlist->title]);
         
-        $query = Track::with('genres');
-        $perPage = $request->input('per_page', 15);
+        $playlist->load('tracks');
+        $existingTrackIds = $playlist->tracks->pluck('id')->toArray();
         
-        // Apply search filter if provided
-        if ($request->has('search')) {
-            $search = $request->input('search');
-            $query->where('name', 'like', "%{$search}%");
-        }
+        // Get tracks not in this playlist
+        $tracks = Track::with('genres')
+            ->whereNotIn('id', $existingTrackIds)
+            ->orderBy('title')
+            ->paginate(20);
         
-        // Apply genre filter if provided
-        if ($request->has('genre')) {
-            $genreId = $request->input('genre');
-            $query->whereHas('genres', function ($q) use ($genreId) {
-                $q->where('genres.id', $genreId);
-            });
-        }
-        
-        // Get tracks that don't belong to this playlist
-        $playlistTrackIds = $playlist->tracks->pluck('id')->toArray();
-        
-        // Use paginate instead of get to enable pagination
-        $availableTracks = $query->whereNotIn('id', $playlistTrackIds)
-            ->orderBy('name')
-            ->paginate($perPage);
-            
-        $availableTracks->appends($request->query());
-        
-        $genres = Genre::orderBy('name')->get();
-        
-        return view('playlists.add-tracks', [
-            'playlist' => $playlist,
-            'availableTracks' => $availableTracks,
-            'genres' => $genres,
-            'playlistTrackIds' => $playlistTrackIds
-        ]);
+        return view('playlists.add-tracks', compact('playlist', 'tracks'));
     }
 
     /**
-     * Store tracks to the playlist.
+     * Store tracks in the playlist.
      */
-    public function storeTracks(Request $request, Playlist $playlist)
+    public function storeTracks(Request $request, Playlist $playlist): RedirectResponse
     {
-        Log::info('Playlist store tracks method called', [
+        Log::info('Store tracks to playlist method called', [
             'playlist_id' => $playlist->id,
-            'name' => $playlist->name,
-            'track_count' => count($request->track_ids ?? [])
+            'title' => $playlist->title,
+            'request' => $request->except(['_token'])
         ]);
 
-        $request->validate([
+        $validated = $request->validate([
             'track_ids' => 'required|array',
             'track_ids.*' => 'exists:tracks,id',
         ]);
 
         try {
-            $position = $playlist->tracks()->count();
-            $addedCount = 0;
-
-            foreach ($request->track_ids as $key => $trackId) {
-                $track = Track::findOrFail($trackId);
-                $playlist->addTrack($track, $position);
+            $position = $playlist->tracks()->max('position') ?? 0;
+            
+            foreach ($validated['track_ids'] as $trackId) {
                 $position++;
-                $addedCount++;
+                
+                if (!$playlist->tracks()->where('track_id', $trackId)->exists()) {
+                    $playlist->tracks()->attach($trackId, ['position' => $position]);
+                    Log::info('Track added to playlist', [
+                        'playlist_id' => $playlist->id,
+                        'track_id' => $trackId,
+                        'position' => $position
+                    ]);
+                }
             }
-
+            
             Log::info('Tracks added to playlist successfully', [
-                'playlist_id' => $playlist->id, 
-                'name' => $playlist->name,
-                'tracks_added' => $addedCount
+                'playlist_id' => $playlist->id,
+                'track_count' => count($validated['track_ids'])
             ]);
-
+            
             return redirect()->route('playlists.show', $playlist)
-                ->with('success', 'Tracks added to playlist successfully.');
+                ->with('success', count($validated['track_ids']) . ' tracks added to playlist.');
         } catch (\Exception $e) {
             Log::error('Error adding tracks to playlist', [
                 'playlist_id' => $playlist->id,
@@ -316,30 +290,32 @@ class PlaylistController extends Controller
     /**
      * Remove a track from the playlist.
      */
-    public function removeTrack(Playlist $playlist, Track $track)
+    public function removeTrack(Playlist $playlist, Track $track): RedirectResponse
     {
-        Log::info('Playlist remove track method called', [
-            'playlist_id' => $playlist->id, 
+        Log::info('Remove track from playlist method called', [
+            'playlist_id' => $playlist->id,
             'track_id' => $track->id
         ]);
 
         try {
-            $playlist->removeTrack($track);
-
-            // Re-order positions
-            $position = 0;
-            foreach ($playlist->tracks()->orderBy('pivot_position')->get() as $index => $t) {
+            $playlist->tracks()->detach($track->id);
+            
+            // Reorder positions to avoid gaps
+            $tracks = $playlist->tracks()->orderBy('position')->get();
+            
+            $position = 1;
+            foreach ($tracks as $t) {
                 $playlist->tracks()->updateExistingPivot($t->id, ['position' => $position]);
                 $position++;
             }
-
+            
             Log::info('Track removed from playlist successfully', [
-                'playlist_id' => $playlist->id, 
+                'playlist_id' => $playlist->id,
                 'track_id' => $track->id
             ]);
-
+            
             return redirect()->route('playlists.show', $playlist)
-                ->with('success', 'Track removed from playlist successfully.');
+                ->with('success', 'Track removed from playlist.');
         } catch (\Exception $e) {
             Log::error('Error removing track from playlist', [
                 'playlist_id' => $playlist->id,
@@ -348,7 +324,7 @@ class PlaylistController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
             
-            return redirect()->route('playlists.show', $playlist)
+            return redirect()->back()
                 ->with('error', 'Failed to remove track from playlist: ' . $e->getMessage());
         }
     }
@@ -356,33 +332,39 @@ class PlaylistController extends Controller
     /**
      * Create a playlist from a genre.
      */
-    public function createFromGenre(Genre $genre)
+    public function createFromGenre(Genre $genre): RedirectResponse
     {
-        Log::info('Create playlist from genre method called', ['genre_id' => $genre->id, 'name' => $genre->name]);
+        Log::info('Create playlist from genre method called', [
+            'genre_id' => $genre->id,
+            'genre_name' => $genre->name
+        ]);
 
         try {
+            // Create a new playlist based on the genre
             $playlist = Playlist::create([
-                'name' => $genre->name . ' Playlist',
-                'description' => 'Playlist containing tracks of the ' . $genre->name . ' genre',
+                'title' => "{$genre->name} Playlist",
+                'description' => "Playlist of {$genre->name} tracks",
                 'genre_id' => $genre->id,
             ]);
-
-            $tracksAdded = 0;
-            // Add all tracks from the genre to the playlist
-            foreach ($genre->tracks as $index => $track) {
-                $playlist->addTrack($track, $index);
-                $tracksAdded++;
+            
+            // Get all tracks for this genre
+            $tracks = $genre->tracks()->get();
+            
+            // Add tracks to the playlist
+            $position = 1;
+            foreach ($tracks as $track) {
+                $playlist->tracks()->attach($track->id, ['position' => $position]);
+                $position++;
             }
-
+            
             Log::info('Playlist created from genre successfully', [
                 'playlist_id' => $playlist->id,
-                'name' => $playlist->name,
                 'genre_id' => $genre->id,
-                'tracks_added' => $tracksAdded
+                'track_count' => $tracks->count()
             ]);
-
-            return redirect()->route('playlists.index')
-                ->with('success', 'Playlist created from genre successfully.');
+            
+            return redirect()->route('playlists.show', $playlist)
+                ->with('success', "Playlist created with {$tracks->count()} tracks from the {$genre->name} genre.");
         } catch (\Exception $e) {
             Log::error('Error creating playlist from genre', [
                 'genre_id' => $genre->id,
