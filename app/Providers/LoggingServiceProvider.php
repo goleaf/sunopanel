@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
-use App\Services\Logging\ErrorLogService;
+use App\Services\Logging\LoggingService;
 use Illuminate\Support\ServiceProvider;
 
 final class LoggingServiceProvider extends ServiceProvider
@@ -14,8 +14,8 @@ final class LoggingServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->singleton(ErrorLogService::class, function ($app) {
-            return new ErrorLogService();
+        $this->app->singleton(LoggingService::class, function ($app) {
+            return new LoggingService();
         });
     }
 

@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Genre;
 use App\Models\Track;
+use App\Services\Logging\LoggingService;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Log;
@@ -13,6 +14,13 @@ use Illuminate\View\View;
 
 final class GenreController extends Controller
 {
+    private LoggingService $loggingService;
+
+    public function __construct(LoggingService $loggingService)
+    {
+        $this->loggingService = $loggingService;
+    }
+
     /**
      * Display a listing of the genres.
      */
@@ -39,7 +47,7 @@ final class GenreController extends Controller
         
         $genres = $query->paginate(15)->withQueryString();
 
-        Log::info('Genres index page accessed', [
+        $this->loggingService->info('Genres index page accessed', [
             'search' => $request->search,
             'sort' => $sortField,
             'direction' => $direction,
@@ -54,7 +62,7 @@ final class GenreController extends Controller
      */
     public function create(): View
     {
-        Log::info('Genre create form accessed');
+        $this->loggingService->info('Genre create form accessed');
         return view('genres.create');
     }
 
@@ -63,7 +71,7 @@ final class GenreController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        Log::info('Genre store method called', ['request' => $request->except(['_token'])]);
+        $this->loggingService->info('Genre store method called', ['request' => $request->except(['_token'])]);
 
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:genres,name',
@@ -72,7 +80,7 @@ final class GenreController extends Controller
 
         $genre = Genre::create($validated);
 
-        Log::info('Genre created successfully', ['genre_id' => $genre->id, 'name' => $genre->name]);
+        $this->loggingService->info('Genre created successfully', ['genre_id' => $genre->id, 'name' => $genre->name]);
         
         return redirect()->route('genres.index')
             ->with('success', 'Genre created successfully.');
@@ -83,7 +91,7 @@ final class GenreController extends Controller
      */
     public function show(Request $request, Genre $genre): View
     {
-        Log::info('Genre show page accessed', ['genre_id' => $genre->id, 'name' => $genre->name]);
+        $this->loggingService->info('Genre show page accessed', ['genre_id' => $genre->id, 'name' => $genre->name]);
         
         $query = $genre->tracks();
         $perPage = $request->input('per_page', 10);
@@ -99,7 +107,7 @@ final class GenreController extends Controller
         
         $query->orderBy($sortField, $sortOrder);
         
-        Log::info('Genre show page tracks sorted', [
+        $this->loggingService->info('Genre show page tracks sorted', [
             'genre_id' => $genre->id,
             'field' => $sortField, 
             'order' => $sortOrder
@@ -116,7 +124,7 @@ final class GenreController extends Controller
      */
     public function edit(Genre $genre): View
     {
-        Log::info('Genre edit form accessed', ['genre_id' => $genre->id, 'name' => $genre->name]);
+        $this->loggingService->info('Genre edit form accessed', ['genre_id' => $genre->id, 'name' => $genre->name]);
         return view('genres.edit', compact('genre'));
     }
 
@@ -125,7 +133,7 @@ final class GenreController extends Controller
      */
     public function update(Request $request, Genre $genre): RedirectResponse
     {
-        Log::info('Genre update method called', [
+        $this->loggingService->info('Genre update method called', [
             'genre_id' => $genre->id,
             'name' => $genre->name,
             'request' => $request->except(['_token'])
@@ -138,7 +146,7 @@ final class GenreController extends Controller
 
         $genre->update($validated);
 
-        Log::info('Genre updated successfully', ['genre_id' => $genre->id, 'name' => $genre->name]);
+        $this->loggingService->info('Genre updated successfully', ['genre_id' => $genre->id, 'name' => $genre->name]);
         
         return redirect()->route('genres.index')
             ->with('success', 'Genre updated successfully.');
@@ -149,7 +157,7 @@ final class GenreController extends Controller
      */
     public function destroy(Genre $genre): RedirectResponse
     {
-        Log::info('Genre delete method called', ['genre_id' => $genre->id, 'name' => $genre->name]);
+        $this->loggingService->info('Genre delete method called', ['genre_id' => $genre->id, 'name' => $genre->name]);
         
         // Get track count for logging
         $trackCount = $genre->tracks()->count();
@@ -160,7 +168,7 @@ final class GenreController extends Controller
         // Now delete the genre
         $genre->delete();
 
-        Log::info('Genre deleted successfully', [
+        $this->loggingService->info('Genre deleted successfully', [
             'genre_id' => $genre->id, 
             'name' => $genre->name,
             'detached_tracks' => $trackCount

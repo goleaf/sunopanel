@@ -4,61 +4,64 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
-use App\Services\Logging\ErrorLogService;
+use App\Services\Logging\LoggingService;
 use Closure;
 use Illuminate\Http\Request;
-use Throwable;
 use Symfony\Component\HttpFoundation\Response;
+use Throwable;
 
-final class ErrorLoggingMiddleware
+final class LoggingMiddleware
 {
-    private ErrorLogService $errorLogService;
+    /**
+     * The logging service instance.
+     */
+    private LoggingService $loggingService;
 
-    public function __construct(ErrorLogService $errorLogService)
+    /**
+     * Create a new middleware instance.
+     *
+     * @param LoggingService $loggingService The logging service
+     */
+    public function __construct(LoggingService $loggingService)
     {
-        $this->errorLogService = $errorLogService;
+        $this->loggingService = $loggingService;
     }
 
     /**
      * Handle an incoming request.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \Closure  $next
-     * @return mixed
+     * @param Request $request The request instance
+     * @param Closure $next The next middleware
+     * @return Response The response
      */
-    public function handle(Request $request, Closure $next): mixed
+    public function handle(Request $request, Closure $next): Response
     {
         try {
-            return $next($request);
-        } catch (Throwable $exception) {
-            // Determine if this is an API request
-            $isApiRequest = $request->expectsJson() || 
-                str_starts_with($request->path(), 'api/') || 
-                $request->wantsJson();
+            $response = $next($request);
             
-            if ($isApiRequest) {
-                $this->errorLogService->logApiError(
-                    $exception, 
-                    $request, 
-                    null, 
-                    'API request failed in middleware'
-                );
+            // Log successful API responses with status >=400 if they're API requests
+            if (($request->expectsJson() || 
+                str_starts_with($request->path(), 'api/') || 
+                $request->wantsJson()) && 
+                $response->getStatusCode() >= 400) {
                 
-                return response()->json([
-                    'success' => false,
-                    'message' => 'An error occurred while processing your request.',
-                    'error' => $exception->getMessage(),
-                    'status_code' => 500
-                ], 500);
+                $responseData = json_decode($response->getContent(), true);
+                $this->loggingService->logInfo(
+                    "API response with status " . $response->getStatusCode(),
+                    $request, 
+                    ['response' => $responseData]
+                );
             }
             
-            $this->errorLogService->logError(
-                $exception, 
-                $request, 
-                'Request failed in middleware'
+            return $response;
+        } catch (Throwable $exception) {
+            // Log the exception
+            $this->loggingService->logError(
+                $exception,
+                $request,
+                'Middleware exception handler'
             );
             
-            // Re-throw the exception for Laravel's exception handler
             throw $exception;
         }
     }

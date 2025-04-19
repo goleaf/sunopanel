@@ -10,10 +10,9 @@ use App\Http\Requests\TrackStoreRequest;
 use App\Http\Requests\TrackUpdateRequest;
 use App\Http\Requests\TrackDeleteRequest;
 use App\Http\Requests\BulkTrackRequest;
-use App\Services\Logging\ErrorLogService;
+use App\Services\Logging\LoggingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use App\Http\Controllers\Controller;
@@ -23,11 +22,11 @@ use Illuminate\View\View;
 
 final class TrackController extends Controller
 {
-    private readonly ErrorLogService $errorLogService;
+    private readonly LoggingService $loggingService;
 
-    public function __construct(ErrorLogService $errorLogService)
+    public function __construct(LoggingService $loggingService)
     {
-        $this->errorLogService = $errorLogService;
+        $this->loggingService = $loggingService;
     }
 
     /**
@@ -78,17 +77,17 @@ final class TrackController extends Controller
             // Get genres for the filter dropdown
             $genres = Genre::orderBy('name')->get();
             
-            Log::info('Tracks index page accessed', [
+            $this->loggingService->info('Tracks index page accessed', [
                 'search' => $request->search,
                 'genre' => $request->genre,
                 'sort' => $sortField,
                 'direction' => $direction,
                 'count' => $tracks->count()
-            ]);
+            ], $request);
             
             return view('tracks.index', compact('tracks', 'genres'));
         } catch (\Exception $e) {
-            $this->errorLogService->logError($e, $request, 'TrackController@index');
+            $this->loggingService->logError($e, $request, 'TrackController@index');
             
             return view('tracks.index', [
                 'tracks' => collect(),
@@ -103,7 +102,7 @@ final class TrackController extends Controller
      */
     public function create(): View
     {
-        Log::info('Track create form accessed');
+        $this->loggingService->info('Track create form accessed');
         $genres = Genre::orderBy('name')->get();
         return view('tracks.create', compact('genres'));
     }
@@ -114,7 +113,9 @@ final class TrackController extends Controller
     public function store(TrackStoreRequest $request): RedirectResponse
     {
         try {
-            Log::info('TrackController: store method called', ['request' => $request->validated()]);
+            $this->loggingService->info('TrackController: store method called', [
+                'request' => $request->validated()
+            ], $request);
             
             // Check if this is a bulk upload request
             if ($request->has('bulk_tracks') && !empty($request->validated('bulk_tracks'))) {
@@ -137,12 +138,14 @@ final class TrackController extends Controller
                 $track->playlists()->attach($request->validated('playlists'));
             }
             
-            Log::info('TrackController: track created successfully', ['track_id' => $track->id]);
+            $this->loggingService->info('TrackController: track created successfully', [
+                'track_id' => $track->id
+            ], $request);
             
             return redirect()->route('tracks.index')
                 ->with('success', 'Track created successfully.');
         } catch (\Exception $e) {
-            $this->errorLogService->logError($e, $request, 'TrackController@store');
+            $this->loggingService->logError($e, $request, 'TrackController@store');
             
             return redirect()->back()
                 ->withInput()
@@ -163,7 +166,9 @@ final class TrackController extends Controller
                 throw new \Exception('No bulk tracks data provided');
             }
             
-            Log::info('Bulk track upload initiated', ['lines_count' => substr_count($bulkTracks, PHP_EOL) + 1]);
+            $this->loggingService->info('Bulk track upload initiated', [
+                'lines_count' => substr_count($bulkTracks, PHP_EOL) + 1
+            ], $request);
 
             $lines = explode(PHP_EOL, $bulkTracks);
             $processedCount = 0;
@@ -205,9 +210,13 @@ final class TrackController extends Controller
                     $track->syncGenres($genresRaw);
 
                     $processedCount++;
-                    Log::info('Bulk track created', ['index' => $index, 'title' => $title, 'track_id' => $track->id]);
+                    $this->loggingService->info('Bulk track created', [
+                        'index' => $index, 
+                        'title' => $title, 
+                        'track_id' => $track->id
+                    ], $request);
                 } catch (\Exception $innerException) {
-                    $this->errorLogService->logError($innerException, $request, 'TrackController@processBulkUpload');
+                    $this->loggingService->logError($innerException, $request, 'TrackController@processBulkUpload');
                     $errors[] = "Line " . ($index + 1) . ": Error - " . $innerException->getMessage();
                 }
             }
@@ -223,7 +232,7 @@ final class TrackController extends Controller
                     ->withInput();
             }
         } catch (\Exception $e) {
-            $this->errorLogService->logError($e, $request, 'TrackController@processBulkUpload');
+            $this->loggingService->logError($e, $request, 'TrackController@processBulkUpload');
             
             return redirect()->back()
                 ->with('error', 'Error processing bulk upload: ' . $e->getMessage())
@@ -238,10 +247,13 @@ final class TrackController extends Controller
     {
         try {
             $track = Track::with('genres', 'playlists')->findOrFail($id);
-            Log::info('Track viewed', ['id' => $id, 'title' => $track->title]);
+            $this->loggingService->info('Track viewed', [
+                'id' => $id, 
+                'title' => $track->title
+            ]);
             return view('tracks.show', compact('track'));
         } catch (\Exception $e) {
-            $this->errorLogService->logError($e, request(), 'TrackController@show');
+            $this->loggingService->logError($e, request(), 'TrackController@show');
             
             return view('tracks.error', [
                 'error' => 'Track not found or an error occurred.'
@@ -254,7 +266,10 @@ final class TrackController extends Controller
      */
     public function edit(Track $track): View
     {
-        Log::info('Track edit form accessed', ['track_id' => $track->id, 'title' => $track->title]);
+        $this->loggingService->info('Track edit form accessed', [
+            'track_id' => $track->id, 
+            'title' => $track->title
+        ]);
         $genres = Genre::orderBy('name')->get();
         return view('tracks.edit', compact('track', 'genres'));
     }
@@ -265,10 +280,10 @@ final class TrackController extends Controller
     public function update(TrackUpdateRequest $request, Track $track): RedirectResponse
     {
         try {
-            Log::info('TrackController: update method called', [
+            $this->loggingService->info('TrackController: update method called', [
                 'track_id' => $track->id,
                 'request' => $request->validated()
-            ]);
+            ], $request);
             
             $track->update($request->validated());
             
@@ -280,12 +295,14 @@ final class TrackController extends Controller
                 $track->playlists()->sync($request->validated('playlists'));
             }
             
-            Log::info('TrackController: track updated successfully', ['track_id' => $track->id]);
+            $this->loggingService->info('TrackController: track updated successfully', [
+                'track_id' => $track->id
+            ], $request);
             
             return redirect()->route('tracks.index')
                 ->with('success', 'Track updated successfully.');
         } catch (\Exception $e) {
-            $this->errorLogService->logError($e, $request, 'TrackController@update');
+            $this->loggingService->logError($e, $request, 'TrackController@update');
             
             return redirect()->back()
                 ->withInput()
@@ -300,7 +317,10 @@ final class TrackController extends Controller
     {
         try {
             $track = Track::findOrFail($id);
-            Log::info('TrackController: destroy method called', ['track_id' => $id, 'title' => $track->title]);
+            $this->loggingService->info('TrackController: destroy method called', [
+                'track_id' => $id, 
+                'title' => $track->title
+            ]);
             
             // Detach from any playlists
             $track->playlists()->detach();
@@ -311,12 +331,14 @@ final class TrackController extends Controller
             // Delete the track
             $track->delete();
             
-            Log::info('TrackController: track deleted successfully', ['track_id' => $id]);
+            $this->loggingService->info('TrackController: track deleted successfully', [
+                'track_id' => $id
+            ]);
             
             return redirect()->route('tracks.index')
                 ->with('success', 'Track deleted successfully.');
         } catch (\Exception $e) {
-            $this->errorLogService->logError($e, request(), 'TrackController@destroy');
+            $this->loggingService->logError($e, request(), 'TrackController@destroy');
             
             return redirect()->back()
                 ->with('error', 'Failed to delete track: ' . $e->getMessage());
@@ -330,7 +352,10 @@ final class TrackController extends Controller
     {
         try {
             $track = Track::findOrFail($id);
-            Log::info('Track played', ['id' => $id, 'title' => $track->title]);
+            $this->loggingService->info('Track played', [
+                'id' => $id, 
+                'title' => $track->title
+            ]);
             
             // Check url first (new field), then audio_url (old field)
             $audioUrl = $track->url ?? $track->audio_url;
@@ -342,7 +367,7 @@ final class TrackController extends Controller
             
             return redirect()->away($audioUrl);
         } catch (\Exception $e) {
-            $this->errorLogService->logError($e, request(), 'TrackController@play');
+            $this->loggingService->logError($e, request(), 'TrackController@play');
             
             return redirect()->back()
                 ->with('error', 'Failed to play track: ' . $e->getMessage());

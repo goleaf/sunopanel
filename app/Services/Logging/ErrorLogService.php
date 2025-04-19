@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Log;
 use Throwable;
 use Symfony\Component\HttpFoundation\Response;
 
-final readonly class ErrorLogService
+final readonly class LoggingService
 {
     /**
      * Log an application error with standardized format
@@ -107,6 +107,90 @@ final readonly class ErrorLogService
         }
 
         Log::error('Database error: ' . $exception->getMessage(), $logData);
+    }
+    
+    /**
+     * Log informational message with standardized format
+     */
+    public function info(
+        string $message,
+        array $context = [],
+        ?Request $request = null
+    ): void {
+        $logData = array_merge($context, [
+            'timestamp' => now()->toDateTimeString(),
+            'user_id' => auth()->id(),
+        ]);
+        
+        // Add request data if available
+        if ($request) {
+            $logData['request_method'] = $request->method();
+            $logData['request_url'] = $request->fullUrl();
+            $logData['request_ip'] = $request->ip();
+            
+            // Include request data, filtered
+            if (!isset($logData['request_data'])) {
+                $logData['request_data'] = $this->filterSensitiveData($request->all());
+            }
+        }
+        
+        Log::info($message, $this->filterSensitiveData($logData));
+    }
+    
+    /**
+     * Log warning message with standardized format
+     */
+    public function warning(
+        string $message,
+        array $context = [],
+        ?Request $request = null
+    ): void {
+        $logData = array_merge($context, [
+            'timestamp' => now()->toDateTimeString(),
+            'user_id' => auth()->id(),
+        ]);
+        
+        // Add request data if available
+        if ($request) {
+            $logData['request_method'] = $request->method();
+            $logData['request_url'] = $request->fullUrl();
+            $logData['request_ip'] = $request->ip();
+            
+            // Include request data, filtered
+            if (!isset($logData['request_data'])) {
+                $logData['request_data'] = $this->filterSensitiveData($request->all());
+            }
+        }
+        
+        Log::warning($message, $this->filterSensitiveData($logData));
+    }
+    
+    /**
+     * Log debug message with standardized format
+     */
+    public function debug(
+        string $message,
+        array $context = [],
+        ?Request $request = null
+    ): void {
+        $logData = array_merge($context, [
+            'timestamp' => now()->toDateTimeString(),
+            'user_id' => auth()->id(),
+        ]);
+        
+        // Add request data if available
+        if ($request) {
+            $logData['request_method'] = $request->method();
+            $logData['request_url'] = $request->fullUrl();
+            $logData['request_ip'] = $request->ip();
+            
+            // Include request data, filtered
+            if (!isset($logData['request_data'])) {
+                $logData['request_data'] = $this->filterSensitiveData($request->all());
+            }
+        }
+        
+        Log::debug($message, $this->filterSensitiveData($logData));
     }
 
     /**

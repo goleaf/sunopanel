@@ -10,7 +10,6 @@ use App\Models\Track;
 use App\Services\Logging\LoggingService;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
 final class PlaylistController extends Controller
@@ -28,7 +27,7 @@ final class PlaylistController extends Controller
     public function index(Request $request): View
     {
         try {
-            Log::info('Playlist index accessed', [
+            $this->loggingService->info('Playlist index accessed', [
                 'query' => $request->query(),
                 'user_id' => auth()->id(),
             ]);
@@ -41,7 +40,7 @@ final class PlaylistController extends Controller
                 $query->where('title', 'like', "%{$searchTerm}%")
                     ->orWhere('description', 'like', "%{$searchTerm}%");
                 
-                Log::info('Playlist search applied', ['term' => $searchTerm]);
+                $this->loggingService->info('Playlist search applied', ['term' => $searchTerm]);
             }
 
             // Handle sorting
@@ -59,7 +58,7 @@ final class PlaylistController extends Controller
                 if (in_array($sortField, $allowedSortFields)) {
                     $query->orderBy($sortField, $direction);
                     
-                    Log::info('Playlist sort applied', [
+                    $this->loggingService->info('Playlist sort applied', [
                         'field' => $sortField,
                         'direction' => $direction
                     ]);
@@ -87,7 +86,7 @@ final class PlaylistController extends Controller
      */
     public function create(): View
     {
-        Log::info('Playlist create form accessed');
+        $this->loggingService->info('Playlist create form accessed');
         $genres = Genre::orderBy('name')->get();
         return view('playlists.create', compact('genres'));
     }
@@ -97,7 +96,7 @@ final class PlaylistController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        Log::info('Playlist store method called', ['request' => $request->except(['_token'])]);
+        $this->loggingService->info('Playlist store method called', ['request' => $request->except(['_token'])]);
 
         $validated = $request->validate([
             'title' => 'required|string|max:255',
@@ -120,7 +119,7 @@ final class PlaylistController extends Controller
                 }
             }
 
-            Log::info('Playlist created successfully', ['playlist_id' => $playlist->id, 'title' => $playlist->title]);
+            $this->loggingService->info('Playlist created successfully', ['playlist_id' => $playlist->id, 'title' => $playlist->title]);
 
             return redirect()->route('playlists.index')
                 ->with('success', 'Playlist created successfully.');
@@ -138,7 +137,7 @@ final class PlaylistController extends Controller
      */
     public function show(Request $request, Playlist $playlist): View
     {
-        Log::info('Playlist show page accessed', ['playlist_id' => $playlist->id, 'title' => $playlist->title]);
+        $this->loggingService->info('Playlist show page accessed', ['playlist_id' => $playlist->id, 'title' => $playlist->title]);
         
         $playlist->load(['tracks.genres', 'genre']);
         return view('playlists.show', compact('playlist'));
@@ -149,7 +148,7 @@ final class PlaylistController extends Controller
      */
     public function edit(Playlist $playlist): View
     {
-        Log::info('Playlist edit form accessed', ['playlist_id' => $playlist->id, 'title' => $playlist->title]);
+        $this->loggingService->info('Playlist edit form accessed', ['playlist_id' => $playlist->id, 'title' => $playlist->title]);
         
         $genres = Genre::orderBy('name')->get();
         return view('playlists.edit', compact('playlist', 'genres'));
@@ -160,7 +159,7 @@ final class PlaylistController extends Controller
      */
     public function update(Request $request, Playlist $playlist): RedirectResponse
     {
-        Log::info('Playlist update method called', [
+        $this->loggingService->info('Playlist update method called', [
             'playlist_id' => $playlist->id,
             'title' => $playlist->title,
             'request' => $request->except(['_token'])
@@ -201,7 +200,7 @@ final class PlaylistController extends Controller
                 $playlist->update(['cover_image' => 'covers/' . $filename]);
             }
 
-            Log::info('Playlist updated successfully', ['playlist_id' => $playlist->id, 'title' => $playlist->title]);
+            $this->loggingService->info('Playlist updated successfully', ['playlist_id' => $playlist->id, 'title' => $playlist->title]);
             
             return redirect()->route('playlists.index')
                 ->with('success', 'Playlist updated successfully.');
@@ -220,11 +219,11 @@ final class PlaylistController extends Controller
     public function destroy(Playlist $playlist): RedirectResponse
     {
         try {
-            Log::info('Playlist delete initiated', ['playlist_id' => $playlist->id, 'title' => $playlist->title]);
+            $this->loggingService->info('Playlist delete initiated', ['playlist_id' => $playlist->id, 'title' => $playlist->title]);
             
             $playlist->delete();
             
-            Log::info('Playlist deleted successfully', ['playlist_id' => $playlist->id, 'title' => $playlist->title]);
+            $this->loggingService->info('Playlist deleted successfully', ['playlist_id' => $playlist->id, 'title' => $playlist->title]);
             
             return redirect()->route('playlists.index')
                 ->with('success', 'Playlist deleted successfully.');
@@ -241,7 +240,7 @@ final class PlaylistController extends Controller
      */
     public function addTracks(Playlist $playlist): View
     {
-        Log::info('Add tracks to playlist form accessed', ['playlist_id' => $playlist->id, 'title' => $playlist->title]);
+        $this->loggingService->info('Add tracks to playlist form accessed', ['playlist_id' => $playlist->id, 'title' => $playlist->title]);
         
         $playlist->load('tracks');
         $existingTrackIds = $playlist->tracks->pluck('id')->toArray();
@@ -266,7 +265,7 @@ final class PlaylistController extends Controller
      */
     public function storeTracks(Request $request, Playlist $playlist): RedirectResponse
     {
-        Log::info('Adding tracks to playlist', [
+        $this->loggingService->info('Adding tracks to playlist', [
             'playlist_id' => $playlist->id,
             'playlist_title' => $playlist->title,
             'track_count' => count($request->input('track_ids', []))
@@ -289,7 +288,7 @@ final class PlaylistController extends Controller
                 }
             }
 
-            Log::info('Tracks added to playlist successfully', [
+            $this->loggingService->info('Tracks added to playlist successfully', [
                 'playlist_id' => $playlist->id,
                 'track_count' => count($trackIds)
             ]);
@@ -310,7 +309,7 @@ final class PlaylistController extends Controller
     public function removeTrack(Playlist $playlist, Track $track): RedirectResponse
     {
         try {
-            Log::info('Removing track from playlist', [
+            $this->loggingService->info('Removing track from playlist', [
                 'playlist_id' => $playlist->id,
                 'playlist_title' => $playlist->title,
                 'track_id' => $track->id,
@@ -327,7 +326,7 @@ final class PlaylistController extends Controller
                 $positions++;
             }
 
-            Log::info('Track removed from playlist successfully', [
+            $this->loggingService->info('Track removed from playlist successfully', [
                 'playlist_id' => $playlist->id,
                 'track_id' => $track->id
             ]);
@@ -348,7 +347,7 @@ final class PlaylistController extends Controller
     public function createFromGenre(Genre $genre): RedirectResponse
     {
         try {
-            Log::info('Creating playlist from genre', [
+            $this->loggingService->info('Creating playlist from genre', [
                 'genre_id' => $genre->id,
                 'genre_name' => $genre->name
             ]);
@@ -375,7 +374,7 @@ final class PlaylistController extends Controller
                 $position++;
             }
 
-            Log::info('Playlist created from genre successfully', [
+            $this->loggingService->info('Playlist created from genre successfully', [
                 'playlist_id' => $playlist->id,
                 'genre_id' => $genre->id,
                 'track_count' => $tracks->count()

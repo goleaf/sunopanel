@@ -5,15 +5,16 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use App\Services\Batch\BatchService;
+use App\Services\Logging\LoggingService;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 
 final class BatchController extends Controller
 {
     public function __construct(
-        private readonly BatchService $batchService
+        private readonly BatchService $batchService,
+        private readonly LoggingService $loggingService
     ) {
     }
 
@@ -37,7 +38,7 @@ final class BatchController extends Controller
      */
     public function import(): RedirectResponse
     {
-        Log::info('Accessed batch import page');
+        $this->loggingService->info('Accessed batch import page');
         return redirect()->route('dashboard')->with('success', 'Import feature temporarily disabled');
     }
 
@@ -46,7 +47,7 @@ final class BatchController extends Controller
      */
     public function processImport(Request $request): RedirectResponse
     {
-        Log::info('Starting batch import process');
+        $this->loggingService->info('Starting batch import process');
         return redirect()->route('dashboard')->with('success', 'Import process temporarily disabled');
     }
 
@@ -100,7 +101,7 @@ final class BatchController extends Controller
      */
     public function actions(): RedirectResponse
     {
-        Log::info('Accessing batch actions page');
+        $this->loggingService->info('Accessing batch actions page');
         return redirect()->route('dashboard')->with('success', 'Batch actions temporarily disabled');
     }
 
@@ -109,7 +110,7 @@ final class BatchController extends Controller
      */
     public function processActions(Request $request): RedirectResponse
     {
-        Log::info('Processing batch actions');
+        $this->loggingService->info('Processing batch actions');
         return redirect()->route('dashboard')->with('success', 'Batch actions temporarily disabled');
     }
 

@@ -8,7 +8,7 @@ use App\Models\User;
 use App\Services\User\UserService;
 use App\Http\Requests\UserStoreRequest;
 use App\Http\Requests\UserUpdateRequest;
-use App\Services\Logging\ErrorLogService;
+use App\Services\Logging\LoggingService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -17,12 +17,12 @@ use Exception;
 final class UserController extends Controller
 {
     private UserService $userService;
-    private ErrorLogService $errorLogService;
+    private LoggingService $loggingService;
 
-    public function __construct(UserService $userService, ErrorLogService $errorLogService)
+    public function __construct(UserService $userService, LoggingService $loggingService)
     {
         $this->userService = $userService;
-        $this->errorLogService = $errorLogService;
+        $this->loggingService = $loggingService;
     }
 
     /**
@@ -60,7 +60,7 @@ final class UserController extends Controller
             
             return view('users.index', compact('users', 'headers', 'search', 'sort', 'order'));
         } catch (Exception $e) {
-            $this->errorLogService->logError($e, $request, 'UserController@index');
+            $this->loggingService->logError($e, $request, 'UserController@index');
             
             return view('users.index', [
                 'users' => collect(),
@@ -95,7 +95,7 @@ final class UserController extends Controller
             return redirect()->route('users.index')
                 ->with('success', 'User created successfully!');
         } catch (Exception $e) {
-            $this->errorLogService->logError($e, $request, 'UserController@store');
+            $this->loggingService->logError($e, $request, 'UserController@store');
             
             return redirect()->back()
                 ->withInput($request->except(['password', 'password_confirmation']))
@@ -113,7 +113,7 @@ final class UserController extends Controller
             $user = $this->userService->getUserWithPlaylists($user);
             return view('users.show', compact('user'));
         } catch (Exception $e) {
-            $this->errorLogService->logError($e, request(), 'UserController@show', $user->id);
+            $this->loggingService->logError($e, request(), 'UserController@show', $user->id);
             
             return view('users.show', [
                 'user' => $user,
@@ -142,7 +142,7 @@ final class UserController extends Controller
             return redirect()->route('users.index')
                 ->with('success', 'User updated successfully!');
         } catch (Exception $e) {
-            $this->errorLogService->logError($e, $request, 'UserController@update', $user->id);
+            $this->loggingService->logError($e, $request, 'UserController@update', $user->id);
             
             return redirect()->back()
                 ->withInput($request->except(['password', 'password_confirmation']))
@@ -162,7 +162,7 @@ final class UserController extends Controller
             return redirect()->route('users.index')
                 ->with('success', 'User deleted successfully!');
         } catch (Exception $e) {
-            $this->errorLogService->logError($e, request(), 'UserController@destroy', $user->id);
+            $this->loggingService->logError($e, request(), 'UserController@destroy', $user->id);
             
             return redirect()->back()
                 ->with('error', 'An error occurred while deleting the user. Please try again.');

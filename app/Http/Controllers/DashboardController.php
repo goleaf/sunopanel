@@ -7,21 +7,28 @@ namespace App\Http\Controllers;
 use App\Models\Track;
 use App\Models\Genre;
 use App\Models\Playlist;
+use App\Services\Logging\LoggingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
 final class DashboardController extends Controller
 {
+    private readonly LoggingService $loggingService;
+    
+    public function __construct(LoggingService $loggingService)
+    {
+        $this->loggingService = $loggingService;
+    }
+    
     /**
      * Display the dashboard with system stats
      */
     public function index(): View
     {
-        Log::info('Loading dashboard index page');
+        $this->loggingService->info('Loading dashboard index page');
         // Get basic system stats
         $stats = $this->getSystemStats();
         
@@ -33,7 +40,7 @@ final class DashboardController extends Controller
      */
     public function systemStats(): JsonResponse
     {
-        Log::info('API request for system stats');
+        $this->loggingService->info('API request for system stats');
         $stats = $this->getSystemStats();
         
         // Include both naming conventions for backwards compatibility
@@ -84,7 +91,7 @@ final class DashboardController extends Controller
         $seconds = $totalSeconds % 60;
         $totalDuration = sprintf('%d:%02d', $minutes, $seconds);
         
-        Log::info("System stats - Tracks: {$trackCount}, Genres: {$genreCount}, Playlists: {$playlistCount}, Total Duration: {$totalDuration}");
+        $this->loggingService->info("System stats - Tracks: {$trackCount}, Genres: {$genreCount}, Playlists: {$playlistCount}, Total Duration: {$totalDuration}");
         
         return [
             'tracksCount' => $trackCount,

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Exceptions;
 
-use App\Services\Logging\ErrorLogService;
+use App\Services\Logging\LoggingService;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -15,15 +15,15 @@ final class Handler extends ExceptionHandler
     /**
      * The error log service
      */
-    private ErrorLogService $errorLogService;
+    private LoggingService $loggingService;
 
     /**
      * Constructor
      */
-    public function __construct(ErrorLogService $errorLogService)
+    public function __construct(LoggingService $loggingService)
     {
         parent::__construct(app());
-        $this->errorLogService = $errorLogService;
+        $this->loggingService = $loggingService;
     }
 
     /**
@@ -58,7 +58,7 @@ final class Handler extends ExceptionHandler
     public function report(Throwable $e): void
     {
         if ($this->shouldReport($e)) {
-            $this->errorLogService->logError($e, null, 'Exception Handler');
+            $this->loggingService->logError($e, null, 'Exception Handler');
         }
 
         parent::report($e);
@@ -80,7 +80,7 @@ final class Handler extends ExceptionHandler
             str_starts_with($request->path(), 'api/') || 
             $request->wantsJson()) {
             
-            $this->errorLogService->logApiError($e, $request, null, 'API exception handler');
+            $this->loggingService->logApiError($e, $request, null, 'API exception handler');
             
             $statusCode = $this->isHttpException($e) ? $e->getStatusCode() : 500;
             
