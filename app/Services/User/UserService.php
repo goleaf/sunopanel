@@ -126,20 +126,17 @@ final readonly class UserService
     }
     
     /**
-     * Get a specific user with their playlists
+     * Get a user with their playlists eager loaded
      */
     public function getUserWithPlaylists(User $user): User
     {
-        $user->load(['playlists' => function ($query) {
-            $query->withCount('tracks');
-        }]);
-        
-        Log::info('Retrieved user with playlists', [
-            'user_id' => $user->id,
-            'playlists_count' => $user->playlists->count()
+        // Eager load playlists with their tracks count and genre
+        return $user->load([
+            'playlists' => function($query) {
+                $query->withCount('tracks');
+            },
+            'playlists.genre'
         ]);
-        
-        return $user;
     }
     
     /**

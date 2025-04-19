@@ -259,8 +259,14 @@ final class TrackController extends Controller
      */
     public function edit(Track $track): View
     {
-        $this->loggingService->info('Track edit form accessed', ['track_id' => $track->id, 'title' => $track->title]);
+        $this->loggingService->info('Track edit form accessed', ['track_id' => $track->id]);
+        
+        // Eager load genres to avoid N+1 query
+        $track->load('genres');
+        
+        // Get all genres for the dropdown
         $genres = Genre::orderBy('name')->get();
+        
         return view('tracks.edit', compact('track', 'genres'));
     }
 

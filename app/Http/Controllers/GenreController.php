@@ -25,35 +25,44 @@ final class GenreController extends Controller
      */
     public function index(Request $request): View
     {
-        $query = Genre::query()->withCount('tracks');
+        try {
+            $query = Genre::query()->withCount('tracks');
 
-        // Handle search
-        if ($request->has('search')) {
-            $query->where('name', 'like', '%' . $request->search . '%');
+            // Handle search
+            if ($request->has('search')) {
+                $query->where('name', 'like', '%' . $request->search . '%');
+            }
+            
+            // Handle sorting
+            $sortField = $request->sort ?? 'name';
+            $direction = $request->direction ?? 'asc';
+            
+            // Validate sort field to prevent SQL injection
+            $allowedSortFields = ['name', 'tracks_count', 'created_at'];
+            if (!in_array($sortField, $allowedSortFields)) {
+                $sortField = 'name';
+            }
+            
+            $query->orderBy($sortField, $direction === 'desc' ? 'desc' : 'asc');
+            
+            $genres = $query->paginate(15)->withQueryString();
+
+            $this->loggingService->info('Genres index page accessed', [
+                'search' => $request->search,
+                'sort' => $sortField,
+                'direction' => $direction,
+                'count' => $genres->count()
+            ]);
+
+            return view('genres.index', compact('genres'));
+        } catch (\Exception $e) {
+            $this->loggingService->logError($e, $request, 'GenreController@index');
+            
+            return view('genres.index', [
+                'genres' => collect(),
+                'error' => 'An error occurred while loading genres.'
+            ]);
         }
-        
-        // Handle sorting
-        $sortField = $request->sort ?? 'name';
-        $direction = $request->direction ?? 'asc';
-        
-        // Validate sort field to prevent SQL injection
-        $allowedSortFields = ['name', 'tracks_count', 'created_at'];
-        if (!in_array($sortField, $allowedSortFields)) {
-            $sortField = 'name';
-        }
-        
-        $query->orderBy($sortField, $direction === 'desc' ? 'desc' : 'asc');
-        
-        $genres = $query->paginate(15)->withQueryString();
-
-        $this->loggingService->info('Genres index page accessed', [
-            'search' => $request->search,
-            'sort' => $sortField,
-            'direction' => $direction,
-            'count' => $genres->count()
-        ]);
-
-        return view('genres.index', compact('genres'));
     }
 
     /**
@@ -90,32 +99,43 @@ final class GenreController extends Controller
      */
     public function show(Request $request, Genre $genre): View
     {
-        $this->loggingService->info('Genre show page accessed', ['genre_id' => $genre->id, 'name' => $genre->name]);
-        
-        $query = $genre->tracks();
-        $perPage = $request->input('per_page', 10);
-        
-        // Sorting for tracks within a genre
-        $sortField = $request->query('sort', 'title');
-        $sortOrder = $request->query('order', 'asc');
-        
-        $allowedSortFields = ['title', 'created_at', 'duration'];
-        if (!in_array($sortField, $allowedSortFields)) {
-            $sortField = 'title';
+        try {
+            $this->loggingService->info('Genre show page accessed', ['genre_id' => $genre->id, 'name' => $genre->name]);
+            
+            // Get tracks with their genres eager loaded
+            $query = $genre->tracks()->with('genres');
+            $perPage = $request->input('per_page', 10);
+            
+            // Sorting for tracks within a genre
+            $sortField = $request->query('sort', 'title');
+            $sortOrder = $request->query('order', 'asc');
+            
+            $allowedSortFields = ['title', 'created_at', 'duration'];
+            if (!in_array($sortField, $allowedSortFields)) {
+                $sortField = 'title';
+            }
+            
+            $query->orderBy($sortField, $sortOrder);
+            
+            $this->loggingService->info('Genre show page tracks sorted', [
+                'genre_id' => $genre->id,
+                'field' => $sortField, 
+                'order' => $sortOrder
+            ]);
+            
+            $tracks = $query->paginate($perPage);
+            $tracks->appends($request->query());
+            
+            return view('genres.show', compact('genre', 'tracks', 'sortField', 'sortOrder'));
+        } catch (\Exception $e) {
+            $this->loggingService->logError($e, $request, 'GenreController@show', $genre->id);
+            
+            return view('genres.show', [
+                'genre' => $genre,
+                'tracks' => collect(),
+                'error' => 'An error occurred while loading tracks for this genre.'
+            ]);
         }
-        
-        $query->orderBy($sortField, $sortOrder);
-        
-        $this->loggingService->info('Genre show page tracks sorted', [
-            'genre_id' => $genre->id,
-            'field' => $sortField, 
-            'order' => $sortOrder
-        ]);
-        
-        $tracks = $query->paginate($perPage);
-        $tracks->appends($request->query());
-        
-        return view('genres.show', compact('genre', 'tracks', 'sortField', 'sortOrder'));
     }
 
     /**

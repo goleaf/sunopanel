@@ -22,9 +22,17 @@ final readonly class BatchService
      */
     public function getBatchData(): array
     {
+        // Eager load tracks with their genres
         $tracks = Track::with('genres')->orderBy('title')->get();
+        
+        // Get all genres
         $genres = Genre::orderBy('name')->get();
-        $playlists = Playlist::orderBy('title')->get();
+        
+        // Eager load playlists with their track counts and genres
+        $playlists = Playlist::withCount('tracks')
+            ->with('genre')
+            ->orderBy('title')
+            ->get();
         
         Log::info('Retrieved batch data', [
             'track_count' => $tracks->count(),

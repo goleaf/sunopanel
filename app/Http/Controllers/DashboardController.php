@@ -73,9 +73,14 @@ final class DashboardController extends Controller
         $genreCount = Genre::count();
         $playlistCount = Playlist::count();
         
-        // Calculate total duration in a database-agnostic way
+        // Calculate total duration in a more efficient way
         $totalSeconds = 0;
-        $tracks = Track::whereNotNull('duration')->where('duration', '!=', '')->get();
+        
+        // Only select the duration column to minimize data transfer
+        $tracks = Track::select('duration')
+            ->whereNotNull('duration')
+            ->where('duration', '!=', '')
+            ->get();
         
         foreach ($tracks as $track) {
             if (strpos($track->duration, ':') !== false) {

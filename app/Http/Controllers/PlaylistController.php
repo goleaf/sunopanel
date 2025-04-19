@@ -32,7 +32,7 @@ final class PlaylistController extends Controller
                 'user_id' => auth()->id(),
             ]);
 
-            $query = Playlist::query()->withCount('tracks');
+            $query = Playlist::query()->withCount('tracks')->with('genre');
 
             // Handle search
             if ($request->has('search')) {
