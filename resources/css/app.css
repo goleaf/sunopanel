@@ -203,3 +203,63 @@ audio.w-48 {
         height: 32px;
     }
 }
+
+/* Form validation styles */
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-5px); }
+    40%, 80% { transform: translateX(5px); }
+}
+
+.input-error, 
+.select-error, 
+.textarea-error {
+    animation: shake 0.4s ease-in-out;
+}
+
+.alert-error {
+    position: relative;
+    overflow: hidden;
+}
+
+.alert-error::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.4);
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Enhance select input for multi-select */
+select[multiple] {
+    min-height: 6rem;
+}
+
+/* Transition effects for validation */
+.input, .select, .textarea {
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.input:focus-visible,
+.select:focus-visible,
+.textarea:focus-visible {
+    outline: none;
+}
+
+/* Make error messages stand out with better animation */
+.text-error {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
