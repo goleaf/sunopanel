@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Services\Batch\BatchService;
-use App\Services\Logging\LoggingService;
+use App\Services\Logging\LoggingServiceInterface;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -14,7 +14,7 @@ final class BatchController extends Controller
 {
     public function __construct(
         private readonly BatchService $batchService,
-        private readonly LoggingService $loggingService
+        private readonly LoggingServiceInterface $loggingService
     ) {}
 
     /**
@@ -37,7 +37,7 @@ final class BatchController extends Controller
      */
     public function import(): RedirectResponse
     {
-        $this->loggingService->info('Accessed batch import page');
+        $this->loggingService->logInfoMessage('Accessed batch import page');
 
         return redirect()->route('dashboard')->with('success', 'Import feature temporarily disabled');
     }
@@ -47,7 +47,7 @@ final class BatchController extends Controller
      */
     public function processImport(Request $request): RedirectResponse
     {
-        $this->loggingService->info('Starting batch import process');
+        $this->loggingService->logInfoMessage('Starting batch import process');
 
         return redirect()->route('dashboard')->with('success', 'Import process temporarily disabled');
     }
@@ -102,7 +102,7 @@ final class BatchController extends Controller
      */
     public function actions(): RedirectResponse
     {
-        $this->loggingService->info('Accessing batch actions page');
+        $this->loggingService->logInfoMessage('Accessing batch actions page');
 
         return redirect()->route('dashboard')->with('success', 'Batch actions temporarily disabled');
     }
@@ -112,7 +112,7 @@ final class BatchController extends Controller
      */
     public function processActions(Request $request): RedirectResponse
     {
-        $this->loggingService->info('Processing batch actions');
+        $this->loggingService->logInfoMessage('Processing batch actions');
 
         return redirect()->route('dashboard')->with('success', 'Batch actions temporarily disabled');
     }

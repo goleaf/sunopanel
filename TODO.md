@@ -55,7 +55,7 @@
 - [ ] Address performance bottlenecks in track processing
 - [ ] Fix memory leaks in batch processing
 
-### Medium Priority  
+### Medium Priority
 - [ ] Improve test coverage
 - [ ] Refactor controllers to be more RESTful
 - [ ] Implement proper API versioning
@@ -72,13 +72,13 @@
 ## Immediate Focus
 Based on priority and dependencies, we'll tackle these tasks in the following order:
 
-1. Fix LoggingMiddleware issues
-2. Fix genre capitalization in tests and models
-3. Resolve TrackRequestTest validation errors
-4. Standardize logging formats across the application
-5. Address PSR-12 compliance
-6. Implement mobile responsiveness improvements
-7. Optimize frontend assets
+1. [x] Fix LoggingMiddleware issues (Removed redundant exception handling)
+2. [x] Fix genre capitalization in tests and models
+3. [x] Resolve TrackRequestTest validation errors
+4. [x] Standardize logging formats across the application
+5. [x] Address PSR-12 compliance
+6. [x] Implement mobile responsiveness improvements
+7. [x] Optimize frontend assets
 
 ## View Templates to Update
 
@@ -195,7 +195,7 @@ Based on priority and dependencies, we'll tackle these tasks in the following or
 - [x] Commit the changes to Git
 - [x] Fix issues with deleted ErrorLoggingMiddleware
 - [x] Recreate proper LoggingMiddleware
-- [x] Update middleware registration in Kernel  
+- [x] Update middleware registration in Kernel
 
 ## Additional Items to Fix
 
@@ -278,7 +278,7 @@ Based on priority and dependencies, we'll tackle these tasks in the following or
 3. [x] Implement proper input sanitization throughout
    - Added HTML special chars encoding and URL sanitization
 4. [x] Run Laravel Pint to automatically fix code style issues
-   - Created artisan command: `php artisan lint:psr12 --fix`  
+   - Created artisan command: `php artisan lint:psr12 --fix`
 
 ## Summary of Fixed Items
 
@@ -376,4 +376,38 @@ composer test:all
 
 # Convert PHPUnit doc-comments to attributes
 composer test:convert-comments
-```  
+```
+
+## Laravel Codebase Refactoring (Based on laravel.mdc)
+
+- [x] **Review Controllers:** Ensure all controllers in `app/Http/Controllers` are `final`, read-only (properties), thin, and use method injection or service classes for dependencies.
+    - [x] Check `BatchController.php` (Confirmed final & readonly. Form Requests deferred until features implemented.)
+    - [x] Check `GenreController.php` (Refactored to use GenreService)
+    - [x] Check `PlaylistController.php` (Refactored to use PlaylistService)
+    - [x] Check `TrackController.php` (Refactored to use TrackService)
+    - [x] Check `UserController.php` (Made readonly, moved index logic to UserService)
+- [x] **Review Models:** Ensure all models in `app/Models` are `final`.
+    - [x] Check `BatchOperation.php` (Confirmed final)
+    - [x] Check `Genre.php` (Confirmed final)
+    - [x] Check `Playlist.php` (Confirmed final)
+    - [x] Check `Track.php` (Confirmed final)
+    - [x] Check `User.php` (Confirmed final)
+- [x] **Review Services:** Ensure all services in `app/Services` are `final` and read-only (properties).
+    - [x] Check `Batch/BatchService.php` (Confirmed final & readonly)
+    - [x] Check `Genre/GenreService.php` (Confirmed final & readonly)
+    - [x] Check `Logging/LoggingService.php` (Confirmed final & readonly)
+    - [x] Check `Playlist/PlaylistService.php` (Confirmed final & readonly)
+    - [x] Check `Track/TrackService.php` (Confirmed final & readonly)
+    - [x] Check `User/UserService.php` (Confirmed final & readonly)
+- [x] **Review Routing:** Consider splitting `routes/web.php` into domain-specific route files (e.g., `routes/track.php`, `routes/playlist.php`) if it becomes large or complex. (Evaluated: Not necessary at current size).
+
+## Review Form Requests
+- [x] **Review Form Requests:** Ensure all necessary request validation happens in Form Requests (`app/Http/Requests`). (Most controllers use Form Requests; `BatchController` methods deferred).
+
+## Review Type Declarations
+- [x] **Review Type Declarations:** Ensure consistent use of PHP 8.2+ type hints (scalar, return, union, nullable) across controllers, models, and services. (Basic review complete; added missing hints).
+
+## Review Repository/Service Pattern
+- [x] **Review Repository/Service Pattern:** Evaluate if the current service structure adequately separates concerns or if a Repository pattern is needed for data access logic. (Evaluated: Current service pattern is sufficient; no repositories needed now).
+
+- [x] **Check for Unused Files:** Identify and remove any unused classes, views, or other files. (Removed unused Playlist Store/Update requests & tests).
