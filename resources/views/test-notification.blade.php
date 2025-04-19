@@ -49,34 +49,97 @@
             </div>
         </div>
         
-        <div class="card bg-base-200 shadow-xl">
-            <div class="card-body">
-                <h2 class="card-title">Custom Notifications</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="form-control w-full">
-                            <div class="label">
-                                <span class="label-text">Message</span>
-                            </div>
-                            <input type="text" id="custom-message" placeholder="Enter your message" class="input input-bordered w-full" />
-                        </label>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="card bg-base-200 shadow-xl">
+                <div class="card-body">
+                    <h2 class="card-title">API Notifications</h2>
+                    <p>These notifications fetch data from an API endpoint:</p>
+                    <div class="flex flex-wrap gap-2 mt-4">
+                        <button class="btn btn-success" onclick="fetchJsonNotification('success')">Success API</button>
+                        <button class="btn btn-error" onclick="fetchJsonNotification('error')">Error API</button>
+                        <button class="btn btn-warning" onclick="fetchJsonNotification('warning')">Warning API</button>
+                        <button class="btn btn-info" onclick="fetchJsonNotification('info')">Info API</button>
                     </div>
-                    <div>
-                        <label class="form-control w-full">
-                            <div class="label">
-                                <span class="label-text">Type</span>
-                            </div>
-                            <select id="custom-type" class="select select-bordered w-full">
-                                <option value="info">Info</option>
-                                <option value="success">Success</option>
-                                <option value="warning">Warning</option>
-                                <option value="error">Error</option>
-                            </select>
-                        </label>
+                    <div class="mt-4">
+                        <pre id="api-response" class="bg-base-300 p-4 rounded-lg text-xs overflow-auto max-h-40 hidden"></pre>
                     </div>
                 </div>
-                <div class="mt-4 flex justify-end">
-                    <button class="btn btn-primary" onclick="showCustomNotification()">Show Notification</button>
+            </div>
+            
+            <div class="card bg-base-200 shadow-xl">
+                <div class="card-body">
+                    <h2 class="card-title">Custom Notifications</h2>
+                    <div class="grid grid-cols-1 gap-4">
+                        <div>
+                            <label class="form-control w-full">
+                                <div class="label">
+                                    <span class="label-text">Message</span>
+                                </div>
+                                <input type="text" id="custom-message" placeholder="Enter your message" class="input input-bordered w-full" />
+                            </label>
+                        </div>
+                        <div>
+                            <label class="form-control w-full">
+                                <div class="label">
+                                    <span class="label-text">Type</span>
+                                </div>
+                                <select id="custom-type" class="select select-bordered w-full">
+                                    <option value="info">Info</option>
+                                    <option value="success">Success</option>
+                                    <option value="warning">Warning</option>
+                                    <option value="error">Error</option>
+                                </select>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex justify-end">
+                        <button class="btn btn-primary" onclick="showCustomNotification()">Show Notification</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card bg-base-200 shadow-xl mb-8">
+            <div class="card-body">
+                <h2 class="card-title">Documentation</h2>
+                <div class="overflow-x-auto">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Method</th>
+                                <th>Description</th>
+                                <th>Example</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>window.dispatchEvent()</code></td>
+                                <td>Trigger notification with JavaScript</td>
+                                <td>
+                                    <pre class="bg-base-300 p-2 rounded text-xs">window.dispatchEvent(new CustomEvent('notify', {
+  detail: {
+    message: "Your message",
+    type: "success"
+  }
+}));</pre>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><code>session()->flash()</code></td>
+                                <td>Set flash message in PHP</td>
+                                <td>
+                                    <pre class="bg-base-300 p-2 rounded text-xs">session()->flash('success', 'Your message');</pre>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><code>NotificationService</code></td>
+                                <td>Use the notification service</td>
+                                <td>
+                                    <pre class="bg-base-300 p-2 rounded text-xs">$notificationService->success('Your message');</pre>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -101,6 +164,24 @@
             const type = document.getElementById('custom-type').value;
             
             showNotification(type, message);
+        }
+        
+        function fetchJsonNotification(type) {
+            fetch(`{{ url('/json-notification') }}/${type}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Display the API response
+                    const responseEl = document.getElementById('api-response');
+                    responseEl.textContent = JSON.stringify(data, null, 2);
+                    responseEl.classList.remove('hidden');
+                    
+                    // Show notification
+                    showNotification(data.type, data.message);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showNotification('error', 'Failed to fetch notification data');
+                });
         }
     </script>
 </body>

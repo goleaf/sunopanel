@@ -10,11 +10,6 @@ class ComponentTest extends DuskTestCase
 {
     use DatabaseMigrations;
 
-    /**
-     * Test the dashboard widget component.
-     *
-     * @return void
-     */
     public function testDashboardWidget()
     {
         $this->browse(function (Browser $browser) {
@@ -26,11 +21,6 @@ class ComponentTest extends DuskTestCase
         });
     }
 
-    /**
-     * Test the advanced search component.
-     *
-     * @return void
-     */
     public function testAdvancedSearchComponent()
     {
         $this->browse(function (Browser $browser) {
@@ -43,11 +33,6 @@ class ComponentTest extends DuskTestCase
         });
     }
 
-    /**
-     * Test the notifications component.
-     *
-     * @return void
-     */
     public function testNotificationsComponent()
     {
         $this->browse(function (Browser $browser) {
@@ -102,11 +87,6 @@ class ComponentTest extends DuskTestCase
         });
     }
 
-    /**
-     * Test the button component.
-     *
-     * @return void
-     */
     public function testButtonComponent()
     {
         $this->browse(function (Browser $browser) {
@@ -115,8 +95,6 @@ class ComponentTest extends DuskTestCase
                     ->screenshot('button-component')
                     ->mouseover('.btn')
                     ->screenshot('button-hover');
-                    
-            // Test all button variants
             $browser->visit('/tracks/create')
                     ->assertPresent('.btn-primary')
                     ->screenshot('primary-button')
@@ -127,11 +105,6 @@ class ComponentTest extends DuskTestCase
         });
     }
 
-    /**
-     * Test the table component.
-     *
-     * @return void
-     */
     public function testTableComponent()
     {
         $this->browse(function (Browser $browser) {
@@ -143,11 +116,6 @@ class ComponentTest extends DuskTestCase
         });
     }
 
-    /**
-     * Test the audio player component.
-     *
-     * @return void
-     */
     public function testAudioPlayerComponent()
     {
         $this->browse(function (Browser $browser) {
@@ -164,11 +132,6 @@ class ComponentTest extends DuskTestCase
         });
     }
 
-    /**
-     * Test the bulk actions component.
-     *
-     * @return void
-     */
     public function testBulkActionsComponent()
     {
         $this->browse(function (Browser $browser) {
@@ -183,11 +146,6 @@ class ComponentTest extends DuskTestCase
         });
     }
 
-    /**
-     * Test the confirmation dialog component.
-     *
-     * @return void
-     */
     public function testConfirmationDialogComponent()
     {
         $this->browse(function (Browser $browser) {
@@ -204,18 +162,13 @@ class ComponentTest extends DuskTestCase
         });
     }
 
-    /**
-     * Test the form components.
-     *
-     * @return void
-     */
     public function testFormComponents()
     {
         $this->browse(function (Browser $browser) {
             $browser->visit('/tracks/create')
                     ->assertPresent('form')
                     ->screenshot('form-component')
-                    ->type('title', '')  // Clear field to trigger validation
+                    ->type('title', '')
                     ->press('Save')
                     ->pause(500)
                     ->assertVisible('.invalid-feedback')

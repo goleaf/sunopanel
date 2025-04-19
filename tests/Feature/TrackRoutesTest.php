@@ -14,20 +14,18 @@ class TrackRoutesTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-
-        // Create test data
         $genre = Genre::factory()->create(['name' => 'Bubblegum bass']);
         $track = Track::factory()->create([
             'title' => 'Test Track',
-            'audio_url' => 'https://example.com/test.mp3',
-            'image_url' => 'https://example.com/image.jpg',
+            'audio_url' => 'https:
+            'image_url' => 'https:
         ]);
 
         $track->genres()->attach($genre->id);
     }
 
-    /** @test */
-    public function tracks_index_page_loads_correctly()
+    #[Test]
+public function tracks_index_page_loads_correctly()
     {
         $track = Track::first();
         $genre = Genre::where('name', 'Bubblegum bass')->first();
@@ -37,15 +35,11 @@ class TrackRoutesTest extends TestCase
         $response->assertStatus(200);
         $response->assertViewIs('tracks.index');
         $response->assertViewHas('tracks');
-
-        // Check that the track is in the collection
-        $response->assertViewHas('tracks', function ($tracks) use ($track) {
-            return $tracks->contains('id', $track->id);
-        });
+        $response->assertViewHas('tracks', function ($tracks)         });
     }
 
-    /** @test */
-    public function track_show_page_loads_correctly()
+    #[Test]
+public function track_show_page_loads_correctly()
     {
         $track = Track::first();
 
@@ -56,8 +50,8 @@ class TrackRoutesTest extends TestCase
         $response->assertViewIs('tracks.show');
     }
 
-    /** @test */
-    public function track_create_page_loads_correctly()
+    #[Test]
+public function track_create_page_loads_correctly()
     {
         $response = $this->get(route('tracks.create'));
 
@@ -66,8 +60,8 @@ class TrackRoutesTest extends TestCase
         $response->assertViewIs('tracks.create');
     }
 
-    /** @test */
-    public function track_edit_page_loads_correctly()
+    #[Test]
+public function track_edit_page_loads_correctly()
     {
         $track = Track::first();
 
@@ -78,15 +72,15 @@ class TrackRoutesTest extends TestCase
         $response->assertViewIs('tracks.edit');
     }
 
-    /** @test */
-    public function track_can_be_created()
+    #[Test]
+public function track_can_be_created()
     {
         $genre = Genre::first();
 
         $response = $this->post(route('tracks.store'), [
             'title' => 'New Test Track',
-            'audio_url' => 'https://example.com/new-audio.mp3',
-            'image_url' => 'https://example.com/new-image.jpg',
+            'audio_url' => 'https:
+            'image_url' => 'https:
             'genres' => 'Bubblegum bass',
         ]);
 
@@ -97,8 +91,8 @@ class TrackRoutesTest extends TestCase
         $this->assertTrue($track->genres->contains($genre->id));
     }
 
-    /** @test */
-    public function track_can_be_updated()
+    #[Test]
+public function track_can_be_updated()
     {
         $track = Track::first();
         $genre = Genre::first();
@@ -114,8 +108,8 @@ class TrackRoutesTest extends TestCase
         $this->assertDatabaseHas('tracks', ['id' => $track->id, 'title' => 'Updated Track Title']);
     }
 
-    /** @test */
-    public function track_can_be_deleted()
+    #[Test]
+public function track_can_be_deleted()
     {
         $track = Track::first();
 
@@ -125,10 +119,9 @@ class TrackRoutesTest extends TestCase
         $this->assertDatabaseMissing('tracks', ['id' => $track->id]);
     }
 
-    /** @test */
-    public function track_can_be_searched()
+    #[Test]
+public function track_can_be_searched()
     {
-        // Create additional track for search test
         Track::factory()->create(['title' => 'Another Track']);
 
         $response = $this->get(route('tracks.index', ['search' => 'Test']));
@@ -140,10 +133,9 @@ class TrackRoutesTest extends TestCase
         });
     }
 
-    /** @test */
-    public function tracks_can_be_filtered_by_genre()
+    #[Test]
+public function tracks_can_be_filtered_by_genre()
     {
-        // Create another genre and track
         $otherGenre = Genre::factory()->create(['name' => 'Rock']);
         $otherTrack = Track::factory()->create(['title' => 'Rock Track']);
         $otherTrack->genres()->attach($otherGenre->id);
@@ -159,8 +151,8 @@ class TrackRoutesTest extends TestCase
         });
     }
 
-    /** @test */
-    public function play_method_redirects_to_audio_url()
+    #[Test]
+public function play_method_redirects_to_audio_url()
     {
         $track = Track::first();
 

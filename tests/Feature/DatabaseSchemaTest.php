@@ -13,8 +13,8 @@ class DatabaseSchemaTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
-    public function tracks_table_has_required_columns()
+    #[Test]
+public function tracks_table_has_required_columns()
     {
         $this->assertTrue(Schema::hasTable('tracks'));
         $this->assertTrue(Schema::hasColumns('tracks', [
@@ -23,8 +23,8 @@ class DatabaseSchemaTest extends TestCase
         ]));
     }
 
-    /** @test */
-    public function genres_table_has_required_columns()
+    #[Test]
+public function genres_table_has_required_columns()
     {
         $this->assertTrue(Schema::hasTable('genres'));
         $this->assertTrue(Schema::hasColumns('genres', [
@@ -32,8 +32,8 @@ class DatabaseSchemaTest extends TestCase
         ]));
     }
 
-    /** @test */
-    public function playlists_table_has_required_columns()
+    #[Test]
+public function playlists_table_has_required_columns()
     {
         $this->assertTrue(Schema::hasTable('playlists'));
         $this->assertTrue(Schema::hasColumns('playlists', [
@@ -42,8 +42,8 @@ class DatabaseSchemaTest extends TestCase
         ]));
     }
 
-    /** @test */
-    public function genre_track_pivot_table_exists()
+    #[Test]
+public function genre_track_pivot_table_exists()
     {
         $this->assertTrue(Schema::hasTable('genre_track'));
         $this->assertTrue(Schema::hasColumns('genre_track', [
@@ -51,8 +51,8 @@ class DatabaseSchemaTest extends TestCase
         ]));
     }
 
-    /** @test */
-    public function playlist_track_pivot_table_exists()
+    #[Test]
+public function playlist_track_pivot_table_exists()
     {
         $this->assertTrue(Schema::hasTable('playlist_track'));
         $this->assertTrue(Schema::hasColumns('playlist_track', [
@@ -60,8 +60,8 @@ class DatabaseSchemaTest extends TestCase
         ]));
     }
 
-    /** @test */
-    public function track_belongs_to_many_genres()
+    #[Test]
+public function track_belongs_to_many_genres()
     {
         $track = Track::factory()->create();
         $genre = Genre::factory()->create();
@@ -72,8 +72,8 @@ class DatabaseSchemaTest extends TestCase
         $this->assertTrue($genre->tracks->contains($track));
     }
 
-    /** @test */
-    public function track_belongs_to_many_playlists()
+    #[Test]
+public function track_belongs_to_many_playlists()
     {
         $track = Track::factory()->create();
         $playlist = Playlist::factory()->create();
@@ -84,8 +84,8 @@ class DatabaseSchemaTest extends TestCase
         $this->assertTrue($playlist->tracks->contains($track));
     }
 
-    /** @test */
-    public function playlist_belongs_to_genre()
+    #[Test]
+public function playlist_belongs_to_genre()
     {
         $genre = Genre::factory()->create();
         $playlist = Playlist::factory()->create(['genre_id' => $genre->id]);
@@ -94,8 +94,8 @@ class DatabaseSchemaTest extends TestCase
         $this->assertEquals($genre->id, $playlist->genre->id);
     }
 
-    /** @test */
-    public function deleting_track_removes_pivot_relationships()
+    #[Test]
+public function deleting_track_removes_pivot_relationships()
     {
         $track = Track::factory()->create();
         $genre = Genre::factory()->create();
@@ -127,8 +127,8 @@ class DatabaseSchemaTest extends TestCase
         ]);
     }
 
-    /** @test */
-    public function deleting_genre_removes_pivot_relationships()
+    #[Test]
+public function deleting_genre_removes_pivot_relationships()
     {
         $track = Track::factory()->create();
         $genre = Genre::factory()->create();
@@ -148,8 +148,8 @@ class DatabaseSchemaTest extends TestCase
         ]);
     }
 
-    /** @test */
-    public function deleting_playlist_removes_pivot_relationships()
+    #[Test]
+public function deleting_playlist_removes_pivot_relationships()
     {
         $track = Track::factory()->create();
         $playlist = Playlist::factory()->create();

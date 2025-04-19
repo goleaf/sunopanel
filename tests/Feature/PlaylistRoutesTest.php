@@ -15,8 +15,6 @@ class PlaylistRoutesTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-
-        // Create test data
         $genre = Genre::factory()->create(['name' => 'Bubblegum bass']);
         $playlist = Playlist::factory()->create([
             'title' => 'Test Playlist',
@@ -26,16 +24,16 @@ class PlaylistRoutesTest extends TestCase
 
         $track = Track::factory()->create([
             'title' => 'Test Track',
-            'audio_url' => 'https://example.com/test.mp3',
-            'image_url' => 'https://example.com/image.jpg',
+            'audio_url' => 'https:
+            'image_url' => 'https:
         ]);
 
         $track->genres()->attach($genre->id);
         $playlist->tracks()->attach($track->id);
     }
 
-    /** @test */
-    public function playlists_index_page_loads_correctly()
+    #[Test]
+public function playlists_index_page_loads_correctly()
     {
         $response = $this->get(route('playlists.index'));
 
@@ -44,8 +42,8 @@ class PlaylistRoutesTest extends TestCase
         $response->assertViewIs('playlists.index');
     }
 
-    /** @test */
-    public function playlist_show_page_loads_correctly()
+    #[Test]
+public function playlist_show_page_loads_correctly()
     {
         $playlist = Playlist::first();
 
@@ -57,8 +55,8 @@ class PlaylistRoutesTest extends TestCase
         $response->assertViewIs('playlists.show');
     }
 
-    /** @test */
-    public function playlist_create_page_loads_correctly()
+    #[Test]
+public function playlist_create_page_loads_correctly()
     {
         $response = $this->get(route('playlists.create'));
 
@@ -67,8 +65,8 @@ class PlaylistRoutesTest extends TestCase
         $response->assertViewIs('playlists.create');
     }
 
-    /** @test */
-    public function playlist_edit_page_loads_correctly()
+    #[Test]
+public function playlist_edit_page_loads_correctly()
     {
         $playlist = Playlist::first();
 
@@ -79,8 +77,8 @@ class PlaylistRoutesTest extends TestCase
         $response->assertViewIs('playlists.edit');
     }
 
-    /** @test */
-    public function playlist_can_be_created()
+    #[Test]
+public function playlist_can_be_created()
     {
         $genre = Genre::first();
         $track = Track::first();
@@ -99,8 +97,8 @@ class PlaylistRoutesTest extends TestCase
         $this->assertTrue($playlist->tracks->contains($track->id));
     }
 
-    /** @test */
-    public function playlist_can_be_updated()
+    #[Test]
+public function playlist_can_be_updated()
     {
         $playlist = Playlist::first();
         $genre = Genre::first();
@@ -121,8 +119,8 @@ class PlaylistRoutesTest extends TestCase
         ]);
     }
 
-    /** @test */
-    public function playlist_can_be_deleted()
+    #[Test]
+public function playlist_can_be_deleted()
     {
         $playlist = Playlist::first();
 
@@ -132,10 +130,9 @@ class PlaylistRoutesTest extends TestCase
         $this->assertDatabaseMissing('playlists', ['id' => $playlist->id]);
     }
 
-    /** @test */
-    public function playlists_can_be_searched()
+    #[Test]
+public function playlists_can_be_searched()
     {
-        // Create additional playlist for search test
         Playlist::factory()->create(['title' => 'Another Playlist']);
 
         $response = $this->get(route('playlists.index', ['search' => 'Test']));
@@ -145,36 +142,30 @@ class PlaylistRoutesTest extends TestCase
         $response->assertDontSee('Another Playlist');
     }
 
-    /** @test */
-    public function playlist_can_be_created_from_genre()
+    #[Test]
+public function playlist_can_be_created_from_genre()
     {
         $genre = Genre::first();
 
         $response = $this->post(route('playlists.create-from-genre', $genre));
-
-        // Get the newly created playlist
         $newPlaylist = Playlist::where('title', "{$genre->name} Playlist")->first();
         $this->assertNotNull($newPlaylist);
 
         $response->assertRedirect(route('playlists.show', $newPlaylist));
-
-        // Verify a new playlist was created with the genre's name
         $this->assertDatabaseHas('playlists', [
             'title' => "{$genre->name} Playlist",
             'genre_id' => $genre->id,
         ]);
     }
 
-    /** @test */
-    public function tracks_can_be_added_to_playlist()
+    #[Test]
+public function tracks_can_be_added_to_playlist()
     {
         $playlist = Playlist::first();
-
-        // Create a new track to add to the playlist
         $newTrack = Track::factory()->create([
             'title' => 'New Track',
-            'audio_url' => 'https://example.com/new.mp3',
-            'image_url' => 'https://example.com/new.jpg',
+            'audio_url' => 'https:
+            'image_url' => 'https:
         ]);
 
         $response = $this->post(route('playlists.store-tracks', $playlist), [
@@ -182,8 +173,6 @@ class PlaylistRoutesTest extends TestCase
         ]);
 
         $response->assertRedirect(route('playlists.show', $playlist));
-
-        // The playlist should now have both tracks
         $this->assertTrue($playlist->fresh()->tracks->contains($newTrack->id));
         $this->assertEquals(2, $playlist->fresh()->tracks->count());
     }

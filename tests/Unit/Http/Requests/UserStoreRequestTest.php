@@ -8,8 +8,6 @@ use App\Http\Requests\UserStoreRequest;
 use Illuminate\Validation\Rules\Password;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class UserStoreRequestTest extends TestCase
 {
@@ -24,11 +22,8 @@ class UserStoreRequestTest extends TestCase
     #[Test]
     public function testAuthorize(): void
     {
-        // Create a standard object with a role property
         $user = new \stdClass();
         $user->role = 'admin';
-        
-        // Mock the user method to return our admin user
         $this->request->setUserResolver(function () use ($user) {
             return $user;
         });
@@ -47,24 +42,16 @@ class UserStoreRequestTest extends TestCase
         $this->assertArrayHasKey('password', $rules);
         $this->assertArrayHasKey('role', $rules);
         $this->assertArrayHasKey('avatar', $rules);
-        
-        // Check name validation rules
         $this->assertContains('required', $rules['name']);
         $this->assertContains('string', $rules['name']);
         $this->assertContains('max:255', $rules['name']);
-        
-        // Check email validation rules
         $this->assertContains('required', $rules['email']);
         $this->assertContains('string', $rules['email']);
         $this->assertContains('email', $rules['email']);
         $this->assertContains('max:255', $rules['email']);
         $this->assertContains('unique:users', $rules['email']);
-        
-        // Check password validation rules
         $this->assertContains('required', $rules['password']);
         $this->assertContains('confirmed', $rules['password']);
-        
-        // Check there's a Password instance in the password rules
         $hasPasswordRule = false;
         foreach ($rules['password'] as $rule) {
             if ($rule instanceof Password) {
@@ -73,13 +60,9 @@ class UserStoreRequestTest extends TestCase
             }
         }
         $this->assertTrue($hasPasswordRule, 'The password rule is missing');
-        
-        // Check role validation rules
         $this->assertContains('sometimes', $rules['role']);
         $this->assertContains('string', $rules['role']);
         $this->assertContains('in:admin,user', $rules['role']);
-        
-        // Check avatar validation rules
         $this->assertContains('sometimes', $rules['avatar']);
         $this->assertContains('image', $rules['avatar']);
         $this->assertContains('mimes:jpeg,png,jpg,gif', $rules['avatar']);

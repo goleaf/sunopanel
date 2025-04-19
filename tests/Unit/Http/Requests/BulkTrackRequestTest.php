@@ -31,8 +31,6 @@ class BulkTrackRequestTest extends TestCase
         
         $this->assertIsArray($rules);
         $this->assertArrayHasKey('bulk_tracks', $rules);
-        
-        // Check bulk_tracks rules
         $this->assertContains('required', $rules['bulk_tracks']);
         $this->assertContains('string', $rules['bulk_tracks']);
         $this->assertContains('min:5', $rules['bulk_tracks']);
@@ -54,12 +52,9 @@ class BulkTrackRequestTest extends TestCase
     #[Test]
     public function testWithValidator(): void
     {
-        // For this test, we need to use a Laravel application test to check the actual validator
-        // Here we can test if the method exists and is callable
+
         $this->assertTrue(method_exists($this->request, 'withValidator'));
-        
-        // Additional test for the validator could be implemented in a feature test
-        // where we can actually validate a complete request
+
         $reflectionMethod = new \ReflectionMethod(BulkTrackRequest::class, 'withValidator');
         $this->assertTrue($reflectionMethod->isPublic());
     }

@@ -45,9 +45,9 @@ final class TrackStoreRequest extends FormRequest
             'audio_url' => ['required', 'url'],
             'image_url' => ['required', 'url'],
             'duration' => ['nullable', 'string', 'max:10'],
-            // Accept either genres string or genre_ids array
-            'genres' => ['nullable', 'required_without:genre_ids', 'string'],
-            'genre_ids' => ['nullable', 'required_without:genres', 'array'],
+            // Make genres validation more flexible
+            'genres' => ['nullable', 'string'],
+            'genre_ids' => ['nullable', 'array'],
             'genre_ids.*' => ['exists:genres,id'],
             'playlists' => ['nullable', 'array'],
             'playlists.*' => ['exists:playlists,id'],
@@ -71,6 +71,9 @@ final class TrackStoreRequest extends FormRequest
             'image_url.url' => 'The image URL must be a valid URL.',
             'genres.required_without' => 'Either genres or genre IDs must be provided.',
             'genre_ids.required_without' => 'Either genres or genre IDs must be provided.',
+            'genres.string' => 'Genres must be a comma-separated string.',
+            'genre_ids.array' => 'Genre IDs must be an array.',
+            'genre_ids.*.exists' => 'One or more selected genres do not exist.',
         ];
     }
 }

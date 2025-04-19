@@ -31,12 +31,7 @@ class GenreDeleteRequestTest extends TestCase
         
         $this->assertIsArray($rules);
         $this->assertArrayHasKey('id', $rules);
-        
-        // Check that the rule is a string with the correct format
         $this->assertEquals('sometimes|exists:genres,id', $rules['id']);
-        
-        // Alternatively, if the rules are defined as an array:
-        // $this->assertContains('sometimes', $rules['id']);
-        // $this->assertContains('exists:genres,id', $rules['id']);
+
     }
 }

@@ -10,11 +10,6 @@ class MainPagesTest extends DuskTestCase
 {
     use DatabaseMigrations;
 
-    /**
-     * Test the dashboard page.
-     *
-     * @return void
-     */
     public function testDashboardPage()
     {
         $this->browse(function (Browser $browser) {
@@ -26,11 +21,6 @@ class MainPagesTest extends DuskTestCase
         });
     }
 
-    /**
-     * Test the tracks index page.
-     *
-     * @return void
-     */
     public function testTracksPage()
     {
         $this->browse(function (Browser $browser) {
@@ -45,11 +35,6 @@ class MainPagesTest extends DuskTestCase
         });
     }
 
-    /**
-     * Test the genres index page.
-     *
-     * @return void
-     */
     public function testGenresPage()
     {
         $this->browse(function (Browser $browser) {
@@ -63,11 +48,6 @@ class MainPagesTest extends DuskTestCase
         });
     }
 
-    /**
-     * Test the playlists index page.
-     *
-     * @return void
-     */
     public function testPlaylistsPage()
     {
         $this->browse(function (Browser $browser) {
@@ -81,23 +61,15 @@ class MainPagesTest extends DuskTestCase
         });
     }
 
-    /**
-     * Test form submission and validation feedback.
-     *
-     * @return void
-     */
     public function testFormSubmission()
     {
         $this->browse(function (Browser $browser) {
-            // Test track form
             $browser->visit('/tracks/create')
                     ->type('title', 'Test Track')
                     ->type('artist', 'Test Artist')
                     ->press('Save')
                     ->assertPathIsNot('/tracks/create')
                     ->screenshot('track-submit-success');
-
-            // Test genre form with validation error
             $browser->visit('/genres/create')
                     ->press('Save')
                     ->assertSee('The name field is required')
@@ -106,8 +78,6 @@ class MainPagesTest extends DuskTestCase
                     ->press('Save')
                     ->assertPathIsNot('/genres/create')
                     ->screenshot('genre-submit-success');
-
-            // Test playlist form
             $browser->visit('/playlists/create')
                     ->type('title', 'Test Playlist')
                     ->press('Save')
@@ -116,11 +86,6 @@ class MainPagesTest extends DuskTestCase
         });
     }
 
-    /**
-     * Test the track player functionality.
-     *
-     * @return void
-     */
     public function testAudioPlayer()
     {
         $this->browse(function (Browser $browser) {
@@ -134,11 +99,6 @@ class MainPagesTest extends DuskTestCase
         });
     }
 
-    /**
-     * Test the advanced search component.
-     *
-     * @return void
-     */
     public function testAdvancedSearch()
     {
         $this->browse(function (Browser $browser) {
@@ -154,11 +114,6 @@ class MainPagesTest extends DuskTestCase
         });
     }
 
-    /**
-     * Test dark mode toggle.
-     *
-     * @return void
-     */
     public function testDarkModeToggle()
     {
         $this->browse(function (Browser $browser) {
@@ -174,15 +129,9 @@ class MainPagesTest extends DuskTestCase
         });
     }
 
-    /**
-     * Test responsive design on different screen sizes.
-     *
-     * @return void
-     */
     public function testResponsiveDesign()
     {
         $this->browse(function (Browser $browser) {
-            // Mobile view
             $browser->resize(375, 667)
                     ->visit('/')
                     ->screenshot('dashboard-mobile')
@@ -191,24 +140,15 @@ class MainPagesTest extends DuskTestCase
                     ->pause(500)
                     ->assertVisible('.mobile-menu')
                     ->screenshot('mobile-menu-open');
-
-            // Tablet view
             $browser->resize(768, 1024)
                     ->visit('/')
                     ->screenshot('dashboard-tablet');
-
-            // Desktop view
             $browser->resize(1920, 1080)
                     ->visit('/')
                     ->screenshot('dashboard-desktop');
         });
     }
 
-    /**
-     * Test notification component.
-     *
-     * @return void
-     */
     public function testNotification()
     {
         $this->browse(function (Browser $browser) {

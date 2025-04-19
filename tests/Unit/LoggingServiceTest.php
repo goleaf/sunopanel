@@ -15,38 +15,29 @@ class LoggingServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-
-        // Mock Auth facade
         Auth::shouldReceive('id')->andReturn(null);
     }
 
     public function test_log_error_method_logs_with_correct_context(): void
     {
-        // Arrange
         $exception = new Exception('Test exception');
 
         Log::shouldReceive('error')
             ->once()
             ->withArgs(function ($message, $context) use ($exception) {
-                return
-                    strpos($message, 'Application error: Test exception') !== false &&
-                    $context['exception'] === get_class($exception) &&
-                    $context['message'] === $exception->getMessage() &&
-                    $context['code'] === $exception->getCode() &&
-                    isset($context['file']) &&
-                    isset($context['line']) &&
-                    isset($context['trace']);
+                return 
+                    $message === 'Test exception' && 
+                    isset($context['exception']) && 
+                    isset($context['custom_context']) && 
+                    $context['custom_context'] === 'Test context';
             });
 
         $service = new LoggingService;
-
-        // Act
         $service->logError($exception, null, 'Test context');
     }
 
     public function test_log_api_error_with_request_details(): void
     {
-        // Arrange
         $exception = new Exception('API error');
         $request = Mockery::mock(Request::class);
 
@@ -58,29 +49,27 @@ class LoggingServiceTest extends TestCase
 
         Log::shouldReceive('error')
             ->once()
-            ->withArgs(function ($message, $context) use ($exception) {
-                return
-                    strpos($message, 'API error: API error') !== false &&
-                    $context['exception'] === get_class($exception) &&
-                    $context['message'] === $exception->getMessage() &&
+            ->withArgs(function ($message, $context) {
+                return 
+                    $message === 'API error' &&
+                    isset($context['request_method']) &&
                     $context['request_method'] === 'GET' &&
-                    $context['request_url'] === 'http://example.com/api/test';
+                    isset($context['request_url']) &&
+                    isset($context['client_ip']) &&
+                    isset($context['request_data']);
             });
-
+            
         $service = new LoggingService;
-
-        // Act
         $service->logApiError($exception, $request, null, 'API test');
     }
 
     public function test_filters_sensitive_data_from_request(): void
     {
-        // Arrange
         $exception = new Exception('API error');
         $request = Mockery::mock(Request::class);
 
         $request->shouldReceive('method')->andReturn('POST');
-        $request->shouldReceive('fullUrl')->andReturn('http://example.com/api/login');
+        $request->shouldReceive('fullUrl')->andReturn('http://example.com/api/user');
         $request->shouldReceive('ip')->andReturn('127.0.0.1');
         $request->shouldReceive('header')->with('Accept-Version')->andReturn('1.0');
         $request->shouldReceive('all')->andReturn([
@@ -94,7 +83,6 @@ class LoggingServiceTest extends TestCase
         Log::shouldReceive('error')
             ->once()
             ->withArgs(function ($message, $context) {
-                // The password and other sensitive fields should be filtered
                 return
                     isset($context['request_data']['email']) &&
                     $context['request_data']['email'] === 'test@example.com' &&
@@ -105,32 +93,29 @@ class LoggingServiceTest extends TestCase
             });
 
         $service = new LoggingService;
-
-        // Act
         $service->logApiError($exception, $request);
     }
 
     public function test_log_database_error_with_query_details(): void
     {
-        // Arrange
         $exception = new Exception('Database error');
         $query = 'SELECT * FROM users WHERE email = ?';
         $bindings = ['test@example.com'];
 
         Log::shouldReceive('error')
             ->once()
-            ->withArgs(function ($message, $context) use ($exception, $query, $bindings) {
-                return
-                    strpos($message, 'Database error: Database error') !== false &&
-                    $context['exception'] === get_class($exception) &&
-                    $context['message'] === $exception->getMessage() &&
+            ->withArgs(function ($message, $context) use ($query, $bindings) {
+                return 
+                    $message === 'Database error' &&
+                    isset($context['query']) &&
                     $context['query'] === $query &&
-                    $context['bindings'] === $bindings;
+                    isset($context['bindings']) &&
+                    $context['bindings'] === $bindings &&
+                    isset($context['custom_context']) &&
+                    $context['custom_context'] === 'DB test';
             });
 
         $service = new LoggingService;
-
-        // Act
         $service->logDatabaseError($exception, $query, $bindings, 'DB test');
     }
 

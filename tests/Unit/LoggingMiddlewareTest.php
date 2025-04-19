@@ -20,13 +20,9 @@ class LoggingMiddlewareTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-
-        // Use the real LoggingService rather than mocking it
         $loggingService = app(LoggingService::class);
         $this->middleware = new LoggingMiddleware($loggingService);
         $this->request = Mockery::mock(Request::class);
-
-        // Common request method expectations
         $this->request->shouldReceive('fullUrl')->andReturn('http://example.com/test');
         $this->request->shouldReceive('method')->andReturn('GET');
         $this->request->shouldReceive('ip')->andReturn('127.0.0.1');
@@ -36,45 +32,30 @@ class LoggingMiddlewareTest extends TestCase
         $this->request->shouldReceive('wantsJson')->andReturn(false);
         $this->request->shouldReceive('all')->andReturn([]);
         $this->request->shouldReceive('header')->withAnyArgs()->andReturn(null);
-
-        // Mock the Log facade
         Log::spy();
     }
 
     public function test_handle_passes_request_to_next_callable(): void
     {
-        // Arrange
         $called = false;
         $next = function ($request) use (&$called) {
             $called = true;
             $this->assertSame($this->request, $request);
 
-            return new Response;
+            return new Response();
         };
-
-        // Act
         $this->middleware->handle($this->request, $next);
-
-        // Assert
         $this->assertTrue($called);
     }
 
     public function test_handle_logs_exception_and_rethrows(): void
     {
-        // Arrange
         $exception = new Exception('Test exception');
         $next = function () use ($exception) {
             throw $exception;
         };
-
-        // Assert
         $this->expectException(Exception::class);
         $this->expectExceptionMessage('Test exception');
-
-        // Act
         $this->middleware->handle($this->request, $next);
-
-        // Note: The error logging verification is not needed here because we're using expectException
-        // which will cause the test to exit before reaching any code after the handle() call
     }
 }

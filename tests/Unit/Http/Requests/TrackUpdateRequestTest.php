@@ -5,10 +5,8 @@ declare(strict_types=1);
 namespace Tests\Unit\Http\Requests;
 
 use App\Http\Requests\TrackUpdateRequest;
-use Illuminate\Validation\Rule;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
-use Illuminate\Http\Request;
 use Illuminate\Routing\Route;
 
 class TrackUpdateRequestTest extends TestCase
@@ -20,12 +18,8 @@ class TrackUpdateRequestTest extends TestCase
     {
         parent::setUp();
         $this->request = new TrackUpdateRequest();
-        
-        // Setup track object
         $this->trackObj = new \stdClass();
         $this->trackObj->id = 1;
-        
-        // Mock the route resolver
         $this->request->setRouteResolver(function () {
             $route = $this->createMock(Route::class);
             $route->method('parameter')
@@ -57,14 +51,10 @@ class TrackUpdateRequestTest extends TestCase
         $this->assertArrayHasKey('genre_ids.*', $rules);
         $this->assertArrayHasKey('playlists', $rules);
         $this->assertArrayHasKey('playlists.*', $rules);
-        
-        // Check title rules - this is an array with Rule::unique
         $this->assertIsArray($rules['title']);
         $this->assertContains('required', $rules['title']);
         $this->assertContains('string', $rules['title']);
         $this->assertContains('max:255', $rules['title']);
-        
-        // Check there's a Rule object in the title rules
         $hasUniqueRule = false;
         foreach ($rules['title'] as $rule) {
             if (is_object($rule)) {
@@ -73,38 +63,22 @@ class TrackUpdateRequestTest extends TestCase
             }
         }
         $this->assertTrue($hasUniqueRule, 'The title unique rule is missing');
-        
-        // Check audio_url rules
         $this->assertContains('required', $rules['audio_url']);
         $this->assertContains('url', $rules['audio_url']);
-        
-        // Check image_url rules
         $this->assertContains('required', $rules['image_url']);
         $this->assertContains('url', $rules['image_url']);
-        
-        // Check duration rules
         $this->assertContains('nullable', $rules['duration']);
         $this->assertContains('string', $rules['duration']);
         $this->assertContains('max:10', $rules['duration']);
-        
-        // Check genres rules
         $this->assertContains('nullable', $rules['genres']);
         $this->assertContains('required_without:genre_ids', $rules['genres']);
         $this->assertContains('string', $rules['genres']);
-        
-        // Check genre_ids rules
         $this->assertContains('nullable', $rules['genre_ids']);
         $this->assertContains('required_without:genres', $rules['genre_ids']);
         $this->assertContains('array', $rules['genre_ids']);
-        
-        // Check genre_ids.* rules
         $this->assertContains('exists:genres,id', $rules['genre_ids.*']);
-        
-        // Check playlists rules
         $this->assertContains('nullable', $rules['playlists']);
         $this->assertContains('array', $rules['playlists']);
-        
-        // Check playlists.* rules
         $this->assertContains('exists:playlists,id', $rules['playlists.*']);
     }
 

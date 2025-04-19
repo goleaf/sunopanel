@@ -43,3 +43,4 @@ Route::get('/system-stats', [DashboardController::class, 'systemStats'])->name('
 // Test Routes
 Route::get('/test-notification', [TestController::class, 'testNotification'])->name('test.notification');
 Route::get('/flash-message/{type}', [TestController::class, 'setFlashMessage'])->name('test.flash');
+Route::get('/json-notification/{type}', [TestController::class, 'testJsonResponse'])->name('test.json');

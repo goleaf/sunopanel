@@ -6,7 +6,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
-use Symfony\Component\Finder\Finder;
+use Symfony\Component\Finder\SplFileInfo;
 
 final class ConvertTestDocCommentsToAttributes extends Command
 {
@@ -15,62 +15,93 @@ final class ConvertTestDocCommentsToAttributes extends Command
      *
      * @var string
      */
-    protected $signature = 'test:convert-attributes';
+    protected $signature = 'tests:convert-docblocks
+                            {--path= : Path to convert test docblocks (default: tests/)}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Convert PHPUnit doc-comment annotations to PHP 8 attributes';
+    protected $description = 'Convert PHPUnit doc-comments to attributes in test files';
 
     /**
      * Execute the console command.
      */
     public function handle(): int
     {
-        $this->info('Converting PHPUnit doc-comment annotations to PHP 8 attributes...');
+        $path = $this->option('path') ?: 'tests/';
+        
+        // Check if the path is absolute
+        $fullPath = str_starts_with($path, '/') ? $path : base_path($path);
+        
+        $this->info("Converting PHPUnit doc-comments to attributes in {$path}...");
 
-        $testDirs = [
-            base_path('tests/Feature'),
-            base_path('tests/Unit'),
-        ];
+        if (!File::exists($fullPath)) {
+            $this->error("The path {$fullPath} does not exist.");
+            return Command::FAILURE;
+        }
+        
+        if (File::isFile($fullPath)) {
+            $this->processFile($fullPath);
+            return Command::SUCCESS;
+        }
 
-        $finder = new Finder();
-        $finder->files()->in($testDirs)->name('*.php');
+        $testFiles = File::allFiles($fullPath);
+        $testFiles = array_filter($testFiles, function (SplFileInfo $file) {
+            return $file->getExtension() === 'php';
+        });
 
-        $convertedCount = 0;
-
-        foreach ($finder as $file) {
-            $path = $file->getRealPath();
-            $content = file_get_contents($path);
-
-            // Skip files that don't contain test methods or already use attributes
-            if (!preg_match('/@test\b/', $content) || str_contains($content, '#[Test]')) {
-                continue;
+        $count = 0;
+        foreach ($testFiles as $file) {
+            $updated = $this->processFile($file->getPathname());
+            if ($updated) {
+                $count++;
             }
-
-            $this->line("Processing file: {$path}");
-
-            // Convert @test annotations to #[Test] attributes
-            $content = preg_replace_callback(
-                '/(\s+)\/\*\*\s*\n\s*\*\s*@test\s*.*?\*\/\s*\n\s*public function (\w+)\(/',
-                function ($matches) {
-                    return "{$matches[1]}#[Test]\n{$matches[1]}public function {$matches[2]}(";
-                },
-                $content
-            );
-
-            file_put_contents($path, $content);
-            $convertedCount++;
         }
 
-        if ($convertedCount > 0) {
-            $this->info("Converted {$convertedCount} test files from doc-comments to attributes.");
-        } else {
-            $this->info('No files needed conversion.');
-        }
-
+        $this->info("Converted {$count} test files.");
         return Command::SUCCESS;
+    }
+
+    protected function processFile(string $filePath): bool
+    {
+        $content = File::get($filePath);
+        $updated = $this->convertDocBlocksToAttributes($content);
+        
+        if ($content !== $updated) {
+            File::put($filePath, $updated);
+            $relativePath = str_replace(base_path() . '/', '', $filePath);
+            $this->line("Updated: " . $relativePath);
+            return true;
+        }
+        
+        return false;
+    }
+
+    protected function convertDocBlocksToAttributes(string $content): string
+    {
+        // Convert @test docblocks to #[Test] attributes
+        $content = preg_replace(
+            '/\s+\/\*\*\s+\*\s+@test\s+.*?\*\/\s+public function (\w+)\(/s',
+            "\n    #[\\PHPUnit\\Framework\\Attributes\\Test]\n    public function $1(",
+            $content
+        );
+
+        // Convert @dataProvider docblocks to #[DataProvider] attributes
+        $content = preg_replace(
+            '/\s+\/\*\*\s+\*\s+@dataProvider\s+(\w+)\s+.*?\*\/\s+public function (\w+)\(/s',
+            "\n    #[\\PHPUnit\\Framework\\Attributes\\DataProvider('$1')]\n    public function $2(",
+            $content
+        );
+
+        // Convert @depends docblocks to #[Depends] attributes
+        $content = preg_replace(
+            '/\s+\/\*\*\s+\*\s+@depends\s+(\w+)\s+.*?\*\/\s+public function (\w+)\(/s',
+            "\n    #[\\PHPUnit\\Framework\\Attributes\\Depends('$1')]\n    public function $2(",
+            $content
+        );
+
+        return $content;
     }
 } 

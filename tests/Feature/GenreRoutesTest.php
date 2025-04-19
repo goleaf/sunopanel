@@ -14,20 +14,18 @@ class GenreRoutesTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-
-        // Create test data
         $genre = Genre::factory()->create(['name' => 'Bubblegum bass']);
         $track = Track::factory()->create([
             'title' => 'Test Track',
-            'audio_url' => 'https://example.com/test.mp3',
-            'image_url' => 'https://example.com/image.jpg',
+            'audio_url' => 'https:
+            'image_url' => 'https:
         ]);
 
         $track->genres()->attach($genre->id);
     }
 
-    /** @test */
-    public function genres_index_page_loads_correctly()
+    #[Test]
+public function genres_index_page_loads_correctly()
     {
         $response = $this->get(route('genres.index'));
 
@@ -36,8 +34,8 @@ class GenreRoutesTest extends TestCase
         $response->assertViewIs('genres.index');
     }
 
-    /** @test */
-    public function genre_show_page_loads_correctly()
+    #[Test]
+public function genre_show_page_loads_correctly()
     {
         $genre = Genre::first();
 
@@ -49,8 +47,8 @@ class GenreRoutesTest extends TestCase
         $response->assertViewIs('genres.show');
     }
 
-    /** @test */
-    public function genre_create_page_loads_correctly()
+    #[Test]
+public function genre_create_page_loads_correctly()
     {
         $response = $this->get(route('genres.create'));
 
@@ -59,8 +57,8 @@ class GenreRoutesTest extends TestCase
         $response->assertViewIs('genres.create');
     }
 
-    /** @test */
-    public function genre_edit_page_loads_correctly()
+    #[Test]
+public function genre_edit_page_loads_correctly()
     {
         $genre = Genre::first();
 
@@ -71,8 +69,8 @@ class GenreRoutesTest extends TestCase
         $response->assertViewIs('genres.edit');
     }
 
-    /** @test */
-    public function genre_can_be_created()
+    #[Test]
+public function genre_can_be_created()
     {
         $response = $this->post(route('genres.store'), [
             'name' => 'Rock',
@@ -83,8 +81,8 @@ class GenreRoutesTest extends TestCase
         $this->assertDatabaseHas('genres', ['name' => 'Rock']);
     }
 
-    /** @test */
-    public function genre_can_be_updated()
+    #[Test]
+public function genre_can_be_updated()
     {
         $genre = Genre::first();
 
@@ -101,8 +99,8 @@ class GenreRoutesTest extends TestCase
         ]);
     }
 
-    /** @test */
-    public function genre_can_be_deleted()
+    #[Test]
+public function genre_can_be_deleted()
     {
         $genre = Genre::first();
 
@@ -112,10 +110,9 @@ class GenreRoutesTest extends TestCase
         $this->assertDatabaseMissing('genres', ['id' => $genre->id]);
     }
 
-    /** @test */
-    public function genres_can_be_searched()
+    #[Test]
+public function genres_can_be_searched()
     {
-        // Create additional genre for search test
         Genre::factory()->create(['name' => 'Rock']);
 
         $response = $this->get(route('genres.index', ['search' => 'bubblegum']));
@@ -125,16 +122,14 @@ class GenreRoutesTest extends TestCase
         $response->assertDontSee('Rock');
     }
 
-    /** @test */
-    public function genre_shows_associated_tracks()
+    #[Test]
+public function genre_shows_associated_tracks()
     {
         $genre = Genre::first();
-
-        // Create more tracks for this genre
         $track2 = Track::factory()->create([
             'title' => 'Another Test Track',
-            'audio_url' => 'https://example.com/another.mp3',
-            'image_url' => 'https://example.com/another.jpg',
+            'audio_url' => 'https:
+            'image_url' => 'https:
         ]);
         $track2->genres()->attach($genre->id);
 

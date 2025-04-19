@@ -9,18 +9,10 @@ class RouteTest extends TestCase
 {
     use RefreshDatabase;
 
-    /**
-     * Test that all the main routes are accessible.
-     *
-     * @return void
-     */
     public function test_main_routes_are_accessible()
     {
-        // Test the dashboard route
         $response = $this->get('/');
         $response->assertStatus(200);
-
-        // Test main resource routes
         $routesToTest = [
             'tracks.index' => '/tracks',
             'tracks.create' => '/tracks/create',
@@ -36,11 +28,6 @@ class RouteTest extends TestCase
         }
     }
 
-    /**
-     * Test that non-existent routes return 404.
-     *
-     * @return void
-     */
     public function test_nonexistent_routes_return_404()
     {
         $nonExistentRoutes = [
@@ -54,28 +41,16 @@ class RouteTest extends TestCase
             $response = $this->get($uri);
             $response->assertStatus(404);
         }
-
-        // Skip testing invalid IDs since they may redirect based on controller logic
         $this->assertTrue(true);
     }
 
-    /**
-     * Test that PUT and DELETE methods are handled correctly.
-     *
-     * @return void
-     */
     public function test_method_not_allowed_on_wrong_methods()
     {
-        // GET routes shouldn't accept POST
         $response = $this->post('/tracks');
-        $response->assertStatus(302); // Validation redirect instead of 405
+        $response->assertStatus(302);
         $response->assertSessionHasErrors(['title', 'audio_url', 'image_url', 'genres']);
-
-        // POST requests to show routes
         $response = $this->post('/tracks/1');
         $response->assertStatus(405);
-
-        // Test that PUT/PATCH/DELETE requests to index routes fail
         $response = $this->put('/tracks');
         $response->assertStatus(405);
 
@@ -86,14 +61,8 @@ class RouteTest extends TestCase
         $response->assertStatus(405);
     }
 
-    /**
-     * Test route parameters are validated.
-     *
-     * @return void
-     */
     public function test_route_parameters_are_validated()
     {
-        // Skip this test since the application may handle invalid parameters differently
         $this->markTestSkipped('Route parameter validation is handled differently in the current implementation');
     }
 }

@@ -12,11 +12,6 @@ class ModelFactoryTest extends TestCase
 {
     use RefreshDatabase;
 
-    /**
-     * Test that Track factory works correctly.
-     *
-     * @return void
-     */
     public function test_track_factory()
     {
         $track = Track::factory()->create();
@@ -30,11 +25,6 @@ class ModelFactoryTest extends TestCase
         ]);
     }
 
-    /**
-     * Test that Genre factory works correctly.
-     *
-     * @return void
-     */
     public function test_genre_factory()
     {
         $genre = Genre::factory()->create();
@@ -47,11 +37,6 @@ class ModelFactoryTest extends TestCase
         ]);
     }
 
-    /**
-     * Test that Playlist factory works correctly.
-     *
-     * @return void
-     */
     public function test_playlist_factory()
     {
         $playlist = Playlist::factory()->create();
@@ -66,30 +51,17 @@ class ModelFactoryTest extends TestCase
         ]);
     }
 
-    /**
-     * Test that FileDownload factory works correctly.
-     *
-     * @return void
-     */
     public function test_file_download_factory()
     {
         $this->markTestSkipped('File download functionality has been removed and merged into tracks');
     }
 
-    /**
-     * Test that Track factory with a relationship to Genre works.
-     *
-     * @return void
-     */
     public function test_track_factory_with_genre_relationship()
     {
-        // Create a track with 2 genres using our custom withGenres method
         $track = Track::factory()->withGenres(2)->create();
 
         $this->assertInstanceOf(Track::class, $track);
         $this->assertEquals(2, $track->genres()->count());
-
-        // Load the relationships
         $track->load('genres');
 
         foreach ($track->genres as $genre) {
@@ -101,60 +73,33 @@ class ModelFactoryTest extends TestCase
         }
     }
 
-    /**
-     * Test that Playlist factory with Track relationships works.
-     *
-     * @return void
-     */
     public function test_playlist_factory_with_track_relationship()
     {
-        // Create tracks first
         $tracks = Track::factory()->count(3)->create();
-
-        // Create a playlist
         $playlist = Playlist::factory()->create();
-
-        // Attach tracks with positions
         foreach ($tracks as $index => $track) {
             $playlist->addTrack($track, $index + 1);
         }
 
         $this->assertInstanceOf(Playlist::class, $playlist);
         $this->assertEquals(3, $playlist->tracks()->count());
-
-        // Check that positions are set correctly
         $playlistTracks = $playlist->tracks()->orderBy('position')->get();
         for ($i = 0; $i < 3; $i++) {
             $this->assertEquals($i + 1, $playlistTracks[$i]->pivot->position);
         }
     }
 
-    /**
-     * Test that FileDownload can have related files.
-     *
-     * @return void
-     */
     public function test_file_download_related_files()
     {
         $this->markTestSkipped('File download functionality has been removed and merged into tracks');
     }
 
-    /**
-     * Test that Playlist factory creates a valid playlist.
-     *
-     * @return void
-     */
     public function test_playlist_factory_creates_valid_playlist()
     {
-        // Create a playlist
         $playlist = Playlist::factory()->create();
-
-        // Assert playlist has required attributes
         $this->assertNotNull($playlist->id);
         $this->assertNotNull($playlist->title);
         $this->assertNotNull($playlist->created_at);
-
-        // Assert playlist can be found in database
         $this->assertDatabaseHas('playlists', [
             'id' => $playlist->id,
             'title' => $playlist->title,

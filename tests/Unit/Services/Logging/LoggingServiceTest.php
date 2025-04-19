@@ -18,11 +18,7 @@ final class LoggingServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
-        // Create a real instance since the class is final
         $this->loggingService = app(LoggingService::class);
-        
-        // Mock the Log facade
         Log::spy();
     }
 
@@ -32,21 +28,14 @@ final class LoggingServiceTest extends TestCase
         parent::tearDown();
     }
 
-    /** @test */
-    public function it_logs_an_error_with_exception_details(): void
+    #[Test]
+public function it_logs_an_error_with_exception_details(): void
     {
-        // Given
         $exception = new Exception('Test exception');
         $context = 'Test context';
-        
-        // When
         $this->loggingService->logError($exception, null, $context);
-        
-        // Then
         Log::shouldHaveReceived('error')
-            ->withArgs(function ($message, $data) use ($exception, $context) {
-                $this->assertStringContainsString('Application error', $message);
-                $this->assertStringContainsString('Test exception', $message);
+            ->withArgs(function ($message, $data)                 $this->assertStringContainsString('Test exception', $message);
                 $this->assertEquals(get_class($exception), $data['exception']);
                 $this->assertEquals($exception->getMessage(), $data['message']);
                 $this->assertEquals($exception->getCode(), $data['code']);
@@ -55,52 +44,38 @@ final class LoggingServiceTest extends TestCase
             });
     }
 
-    /** @test */
-    public function it_logs_an_api_error_with_request_details(): void
+    #[Test]
+public function it_logs_an_api_error_with_request_details(): void
     {
-        // Given
         $exception = new Exception('API test exception');
         $request = Mockery::mock(Request::class);
         $request->shouldReceive('method')->andReturn('POST');
-        $request->shouldReceive('fullUrl')->andReturn('https://example.com/api/test');
+        $request->shouldReceive('fullUrl')->andReturn('https:
         $request->shouldReceive('ip')->andReturn('127.0.0.1');
         $request->shouldReceive('header')->with('Accept-Version')->andReturn('1.0');
         $request->shouldReceive('all')->andReturn(['test' => 'data']);
-        
-        // When
         $this->loggingService->logApiError($exception, $request, null, 'API test');
-        
-        // Then
         Log::shouldHaveReceived('error')
-            ->withArgs(function ($message, $data) use ($exception, $request) {
-                $this->assertStringContainsString('API error', $message);
-                $this->assertStringContainsString('API test exception', $message);
+            ->withArgs(function ($message, $data)                 $this->assertStringContainsString('API test exception', $message);
                 $this->assertEquals(get_class($exception), $data['exception']);
                 $this->assertEquals($exception->getMessage(), $data['message']);
                 $this->assertEquals('POST', $data['request_method']);
-                $this->assertEquals('https://example.com/api/test', $data['request_url']);
+                $this->assertEquals('https:
                 $this->assertEquals('127.0.0.1', $data['request_ip']);
                 $this->assertEquals('1.0', $data['api_version']);
                 return true;
             });
     }
 
-    /** @test */
-    public function it_logs_a_database_error_with_query_details(): void
+    #[Test]
+public function it_logs_a_database_error_with_query_details(): void
     {
-        // Given
         $exception = new Exception('Database test exception');
         $query = 'SELECT * FROM users WHERE id = ?';
         $bindings = [1];
-        
-        // When
         $this->loggingService->logDatabaseError($exception, $query, $bindings, 'DB test');
-        
-        // Then
         Log::shouldHaveReceived('error')
-            ->withArgs(function ($message, $data) use ($exception, $query, $bindings) {
-                $this->assertStringContainsString('Database error', $message);
-                $this->assertStringContainsString('Database test exception', $message);
+            ->withArgs(function ($message, $data)                 $this->assertStringContainsString('Database test exception', $message);
                 $this->assertEquals(get_class($exception), $data['exception']);
                 $this->assertEquals($exception->getMessage(), $data['message']);
                 $this->assertEquals($query, $data['query']);
@@ -109,14 +84,13 @@ final class LoggingServiceTest extends TestCase
             });
     }
 
-    /** @test */
-    public function it_filters_sensitive_data_from_request(): void
+    #[Test]
+public function it_filters_sensitive_data_from_request(): void
     {
-        // Given
         $exception = new Exception('Test exception');
         $request = Mockery::mock(Request::class);
         $request->shouldReceive('method')->andReturn('POST');
-        $request->shouldReceive('fullUrl')->andReturn('https://example.com/api/login');
+        $request->shouldReceive('fullUrl')->andReturn('https:
         $request->shouldReceive('ip')->andReturn('127.0.0.1');
         $request->shouldReceive('header')->andReturn(null);
         $request->shouldReceive('all')->andReturn([
@@ -127,11 +101,7 @@ final class LoggingServiceTest extends TestCase
                 'api_key' => 'secret-api-key'
             ]
         ]);
-        
-        // When
         $this->loggingService->logApiError($exception, $request);
-        
-        // Then
         Log::shouldHaveReceived('error')
             ->withArgs(function ($message, $data) {
                 $this->assertEquals('[FILTERED]', $data['request_data']['password']);

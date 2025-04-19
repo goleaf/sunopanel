@@ -12,9 +12,6 @@ class DashboardControllerTest extends TestCase
 {
     use RefreshDatabase;
 
-    /**
-     * Test the dashboard page loads correctly.
-     */
     public function test_dashboard_page_loads(): void
     {
         $response = $this->get('/dashboard');
@@ -24,12 +21,8 @@ class DashboardControllerTest extends TestCase
         $response->assertSee('Welcome to SunoPanel');
     }
 
-    /**
-     * Test dashboard displays system stats.
-     */
     public function test_dashboard_displays_system_stats()
     {
-        // Create some test data
         Track::factory()->count(3)->create();
         Genre::factory()->count(2)->create();
         Playlist::factory()->count(1)->create();
@@ -44,12 +37,8 @@ class DashboardControllerTest extends TestCase
         $response->assertSee('Total Duration');
     }
 
-    /**
-     * Test system stats API endpoint.
-     */
     public function test_system_stats_api_endpoint()
     {
-        // Create some test data
         Track::factory()->count(3)->create();
         Genre::factory()->count(2)->create();
         Playlist::factory()->count(1)->create();

@@ -36,23 +36,11 @@ class PlaylistStoreRequestTest extends TestCase
         $this->assertArrayHasKey('genre_id', $rules);
         $this->assertArrayHasKey('tracks', $rules);
         $this->assertArrayHasKey('tracks.*', $rules);
-        
-        // Check title rules
         $this->assertEquals('required|string|max:255', $rules['title']);
-        
-        // Check description rules
         $this->assertEquals('nullable|string', $rules['description']);
-        
-        // Check cover_image rules
         $this->assertEquals('nullable|url', $rules['cover_image']);
-        
-        // Check genre_id rules
         $this->assertEquals('nullable|exists:genres,id', $rules['genre_id']);
-        
-        // Check tracks rules
         $this->assertEquals('nullable|array', $rules['tracks']);
-        
-        // Check tracks.* rules
         $this->assertEquals('exists:tracks,id', $rules['tracks.*']);
     }
 }

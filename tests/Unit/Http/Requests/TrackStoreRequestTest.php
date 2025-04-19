@@ -7,7 +7,6 @@ namespace Tests\Unit\Http\Requests;
 use App\Http\Requests\TrackStoreRequest;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
-use Illuminate\Http\Request;
 
 class TrackStoreRequestTest extends TestCase
 {
@@ -28,7 +27,6 @@ class TrackStoreRequestTest extends TestCase
     #[Test]
     public function testRulesWithoutBulkTracks(): void
     {
-        // Create a new request without bulk_tracks
         $request = new TrackStoreRequest();
         $request->replace(['title' => 'Test Track']);
         
@@ -45,47 +43,27 @@ class TrackStoreRequestTest extends TestCase
         $this->assertArrayHasKey('playlists', $rules);
         $this->assertArrayHasKey('playlists.*', $rules);
         $this->assertArrayHasKey('bulk_tracks', $rules);
-        
-        // Check title rules
         $this->assertContains('required', $rules['title']);
         $this->assertContains('string', $rules['title']);
         $this->assertContains('max:255', $rules['title']);
         $this->assertContains('unique:tracks', $rules['title']);
-        
-        // Check audio_url rules
         $this->assertContains('required', $rules['audio_url']);
         $this->assertContains('url', $rules['audio_url']);
-        
-        // Check image_url rules
         $this->assertContains('required', $rules['image_url']);
         $this->assertContains('url', $rules['image_url']);
-        
-        // Check duration rules
         $this->assertContains('nullable', $rules['duration']);
         $this->assertContains('string', $rules['duration']);
         $this->assertContains('max:10', $rules['duration']);
-        
-        // Check genres rules
         $this->assertContains('nullable', $rules['genres']);
         $this->assertContains('required_without:genre_ids', $rules['genres']);
         $this->assertContains('string', $rules['genres']);
-        
-        // Check genre_ids rules
         $this->assertContains('nullable', $rules['genre_ids']);
         $this->assertContains('required_without:genres', $rules['genre_ids']);
         $this->assertContains('array', $rules['genre_ids']);
-        
-        // Check genre_ids.* rules
         $this->assertContains('exists:genres,id', $rules['genre_ids.*']);
-        
-        // Check playlists rules
         $this->assertContains('nullable', $rules['playlists']);
         $this->assertContains('array', $rules['playlists']);
-        
-        // Check playlists.* rules
         $this->assertContains('exists:playlists,id', $rules['playlists.*']);
-        
-        // Check bulk_tracks rules
         $this->assertContains('nullable', $rules['bulk_tracks']);
         $this->assertContains('string', $rules['bulk_tracks']);
     }
@@ -93,7 +71,6 @@ class TrackStoreRequestTest extends TestCase
     #[Test]
     public function testRulesWithBulkTracks(): void
     {
-        // Create a new request with bulk_tracks
         $request = new TrackStoreRequest();
         $request->replace(['bulk_tracks' => 'Track 1|URL1|URL2']);
         
@@ -110,21 +87,13 @@ class TrackStoreRequestTest extends TestCase
         $this->assertArrayHasKey('genre_ids.*', $rules);
         $this->assertArrayHasKey('playlists', $rules);
         $this->assertArrayHasKey('playlists.*', $rules);
-        
-        // Check bulk_tracks rules
         $this->assertContains('required', $rules['bulk_tracks']);
         $this->assertContains('string', $rules['bulk_tracks']);
-        
-        // Check title rules - now nullable when bulk_tracks is provided
         $this->assertContains('nullable', $rules['title']);
         $this->assertContains('string', $rules['title']);
         $this->assertContains('max:255', $rules['title']);
-        
-        // Check audio_url rules - now nullable when bulk_tracks is provided
         $this->assertContains('nullable', $rules['audio_url']);
         $this->assertContains('url', $rules['audio_url']);
-        
-        // Check image_url rules - now nullable when bulk_tracks is provided
         $this->assertContains('nullable', $rules['image_url']);
         $this->assertContains('url', $rules['image_url']);
     }
