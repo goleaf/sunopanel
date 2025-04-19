@@ -236,7 +236,7 @@ final readonly class LoggingService
         foreach ($data as $key => $value) {
             if (is_array($value)) {
                 $data[$key] = $this->filterSensitiveData($value);
-            } elseif (in_array(strtolower($key), $sensitiveFields, true)) {
+            } elseif (is_string($key) && in_array(strtolower($key), $sensitiveFields, true)) {
                 $data[$key] = '[FILTERED]';
             }
         }

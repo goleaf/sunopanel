@@ -34,7 +34,9 @@ final class TrackUpdateRequest extends FormRequest
             'audio_url' => ['required', 'url'],
             'image_url' => ['required', 'url'],
             'duration' => ['nullable', 'string', 'max:10'],
-            'genres' => ['required', 'string'],
+            'genres' => ['required_without:genre_ids', 'string'],
+            'genre_ids' => ['required_without:genres', 'array'],
+            'genre_ids.*' => ['exists:genres,id'],
             'playlists' => ['nullable', 'array'],
             'playlists.*' => ['exists:playlists,id'],
         ];

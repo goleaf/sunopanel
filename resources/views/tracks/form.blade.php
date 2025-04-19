@@ -84,13 +84,14 @@
         </div>
 
         <div class="mb-4">
-            <x-label for="genres" value="Genres" required />
+            <x-label for="genre_ids" value="Genres" required />
             <select 
-                id="genres" 
+                id="genre_ids" 
                 name="genre_ids[]" 
                 multiple 
                 class="w-full mt-1 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
                 required
+                onchange="updateGenresString()"
             >
                 @foreach(\App\Models\Genre::orderBy('name')->get() as $genre)
                     <option 
@@ -102,7 +103,14 @@
                     </option>
                 @endforeach
             </select>
+            
+            <!-- Hidden field for genres string (for API compatibility) -->
+            <input type="hidden" name="genres" id="genres_string" value="{{ old('genres', $track ? $track->genres->pluck('name')->implode(', ') : '') }}">
+            
             @error('genre_ids')
+                <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+            @enderror
+            @error('genres')
                 <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
             @enderror
             <p class="text-gray-600 text-sm mt-1">Hold Ctrl/Cmd to select multiple genres</p>
@@ -126,4 +134,15 @@
             </x-button>
         </div>
     </form>
-</div> 
+</div>
+
+<script>
+function updateGenresString() {
+    const selectElement = document.getElementById('genre_ids');
+    const selectedGenres = Array.from(selectElement.selectedOptions).map(option => option.text);
+    document.getElementById('genres_string').value = selectedGenres.join(', ');
+}
+
+// Run this on page load to initialize the hidden field
+document.addEventListener('DOMContentLoaded', updateGenresString);
+</script> 
