@@ -137,6 +137,16 @@ final class Track extends Model
     }
 
     /**
+     * Alias for syncGenres method to maintain backwards compatibility with tests.
+     * 
+     * @deprecated Use syncGenres() instead
+     */
+    public function assignGenres(string $genresString): void
+    {
+        $this->syncGenres($genresString);
+    }
+
+    /**
      * Get comma-separated list of genre names.
      */
     public function getGenresListAttribute(): string

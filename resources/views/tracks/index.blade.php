@@ -51,10 +51,10 @@
                 <div class="overflow-x-auto">
                     <x-table>
                         <x-slot name="header">
-                            <x-table.heading sortable wire:click="sortBy('title')" :direction="$sortField === 'title' ? $sortDirection : null">Title</x-table.heading>
+                            <x-table.heading sortable wire:click="sortBy('title')" :direction="$sortField === 'title' ? $direction : null">Title</x-table.heading>
                             <x-table.heading>Genres</x-table.heading>
                             <x-table.heading>Duration</x-table.heading>
-                            <x-table.heading sortable wire:click="sortBy('created_at')" :direction="$sortField === 'created_at' ? $sortDirection : null">Added</x-table.heading>
+                            <x-table.heading sortable wire:click="sortBy('created_at')" :direction="$sortField === 'created_at' ? $direction : null">Added</x-table.heading>
                             <x-table.heading>Actions</x-table.heading>
                         </x-slot>
                         

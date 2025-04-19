@@ -8,7 +8,7 @@ use App\Services\Logging\LoggingService;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use PHPUnit\Framework\TestCase;
+use Tests\TestCase;
 use Mockery;
 
 final class LoggingServiceTest extends TestCase
@@ -19,12 +19,11 @@ final class LoggingServiceTest extends TestCase
     {
         parent::setUp();
         
-        $this->loggingService = new LoggingService();
+        // Create a real instance since the class is final
+        $this->loggingService = app(LoggingService::class);
         
         // Mock the Log facade
-        Log::shouldReceive('error')
-            ->byDefault()
-            ->andReturnNull();
+        Log::spy();
     }
 
     protected function tearDown(): void
@@ -40,9 +39,11 @@ final class LoggingServiceTest extends TestCase
         $exception = new Exception('Test exception');
         $context = 'Test context';
         
-        // Expect
-        Log::shouldReceive('error')
-            ->once()
+        // When
+        $this->loggingService->logError($exception, null, $context);
+        
+        // Then
+        Log::shouldHaveReceived('error')
             ->withArgs(function ($message, $data) use ($exception, $context) {
                 $this->assertStringContainsString('Application error', $message);
                 $this->assertStringContainsString('Test exception', $message);
@@ -52,9 +53,6 @@ final class LoggingServiceTest extends TestCase
                 $this->assertEquals($context, $data['context']);
                 return true;
             });
-        
-        // When
-        $this->loggingService->logError($exception, null, $context);
     }
 
     /** @test */
@@ -69,9 +67,11 @@ final class LoggingServiceTest extends TestCase
         $request->shouldReceive('header')->with('Accept-Version')->andReturn('1.0');
         $request->shouldReceive('all')->andReturn(['test' => 'data']);
         
-        // Expect
-        Log::shouldReceive('error')
-            ->once()
+        // When
+        $this->loggingService->logApiError($exception, $request, null, 'API test');
+        
+        // Then
+        Log::shouldHaveReceived('error')
             ->withArgs(function ($message, $data) use ($exception, $request) {
                 $this->assertStringContainsString('API error', $message);
                 $this->assertStringContainsString('API test exception', $message);
@@ -83,9 +83,6 @@ final class LoggingServiceTest extends TestCase
                 $this->assertEquals('1.0', $data['api_version']);
                 return true;
             });
-        
-        // When
-        $this->loggingService->logApiError($exception, $request, null, 'API test');
     }
 
     /** @test */
@@ -96,9 +93,11 @@ final class LoggingServiceTest extends TestCase
         $query = 'SELECT * FROM users WHERE id = ?';
         $bindings = [1];
         
-        // Expect
-        Log::shouldReceive('error')
-            ->once()
+        // When
+        $this->loggingService->logDatabaseError($exception, $query, $bindings, 'DB test');
+        
+        // Then
+        Log::shouldHaveReceived('error')
             ->withArgs(function ($message, $data) use ($exception, $query, $bindings) {
                 $this->assertStringContainsString('Database error', $message);
                 $this->assertStringContainsString('Database test exception', $message);
@@ -108,9 +107,6 @@ final class LoggingServiceTest extends TestCase
                 $this->assertEquals($bindings, $data['bindings']);
                 return true;
             });
-        
-        // When
-        $this->loggingService->logDatabaseError($exception, $query, $bindings, 'DB test');
     }
 
     /** @test */
@@ -132,9 +128,11 @@ final class LoggingServiceTest extends TestCase
             ]
         ]);
         
-        // Expect
-        Log::shouldReceive('error')
-            ->once()
+        // When
+        $this->loggingService->logApiError($exception, $request);
+        
+        // Then
+        Log::shouldHaveReceived('error')
             ->withArgs(function ($message, $data) {
                 $this->assertEquals('[FILTERED]', $data['request_data']['password']);
                 $this->assertEquals('[FILTERED]', $data['request_data']['credit_card']);
@@ -142,8 +140,5 @@ final class LoggingServiceTest extends TestCase
                 $this->assertEquals('test@example.com', $data['request_data']['email']);
                 return true;
             });
-        
-        // When
-        $this->loggingService->logApiError($exception, $request);
     }
 } 
