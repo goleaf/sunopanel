@@ -19,7 +19,7 @@ use Throwable;
 
 final readonly class TrackService
 {
-    public function __construct(private LoggingService $loggingService)
+    public function __construct(private readonly LoggingService $loggingService)
     {
         // Optionally inject LoggingService if needed within the service itself
     }
