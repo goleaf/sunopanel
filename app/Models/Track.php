@@ -26,8 +26,9 @@ final class Track extends Model
         'title',
         'audio_url',
         'image_url',
+        'duration',
+        'duration_seconds',
         'unique_id',
-        'duration'
     ];
 
     /**
@@ -61,6 +62,13 @@ final class Track extends Model
                     'name' => $track->name,
                     'title' => $track->title
                 ]);
+            }
+        });
+
+        static::saving(function (Track $track) {
+            // Update duration_seconds when duration changes
+            if ($track->isDirty('duration') && !empty($track->duration)) {
+                $track->duration_seconds = parseDuration($track->duration);
             }
         });
     }
