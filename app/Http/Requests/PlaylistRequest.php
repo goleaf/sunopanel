@@ -5,15 +5,17 @@ declare(strict_types=1);
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Auth;
 
-final class PlaylistStoreRequest extends FormRequest
+class PlaylistRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
     {
-        return true;
+        // Allow logged-in users to create/update playlists
+        return Auth::check();
     }
 
     /**
@@ -25,11 +27,9 @@ final class PlaylistStoreRequest extends FormRequest
     {
         return [
             'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'cover_image' => 'nullable|url',
-            'genre_id' => 'nullable|exists:genres,id',
-            'tracks' => 'nullable|array',
-            'tracks.*' => 'exists:tracks,id',
+            'description' => 'nullable|string|max:1000',
+            'cover_image' => 'nullable|url|max:2048', // Assuming URL for now
+            'genre_id' => 'nullable|exists:genres,id', // Allow associating with a genre
         ];
     }
 }

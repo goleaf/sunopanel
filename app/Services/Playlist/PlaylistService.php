@@ -279,122 +279,6 @@ final readonly class PlaylistService
     }
 
     /**
-     * Store a new playlist
-     */
-    public function store(PlaylistStoreRequest $request, User $user): Playlist
-    {
-        $validatedData = $request->validated();
-
-        // Handle cover image upload if provided
-        if (isset($validatedData['cover_image']) && $validatedData['cover_image'] instanceof UploadedFile) {
-            $coverPath = $this->storeCoverImage($validatedData['cover_image']);
-            $validatedData['cover_path'] = $coverPath;
-            unset($validatedData['cover_image']);
-        }
-
-        // Create the playlist
-        $playlist = Playlist::create([
-            'name' => $validatedData['name'],
-            'description' => $validatedData['description'] ?? null,
-            'user_id' => $user->id,
-            'cover_path' => $validatedData['cover_path'] ?? null,
-            'is_public' => $validatedData['is_public'] ?? true,
-        ]);
-
-        // Attach tracks if provided
-        if (isset($validatedData['track_ids']) && is_array($validatedData['track_ids'])) {
-            $playlist->tracks()->attach($validatedData['track_ids']);
-
-            Log::info('Tracks attached to playlist', [
-                'playlist_id' => $playlist->id,
-                'track_count' => count($validatedData['track_ids']),
-            ]);
-        }
-
-        Log::info('Playlist created successfully', [
-            'playlist_id' => $playlist->id,
-            'name' => $playlist->name,
-            'user_id' => $user->id,
-        ]);
-
-        return $playlist;
-    }
-
-    /**
-     * Update an existing playlist
-     */
-    public function update(PlaylistUpdateRequest $request, Playlist $playlist): Playlist
-    {
-        $validatedData = $request->validated();
-
-        // Handle cover image upload if provided
-        if (isset($validatedData['cover_image']) && $validatedData['cover_image'] instanceof UploadedFile) {
-            // Delete old cover if exists
-            if ($playlist->cover_path) {
-                Storage::disk('public')->delete($playlist->cover_path);
-            }
-
-            $coverPath = $this->storeCoverImage($validatedData['cover_image']);
-            $validatedData['cover_path'] = $coverPath;
-            unset($validatedData['cover_image']);
-        }
-
-        // Update the playlist
-        $playlist->update([
-            'name' => $validatedData['name'] ?? $playlist->name,
-            'description' => $validatedData['description'] ?? $playlist->description,
-            'cover_path' => $validatedData['cover_path'] ?? $playlist->cover_path,
-            'is_public' => $validatedData['is_public'] ?? $playlist->is_public,
-        ]);
-
-        // Sync tracks if provided
-        if (isset($validatedData['track_ids']) && is_array($validatedData['track_ids'])) {
-            $playlist->tracks()->sync($validatedData['track_ids']);
-
-            Log::info('Tracks synced with playlist', [
-                'playlist_id' => $playlist->id,
-                'track_count' => count($validatedData['track_ids']),
-            ]);
-        }
-
-        Log::info('Playlist updated successfully', [
-            'playlist_id' => $playlist->id,
-            'name' => $playlist->name,
-        ]);
-
-        return $playlist;
-    }
-
-    /**
-     * Delete a playlist
-     */
-    public function delete(Playlist $playlist): bool
-    {
-        // Detach all tracks first
-        $playlist->tracks()->detach();
-
-        // Delete cover image if exists
-        if ($playlist->cover_path) {
-            Storage::disk('public')->delete($playlist->cover_path);
-            Log::info('Playlist cover deleted', [
-                'playlist_id' => $playlist->id,
-                'cover_path' => $playlist->cover_path,
-            ]);
-        }
-
-        // Delete the playlist
-        $deleted = $playlist->delete();
-
-        Log::info('Playlist deleted', [
-            'playlist_id' => $playlist->id,
-            'name' => $playlist->name,
-            'success' => $deleted,
-        ]);
-
-        return $deleted;
-    }
-
-    /**
      * Add tracks to a playlist
      */
     public function addTracks(Playlist $playlist, array $trackIds): Playlist
@@ -447,21 +331,6 @@ final readonly class PlaylistService
     }
 
     /**
-     * Get playlist with its tracks
-     */
-    public function getWithTracks(Playlist $playlist): Playlist
-    {
-        $playlist->load('tracks');
-
-        Log::info('Retrieved playlist with tracks', [
-            'playlist_id' => $playlist->id,
-            'track_count' => $playlist->tracks->count(),
-        ]);
-
-        return $playlist;
-    }
-
-    /**
      * Store a cover image and return the file path
      */
     private function storeCoverImage(UploadedFile $file): string
@@ -478,7 +347,7 @@ final readonly class PlaylistService
     }
 
     /**
-     * Add tracks to a playlist
+     * Add tracks to a playlist from request
      */
     public function addTracksFromRequest(PlaylistStoreTracksRequest $request, Playlist $playlist): int
     {
@@ -518,7 +387,7 @@ final readonly class PlaylistService
     }
 
     /**
-     * Remove a track from the playlist
+     * Remove a single track from a playlist
      */
     public function removeTrack(Playlist $playlist, Track $track): bool
     {
