@@ -1,0 +1,176 @@
+<x-app-layout>
+    <x-slot name="header">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            {{ __('Dashboard') }}
+        </h2>
+    </x-slot>
+
+    <div class="py-12">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Tracks Card -->
+                    <div class="bg-white overflow-hidden shadow rounded-lg">
+                        <div class="p-5 bg-indigo-600">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 bg-indigo-500 rounded-md p-3">
+                                    <svg class="h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                                    </svg>
+                                </div>
+                                <div class="ml-5 w-0 flex-1">
+                                    <dl>
+                                        <dt class="text-sm font-medium text-indigo-100 truncate">
+                                            Total Tracks
+                                        </dt>
+                                        <dd>
+                                            <div class="text-lg font-medium text-white">
+                                                {{ $tracksCount }}
+                                            </div>
+                                        </dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 px-5 py-3">
+                            <div class="text-sm">
+                                <a href="{{ route('tracks.index') }}" class="font-medium text-indigo-600 hover:text-indigo-500">
+                                    View all tracks
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Genres Card -->
+                    <div class="bg-white overflow-hidden shadow rounded-lg">
+                        <div class="p-5 bg-purple-600">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 bg-purple-500 rounded-md p-3">
+                                    <svg class="h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                                    </svg>
+                                </div>
+                                <div class="ml-5 w-0 flex-1">
+                                    <dl>
+                                        <dt class="text-sm font-medium text-purple-100 truncate">
+                                            Total Genres
+                                        </dt>
+                                        <dd>
+                                            <div class="text-lg font-medium text-white">
+                                                {{ $genresCount }}
+                                            </div>
+                                        </dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 px-5 py-3">
+                            <div class="text-sm">
+                                <a href="{{ route('genres.index') }}" class="font-medium text-purple-600 hover:text-purple-500">
+                                    View all genres
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Playlists Card -->
+                    <div class="bg-white overflow-hidden shadow rounded-lg">
+                        <div class="p-5 bg-pink-600">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 bg-pink-500 rounded-md p-3">
+                                    <svg class="h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                                    </svg>
+                                </div>
+                                <div class="ml-5 w-0 flex-1">
+                                    <dl>
+                                        <dt class="text-sm font-medium text-pink-100 truncate">
+                                            Total Playlists
+                                        </dt>
+                                        <dd>
+                                            <div class="text-lg font-medium text-white">
+                                                {{ $playlistsCount }}
+                                            </div>
+                                        </dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 px-5 py-3">
+                            <div class="text-sm">
+                                <a href="{{ route('playlists.index') }}" class="font-medium text-pink-600 hover:text-pink-500">
+                                    View all playlists
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Tracks -->
+                <div class="mt-8">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
+                        Recently Added Tracks
+                    </h3>
+                    
+                    <x-table.table>
+                        <x-slot name="header">
+                            <x-table.header-cell>Title</x-table.header-cell>
+                            <x-table.header-cell>Genres</x-table.header-cell>
+                            <x-table.header-cell>Added</x-table.header-cell>
+                            <x-table.header-cell>Audio</x-table.header-cell>
+                        </x-slot>
+
+                        <x-slot name="body">
+                            @forelse ($recentTracks as $track)
+                                <tr>
+                                    <x-table.cell>
+                                        <div class="flex items-center">
+                                            <div class="h-10 w-10 flex-shrink-0">
+                                                <img class="h-10 w-10 rounded object-cover" src="{{ $track->image_url }}" alt="{{ $track->title }}">
+                                            </div>
+                                            <div class="ml-4">
+                                                <div class="text-sm font-medium text-gray-900">
+                                                    {{ $track->title }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </x-table.cell>
+                                    <x-table.cell>
+                                        <div class="flex flex-wrap">
+                                            @foreach($track->genres as $genre)
+                                                <span class="px-2 py-1 m-1 text-xs rounded-full bg-indigo-100 text-indigo-800">
+                                                    {{ $genre->name }}
+                                                </span>
+                                            @endforeach
+                                        </div>
+                                    </x-table.cell>
+                                    <x-table.cell>
+                                        {{ $track->created_at->format('Y-m-d') }}
+                                    </x-table.cell>
+                                    <x-table.cell>
+                                        <audio controls class="w-40">
+                                            <source src="{{ $track->audio_url }}" type="audio/mpeg">
+                                            Your browser does not support the audio element.
+                                        </audio>
+                                    </x-table.cell>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <x-table.cell colspan="4" align="center">
+                                        <div class="text-gray-500">No tracks found</div>
+                                    </x-table.cell>
+                                </tr>
+                            @endforelse
+                        </x-slot>
+                    </x-table.table>
+
+                    <div class="mt-4 text-right">
+                        <a href="{{ route('tracks.index') }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:border-indigo-900 focus:ring focus:ring-indigo-300 disabled:opacity-25 transition">
+                            View All Tracks
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</x-app-layout> 

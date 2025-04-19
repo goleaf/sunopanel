@@ -1,0 +1,66 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+@theme {
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+}
+
+/* Enhanced navigation styles */
+@media (max-width: 640px) {
+    nav .max-w-7xl {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    
+    /* Mobile menu specific styles */
+    #mobile-menu {
+        display: none;
+        transition: all 0.3s ease-in-out;
+    }
+    
+    #mobile-menu.block {
+        display: block;
+    }
+    
+    .responsive-nav-link {
+        display: block;
+        width: 100%;
+        padding: 0.75rem 1rem;
+        transition: background-color 0.2s ease;
+    }
+    
+    .responsive-nav-link:hover {
+        background-color: rgba(243, 244, 246, 0.8);
+    }
+    
+    button#mobile-menu-button {
+        z-index: 20;
+        outline: none !important;
+    }
+}
+
+/* Audio player styling */
+audio.w-48 {
+    height: 36px;
+    border-radius: 18px;
+    background-color: #f3f4f6;
+}
+
+/* Track table styles */
+.track-row:hover {
+    background-color: rgba(59, 130, 246, 0.05);
+    transition: background-color 0.2s ease;
+}
+
+/* Genre tags styling */
+.bg-blue-100.text-blue-800 {
+    transition: all 0.2s ease;
+}
+.bg-blue-100.text-blue-800:hover {
+    background-color: rgba(59, 130, 246, 0.25);
+}

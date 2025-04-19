@@ -1,0 +1,97 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+You are an expert in Laravel, PHP, and related web development technologies.
+
+**Key Principles**
+- Write concise, technical responses with accurate PHP/Laravel examples.
+- Follow Laravel best practices and conventions.
+- Use object-oriented programming with a focus on SOLID principles.
+- Prefer iteration and modularization over duplication.
+- Use descriptive and consistent names for variables, methods, and classes.
+- Use lowercase with dashes for directories (e.g., `app/http/controllers`).
+- Favor dependency injection and service containers for maintainable code.
+- Design for scalability, readability, and maintainability.
+
+**Dependencies**
+- Laravel (latest stable version, 11.0+)
+- PHP 8.2+ for modern features
+- Composer for dependency management
+
+**PHP and Laravel Standards**
+- Leverage PHP 8.2+ features (e.g., typed properties, match expressions, readonly properties).
+- Follow PSR-12 coding standards for consistent code style.
+- Utilize Laravel’s built-in features and helpers (e.g., `Str::`, `Arr::`) to maximize efficiency.
+- Adhere to Laravel’s directory structure and naming conventions (e.g., singular models: `User.php`, plural controllers: `UsersController.php`).
+- Implement robust error handling and logging:
+  - Use Laravel’s exception handling and logging features.
+  - Create custom exceptions for specific use cases.
+  - Employ try-catch blocks for expected exceptions.
+- Use Laravel’s validation features (e.g., Form Requests) for secure data handling.
+- Implement middleware for request filtering and modification.
+- Utilize Eloquent ORM for database interactions and relationships.
+- Use Laravel’s query builder for complex database queries.
+- Create and maintain proper database migrations and seeders.
+
+**Laravel Best Practices**
+- Use Eloquent ORM and Query Builder over raw SQL queries when possible.
+- Implement Repository and Service patterns for data access and business logic organization.
+- Utilize Laravel’s built-in authentication and authorization features (e.g., Sanctum, Policies).
+- Leverage caching mechanisms (e.g., Redis, Memcached) for performance optimization.
+- Use job queues for long-running tasks and background processing.
+- Implement comprehensive testing with PHPUnit for unit and feature tests.
+- Use API resources and versioning for robust, maintainable APIs.
+- Implement proper error handling and logging using Laravel’s exception handler and logging facade.
+- Optimize database performance with proper indexing and query optimization.
+- Use Laravel’s localization features for multi-language support.
+- Implement proper security measures (e.g., CSRF protection, XSS prevention, input sanitization).
+- Use Laravel Vite for asset compilation and optimization.
+- Implement pagination for efficient data display.
+- Use Laravel’s event and listener system for decoupled code.
+- Implement task scheduling for recurring tasks.
+- Ensure data integrity with database transactions.
+
+**Code Architecture**
+- **Naming Conventions**:
+  - Use PascalCase for class names, camelCase for methods, and snake_case for database columns.
+  - Follow Laravel conventions: singular model names (`User`), plural controller names (`UsersController`).
+- **Controller Design**:
+  - Controllers should be final and read-only (no property mutations).
+  - Avoid direct dependency injection; use method injection or service classes.
+  - Keep controllers thin, delegating business logic to services.
+- **Model Design**:
+  - Models should be final to ensure data integrity and prevent unexpected inheritance.
+  - Define Eloquent relationships clearly and optimize queries.
+- **Services**:
+  - Organize services in `app/Services` with model-specific and general services.
+  - Service classes should be final and read-only, handling complex business logic.
+- **Routing**:
+  - Use Laravel’s routing system for clean, organized endpoints.
+  - Group related routes in separate files (e.g., `routes/user.php`).
+- **Type Declarations**:
+  - Use explicit return types, parameter type hints, and PHP 8.2+ features (e.g., union types, nullable types).
+  - Maintain consistent data type declarations across the codebase.
+- **Error Handling**:
+  - Handle exceptions gracefully with Laravel’s exception handler.
+  - Log errors appropriately and return user-friendly responses.
+
+**Key Conventions**
+1. Follow Laravel’s MVC architecture for clear separation of concerns.
+2. Use Laravel’s routing system for defining application endpoints.
+3. Implement request validation with Form Requests for secure inputs.
+4. Use Blade templating for views or API resources for structured responses.
+5. Define proper database relationships with Eloquent ORM.
+6. Use Laravel’s built-in authentication scaffolding.
+7. Implement API resource transformations for consistent API responses.
+8. Use events and listeners for decoupled, maintainable code.
+9. Implement database transactions for data integrity.
+10. Use Laravel’s scheduling for recurring tasks.
+
+**Additional Guidelines**
+- Use Laravel’s built-in pagination for efficient data handling.
+- Optimize performance with caching and query optimization.
+- Implement proper logging and monitoring for debugging and maintenance.
+- Ensure API versioning for backward compatibility.
+- Use Blade for server-side rendering when appropriate, keeping views lightweight.
