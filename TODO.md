@@ -10,9 +10,9 @@
 - [x] Standardize layout between dashboard and home views
 
 ### Layout Pages
-- [ ] Review and update `layouts/app.blade.php` - Main application layout
-- [ ] Ensure consistent navbar styling across all pages
-- [ ] Add theme toggle functionality for light/dark mode
+- [x] Review and update `layouts/app.blade.php` - Main application layout
+- [x] Ensure consistent navbar styling across all pages
+- [x] Add theme toggle functionality for light/dark mode
 
 ### Components
 - [ ] Review and update table components:
@@ -43,4 +43,24 @@
 - [ ] Remove unused components and views
 - [ ] Standardize naming conventions across all components
 - [ ] Ensure all components follow Laravel and Tailwind best practices
-- [ ] Optimize stylesheets and scripts for performance  
+- [ ] Optimize stylesheets and scripts for performance
+
+## Critical Fixes Needed
+- [ ] Fix undefined variable $genres in playlists/add-tracks.blade.php view
+- [ ] Fix failing tests in PlaylistControllerTest:
+  - [ ] Update PlaylistController@addTracks to properly pass $availableTracks instead of $tracks
+  - [ ] Fix test_add_tracks_to_playlist test with correct variable names
+- [ ] Fix failing tests in PlaylistRoutesTest:
+  - [ ] Update create and update methods to use 'title' field instead of 'name'
+  - [ ] Fix inconsistency between 'name' and 'title' fields in Playlist model
+- [ ] Fix PlaylistController@createFromGenre method to use 'title' field instead of 'name'
+- [ ] Update PlaylistController validation rules to require 'title' instead of 'name'
+- [ ] Update all playlist form templates to use 'title' field instead of 'name'
+- [ ] Fix routing issues in PlaylistController that cause redirect test failures
+
+## Database & Model Updates
+- [ ] Update Playlist model fields:
+  - [ ] Consolidate 'name' and 'title' fields to use only 'title'
+  - [ ] Create migration to remove redundant columns from playlists table
+- [ ] Update test factories to use consistent field names
+- [ ] Update form request validation for playlist creation and editing  
