@@ -48,23 +48,23 @@
 ## Critical Fixes Needed
 - [x] Fix undefined variable $genres in playlists/add-tracks.blade.php view
 - [x] Fix variable name in playlists/add-tracks.blade.php view: use $tracks instead of $availableTracks
-- [ ] Fix failing tests in PlaylistControllerTest:
+- [x] Fix failing tests in PlaylistControllerTest:
   - [x] Update PlaylistController@addTracks to properly pass $tracks instead of $availableTracks
   - [x] Fix test_add_tracks_to_playlist test with correct variable names
-- [ ] Fix failing tests in PlaylistRoutesTest:
+- [x] Fix failing tests in PlaylistRoutesTest:
   - [x] Update create and update methods to use 'title' field instead of 'name'
   - [x] Fix inconsistency between 'name' and 'title' fields in Playlist model
 - [x] Fix PlaylistController@createFromGenre method to use 'title' field instead of 'name'
 - [x] Update PlaylistController validation rules to require 'title' instead of 'name'
 - [x] Update all playlist form templates to use 'title' field instead of 'name'
-- [ ] Fix routing issues in PlaylistController that cause redirect test failures
+- [x] Fix routing issues in PlaylistController that cause redirect test failures
 
 ## Database & Model Updates
-- [ ] Update Playlist model fields:
-  - [ ] Consolidate 'name' and 'title' fields to use only 'title'
+- [x] Update Playlist model fields:
+  - [x] Consolidate 'name' and 'title' fields to use only 'title'
   - [ ] Create migration to remove redundant columns from playlists table
-- [ ] Update test factories to use consistent field names
-- [ ] Update form request validation for playlist creation and editing
+- [x] Update test factories to use consistent field names
+- [x] Update form request validation for playlist creation and editing
 
 ## Laravel/PHP Code Structure Improvements
 - [ ] Make controllers final classes per Laravel standards
