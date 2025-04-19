@@ -1,129 +1,218 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+        <h2 class="text-xl font-semibold text-base-content">
             {{ __('Playlists') }}
         </h2>
     </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            @if (session('success'))
-                <x-alert type="success" class="mb-4">{{ session('success') }}</x-alert>
-            @endif
+    <div class="container mx-auto px-4">
+        @if (session('success'))
+            <div class="alert alert-success mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>{{ session('success') }}</span>
+            </div>
+        @endif
 
-            @if (session('error'))
-                <x-alert type="error" class="mb-4">{{ session('error') }}</x-alert>
-            @endif
+        @if (session('error'))
+            <div class="alert alert-error mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>{{ session('error') }}</span>
+            </div>
+        @endif
 
-            <x-card rounded="lg" class="overflow-hidden">
-                <div class="flex justify-between items-center mb-6">
+        <div class="card bg-base-100 shadow-md">
+            <div class="card-body">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                     <div class="w-full md:w-2/3">
-                        <x-search-form placeholder="Search playlists..." />
+                        <form action="{{ route('playlists.index') }}" method="GET" class="join">
+                            <input type="text" name="search" placeholder="Search playlists..." value="{{ request('search') }}" class="input input-bordered join-item w-full" />
+                            <button type="submit" class="btn btn-primary join-item">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                                Search
+                            </button>
+                        </form>
                     </div>
                     <div>
-                        <x-button href="{{ route('playlists.create') }}" color="indigo">
-                            <x-icon name="plus" class="h-5 w-5 mr-1" />
+                        <a href="{{ route('playlists.create') }}" class="btn btn-primary">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                            </svg>
                             New Playlist
-                        </x-button>
+                        </a>
                     </div>
                 </div>
 
-                <x-data-table>
-                    <x-slot name="header">
-                        <x-th sortable field="name" :sort="request('sort')" :direction="request('direction', 'asc')">
-                            Name
-                        </x-th>
-                        <x-th>
-                            Description
-                        </x-th>
-                        <x-th sortable field="genre_id" :sort="request('sort')" :direction="request('direction', 'asc')">
-                            Genre
-                        </x-th>
-                        <x-th sortable field="tracks_count" :sort="request('sort')" :direction="request('direction', 'asc')">
-                            Tracks
-                        </x-th>
-                        <x-th sortable field="created_at" :sort="request('sort')" :direction="request('direction', 'asc')">
-                            Created
-                        </x-th>
-                        <x-th>
-                            Actions
-                        </x-th>
-                    </x-slot>
-
-                    <x-slot name="body">
-                        @forelse ($playlists as $playlist)
-                            <tr class="hover:bg-gray-50">
-                                <x-td>
-                                    <div class="flex items-center">
-                                        @if($playlist->cover_image)
-                                            <div class="flex-shrink-0 mr-3">
-                                                <img src="{{ $playlist->cover_image }}" alt="{{ $playlist->name }}" class="h-10 w-10 object-cover rounded">
-                                            </div>
+                <div class="overflow-x-auto">
+                    <table class="table table-zebra w-full">
+                        <thead>
+                            <tr>
+                                <th>
+                                    <a href="{{ route('playlists.index', array_merge(request()->query(), [
+                                        'sort' => 'name',
+                                        'direction' => request('sort') === 'name' && request('direction') === 'asc' ? 'desc' : 'asc'
+                                    ])) }}" class="flex items-center">
+                                        Name
+                                        @if(request('sort') === 'name')
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                @if(request('direction') === 'asc')
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                                                @else
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                                @endif
+                                            </svg>
                                         @endif
-                                        <div>
-                                            <a href="{{ route('playlists.show', $playlist) }}" class="text-indigo-600 hover:text-indigo-900 font-medium">
-                                                {{ $playlist->name }}
+                                    </a>
+                                </th>
+                                <th>Description</th>
+                                <th>
+                                    <a href="{{ route('playlists.index', array_merge(request()->query(), [
+                                        'sort' => 'genre_id',
+                                        'direction' => request('sort') === 'genre_id' && request('direction') === 'asc' ? 'desc' : 'asc'
+                                    ])) }}" class="flex items-center">
+                                        Genre
+                                        @if(request('sort') === 'genre_id')
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                @if(request('direction') === 'asc')
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                                                @else
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                                @endif
+                                            </svg>
+                                        @endif
+                                    </a>
+                                </th>
+                                <th>
+                                    <a href="{{ route('playlists.index', array_merge(request()->query(), [
+                                        'sort' => 'tracks_count',
+                                        'direction' => request('sort') === 'tracks_count' && request('direction') === 'asc' ? 'desc' : 'asc'
+                                    ])) }}" class="flex items-center">
+                                        Tracks
+                                        @if(request('sort') === 'tracks_count')
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                @if(request('direction') === 'asc')
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                                                @else
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                                @endif
+                                            </svg>
+                                        @endif
+                                    </a>
+                                </th>
+                                <th>
+                                    <a href="{{ route('playlists.index', array_merge(request()->query(), [
+                                        'sort' => 'created_at',
+                                        'direction' => request('sort') === 'created_at' && request('direction') === 'asc' ? 'desc' : 'asc'
+                                    ])) }}" class="flex items-center">
+                                        Created
+                                        @if(request('sort') === 'created_at')
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                @if(request('direction') === 'asc')
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                                                @else
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                                @endif
+                                            </svg>
+                                        @endif
+                                    </a>
+                                </th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse ($playlists as $playlist)
+                                <tr>
+                                    <td>
+                                        <div class="flex items-center gap-3">
+                                            @if($playlist->cover_image)
+                                                <div class="avatar">
+                                                    <div class="mask mask-squircle w-12 h-12">
+                                                        <img src="{{ $playlist->cover_image }}" alt="{{ $playlist->name }}" />
+                                                    </div>
+                                                </div>
+                                            @endif
+                                            <div>
+                                                <a href="{{ route('playlists.show', $playlist) }}" class="font-bold text-primary hover:underline">
+                                                    {{ $playlist->name }}
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="truncate max-w-xs">
+                                            {{ Str::limit($playlist->description, 50) }}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        @if($playlist->genre)
+                                            <a href="{{ route('genres.show', $playlist->genre) }}" class="badge badge-accent">
+                                                {{ $playlist->genre->name }}
+                                            </a>
+                                        @else
+                                            <span class="opacity-50">-</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        <div class="badge">{{ $playlist->tracks_count }}</div>
+                                    </td>
+                                    <td>
+                                        {{ $playlist->created_at->format('Y-m-d') }}
+                                    </td>
+                                    <td>
+                                        <div class="flex flex-col md:flex-row gap-2">
+                                            <a href="{{ route('playlists.show', $playlist) }}" class="btn btn-info btn-xs">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                </svg>
+                                                View
+                                            </a>
+                                            <a href="{{ route('playlists.edit', $playlist) }}" class="btn btn-warning btn-xs">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                                </svg>
+                                                Edit
+                                            </a>
+                                            <form action="{{ route('playlists.destroy', $playlist) }}" method="POST" class="inline-block">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" 
+                                                    class="btn btn-error btn-xs" 
+                                                    onclick="return confirm('Are you sure you want to delete this playlist?')">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                    </svg>
+                                                    Delete
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="6" class="text-center py-4">
+                                        <div class="text-base-content/60">
+                                            No playlists found. 
+                                            <a href="{{ route('playlists.create') }}" class="link link-primary">
+                                                Create your first playlist
                                             </a>
                                         </div>
-                                    </div>
-                                </x-td>
-                                <x-td>
-                                    <div class="text-sm text-gray-900 truncate max-w-xs">
-                                        {{ Str::limit($playlist->description, 50) }}
-                                    </div>
-                                </x-td>
-                                <x-td>
-                                    @if($playlist->genre)
-                                        <a href="{{ route('genres.show', $playlist->genre) }}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 hover:bg-green-200">
-                                            {{ $playlist->genre->name }}
-                                        </a>
-                                    @else
-                                        <span class="text-gray-500">-</span>
-                                    @endif
-                                </x-td>
-                                <x-td>
-                                    <span class="text-sm">{{ $playlist->tracks_count }}</span>
-                                </x-td>
-                                <x-td>
-                                    <span class="text-sm text-gray-500">{{ $playlist->created_at->format('Y-m-d') }}</span>
-                                </x-td>
-                                <x-td>
-                                    <x-action-buttons>
-                                        <x-row-action href="{{ route('playlists.show', $playlist) }}" icon="eye" label="View" />
-                                        <x-row-action href="{{ route('playlists.edit', $playlist) }}" icon="pencil" label="Edit" />
-                                        
-                                        <form action="{{ route('playlists.destroy', $playlist) }}" method="POST" class="inline-block">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" 
-                                                class="text-red-600 hover:text-red-900 inline-flex items-center" 
-                                                onclick="return confirm('Are you sure you want to delete this playlist?')">
-                                                <x-icon name="trash" class="h-5 w-5 mr-1" />
-                                                <span>Delete</span>
-                                            </button>
-                                        </form>
-                                    </x-action-buttons>
-                                </x-td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <x-td colspan="6" class="text-center">
-                                    <div class="text-gray-500">
-                                        No playlists found. 
-                                        <a href="{{ route('playlists.create') }}" class="text-indigo-600 hover:text-indigo-900 font-medium">
-                                            Create your first playlist
-                                        </a>
-                                    </div>
-                                </x-td>
-                            </tr>
-                        @endforelse
-                    </x-slot>
-                </x-data-table>
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
 
                 <div class="mt-4">
-                    {{ $playlists->links('components.pagination-links') }}
+                    {{ $playlists->links() }}
                 </div>
-            </x-card>
+            </div>
         </div>
     </div>
 </x-app-layout>
