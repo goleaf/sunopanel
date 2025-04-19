@@ -24,6 +24,7 @@ Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard
 // Track routes
 Route::resource('tracks', TrackController::class);
 Route::get('tracks/{id}/play', [TrackController::class, 'play'])->name('tracks.play');
+Route::post('tracks/bulk-upload', [TrackController::class, 'processBulkUpload'])->name('tracks.bulk-upload');
 
 // Genre routes
 Route::resource('genres', GenreController::class);
