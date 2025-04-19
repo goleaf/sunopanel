@@ -422,3 +422,24 @@ composer test:convert-comments
 6. **Testing**: Ensure all components are tested for functionality after conversion.
 7. **Commit Changes**: Regularly commit changes to the `main` branch as per instructions.
 8. **Remove Unused Files**: Clean up any unused files or old controller/view structures post-conversion.
+
+## Conversion to Livewire
+
+- [ ] Create Livewire components for Tracks (Index, Create, Edit, Show).
+- [ ] Create Livewire components for Genres (Index, Create, Edit, Show).
+- [ ] Create Livewire components for Playlists (Index, Create, Edit, Show, Add/Remove Tracks).
+- [ ] Update routes to use Livewire components.
+- [ ] Update views to render Livewire components instead of Blade views.
+- [ ] Modify controllers to handle Livewire component interactions if necessary.
+- [ ] Update tests to work with Livewire components.
+- [ ] Ensure all UI interactions (search, sort, pagination) are handled by Livewire.
+- [ ] Implement real-time updates and reactivity using Livewire's features.
+- [ ] Test and debug the Livewire implementation for any issues.
+
+## Existing Test Fixes (In Progress)
+
+- [x] Add authentication to `tests/Feature/AppRouteTest.php`.
+- [x] Add authentication to `tests/Feature/MusicAppTest.php`.
+- [x] Add authentication to `tests/Feature/PlaylistControllerTest.php`.
+- [ ] Add authentication to `tests/Feature/PlaylistRequestTest.php`.
+- [ ] Verify all tests pass after authentication fixes.
