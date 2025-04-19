@@ -1,16 +1,18 @@
-@props(['href' => '#', 'icon' => null, 'label' => '', 'color' => 'indigo'])
+@props(['href' => '#', 'icon' => null, 'label' => '', 'color' => 'primary'])
 
 @php
 $colors = [
-    'indigo' => 'text-indigo-600 hover:text-indigo-900',
-    'red' => 'text-red-600 hover:text-red-900',
-    'green' => 'text-green-600 hover:text-green-900',
-    'blue' => 'text-blue-600 hover:text-blue-900',
-    'yellow' => 'text-yellow-600 hover:text-yellow-900',
-    'gray' => 'text-gray-600 hover:text-gray-900',
+    'primary' => 'text-primary hover:text-primary-focus',
+    'secondary' => 'text-secondary hover:text-secondary-focus',
+    'accent' => 'text-accent hover:text-accent-focus',
+    'neutral' => 'text-neutral hover:text-neutral-focus',
+    'info' => 'text-info hover:text-info-focus',
+    'success' => 'text-success hover:text-success-focus',
+    'warning' => 'text-warning hover:text-warning-focus',
+    'error' => 'text-error hover:text-error-focus',
 ];
 
-$colorClass = $colors[$color] ?? $colors['indigo'];
+$colorClass = $colors[$color] ?? $colors['primary'];
 @endphp
 
 <a href="{{ $href }}" {{ $attributes->merge(['class' => "inline-flex items-center px-2 py-1 text-sm $colorClass transition-colors duration-150"]) }}>
