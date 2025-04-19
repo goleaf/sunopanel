@@ -97,6 +97,4 @@
 - [x] Update the exception handler to use our logging service
 - [ ] Remove error logging from controllers
 - [x] Create tests for the logging service
-- [x] Commit the changes to Git
-
-Note: Some files were not properly tracked by Git, but the service is implemented and working. The error logging is now centralized using the global error handler and middleware.  
+- [x] Commit the changes to Git  
