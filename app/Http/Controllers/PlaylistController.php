@@ -11,6 +11,7 @@ use App\Services\Logging\LoggingService;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
+use App\Http\Requests\PlaylistCreateFromGenreRequest;
 
 final class PlaylistController extends Controller
 {
@@ -344,7 +345,7 @@ final class PlaylistController extends Controller
     /**
      * Create a playlist from a genre.
      */
-    public function createFromGenre(Genre $genre): RedirectResponse
+    public function createFromGenre(PlaylistCreateFromGenreRequest $request, Genre $genre): RedirectResponse
     {
         try {
             $this->loggingService->info('Creating playlist from genre', [
@@ -360,9 +361,12 @@ final class PlaylistController extends Controller
                     ->with('warning', 'No tracks found in this genre to create playlist.');
             }
 
+            // Get title suffix if provided, otherwise use "Playlist"
+            $titleSuffix = $request->input('title_suffix') ? $request->input('title_suffix') : ' Playlist';
+
             // Create a new playlist
             $playlist = Playlist::create([
-                'title' => 'Playlist: ' . $genre->name,
+                'title' => $genre->name . $titleSuffix,
                 'description' => 'Auto-generated playlist from ' . $genre->name . ' genre.',
                 'genre_id' => $genre->id,
             ]);

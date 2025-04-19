@@ -34,9 +34,9 @@ final class TrackStoreRequest extends FormRequest
                 'duration' => ['nullable', 'string', 'max:10'],
                 'genres' => ['nullable', 'string'],
                 'genre_ids' => ['nullable', 'array'],
-                'genre_ids.*' => ['exists:genres,id'],
+                'genre_ids.*' => ['nullable', 'exists:genres,id'],
                 'playlists' => ['nullable', 'array'],
-                'playlists.*' => ['exists:playlists,id'],
+                'playlists.*' => ['nullable', 'exists:playlists,id'],
             ];
         }
 
@@ -46,12 +46,31 @@ final class TrackStoreRequest extends FormRequest
             'image_url' => ['required', 'url'],
             'duration' => ['nullable', 'string', 'max:10'],
             // Accept either genres string or genre_ids array
-            'genres' => ['required_without:genre_ids', 'string'],
-            'genre_ids' => ['required_without:genres', 'array'],
+            'genres' => ['nullable', 'required_without:genre_ids', 'string'],
+            'genre_ids' => ['nullable', 'required_without:genres', 'array'],
             'genre_ids.*' => ['exists:genres,id'],
             'playlists' => ['nullable', 'array'],
             'playlists.*' => ['exists:playlists,id'],
             'bulk_tracks' => ['nullable', 'string'],
+        ];
+    }
+
+    /**
+     * Get custom messages for validator errors.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'title.required' => 'The track title is required.',
+            'title.unique' => 'A track with this title already exists.',
+            'audio_url.required' => 'The audio URL is required.',
+            'audio_url.url' => 'The audio URL must be a valid URL.',
+            'image_url.required' => 'The image URL is required.',
+            'image_url.url' => 'The image URL must be a valid URL.',
+            'genres.required_without' => 'Either genres or genre IDs must be provided.',
+            'genre_ids.required_without' => 'Either genres or genre IDs must be provided.',
         ];
     }
 } 

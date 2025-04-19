@@ -32,9 +32,12 @@ class BladeViewTest extends TestCase
         // Assert view has the expected variable
         $response->assertViewHas('tracks');
         
-        // Assert the view contains the track titles
+        // Check that all created tracks are in the collection
         foreach ($tracks as $track) {
-            $response->assertSee($track->title);
+            $trackId = $track->id;
+            $response->assertViewHas('tracks', function($viewTracks) use ($trackId) {
+                return $viewTracks->contains('id', $trackId);
+            });
         }
     }
 

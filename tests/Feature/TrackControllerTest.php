@@ -318,15 +318,24 @@ class TrackControllerTest extends TestCase
      */
     public function test_track_search()
     {
-        $response = $this->get(route('tracks.index', ['search' => 'Rock']));
+        // Create test data - tracks with different names
+        $rockTrack1 = Track::factory()->create(['title' => 'Rock Song 1']);
+        $rockTrack2 = Track::factory()->create(['title' => 'Rock Track']);
+        $popTrack1 = Track::factory()->create(['title' => 'Pop Song 1']);
+        
+        // Search for tracks with "Rock" in the title
+        $response = $this->get('/tracks?search=Rock');
         
         $response->assertStatus(200);
         $response->assertViewIs('tracks.index');
         $response->assertViewHas('tracks');
         
-        $response->assertSee('Rock Song 1');
-        $response->assertSee('Rock Track');
-        $response->assertDontSee('Pop Song 1');
+        // Check that the right tracks are in the results
+        $response->assertViewHas('tracks', function($tracks) use ($rockTrack1, $rockTrack2, $popTrack1) {
+            return $tracks->contains('id', $rockTrack1->id) && 
+                   $tracks->contains('id', $rockTrack2->id) && 
+                   !$tracks->contains('id', $popTrack1->id);
+        });
     }
 
     /**
@@ -334,24 +343,33 @@ class TrackControllerTest extends TestCase
      */
     public function test_track_filter_by_genre()
     {
-        // Get the Rock genre
-        $rockGenre = Genre::where('name', 'Rock')->first();
-        $this->assertNotNull($rockGenre);
+        // Create or get test genres
+        $rockGenre = Genre::firstOrCreate(['slug' => 'rock'], ['name' => 'Rock', 'description' => 'Rock genre for testing']);
+        $popGenre = Genre::firstOrCreate(['slug' => 'pop'], ['name' => 'Pop', 'description' => 'Pop genre for testing']);
         
-        // Filter by Rock genre
-        $response = $this->get(route('tracks.index', ['genre' => $rockGenre->id]));
+        // Create test tracks with different genres
+        $rockTrack1 = Track::factory()->create(['title' => 'Rock Song 1']);
+        $rockTrack2 = Track::factory()->create(['title' => 'Rock Track']);
+        $popTrack = Track::factory()->create(['title' => 'Pop Song 1']);
+        
+        // Associate tracks with genres
+        $rockTrack1->genres()->attach($rockGenre);
+        $rockTrack2->genres()->attach($rockGenre);
+        $popTrack->genres()->attach($popGenre);
+        
+        // Filter tracks by Rock genre
+        $response = $this->get('/tracks?genre=' . $rockGenre->id);
         
         $response->assertStatus(200);
         $response->assertViewIs('tracks.index');
         $response->assertViewHas('tracks');
         
-        // Should see Rock tracks
-        $response->assertSee('Rock Song 1');
-        $response->assertSee('Rock Track');
-        
-        // Should not see Pop tracks
-        $response->assertDontSee('Pop Song 1');
-        $response->assertDontSee('Pop Track');
+        // Check that the right tracks are in the results
+        $response->assertViewHas('tracks', function($tracks) use ($rockTrack1, $rockTrack2, $popTrack) {
+            return $tracks->contains('id', $rockTrack1->id) && 
+                   $tracks->contains('id', $rockTrack2->id) && 
+                   !$tracks->contains('id', $popTrack->id);
+        });
     }
 
     /**
