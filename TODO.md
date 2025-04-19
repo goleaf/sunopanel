@@ -54,9 +54,9 @@
 - [ ] Fix failing tests in PlaylistRoutesTest:
   - [x] Update create and update methods to use 'title' field instead of 'name'
   - [x] Fix inconsistency between 'name' and 'title' fields in Playlist model
-- [ ] Fix PlaylistController@createFromGenre method to use 'title' field instead of 'name'
-- [ ] Update PlaylistController validation rules to require 'title' instead of 'name'
-- [ ] Update all playlist form templates to use 'title' field instead of 'name'
+- [x] Fix PlaylistController@createFromGenre method to use 'title' field instead of 'name'
+- [x] Update PlaylistController validation rules to require 'title' instead of 'name'
+- [x] Update all playlist form templates to use 'title' field instead of 'name'
 - [ ] Fix routing issues in PlaylistController that cause redirect test failures
 
 ## Database & Model Updates
