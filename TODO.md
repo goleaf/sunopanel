@@ -46,14 +46,14 @@
 - [ ] Optimize stylesheets and scripts for performance
 
 ## Critical Fixes Needed
-- [ ] Fix undefined variable $genres in playlists/add-tracks.blade.php view
-- [ ] Fix variable name in playlists/add-tracks.blade.php view: use $tracks instead of $availableTracks
+- [x] Fix undefined variable $genres in playlists/add-tracks.blade.php view
+- [x] Fix variable name in playlists/add-tracks.blade.php view: use $tracks instead of $availableTracks
 - [ ] Fix failing tests in PlaylistControllerTest:
-  - [ ] Update PlaylistController@addTracks to properly pass $tracks instead of $availableTracks
-  - [ ] Fix test_add_tracks_to_playlist test with correct variable names
+  - [x] Update PlaylistController@addTracks to properly pass $tracks instead of $availableTracks
+  - [x] Fix test_add_tracks_to_playlist test with correct variable names
 - [ ] Fix failing tests in PlaylistRoutesTest:
-  - [ ] Update create and update methods to use 'title' field instead of 'name'
-  - [ ] Fix inconsistency between 'name' and 'title' fields in Playlist model
+  - [x] Update create and update methods to use 'title' field instead of 'name'
+  - [x] Fix inconsistency between 'name' and 'title' fields in Playlist model
 - [ ] Fix PlaylistController@createFromGenre method to use 'title' field instead of 'name'
 - [ ] Update PlaylistController validation rules to require 'title' instead of 'name'
 - [ ] Update all playlist form templates to use 'title' field instead of 'name'
