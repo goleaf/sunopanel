@@ -6,6 +6,11 @@
     'disabled' => false,
     'outline' => false,
     'icon' => false,
+    'circle' => false,
+    'square' => false,
+    'block' => false,
+    'loading' => false,
+    'wide' => false,
 ])
 
 @php
@@ -23,6 +28,7 @@
             'error' => 'btn-outline btn-error ',
             'ghost' => 'btn-ghost ',
             'link' => 'btn-link ',
+            'neutral' => 'btn-outline btn-neutral ',
             default => 'btn-outline ',
         };
     } else {
@@ -36,6 +42,7 @@
             'error' => 'btn-error ',
             'ghost' => 'btn-ghost ',
             'link' => 'btn-link ',
+            'neutral' => 'btn-neutral ',
             default => '',
         };
     }
@@ -49,12 +56,28 @@
     };
     
     // Special variants
-    if ($icon) {
+    if ($icon || $square) {
         $baseClasses .= 'btn-square ';
+    }
+    
+    if ($circle) {
+        $baseClasses .= 'btn-circle ';
     }
     
     if ($disabled) {
         $baseClasses .= 'btn-disabled ';
+    }
+    
+    if ($block) {
+        $baseClasses .= 'btn-block ';
+    }
+    
+    if ($wide) {
+        $baseClasses .= 'btn-wide ';
+    }
+    
+    if ($loading) {
+        $baseClasses .= 'loading ';
     }
     
     $attributes = $attributes->class([$baseClasses])->merge([

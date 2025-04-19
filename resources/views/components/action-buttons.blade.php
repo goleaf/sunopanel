@@ -8,24 +8,27 @@
 
 <div class="flex items-center justify-end space-x-2">
     @if($view)
-        <a href="{{ $view }}" class="text-indigo-600 hover:text-indigo-900" title="View">
-            <x-icon name="eye" class="h-5 w-5" />
-        </a>
+        <x-button :href="$view" color="info" size="xs">
+            <x-icon name="eye" class="h-4 w-4 mr-1" />
+            View
+        </x-button>
     @endif
     
     @if($edit)
-        <a href="{{ $edit }}" class="text-blue-600 hover:text-blue-900" title="Edit">
-            <x-icon name="pencil" class="h-5 w-5" />
-        </a>
+        <x-button :href="$edit" color="warning" size="xs">
+            <x-icon name="pencil" class="h-4 w-4 mr-1" />
+            Edit
+        </x-button>
     @endif
     
     @if($delete)
         <form action="{{ $delete }}" method="POST" class="inline-block" onsubmit="return confirm('{{ $confirmMessage }}');">
             @csrf
             @method('DELETE')
-            <button type="submit" class="text-red-600 hover:text-red-900" title="Delete">
-                <x-icon name="trash" class="h-5 w-5" />
-            </button>
+            <x-button type="submit" color="error" size="xs">
+                <x-icon name="trash" class="h-4 w-4 mr-1" />
+                Delete
+            </x-button>
         </form>
     @endif
     
