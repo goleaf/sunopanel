@@ -5,6 +5,8 @@
 - [x] All Playlist-related tests now pass 
 - [x] Fixed test failures in PlaylistControllerTest and PlaylistRoutesTest
 - [x] Created migration to remove redundant name column from playlists table
+- [x] Created FormRequest classes for all controller methods
+- [x] Added comprehensive tests for all FormRequest classes
 - [ ] Several other test failures still exist in other test classes (TrackRequestTest, GenreControllerTest, etc.)
 
 ## View Templates to Update
@@ -76,6 +78,8 @@
 - [x] Update form request validation for playlist creation and editing
 
 ## Laravel/PHP Code Structure Improvements
+- [x] Create dedicated FormRequest classes for controller validation
+- [x] Add comprehensive tests for all FormRequest classes
 - [ ] Make controllers final classes per Laravel standards
 - [ ] Make model classes final per Laravel standards
 - [ ] Add strict typing declarations to PHP files: `declare(strict_types=1);`
