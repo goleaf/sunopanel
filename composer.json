@@ -61,6 +61,22 @@
         "test": [
             "@php artisan config:clear --ansi",
             "@php artisan test"
+        ],
+        "lint": [
+            "@php artisan lint:psr12 --fix"
+        ],
+        "test:lint": [
+            "@lint",
+            "@test"
+        ],
+        "test:fix-style": [
+            "@php artisan test:style-fix"
+        ],
+        "test:generate-missing": [
+            "@php artisan test:generate-missing"
+        ],
+        "test:convert-attributes": [
+            "@php artisan test:convert-attributes"
         ]
     },
     "extra": {
