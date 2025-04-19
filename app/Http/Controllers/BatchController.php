@@ -11,6 +11,7 @@ use App\Models\Genre;
 use App\Models\Playlist;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
+use Exception;
 
 final class BatchController extends Controller
 {
@@ -19,11 +20,24 @@ final class BatchController extends Controller
      */
     public function index(): View
     {
-        $tracks = Track::with('genres')->orderBy('title')->get();
-        $genres = Genre::orderBy('name')->get();
-        $playlists = Playlist::orderBy('name')->get();
+        try {
+            $tracks = Track::with('genres')->orderBy('title')->get();
+            $genres = Genre::orderBy('name')->get();
+            $playlists = Playlist::orderBy('name')->get();
 
-        return view('batch.index', compact('tracks', 'genres', 'playlists'));
+            return view('batch.index', compact('tracks', 'genres', 'playlists'));
+        } catch (Exception $e) {
+            Log::error('Error retrieving batch data: ' . $e->getMessage(), [
+                'exception' => $e
+            ]);
+            
+            return view('batch.index', [
+                'tracks' => collect(),
+                'genres' => collect(),
+                'playlists' => collect(),
+                'error' => 'An error occurred while retrieving data.'
+            ]);
+        }
     }
 
     /**
@@ -31,8 +45,17 @@ final class BatchController extends Controller
      */
     public function import(): RedirectResponse
     {
-        Log::info('Accessed batch import page');
-        return redirect()->route('dashboard')->with('success', 'Import feature temporarily disabled');
+        try {
+            Log::info('Accessed batch import page');
+            return redirect()->route('dashboard')->with('success', 'Import feature temporarily disabled');
+        } catch (Exception $e) {
+            Log::error('Error accessing batch import page: ' . $e->getMessage(), [
+                'exception' => $e
+            ]);
+            
+            return redirect()->route('dashboard')
+                ->with('error', 'An error occurred while accessing the import page.');
+        }
     }
 
     /**
@@ -40,8 +63,18 @@ final class BatchController extends Controller
      */
     public function processImport(Request $request): RedirectResponse
     {
-        Log::info('Starting batch import process');
-        return redirect()->route('dashboard')->with('success', 'Import process temporarily disabled');
+        try {
+            Log::info('Starting batch import process');
+            return redirect()->route('dashboard')->with('success', 'Import process temporarily disabled');
+        } catch (Exception $e) {
+            Log::error('Error in batch import process: ' . $e->getMessage(), [
+                'exception' => $e,
+                'request' => $request->all()
+            ]);
+            
+            return redirect()->route('dashboard')
+                ->with('error', 'An error occurred during the import process.');
+        }
     }
 
     /**
@@ -49,8 +82,18 @@ final class BatchController extends Controller
      */
     public function importTracks(Request $request): RedirectResponse
     {
-        Log::info('Starting tracks import');
-        return redirect()->route('dashboard')->with('success', 'Track import temporarily disabled');
+        try {
+            Log::info('Starting tracks import');
+            return redirect()->route('dashboard')->with('success', 'Track import temporarily disabled');
+        } catch (Exception $e) {
+            Log::error('Error importing tracks: ' . $e->getMessage(), [
+                'exception' => $e,
+                'request' => $request->all()
+            ]);
+            
+            return redirect()->route('dashboard')
+                ->with('error', 'An error occurred while importing tracks.');
+        }
     }
 
     /**
@@ -58,8 +101,18 @@ final class BatchController extends Controller
      */
     public function importPlaylists(Request $request): RedirectResponse
     {
-        Log::info('Starting playlists import');
-        return redirect()->route('dashboard')->with('success', 'Playlist import temporarily disabled');
+        try {
+            Log::info('Starting playlists import');
+            return redirect()->route('dashboard')->with('success', 'Playlist import temporarily disabled');
+        } catch (Exception $e) {
+            Log::error('Error importing playlists: ' . $e->getMessage(), [
+                'exception' => $e,
+                'request' => $request->all()
+            ]);
+            
+            return redirect()->route('dashboard')
+                ->with('error', 'An error occurred while importing playlists.');
+        }
     }
 
     /**
@@ -67,8 +120,18 @@ final class BatchController extends Controller
      */
     public function importGenres(Request $request): RedirectResponse
     {
-        Log::info('Starting genres import');
-        return redirect()->route('dashboard')->with('success', 'Genre import temporarily disabled');
+        try {
+            Log::info('Starting genres import');
+            return redirect()->route('dashboard')->with('success', 'Genre import temporarily disabled');
+        } catch (Exception $e) {
+            Log::error('Error importing genres: ' . $e->getMessage(), [
+                'exception' => $e,
+                'request' => $request->all()
+            ]);
+            
+            return redirect()->route('dashboard')
+                ->with('error', 'An error occurred while importing genres.');
+        }
     }
 
     /**
@@ -76,8 +139,17 @@ final class BatchController extends Controller
      */
     public function actions(): RedirectResponse
     {
-        Log::info('Accessing batch actions page');
-        return redirect()->route('dashboard')->with('success', 'Batch actions temporarily disabled');
+        try {
+            Log::info('Accessing batch actions page');
+            return redirect()->route('dashboard')->with('success', 'Batch actions temporarily disabled');
+        } catch (Exception $e) {
+            Log::error('Error accessing batch actions: ' . $e->getMessage(), [
+                'exception' => $e
+            ]);
+            
+            return redirect()->route('dashboard')
+                ->with('error', 'An error occurred while accessing batch actions.');
+        }
     }
 
     /**
@@ -85,8 +157,18 @@ final class BatchController extends Controller
      */
     public function processActions(Request $request): RedirectResponse
     {
-        Log::info('Processing batch actions');
-        return redirect()->route('dashboard')->with('success', 'Batch actions temporarily disabled');
+        try {
+            Log::info('Processing batch actions');
+            return redirect()->route('dashboard')->with('success', 'Batch actions temporarily disabled');
+        } catch (Exception $e) {
+            Log::error('Error processing batch actions: ' . $e->getMessage(), [
+                'exception' => $e,
+                'request' => $request->all()
+            ]);
+            
+            return redirect()->route('dashboard')
+                ->with('error', 'An error occurred while processing batch actions.');
+        }
     }
 
     /**
@@ -94,8 +176,18 @@ final class BatchController extends Controller
      */
     public function assignGenres(Request $request): RedirectResponse
     {
-        Log::info('Assigning genres to tracks in batch');
-        return redirect()->route('dashboard')->with('success', 'Genre assignment temporarily disabled');
+        try {
+            Log::info('Assigning genres to tracks in batch');
+            return redirect()->route('dashboard')->with('success', 'Genre assignment temporarily disabled');
+        } catch (Exception $e) {
+            Log::error('Error assigning genres to tracks: ' . $e->getMessage(), [
+                'exception' => $e,
+                'request' => $request->all()
+            ]);
+            
+            return redirect()->route('dashboard')
+                ->with('error', 'An error occurred while assigning genres to tracks.');
+        }
     }
 
     /**
@@ -103,7 +195,17 @@ final class BatchController extends Controller
      */
     public function addToPlaylist(Request $request): RedirectResponse
     {
-        Log::info('Adding tracks to playlist in batch');
-        return redirect()->route('dashboard')->with('success', 'Playlist addition temporarily disabled');
+        try {
+            Log::info('Adding tracks to playlist in batch');
+            return redirect()->route('dashboard')->with('success', 'Playlist addition temporarily disabled');
+        } catch (Exception $e) {
+            Log::error('Error adding tracks to playlist: ' . $e->getMessage(), [
+                'exception' => $e,
+                'request' => $request->all()
+            ]);
+            
+            return redirect()->route('dashboard')
+                ->with('error', 'An error occurred while adding tracks to playlist.');
+        }
     }
 } 
