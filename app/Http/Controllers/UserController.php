@@ -31,6 +31,12 @@ final class UserController extends Controller
     public function index(Request $request): View
     {
         try {
+            $this->loggingService->info('Users index accessed', [
+                'search' => $request->input('search', ''),
+                'sort' => $request->input('sort', 'id'),
+                'order' => $request->input('order', 'asc')
+            ]);
+            
             $search = $request->input('search', '');
             $sort = $request->input('sort', 'id');
             $order = $request->input('order', 'asc');
@@ -41,6 +47,8 @@ final class UserController extends Controller
             
             // Apply search if provided
             if (!empty($search)) {
+                $this->loggingService->info('User search applied', ['term' => $search]);
+                
                 $users = User::where(function($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
                       ->orWhere('email', 'like', "%{$search}%");
@@ -80,6 +88,7 @@ final class UserController extends Controller
      */
     public function create(): View
     {
+        $this->loggingService->info('User create form accessed');
         return view('users.create');
     }
 
@@ -89,8 +98,12 @@ final class UserController extends Controller
     public function store(UserStoreRequest $request): RedirectResponse
     {
         try {
+            $this->loggingService->info('User store method called', ['request' => $request->except(['password', 'password_confirmation'])]);
+            
             // Delegate user creation to service
-            $this->userService->store($request);
+            $user = $this->userService->store($request);
+            
+            $this->loggingService->info('User created successfully', ['user_id' => $user->id]);
             
             return redirect()->route('users.index')
                 ->with('success', 'User created successfully!');
@@ -109,6 +122,8 @@ final class UserController extends Controller
     public function show(User $user): View
     {
         try {
+            $this->loggingService->info('User show accessed', ['user_id' => $user->id]);
+            
             // Get user with their playlists
             $user = $this->userService->getUserWithPlaylists($user);
             return view('users.show', compact('user'));
@@ -127,6 +142,7 @@ final class UserController extends Controller
      */
     public function edit(User $user): View
     {
+        $this->loggingService->info('User edit form accessed', ['user_id' => $user->id]);
         return view('users.edit', compact('user'));
     }
 
@@ -136,8 +152,15 @@ final class UserController extends Controller
     public function update(UserUpdateRequest $request, User $user): RedirectResponse
     {
         try {
+            $this->loggingService->info('User update method called', [
+                'user_id' => $user->id, 
+                'request' => $request->except(['password', 'password_confirmation'])
+            ]);
+            
             // Delegate user update to service
             $this->userService->update($request, $user);
+            
+            $this->loggingService->info('User updated successfully', ['user_id' => $user->id]);
             
             return redirect()->route('users.index')
                 ->with('success', 'User updated successfully!');
@@ -156,8 +179,12 @@ final class UserController extends Controller
     public function destroy(User $user): RedirectResponse
     {
         try {
+            $this->loggingService->info('User delete initiated', ['user_id' => $user->id]);
+            
             // Delegate user deletion to service
             $this->userService->delete($user);
+            
+            $this->loggingService->info('User deleted successfully', ['user_id' => $user->id]);
             
             return redirect()->route('users.index')
                 ->with('success', 'User deleted successfully!');
