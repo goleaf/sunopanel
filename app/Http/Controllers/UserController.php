@@ -5,17 +5,24 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Models\User;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Validation\Rule;
+use App\Services\User\UserService;
+use App\Http\Requests\UserStoreRequest;
 use App\Http\Requests\UserUpdateRequest;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 use Exception;
 
 final class UserController extends Controller
 {
+    private UserService $userService;
+
+    public function __construct(UserService $userService)
+    {
+        $this->userService = $userService;
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -26,21 +33,20 @@ final class UserController extends Controller
             $sort = $request->input('sort', 'id');
             $order = $request->input('order', 'asc');
             
-            $query = User::query();
+            // Get paginated users from service
+            $perPage = (int) $request->input('per_page', 10);
+            $users = $this->userService->getAll($perPage);
             
-            // Search functionality
+            // Apply search if provided
             if (!empty($search)) {
-                $query->where(function($q) use ($search) {
+                $users = User::where(function($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
                       ->orWhere('email', 'like', "%{$search}%");
-                });
+                })
+                ->orderBy($sort, $order)
+                ->paginate($perPage)
+                ->withQueryString();
             }
-            
-            // Sorting
-            $query->orderBy($sort, $order);
-            
-            // Paginate the results
-            $users = $query->paginate(10)->withQueryString();
             
             // Define headers for the data table
             $headers = [
@@ -83,20 +89,11 @@ final class UserController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request): RedirectResponse
+    public function store(UserStoreRequest $request): RedirectResponse
     {
         try {
-            $validated = $request->validate([
-                'name' => 'required|string|max:255',
-                'email' => 'required|string|email|max:255|unique:users',
-                'password' => 'required|string|min:8|confirmed',
-            ]);
-            
-            User::create([
-                'name' => $validated['name'],
-                'email' => $validated['email'],
-                'password' => Hash::make($validated['password']),
-            ]);
+            // Delegate user creation to service
+            $this->userService->store($request);
             
             return redirect()->route('users.index')
                 ->with('success', 'User created successfully!');
@@ -117,7 +114,21 @@ final class UserController extends Controller
      */
     public function show(User $user): View
     {
-        return view('users.show', compact('user'));
+        try {
+            // Get user with their playlists
+            $user = $this->userService->getUserWithPlaylists($user);
+            return view('users.show', compact('user'));
+        } catch (Exception $e) {
+            Log::error('Error showing user: ' . $e->getMessage(), [
+                'exception' => $e,
+                'user_id' => $user->id
+            ]);
+            
+            return view('users.show', [
+                'user' => $user,
+                'error' => 'An error occurred while retrieving user data.'
+            ]);
+        }
     }
 
     /**
@@ -131,31 +142,11 @@ final class UserController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, User $user): RedirectResponse
+    public function update(UserUpdateRequest $request, User $user): RedirectResponse
     {
         try {
-            $validated = $request->validate([
-                'name' => 'required|string|max:255',
-                'email' => [
-                    'required',
-                    'string',
-                    'email',
-                    'max:255',
-                    Rule::unique('users')->ignore($user->id),
-                ],
-                'password' => 'nullable|string|min:8|confirmed',
-            ]);
-            
-            $userData = [
-                'name' => $validated['name'],
-                'email' => $validated['email'],
-            ];
-            
-            if (!empty($validated['password'])) {
-                $userData['password'] = Hash::make($validated['password']);
-            }
-            
-            $user->update($userData);
+            // Delegate user update to service
+            $this->userService->update($request, $user);
             
             return redirect()->route('users.index')
                 ->with('success', 'User updated successfully!');
@@ -178,7 +169,8 @@ final class UserController extends Controller
     public function destroy(User $user): RedirectResponse
     {
         try {
-            $user->delete();
+            // Delegate user deletion to service
+            $this->userService->delete($user);
             
             return redirect()->route('users.index')
                 ->with('success', 'User deleted successfully!');

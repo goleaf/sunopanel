@@ -6,26 +6,34 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use App\Models\Track;
-use App\Models\Genre;
-use App\Models\Playlist;
+use App\Services\Batch\BatchService;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 use Exception;
 
 final class BatchController extends Controller
 {
+    private BatchService $batchService;
+
+    public function __construct(BatchService $batchService)
+    {
+        $this->batchService = $batchService;
+    }
+
     /**
      * Display a listing of all batches
      */
     public function index(): View
     {
         try {
-            $tracks = Track::with('genres')->orderBy('title')->get();
-            $genres = Genre::orderBy('name')->get();
-            $playlists = Playlist::orderBy('name')->get();
-
-            return view('batch.index', compact('tracks', 'genres', 'playlists'));
+            // Get batch data from service
+            $batchData = $this->batchService->getBatchData();
+            
+            return view('batch.index', [
+                'tracks' => $batchData['tracks'],
+                'genres' => $batchData['genres'],
+                'playlists' => $batchData['playlists']
+            ]);
         } catch (Exception $e) {
             Log::error('Error retrieving batch data: ' . $e->getMessage(), [
                 'exception' => $e
@@ -83,8 +91,14 @@ final class BatchController extends Controller
     public function importTracks(Request $request): RedirectResponse
     {
         try {
-            Log::info('Starting tracks import');
-            return redirect()->route('dashboard')->with('success', 'Track import temporarily disabled');
+            // Delegate to service
+            $result = $this->batchService->importTracks($request);
+            
+            $message = $result 
+                ? 'Tracks imported successfully' 
+                : 'Track import temporarily disabled';
+                
+            return redirect()->route('dashboard')->with('success', $message);
         } catch (Exception $e) {
             Log::error('Error importing tracks: ' . $e->getMessage(), [
                 'exception' => $e,
@@ -102,8 +116,14 @@ final class BatchController extends Controller
     public function importPlaylists(Request $request): RedirectResponse
     {
         try {
-            Log::info('Starting playlists import');
-            return redirect()->route('dashboard')->with('success', 'Playlist import temporarily disabled');
+            // Delegate to service
+            $result = $this->batchService->importPlaylists($request);
+            
+            $message = $result 
+                ? 'Playlists imported successfully' 
+                : 'Playlist import temporarily disabled';
+                
+            return redirect()->route('dashboard')->with('success', $message);
         } catch (Exception $e) {
             Log::error('Error importing playlists: ' . $e->getMessage(), [
                 'exception' => $e,
@@ -121,8 +141,14 @@ final class BatchController extends Controller
     public function importGenres(Request $request): RedirectResponse
     {
         try {
-            Log::info('Starting genres import');
-            return redirect()->route('dashboard')->with('success', 'Genre import temporarily disabled');
+            // Delegate to service
+            $result = $this->batchService->importGenres($request);
+            
+            $message = $result 
+                ? 'Genres imported successfully' 
+                : 'Genre import temporarily disabled';
+                
+            return redirect()->route('dashboard')->with('success', $message);
         } catch (Exception $e) {
             Log::error('Error importing genres: ' . $e->getMessage(), [
                 'exception' => $e,
@@ -177,8 +203,14 @@ final class BatchController extends Controller
     public function assignGenres(Request $request): RedirectResponse
     {
         try {
-            Log::info('Assigning genres to tracks in batch');
-            return redirect()->route('dashboard')->with('success', 'Genre assignment temporarily disabled');
+            // Delegate to service
+            $result = $this->batchService->assignGenresToTracks($request);
+            
+            $message = $result 
+                ? 'Genres assigned to tracks successfully' 
+                : 'Genre assignment temporarily disabled';
+                
+            return redirect()->route('dashboard')->with('success', $message);
         } catch (Exception $e) {
             Log::error('Error assigning genres to tracks: ' . $e->getMessage(), [
                 'exception' => $e,
@@ -196,8 +228,14 @@ final class BatchController extends Controller
     public function addToPlaylist(Request $request): RedirectResponse
     {
         try {
-            Log::info('Adding tracks to playlist in batch');
-            return redirect()->route('dashboard')->with('success', 'Playlist addition temporarily disabled');
+            // Delegate to service
+            $result = $this->batchService->addTracksToPlaylist($request);
+            
+            $message = $result 
+                ? 'Tracks added to playlist successfully' 
+                : 'Playlist addition temporarily disabled';
+                
+            return redirect()->route('dashboard')->with('success', $message);
         } catch (Exception $e) {
             Log::error('Error adding tracks to playlist: ' . $e->getMessage(), [
                 'exception' => $e,
