@@ -68,7 +68,7 @@
     x-transition:leave="transition ease-in duration-100"
     x-transition:leave-start="opacity-100"
     x-transition:leave-end="opacity-0"
-    class="fixed {{ $positionClasses }} z-50 max-w-sm"
+    class="fixed {{ $positionClasses }} z-50 max-w-sm notification notification-{{ $type }}"
     style="display: none;"
     id="{{ $id }}"
     {{ $attributes }}
@@ -87,7 +87,7 @@
                     <button 
                         type="button" 
                         @click="show = false" 
-                        class="inline-flex rounded-md p-1.5 {{ $typeClasses }} focus:outline-none focus:ring-2 focus:ring-offset-2"
+                        class="inline-flex rounded-md p-1.5 {{ $typeClasses }} focus:outline-none focus:ring-2 focus:ring-offset-2 close-button"
                     >
                         <span class="sr-only">Dismiss</span>
                         <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
@@ -111,5 +111,15 @@
             }));
         }
     }
+
+    // Setup global notification listener
+    document.addEventListener('DOMContentLoaded', function() {
+        window.addEventListener('notify', function(event) {
+            const id = event.detail.id || 'main-notification';
+            notify(id, event.detail.message, {
+                type: event.detail.type || 'info'
+            });
+        });
+    });
 </script>
 @endpush 
