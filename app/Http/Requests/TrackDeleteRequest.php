@@ -24,7 +24,7 @@ final class TrackDeleteRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'id' => ['required', 'exists:tracks,id']
+            'id' => ['required', 'exists:tracks,id'],
         ];
     }
-} 
+}

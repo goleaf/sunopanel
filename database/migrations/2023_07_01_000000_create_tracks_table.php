@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('unique_id')->nullable()->unique();
             $table->string('duration')->nullable()->default('0:00');
             $table->timestamps();
-            
+
             // Add index on created_at for sorting queries
             $table->index('created_at');
         });
@@ -32,4 +32,4 @@ return new class extends Migration
     {
         Schema::dropIfExists('tracks');
     }
-}; 
+};

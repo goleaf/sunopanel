@@ -37,4 +37,4 @@ return new class extends Migration
         Schema::dropIfExists('playlist_track');
         Schema::dropIfExists('playlists');
     }
-}; 
+};

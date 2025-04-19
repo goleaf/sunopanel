@@ -24,7 +24,7 @@ class GenreCapitalizationTest extends TestCase
         $this->assertEquals('EDM', Genre::formatGenreName('edm'));
         $this->assertEquals('UK Garage', Genre::formatGenreName('uk garage'));
         $this->assertEquals('R&B', Genre::formatGenreName('r&b'));
-        
+
         // Test standard capitalization of single words
         $this->assertEquals('Rock', Genre::formatGenreName('rock'));
         $this->assertEquals('Pop', Genre::formatGenreName('POP'));
@@ -34,12 +34,12 @@ class GenreCapitalizationTest extends TestCase
         $this->assertEquals('Alternative Rock', Genre::formatGenreName('alternative rock'));
         $this->assertEquals('Jazz Fusion', Genre::formatGenreName('jazz fusion'));
         $this->assertEquals('Progressive Metal', Genre::formatGenreName('progressive metal'));
-        
+
         // Test capitalization rules for articles, conjunctions, etc.
         $this->assertEquals('Symphony of the Night', Genre::formatGenreName('symphony of the night'));
         $this->assertEquals('Back in Time', Genre::formatGenreName('back in time'));
     }
-    
+
     /**
      * Test that findOrCreateByName properly handles capitalization.
      */
@@ -48,82 +48,82 @@ class GenreCapitalizationTest extends TestCase
         // Create a genre with lowercase
         $genre1 = Genre::findOrCreateByName('electronic dance music');
         $this->assertEquals('Electronic Dance Music', $genre1->name);
-        
+
         // Try to find the same genre with different casing
         $genre2 = Genre::findOrCreateByName('ELECTRONIC DANCE MUSIC');
         $this->assertEquals($genre1->id, $genre2->id);
         $this->assertEquals('Electronic Dance Music', $genre2->name);
-        
+
         // Test a special case genre
         $genre3 = Genre::findOrCreateByName('bubblegum bass');
         $this->assertEquals('Bubblegum bass', $genre3->name);
-        
+
         // Try to find the same special case genre with different formatting
         $genre4 = Genre::findOrCreateByName('BUBBLEGUM-BASS');
         $this->assertEquals($genre3->id, $genre4->id);
         $this->assertEquals('Bubblegum bass', $genre4->name);
     }
-    
+
     /**
      * Test that Track::syncGenres handles genre capitalization correctly.
      */
     public function test_track_sync_genres(): void
     {
         $track = Track::factory()->create();
-        
+
         // Sync with lowercase genres
         $track->syncGenres('electronic, rock, bubblegum bass');
         $genreNames = $track->genres->pluck('name')->toArray();
-        
+
         $this->assertContains('Electronic', $genreNames);
         $this->assertContains('Rock', $genreNames);
         $this->assertContains('Bubblegum bass', $genreNames);
         $this->assertCount(3, $genreNames);
-        
+
         // Sync with mixed case genres
         $track->syncGenres('ELECTRONIC, Rock, bubblegum-bass, HIP HOP');
         $track->refresh();
         $genreNames = $track->genres->pluck('name')->toArray();
-        
+
         $this->assertContains('Electronic', $genreNames);
         $this->assertContains('Rock', $genreNames);
         $this->assertContains('Bubblegum bass', $genreNames);
         $this->assertContains('Hip Hop', $genreNames);
         $this->assertCount(4, $genreNames);
-        
+
         // Verify only one instance of each genre exists
         $this->assertEquals(1, Genre::where('name', 'Electronic')->count());
         $this->assertEquals(1, Genre::where('name', 'Rock')->count());
         $this->assertEquals(1, Genre::where('name', 'Bubblegum bass')->count());
         $this->assertEquals(1, Genre::where('name', 'Hip Hop')->count());
     }
-    
+
     /**
      * Test that Track::assignGenres handles genre capitalization correctly.
      */
     public function test_track_assign_genres(): void
     {
         $track = Track::factory()->create();
-        
+
         // Assign with lowercase genres
         $track->assignGenres('jazz, classical, r&b');
         $genreNames = $track->genres->pluck('name')->toArray();
-        
+
         $this->assertContains('Jazz', $genreNames);
         $this->assertContains('Classical', $genreNames);
         $this->assertContains('R&B', $genreNames);
         $this->assertCount(3, $genreNames);
-        
+
         // Assign with mixed case genres (should replace previous genres)
         $track->assignGenres('JAZZ, uk garage, pop');
         $track->refresh();
         $genreNames = $track->genres->pluck('name')->toArray();
-        
+
         $this->assertContains('Jazz', $genreNames);
         $this->assertContains('UK Garage', $genreNames);
         $this->assertContains('Pop', $genreNames);
         $this->assertCount(3, $genreNames);
-        
+
         // Verify only one instance of each genre exists
         $this->assertEquals(1, Genre::where('name', 'Jazz')->count());
         $this->assertEquals(1, Genre::where('name', 'Classical')->count());
@@ -131,4 +131,4 @@ class GenreCapitalizationTest extends TestCase
         $this->assertEquals(1, Genre::where('name', 'UK Garage')->count());
         $this->assertEquals(1, Genre::where('name', 'Pop')->count());
     }
-} 
+}

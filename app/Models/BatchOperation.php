@@ -43,4 +43,4 @@ final class BatchOperation extends Model
     {
         return $this->belongsTo(User::class);
     }
-} 
+}

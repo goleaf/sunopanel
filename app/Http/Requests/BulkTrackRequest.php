@@ -24,10 +24,10 @@ final class BulkTrackRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'bulk_tracks' => ['required', 'string', 'min:5']
+            'bulk_tracks' => ['required', 'string', 'min:5'],
         ];
     }
-    
+
     /**
      * Get custom messages for validator errors.
      *
@@ -40,12 +40,11 @@ final class BulkTrackRequest extends FormRequest
             'bulk_tracks.min' => 'The bulk tracks data is too short. Please provide valid track data.',
         ];
     }
-    
+
     /**
      * Configure the validator instance.
      *
-     * @param \Illuminate\Validation\Validator $validator
-     * @return void
+     * @param  \Illuminate\Validation\Validator  $validator
      */
     public function withValidator($validator): void
     {
@@ -54,22 +53,22 @@ final class BulkTrackRequest extends FormRequest
             if (empty($bulkTracks)) {
                 return;
             }
-            
+
             $lines = explode(PHP_EOL, $bulkTracks);
             foreach ($lines as $index => $line) {
                 $line = trim($line);
                 if (empty($line)) {
                     continue;
                 }
-                
+
                 $parts = explode('|', $line);
                 if (count($parts) < 3) {
                     $validator->errors()->add(
                         'bulk_tracks',
-                        "Line " . ($index + 1) . " has an invalid format. Expected format: Title|Audio URL|Image URL|Genres[|Duration]"
+                        'Line '.($index + 1).' has an invalid format. Expected format: Title|Audio URL|Image URL|Genres[|Duration]'
                     );
                 }
             }
         });
     }
-} 
+}

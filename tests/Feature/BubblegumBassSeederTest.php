@@ -2,15 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Models\Genre;
+use App\Models\Track;
+use Database\Seeders\TrackSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Log;
 use Tests\TestCase;
-use App\Models\Track;
-use App\Models\Genre;
-use Database\Seeders\TrackSeeder;
 
 class BubblegumBassSeederTest extends TestCase
 {
@@ -23,29 +20,29 @@ class BubblegumBassSeederTest extends TestCase
     {
         // Run the seeder
         $this->seed(TrackSeeder::class);
-        
+
         // Check that we have tracks
         $this->assertDatabaseCount('tracks', 20);
-        
+
         // Check that all tracks have the "Bubblegum bass" genre
         $bubblegumGenre = Genre::where('name', 'Bubblegum bass')->first();
         $this->assertNotNull($bubblegumGenre, 'Bubblegum bass genre should exist');
-        
+
         // Check that all tracks are related to the genre
         $tracksWithGenre = $bubblegumGenre->tracks->count();
         $this->assertEquals(20, $tracksWithGenre, 'All tracks should be related to the Bubblegum bass genre');
-        
+
         // Check that some specific tracks exist
         $this->assertDatabaseHas('tracks', [
-            'title' => 'Neon Threads'
+            'title' => 'Neon Threads',
         ]);
-        
+
         // Check that our specific genres are created and properly formatted (capitalized)
         $this->assertDatabaseHas('genres', [
-            'name' => 'Symphonic metal'
+            'name' => 'Symphonic metal',
         ]);
     }
-    
+
     /**
      * Test that our command works correctly
      */
@@ -54,7 +51,7 @@ class BubblegumBassSeederTest extends TestCase
         // Execute the command using the TrackSeeder
         $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\TrackSeeder'])
             ->assertSuccessful();
-            
+
         // Check data was created
         $this->assertDatabaseCount('tracks', 20);
     }
@@ -66,7 +63,7 @@ class BubblegumBassSeederTest extends TestCase
     {
         // Log test execution
         Log::info('Running test_bubblegum_bass_is_one_genre');
-        
+
         // Setup test data with various formats for "bubblegum bass"
         $genreVariations = [
             'bubblegum bass',
@@ -76,43 +73,43 @@ class BubblegumBassSeederTest extends TestCase
             'bubblegum  bass', // double space
             'bubblegumbass',   // no space
         ];
-        
+
         // Create test tracks with various forms of "bubblegum bass"
         foreach ($genreVariations as $index => $variant) {
             $track = Track::create([
                 'title' => "Test Track {$index}",
                 'audio_url' => 'https://example.com/audio.mp3',
                 'image_url' => 'https://example.com/image.jpg',
-                'unique_id' => "test-track-{$index}"
+                'unique_id' => "test-track-{$index}",
             ]);
-            
+
             // Assign the variant genre
             $track->assignGenres($variant);
-            
+
             Log::info("Created test track with genre variant: {$variant}");
         }
-        
+
         // Verify only one "Bubblegum bass" genre was created with proper capitalization
         $genreCount = Genre::where('name', 'Bubblegum bass')->count();
         $this->assertEquals(1, $genreCount, 'Expected only one "Bubblegum bass" genre');
-        
+
         // Verify no "bubblegum bass" (lowercase) genre was created
         $this->assertEquals(0, Genre::where('name', 'bubblegum bass')->count(), 'Should not have created a lowercase "bubblegum bass" genre');
-        
+
         // Verify no separate "bubblegum" or "bass" genres were created
         $this->assertEquals(0, Genre::where('name', 'Bubblegum')->count(), 'Should not have created a separate "Bubblegum" genre');
         $this->assertEquals(0, Genre::where('name', 'Bass')->count(), 'Should not have created a separate "Bass" genre');
-        
+
         // Verify all tracks have the correct genre name with proper capitalization
         foreach (Track::all() as $track) {
             $genres = $track->genres()->pluck('name')->toArray();
             $this->assertContains('Bubblegum bass', $genres, 'Track should have "Bubblegum bass" genre with correct capitalization');
             $this->assertEquals(1, count($genres), 'Track should only have one genre');
         }
-        
+
         Log::info('Completed test_bubblegum_bass_is_one_genre');
     }
-    
+
     /**
      * Test that genres are properly capitalized according to our conventions.
      */
@@ -120,43 +117,43 @@ class BubblegumBassSeederTest extends TestCase
     {
         // Log test execution
         Log::info('Running test_genre_capitalization');
-        
+
         // Test data with lowercase genres that should be capitalized
         $testCases = [
             'techno' => 'Techno',
-            'house' => 'House', 
+            'house' => 'House',
             'drum and bass' => 'Drum and bass',
             'edm' => 'EDM',
-            'bubblegum bass,rock,pop' => ['Bubblegum bass', 'Rock', 'Pop']
+            'bubblegum bass,rock,pop' => ['Bubblegum bass', 'Rock', 'Pop'],
         ];
-        
+
         // Test each case
         foreach ($testCases as $input => $expected) {
             $track = Track::create([
                 'title' => "Track with {$input}",
                 'audio_url' => 'https://example.com/audio.mp3',
                 'image_url' => 'https://example.com/image.jpg',
-                'unique_id' => md5($input . time())
+                'unique_id' => md5($input.time()),
             ]);
-            
+
             // Assign genres
             $track->assignGenres($input);
             Log::info("Created track with genre input: {$input}");
-            
+
             // Check results
             $genres = $track->genres()->pluck('name')->toArray();
-            
+
             if (is_array($expected)) {
                 foreach ($expected as $exp) {
                     $this->assertContains($exp, $genres, "Should contain genre '{$exp}' with correct capitalization");
                 }
-                $this->assertEquals(count($expected), count($genres), "Should have exactly " . count($expected) . " genres");
+                $this->assertEquals(count($expected), count($genres), 'Should have exactly '.count($expected).' genres');
             } else {
                 $this->assertContains($expected, $genres, "Should contain genre '{$expected}' with correct capitalization");
-                $this->assertEquals(1, count($genres), "Should have exactly 1 genre");
+                $this->assertEquals(1, count($genres), 'Should have exactly 1 genre');
             }
         }
-        
+
         Log::info('Completed test_genre_capitalization');
     }
-} 
+}

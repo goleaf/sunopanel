@@ -22,20 +22,20 @@ class BladeViewTest extends TestCase
     {
         // Create some tracks
         $tracks = Track::factory(3)->create();
-        
+
         // Visit the tracks index page
         $response = $this->get(route('tracks.index'));
-        
+
         // Assert the response is successful
         $response->assertStatus(200);
-        
+
         // Assert view has the expected variable
         $response->assertViewHas('tracks');
-        
+
         // Check that all created tracks are in the collection
         foreach ($tracks as $track) {
             $trackId = $track->id;
-            $response->assertViewHas('tracks', function($viewTracks) use ($trackId) {
+            $response->assertViewHas('tracks', function ($viewTracks) use ($trackId) {
                 return $viewTracks->contains('id', $trackId);
             });
         }
@@ -52,16 +52,16 @@ class BladeViewTest extends TestCase
         $track = Track::factory()->create(['title' => 'Test Track']);
         $genre = Genre::factory()->create(['name' => 'Rock']);
         $track->genres()->attach($genre);
-        
+
         // Visit the track show page
         $response = $this->get(route('tracks.show', $track->id));
-        
+
         // Assert the response is successful
         $response->assertStatus(200);
-        
+
         // Assert view has the expected variable
         $response->assertViewHas('track');
-        
+
         // Assert the view contains the track title and genre
         $response->assertSee('Test Track');
         $response->assertSee('Rock');
@@ -76,16 +76,16 @@ class BladeViewTest extends TestCase
     {
         // Create some genres
         $genres = Genre::factory(3)->create();
-        
+
         // Visit the genres index page
         $response = $this->get(route('genres.index'));
-        
+
         // Assert the response is successful
         $response->assertStatus(200);
-        
+
         // Assert view has the expected variable
         $response->assertViewHas('genres');
-        
+
         // Assert the view contains the genre names
         foreach ($genres as $genre) {
             $response->assertSee($genre->name);
@@ -101,16 +101,16 @@ class BladeViewTest extends TestCase
     {
         // Create some playlists
         $playlists = Playlist::factory(3)->create();
-        
+
         // Visit the playlists index page
         $response = $this->get(route('playlists.index'));
-        
+
         // Assert the response is successful
         $response->assertStatus(200);
-        
+
         // Assert view has the expected variable
         $response->assertViewHas('playlists');
-        
+
         // Assert the view contains the playlist names
         foreach ($playlists as $playlist) {
             $response->assertSee($playlist->name);
@@ -127,28 +127,28 @@ class BladeViewTest extends TestCase
         // Create a playlist
         $playlist = Playlist::factory()->create([
             'title' => 'Test Playlist',
-            'description' => 'This is a test playlist'
+            'description' => 'This is a test playlist',
         ]);
-        
+
         // Create some tracks and attach to playlist
         $tracks = Track::factory(3)->create();
         foreach ($tracks as $index => $track) {
             $playlist->tracks()->attach($track, ['position' => $index + 1]);
         }
-        
+
         // Visit the playlist show page
         $response = $this->get(route('playlists.show', $playlist->id));
-        
+
         // Assert the response is successful
         $response->assertStatus(200);
-        
+
         // Assert view has the expected variable
         $response->assertViewHas('playlist');
-        
+
         // Assert the view contains the playlist name, description and track titles
         $response->assertSee('Test Playlist');
         $response->assertSee('This is a test playlist');
-        
+
         foreach ($tracks as $track) {
             $response->assertSee($track->title);
         }
@@ -165,12 +165,12 @@ class BladeViewTest extends TestCase
         $response = $this->get(route('tracks.create'));
         $response->assertStatus(200);
         $response->assertSee('Add New Track');
-        
+
         // Test genre create form
         $response = $this->get(route('genres.create'));
         $response->assertStatus(200);
         $response->assertSee('Add New Genre');
-        
+
         // Test playlist create form
         $response = $this->get(route('playlists.create'));
         $response->assertStatus(200);
@@ -188,20 +188,20 @@ class BladeViewTest extends TestCase
         $track = Track::factory()->create();
         $genre = Genre::factory()->create();
         $playlist = Playlist::factory()->create();
-        
+
         // Test track edit form
         $response = $this->get(route('tracks.edit', $track->id));
         $response->assertStatus(200);
         $response->assertSee('Edit Track');
-        
+
         // Test genre edit form
         $response = $this->get(route('genres.edit', $genre->id));
         $response->assertStatus(200);
         $response->assertSee('Edit Genre');
-        
+
         // Test playlist edit form
         $response = $this->get(route('playlists.edit', $playlist->id));
         $response->assertStatus(200);
         $response->assertSee('Edit Playlist');
     }
-} 
+}

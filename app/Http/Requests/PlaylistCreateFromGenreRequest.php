@@ -28,4 +28,4 @@ final class PlaylistCreateFromGenreRequest extends FormRequest
             'title_suffix' => 'nullable|string|max:255',
         ];
     }
-} 
+}

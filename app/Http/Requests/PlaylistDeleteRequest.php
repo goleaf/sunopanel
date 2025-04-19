@@ -27,4 +27,4 @@ final class PlaylistDeleteRequest extends FormRequest
             'id' => 'sometimes|exists:playlists,id',
         ];
     }
-} 
+}

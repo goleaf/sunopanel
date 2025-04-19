@@ -29,4 +29,4 @@ final class GenreStoreRequest extends FormRequest
             'cover_image' => ['nullable', 'url'],
         ];
     }
-} 
+}

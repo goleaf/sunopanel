@@ -27,4 +27,4 @@ final class GenreDeleteRequest extends FormRequest
             'id' => 'sometimes|exists:genres,id',
         ];
     }
-} 
+}

@@ -24,11 +24,11 @@ class PlaylistRequestTest extends TestCase
             'description' => 'Test Description',
             'cover_image' => 'https://example.com/image.jpg',
         ];
-        
+
         $response = $this->post(route('playlists.store'), $validData);
         $response->assertSessionHasNoErrors();
         $response->assertRedirect(route('playlists.index'));
-        
+
         $this->assertDatabaseHas('playlists', [
             'title' => 'Test Playlist',
             'description' => 'Test Description',
@@ -48,11 +48,11 @@ class PlaylistRequestTest extends TestCase
             'title' => 'Updated Playlist',
             'description' => 'Updated Description',
         ];
-        
+
         $response = $this->put(route('playlists.update', $playlist->id), $validData);
         $response->assertSessionHasNoErrors();
         $response->assertRedirect(route('playlists.index'));
-        
+
         $this->assertDatabaseHas('playlists', [
             'id' => $playlist->id,
             'title' => 'Updated Playlist',
@@ -92,17 +92,17 @@ class PlaylistRequestTest extends TestCase
         $validData = [
             'track_ids' => [$track1->id, $track2->id],
         ];
-        
+
         $response = $this->post(route('playlists.store-tracks', $playlist->id), $validData);
         $response->assertSessionHasNoErrors();
         $response->assertRedirect(route('playlists.show', $playlist->id));
-        
+
         // Check if tracks were attached to the playlist
         $this->assertDatabaseHas('playlist_track', [
             'playlist_id' => $playlist->id,
             'track_id' => $track1->id,
         ]);
-        
+
         $this->assertDatabaseHas('playlist_track', [
             'playlist_id' => $playlist->id,
             'track_id' => $track2->id,
@@ -132,7 +132,7 @@ class PlaylistRequestTest extends TestCase
         $response = $this->delete(route('playlists.remove-track', [$playlist->id, $track->id]));
         $response->assertSessionHasNoErrors();
         $response->assertRedirect(route('playlists.show', $playlist->id));
-        
+
         // Check if track was detached from playlist
         $this->assertDatabaseMissing('playlist_track', [
             'playlist_id' => $playlist->id,
@@ -152,7 +152,7 @@ class PlaylistRequestTest extends TestCase
         $response = $this->delete(route('playlists.destroy', $playlist->id));
         $response->assertSessionHasNoErrors();
         $response->assertRedirect(route('playlists.index'));
-        
+
         // Check if playlist was deleted
         $this->assertDatabaseMissing('playlists', [
             'id' => $playlist->id,
@@ -191,24 +191,24 @@ class PlaylistRequestTest extends TestCase
             'title_suffix' => 'Custom Suffix',
         ]);
         $response->assertSessionHasNoErrors();
-        
+
         // Check if playlist was created
         $this->assertDatabaseHas('playlists', [
             'genre_id' => $genre->id,
         ]);
-        
+
         // Get the created playlist to check if tracks were attached
         $playlist = Playlist::where('genre_id', $genre->id)->first();
-        
+
         // Check if tracks from the genre were attached to the playlist
         $this->assertDatabaseHas('playlist_track', [
             'playlist_id' => $playlist->id,
             'track_id' => $track1->id,
         ]);
-        
+
         $this->assertDatabaseHas('playlist_track', [
             'playlist_id' => $playlist->id,
             'track_id' => $track2->id,
         ]);
     }
-} 
+}

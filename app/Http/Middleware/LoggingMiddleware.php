@@ -8,8 +8,8 @@ use App\Services\Logging\LoggingService;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Throwable;
 use Symfony\Component\HttpFoundation\Response;
+use Throwable;
 
 final class LoggingMiddleware
 {
@@ -21,7 +21,7 @@ final class LoggingMiddleware
     /**
      * Create a new middleware instance.
      *
-     * @param LoggingService $loggingService The logging service
+     * @param  LoggingService  $loggingService  The logging service
      */
     public function __construct(LoggingService $loggingService)
     {
@@ -31,8 +31,8 @@ final class LoggingMiddleware
     /**
      * Handle an incoming request.
      *
-     * @param Request $request The request instance
-     * @param Closure $next The next middleware
+     * @param  Request  $request  The request instance
+     * @param  Closure  $next  The next middleware
      * @return Response The response
      */
     public function handle(Request $request, Closure $next): Response
@@ -47,27 +47,27 @@ final class LoggingMiddleware
                     'user_agent' => $request->userAgent(),
                 ]);
             }
-            
+
             $response = $next($request);
-            
+
             // Log failed responses (status >= 400) for API requests
-            if (($request->expectsJson() || 
-                str_starts_with($request->path(), 'api/') || 
-                $request->wantsJson()) && 
+            if (($request->expectsJson() ||
+                str_starts_with($request->path(), 'api/') ||
+                $request->wantsJson()) &&
                 $response->getStatusCode() >= 400) {
-                
+
                 $responseData = json_decode($response->getContent(), true);
                 $this->loggingService->warning(
-                    "API response with status {$response->getStatusCode()}", 
+                    "API response with status {$response->getStatusCode()}",
                     [
                         'status' => $response->getStatusCode(),
                         'path' => $request->path(),
                         'method' => $request->method(),
-                        'response' => $responseData
+                        'response' => $responseData,
                     ]
                 );
             }
-            
+
             return $response;
         } catch (Throwable $exception) {
             // Log the exception using our logging service
@@ -76,9 +76,9 @@ final class LoggingMiddleware
                 $request,
                 'Middleware exception handler'
             );
-            
+
             // Re-throw the exception to be handled by the global exception handler
             throw $exception;
         }
     }
-} 
+}

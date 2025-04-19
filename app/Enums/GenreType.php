@@ -28,21 +28,21 @@ enum GenreType: string
     case TECH_HOUSE = 'Tech-house';
     case TRAP = 'Trap';
     case URBAN_POP = 'Urban-Pop';
-    
+
     public static function fromName(string $name): self
     {
         $name = trim($name);
         $formattedName = ucfirst(strtolower($name));
-        
+
         foreach (self::cases() as $case) {
             if (strtolower($case->value) === strtolower($formattedName)) {
                 return $case;
             }
         }
-        
-        throw new \ValueError("\"$name\" is not a valid backing value for enum " . self::class);
+
+        throw new \ValueError("\"$name\" is not a valid backing value for enum ".self::class);
     }
-    
+
     public static function tryFromName(string $name): ?self
     {
         try {
@@ -51,4 +51,4 @@ enum GenreType: string
             return null;
         }
     }
-} 
+}

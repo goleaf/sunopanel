@@ -14,6 +14,7 @@ use Tests\TestCase;
 class LoggingMiddlewareTest extends TestCase
 {
     protected $middleware;
+
     protected $request;
 
     protected function setUp(): void
@@ -24,7 +25,7 @@ class LoggingMiddlewareTest extends TestCase
         $loggingService = app(LoggingService::class);
         $this->middleware = new LoggingMiddleware($loggingService);
         $this->request = Mockery::mock(Request::class);
-        
+
         // Common request method expectations
         $this->request->shouldReceive('fullUrl')->andReturn('http://example.com/test');
         $this->request->shouldReceive('method')->andReturn('GET');
@@ -35,19 +36,20 @@ class LoggingMiddlewareTest extends TestCase
         $this->request->shouldReceive('wantsJson')->andReturn(false);
         $this->request->shouldReceive('all')->andReturn([]);
         $this->request->shouldReceive('header')->withAnyArgs()->andReturn(null);
-        
+
         // Mock the Log facade
         Log::spy();
     }
 
-    public function testHandlePassesRequestToNextCallable(): void
+    public function test_handle_passes_request_to_next_callable(): void
     {
         // Arrange
         $called = false;
         $next = function ($request) use (&$called) {
             $called = true;
             $this->assertSame($this->request, $request);
-            return new Response();
+
+            return new Response;
         };
 
         // Act
@@ -57,7 +59,7 @@ class LoggingMiddlewareTest extends TestCase
         $this->assertTrue($called);
     }
 
-    public function testHandleLogsExceptionAndRethrows(): void
+    public function test_handle_logs_exception_and_rethrows(): void
     {
         // Arrange
         $exception = new Exception('Test exception');
@@ -71,8 +73,8 @@ class LoggingMiddlewareTest extends TestCase
 
         // Act
         $this->middleware->handle($this->request, $next);
-        
+
         // Note: The error logging verification is not needed here because we're using expectException
         // which will cause the test to exit before reaching any code after the handle() call
     }
-} 
+}

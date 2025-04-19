@@ -1,10 +1,10 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\TrackController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GenreController;
 use App\Http\Controllers\PlaylistController;
-use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\TrackController;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------

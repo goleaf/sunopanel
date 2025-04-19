@@ -38,4 +38,4 @@ final class PlaylistUpdateRequest extends FormRequest
             'tracks.*' => 'exists:tracks,id',
         ];
     }
-} 
+}

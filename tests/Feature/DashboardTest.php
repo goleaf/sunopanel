@@ -2,11 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Models\Track;
 use App\Models\Genre;
 use App\Models\Playlist;
+use App\Models\Track;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 
 class DashboardTest extends TestCase
@@ -22,13 +21,13 @@ class DashboardTest extends TestCase
         Track::factory()->count(3)->create();
         Genre::factory()->count(2)->create();
         Playlist::factory()->count(1)->create();
-        
+
         // Test dashboard display
         $response = $this->get('/dashboard');
         $response->assertStatus(200);
         $response->assertSee('System Statistics');
     }
-    
+
     /**
      * Test download status endpoint.
      */
@@ -37,7 +36,7 @@ class DashboardTest extends TestCase
         // Skip test as download functionality is now merged into tracks
         $this->markTestSkipped('Download functionality has been removed and merged into tracks');
     }
-    
+
     /**
      * Test simulating download progress.
      */
@@ -46,4 +45,4 @@ class DashboardTest extends TestCase
         // Skip test as download functionality is now merged into tracks
         $this->markTestSkipped('Download functionality has been removed and merged into tracks');
     }
-} 
+}

@@ -4,19 +4,18 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Services\Batch\BatchService;
 use App\Services\Logging\LoggingService;
-use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 final class BatchController extends Controller
 {
     public function __construct(
         private readonly BatchService $batchService,
         private readonly LoggingService $loggingService
-    ) {
-    }
+    ) {}
 
     /**
      * Display a listing of all batches
@@ -25,11 +24,11 @@ final class BatchController extends Controller
     {
         // Get batch data from service
         $batchData = $this->batchService->getBatchData();
-        
+
         return view('batch.index', [
             'tracks' => $batchData['tracks'],
             'genres' => $batchData['genres'],
-            'playlists' => $batchData['playlists']
+            'playlists' => $batchData['playlists'],
         ]);
     }
 
@@ -39,6 +38,7 @@ final class BatchController extends Controller
     public function import(): RedirectResponse
     {
         $this->loggingService->info('Accessed batch import page');
+
         return redirect()->route('dashboard')->with('success', 'Import feature temporarily disabled');
     }
 
@@ -48,6 +48,7 @@ final class BatchController extends Controller
     public function processImport(Request $request): RedirectResponse
     {
         $this->loggingService->info('Starting batch import process');
+
         return redirect()->route('dashboard')->with('success', 'Import process temporarily disabled');
     }
 
@@ -58,11 +59,11 @@ final class BatchController extends Controller
     {
         // Delegate to service
         $result = $this->batchService->importTracks($request);
-        
-        $message = $result 
-            ? 'Tracks imported successfully' 
+
+        $message = $result
+            ? 'Tracks imported successfully'
             : 'Track import temporarily disabled';
-            
+
         return redirect()->route('dashboard')->with('success', $message);
     }
 
@@ -73,11 +74,11 @@ final class BatchController extends Controller
     {
         // Delegate to service
         $result = $this->batchService->importPlaylists($request);
-        
-        $message = $result 
-            ? 'Playlists imported successfully' 
+
+        $message = $result
+            ? 'Playlists imported successfully'
             : 'Playlist import temporarily disabled';
-            
+
         return redirect()->route('dashboard')->with('success', $message);
     }
 
@@ -88,11 +89,11 @@ final class BatchController extends Controller
     {
         // Delegate to service
         $result = $this->batchService->importGenres($request);
-        
-        $message = $result 
-            ? 'Genres imported successfully' 
+
+        $message = $result
+            ? 'Genres imported successfully'
             : 'Genre import temporarily disabled';
-            
+
         return redirect()->route('dashboard')->with('success', $message);
     }
 
@@ -102,6 +103,7 @@ final class BatchController extends Controller
     public function actions(): RedirectResponse
     {
         $this->loggingService->info('Accessing batch actions page');
+
         return redirect()->route('dashboard')->with('success', 'Batch actions temporarily disabled');
     }
 
@@ -111,6 +113,7 @@ final class BatchController extends Controller
     public function processActions(Request $request): RedirectResponse
     {
         $this->loggingService->info('Processing batch actions');
+
         return redirect()->route('dashboard')->with('success', 'Batch actions temporarily disabled');
     }
 
@@ -121,11 +124,11 @@ final class BatchController extends Controller
     {
         // Delegate to service
         $result = $this->batchService->assignGenres($request);
-        
-        $message = $result 
-            ? 'Genres assigned successfully' 
+
+        $message = $result
+            ? 'Genres assigned successfully'
             : 'Genre assignment temporarily disabled';
-            
+
         return redirect()->route('dashboard')->with('success', $message);
     }
 
@@ -136,11 +139,11 @@ final class BatchController extends Controller
     {
         // Delegate to service
         $result = $this->batchService->addToPlaylist($request);
-        
-        $message = $result 
-            ? 'Tracks added to playlist successfully' 
+
+        $message = $result
+            ? 'Tracks added to playlist successfully'
             : 'Adding tracks to playlist temporarily disabled';
-            
+
         return redirect()->route('dashboard')->with('success', $message);
     }
-} 
+}

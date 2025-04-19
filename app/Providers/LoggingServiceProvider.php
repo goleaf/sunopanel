@@ -15,7 +15,7 @@ final class LoggingServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(LoggingService::class, function ($app) {
-            return new LoggingService();
+            return new LoggingService;
         });
     }
 
@@ -26,4 +26,4 @@ final class LoggingServiceProvider extends ServiceProvider
     {
         //
     }
-} 
+}

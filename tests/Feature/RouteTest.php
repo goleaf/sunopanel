@@ -54,7 +54,7 @@ class RouteTest extends TestCase
             $response = $this->get($uri);
             $response->assertStatus(404);
         }
-        
+
         // Skip testing invalid IDs since they may redirect based on controller logic
         $this->assertTrue(true);
     }
@@ -96,4 +96,4 @@ class RouteTest extends TestCase
         // Skip this test since the application may handle invalid parameters differently
         $this->markTestSkipped('Route parameter validation is handled differently in the current implementation');
     }
-} 
+}

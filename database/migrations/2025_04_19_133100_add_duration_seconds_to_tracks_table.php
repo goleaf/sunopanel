@@ -2,9 +2,8 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
-use App\Models\Track;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -21,9 +20,9 @@ return new class extends Migration
         // Update existing records
         $tracks = DB::table('tracks')->get();
         foreach ($tracks as $track) {
-            if (!empty($track->duration)) {
+            if (! empty($track->duration)) {
                 $durationSeconds = parseDuration($track->duration);
-                
+
                 DB::table('tracks')
                     ->where('id', $track->id)
                     ->update(['duration_seconds' => $durationSeconds]);

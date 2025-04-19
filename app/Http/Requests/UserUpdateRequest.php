@@ -15,7 +15,7 @@ final class UserUpdateRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user()?->role === 'admin' || 
+        return $this->user()?->role === 'admin' ||
                $this->user()?->id === (int) $this->route('user')->id;
     }
 
@@ -29,11 +29,11 @@ final class UserUpdateRequest extends FormRequest
         return [
             'name' => ['sometimes', 'string', 'max:255'],
             'email' => [
-                'sometimes', 
-                'string', 
-                'email', 
-                'max:255', 
-                Rule::unique('users')->ignore($this->route('user')->id)
+                'sometimes',
+                'string',
+                'email',
+                'max:255',
+                Rule::unique('users')->ignore($this->route('user')->id),
             ],
             'password' => ['sometimes', 'nullable', Password::defaults(), 'confirmed'],
             'role' => ['sometimes', 'string', 'in:admin,user'],
@@ -60,4 +60,4 @@ final class UserUpdateRequest extends FormRequest
             'avatar.max' => 'The image may not be greater than 2MB.',
         ];
     }
-} 
+}

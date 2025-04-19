@@ -53,4 +53,4 @@ final class UserStoreRequest extends FormRequest
             'avatar.max' => 'The image may not be greater than 2MB.',
         ];
     }
-} 
+}

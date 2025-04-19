@@ -7,8 +7,8 @@ namespace App\Http\Controllers;
 use App\Models\Genre;
 use App\Models\Track;
 use App\Services\Logging\LoggingService;
-use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 final class GenreController extends Controller
@@ -30,37 +30,37 @@ final class GenreController extends Controller
 
             // Handle search
             if ($request->has('search')) {
-                $query->where('name', 'like', '%' . $request->search . '%');
+                $query->where('name', 'like', '%'.$request->search.'%');
             }
-            
+
             // Handle sorting
             $sortField = $request->sort ?? 'name';
             $direction = $request->direction ?? 'asc';
-            
+
             // Validate sort field to prevent SQL injection
             $allowedSortFields = ['name', 'tracks_count', 'created_at'];
-            if (!in_array($sortField, $allowedSortFields)) {
+            if (! in_array($sortField, $allowedSortFields)) {
                 $sortField = 'name';
             }
-            
+
             $query->orderBy($sortField, $direction === 'desc' ? 'desc' : 'asc');
-            
+
             $genres = $query->paginate(15)->withQueryString();
 
             $this->loggingService->info('Genres index page accessed', [
                 'search' => $request->search,
                 'sort' => $sortField,
                 'direction' => $direction,
-                'count' => $genres->count()
+                'count' => $genres->count(),
             ]);
 
             return view('genres.index', compact('genres'));
         } catch (\Exception $e) {
             $this->loggingService->logError($e, $request, 'GenreController@index');
-            
+
             return view('genres.index', [
                 'genres' => collect(),
-                'error' => 'An error occurred while loading genres.'
+                'error' => 'An error occurred while loading genres.',
             ]);
         }
     }
@@ -71,6 +71,7 @@ final class GenreController extends Controller
     public function create(): View
     {
         $this->loggingService->info('Genre create form accessed');
+
         return view('genres.create');
     }
 
@@ -89,7 +90,7 @@ final class GenreController extends Controller
         $genre = Genre::create($validated);
 
         $this->loggingService->info('Genre created successfully', ['genre_id' => $genre->id, 'name' => $genre->name]);
-        
+
         return redirect()->route('genres.index')
             ->with('success', 'Genre created successfully.');
     }
@@ -101,39 +102,39 @@ final class GenreController extends Controller
     {
         try {
             $this->loggingService->info('Genre show page accessed', ['genre_id' => $genre->id, 'name' => $genre->name]);
-            
+
             // Get tracks with their genres eager loaded
             $query = $genre->tracks()->with('genres');
             $perPage = $request->input('per_page', 10);
-            
+
             // Sorting for tracks within a genre
             $sortField = $request->query('sort', 'title');
             $sortOrder = $request->query('order', 'asc');
-            
+
             $allowedSortFields = ['title', 'created_at', 'duration'];
-            if (!in_array($sortField, $allowedSortFields)) {
+            if (! in_array($sortField, $allowedSortFields)) {
                 $sortField = 'title';
             }
-            
+
             $query->orderBy($sortField, $sortOrder);
-            
+
             $this->loggingService->info('Genre show page tracks sorted', [
                 'genre_id' => $genre->id,
-                'field' => $sortField, 
-                'order' => $sortOrder
+                'field' => $sortField,
+                'order' => $sortOrder,
             ]);
-            
+
             $tracks = $query->paginate($perPage);
             $tracks->appends($request->query());
-            
+
             return view('genres.show', compact('genre', 'tracks', 'sortField', 'sortOrder'));
         } catch (\Exception $e) {
             $this->loggingService->logError($e, $request, 'GenreController@show', $genre->id);
-            
+
             return view('genres.show', [
                 'genre' => $genre,
                 'tracks' => collect(),
-                'error' => 'An error occurred while loading tracks for this genre.'
+                'error' => 'An error occurred while loading tracks for this genre.',
             ]);
         }
     }
@@ -144,6 +145,7 @@ final class GenreController extends Controller
     public function edit(Genre $genre): View
     {
         $this->loggingService->info('Genre edit form accessed', ['genre_id' => $genre->id, 'name' => $genre->name]);
+
         return view('genres.edit', compact('genre'));
     }
 
@@ -155,18 +157,18 @@ final class GenreController extends Controller
         $this->loggingService->info('Genre update method called', [
             'genre_id' => $genre->id,
             'name' => $genre->name,
-            'request' => $request->except(['_token'])
+            'request' => $request->except(['_token']),
         ]);
 
         $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:genres,name,' . $genre->id,
+            'name' => 'required|string|max:255|unique:genres,name,'.$genre->id,
             'description' => 'nullable|string',
         ]);
 
         $genre->update($validated);
 
         $this->loggingService->info('Genre updated successfully', ['genre_id' => $genre->id, 'name' => $genre->name]);
-        
+
         return redirect()->route('genres.index')
             ->with('success', 'Genre updated successfully.');
     }
@@ -177,22 +179,22 @@ final class GenreController extends Controller
     public function destroy(Genre $genre): RedirectResponse
     {
         $this->loggingService->info('Genre delete method called', ['genre_id' => $genre->id, 'name' => $genre->name]);
-        
+
         // Get track count for logging
         $trackCount = $genre->tracks()->count();
-        
+
         // Detach tracks instead of deleting them
         $genre->tracks()->detach();
-        
+
         // Now delete the genre
         $genre->delete();
 
         $this->loggingService->info('Genre deleted successfully', [
-            'genre_id' => $genre->id, 
+            'genre_id' => $genre->id,
             'name' => $genre->name,
-            'detached_tracks' => $trackCount
+            'detached_tracks' => $trackCount,
         ]);
-        
+
         return redirect()->route('genres.index')
             ->with('success', 'Genre deleted successfully.');
     }

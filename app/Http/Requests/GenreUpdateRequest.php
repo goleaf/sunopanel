@@ -26,13 +26,13 @@ final class GenreUpdateRequest extends FormRequest
     {
         return [
             'name' => [
-                'required', 
-                'string', 
-                'max:255', 
-                Rule::unique('genres')->ignore($this->route('genre'))
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('genres')->ignore($this->route('genre')),
             ],
             'description' => ['nullable', 'string'],
             'cover_image' => ['nullable', 'url'],
         ];
     }
-} 
+}

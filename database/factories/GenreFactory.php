@@ -20,9 +20,9 @@ class GenreFactory extends Factory
         $name = $this->faker->unique()->randomElement([
             'Rock', 'Pop', 'Hip Hop', 'Electronic', 'Jazz',
             'Classical', 'Country', 'R&B', 'Reggae', 'Blues',
-            'Metal', 'Folk', 'Punk', 'Disco', 'Funk'
+            'Metal', 'Folk', 'Punk', 'Disco', 'Funk',
         ]);
-        
+
         return [
             'name' => $name,
             'slug' => Str::slug($name),

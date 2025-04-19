@@ -8,8 +8,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\App;
-use App\Services\Logging\LoggingService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
@@ -53,21 +51,21 @@ final class Track extends Model
      */
     protected static function booted(): void
     {
-        static::creating(function ($track): void {
+        self::creating(function ($track): void {
             // When creating, ensure that if 'name' is used in request but 'title' is empty,
             // copy the value from 'name' to 'title'
-            if (empty($track->title) && !empty($track->name)) {
+            if (empty($track->title) && ! empty($track->name)) {
                 $track->title = $track->name;
                 Log::info('Track title set from name field for backward compatibility', [
                     'name' => $track->name,
-                    'title' => $track->title
+                    'title' => $track->title,
                 ]);
             }
         });
 
-        static::saving(function (Track $track) {
+        self::saving(function (Track $track) {
             // Update duration_seconds when duration changes
-            if ($track->isDirty('duration') && !empty($track->duration)) {
+            if ($track->isDirty('duration') && ! empty($track->duration)) {
                 $track->duration_seconds = parseDuration($track->duration);
             }
         });
@@ -104,8 +102,8 @@ final class Track extends Model
     public function playlists(): BelongsToMany
     {
         return $this->belongsToMany(Playlist::class)
-                    ->withPivot('position')
-                    ->orderBy('position');
+            ->withPivot('position')
+            ->orderBy('position');
     }
 
     /**
@@ -116,6 +114,7 @@ final class Track extends Model
     {
         if (empty($genresString)) {
             $this->genres()->detach();
+
             return;
         }
 
@@ -138,7 +137,7 @@ final class Track extends Model
 
     /**
      * Alias for syncGenres method to maintain backwards compatibility with tests.
-     * 
+     *
      * @deprecated Use syncGenres() instead
      */
     public function assignGenres(string $genresString): void
@@ -155,14 +154,14 @@ final class Track extends Model
         if ($this->relationLoaded('genres') && $this->genres instanceof Collection) {
             return $this->genres->pluck('name')->implode(', ');
         }
-        
+
         // Return empty string as fallback
         return '';
     }
 
     /**
      * Get array of genre names for backward compatibility
-     * 
+     *
      * @return array<int, string>
      */
     public function getGenresArray(): array
@@ -177,11 +176,12 @@ final class Track extends Model
         if ($genreCount > 0) {
             // Load the relationship and return the names
             $this->load('genres');
+
             return $this->genres->pluck('name')->toArray();
         }
 
         // Fall back to the old string field if needed
-        if (!empty($this->getAttribute('genres'))) {
+        if (! empty($this->getAttribute('genres'))) {
             return array_map('trim', explode(',', $this->getAttribute('genres')));
         }
 
@@ -206,7 +206,7 @@ final class Track extends Model
         }
 
         $genres = array_map('trim', explode(',', $genresString));
-        $formattedGenres = array_map(fn($genre) => ucfirst($genre), $genres);
+        $formattedGenres = array_map(fn ($genre) => ucfirst($genre), $genres);
 
         return implode(', ', $formattedGenres);
     }
@@ -222,7 +222,7 @@ final class Track extends Model
 
         // Make sure the ID is unique
         while (self::where('unique_id', $uniqueId)->exists()) {
-            $uniqueId = $baseSlug . '-' . $counter++;
+            $uniqueId = $baseSlug.'-'.$counter++;
         }
 
         return $uniqueId;
@@ -239,19 +239,20 @@ final class Track extends Model
 
         // Parse from format like "3:45"
         $parts = explode(':', $this->duration);
-        
+
         if (count($parts) === 2) {
-            $minutes = (int)$parts[0];
-            $seconds = (int)$parts[1];
+            $minutes = (int) $parts[0];
+            $seconds = (int) $parts[1];
+
             return ($minutes * 60) + $seconds;
         }
-        
+
         return 0;
     }
 
     /**
      * Get the fields used for storing a track
-     * 
+     *
      * @return array<string, mixed>
      */
     public function getStoreFields(): array
@@ -269,14 +270,14 @@ final class Track extends Model
 
     /**
      * Get the fields used for updating a track
-     * 
+     *
      * @return array<string, mixed>
      */
     public function getUpdateFields(): array
     {
         return [
             'title' => $this->title,
-            'url' => $this->url, 
+            'url' => $this->url,
             'cover_image' => $this->cover_image,
             'audio_url' => $this->audio_url,
             'image_url' => $this->image_url,
@@ -286,7 +287,7 @@ final class Track extends Model
 
     /**
      * Get fields for deletion logging
-     * 
+     *
      * @return array<string, mixed>
      */
     public function getDeleteFields(): array

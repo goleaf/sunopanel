@@ -2,12 +2,12 @@
 
 namespace Tests\Feature;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
 use App\Models\Genre;
 use App\Models\Track;
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
+use Tests\TestCase;
 
 class GenreControllerTest extends TestCase
 {
@@ -16,7 +16,7 @@ class GenreControllerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         // Create a user and authenticate
         $this->actingAs(User::factory()->create());
     }
@@ -28,30 +28,30 @@ class GenreControllerTest extends TestCase
     {
         // Create some genres
         $genres = Genre::factory()->count(3)->create();
-        
+
         $response = $this->get('/genres');
-        
+
         $response->assertStatus(200);
         $response->assertViewIs('genres.index');
         $response->assertViewHas('genres');
-        
+
         // Check if all genres are displayed
         foreach ($genres as $genre) {
             $response->assertSee($genre->name);
         }
     }
-    
+
     /**
      * Test genre create page.
      */
     public function test_create_page_loads(): void
     {
         $response = $this->get('/genres/create');
-        
+
         $response->assertStatus(200);
         $response->assertViewIs('genres.create');
     }
-    
+
     /**
      * Test storing a new genre.
      */
@@ -61,71 +61,71 @@ class GenreControllerTest extends TestCase
             'name' => 'Test Genre',
             'description' => 'This is a test genre',
         ];
-        
+
         $response = $this->post('/genres', $genreData);
-        
+
         $response->assertRedirect('/genres');
         $this->assertDatabaseHas('genres', [
             'name' => 'Test Genre',
             'description' => 'This is a test genre',
         ]);
     }
-    
+
     /**
      * Test showing a genre.
      */
     public function test_show_genre(): void
     {
         $genre = Genre::factory()->create();
-        
+
         // Associate some tracks with the genre
         $tracks = Track::factory()->count(3)->create();
         foreach ($tracks as $track) {
             $track->genres()->attach($genre->id);
         }
-        
+
         $response = $this->get("/genres/{$genre->id}");
-        
+
         $response->assertStatus(200);
         $response->assertViewIs('genres.show');
         $response->assertViewHas('genre');
         $response->assertSee($genre->name);
-        
+
         // Check if tracks are displayed
         foreach ($tracks as $track) {
             $response->assertSee($track->name);
         }
     }
-    
+
     /**
      * Test editing a genre.
      */
     public function test_edit_genre(): void
     {
         $genre = Genre::factory()->create();
-        
+
         $response = $this->get("/genres/{$genre->id}/edit");
-        
+
         $response->assertStatus(200);
         $response->assertViewIs('genres.edit');
         $response->assertViewHas('genre');
         $response->assertSee($genre->name);
     }
-    
+
     /**
      * Test updating a genre.
      */
     public function test_update_genre(): void
     {
         $genre = Genre::factory()->create();
-        
+
         $updateData = [
             'name' => 'Updated Genre',
             'description' => 'This is an updated description',
         ];
-        
+
         $response = $this->put("/genres/{$genre->id}", $updateData);
-        
+
         $response->assertRedirect('/genres');
         $this->assertDatabaseHas('genres', [
             'id' => $genre->id,
@@ -133,22 +133,22 @@ class GenreControllerTest extends TestCase
             'description' => 'This is an updated description',
         ]);
     }
-    
+
     /**
      * Test deleting a genre.
      */
     public function test_delete_genre(): void
     {
         $genre = Genre::factory()->create();
-        
+
         $response = $this->delete("/genres/{$genre->id}");
-        
+
         $response->assertRedirect('/genres');
         $this->assertDatabaseMissing('genres', [
             'id' => $genre->id,
         ]);
     }
-    
+
     /**
      * Test the findOrCreateByName method.
      */
@@ -156,11 +156,11 @@ class GenreControllerTest extends TestCase
     {
         // Create a genre first
         $existingGenre = Genre::factory()->create(['name' => 'Existing Genre']);
-        
+
         // Find existing genre
         $foundGenre = Genre::findOrCreateByName('Existing Genre');
         $this->assertEquals($existingGenre->id, $foundGenre->id);
-        
+
         // Create a new genre
         $newGenre = Genre::findOrCreateByName('New Genre');
         $this->assertDatabaseHas('genres', [
@@ -175,9 +175,9 @@ class GenreControllerTest extends TestCase
     {
         // Create some genres for testing
         Genre::factory()->count(5)->create();
-        
+
         $response = $this->get(route('genres.index'));
-        
+
         $response->assertStatus(200);
         $response->assertViewIs('genres.index');
         $response->assertViewHas('genres');
@@ -189,7 +189,7 @@ class GenreControllerTest extends TestCase
     public function test_genre_create_form()
     {
         $response = $this->get(route('genres.create'));
-        
+
         $response->assertStatus(200);
         $response->assertViewIs('genres.create');
     }
@@ -203,12 +203,12 @@ class GenreControllerTest extends TestCase
             'name' => 'Test Genre',
             'description' => 'This is a test genre description',
         ];
-        
+
         $response = $this->post(route('genres.store'), $genreData);
-        
+
         $response->assertRedirect(route('genres.index'));
         $response->assertSessionHas('success');
-        
+
         // Check database for the genre
         $this->assertDatabaseHas('genres', [
             'name' => 'Test Genre',
@@ -223,21 +223,21 @@ class GenreControllerTest extends TestCase
     {
         // Create a genre with a name we'll try to duplicate
         Genre::factory()->create(['name' => 'Existing Genre']);
-        
+
         // Test empty name validation
         $response = $this->post(route('genres.store'), [
             'name' => '',
             'description' => 'Test description',
         ]);
-        
+
         $response->assertSessionHasErrors('name');
-        
+
         // Test duplicate name validation
         $response = $this->post(route('genres.store'), [
             'name' => 'Existing Genre',
             'description' => 'Test description',
         ]);
-        
+
         $response->assertSessionHasErrors('name');
     }
 
@@ -247,9 +247,9 @@ class GenreControllerTest extends TestCase
     public function test_genre_edit_form()
     {
         $genre = Genre::factory()->create();
-        
+
         $response = $this->get(route('genres.edit', $genre->id));
-        
+
         $response->assertStatus(200);
         $response->assertViewIs('genres.edit');
         $response->assertViewHas('genre', $genre);
@@ -262,17 +262,17 @@ class GenreControllerTest extends TestCase
     {
         // Create a genre
         $genre = Genre::factory()->create();
-        
+
         $updatedData = [
             'name' => 'Updated Genre Name',
             'description' => 'Updated genre description',
         ];
-        
+
         $response = $this->put(route('genres.update', $genre->id), $updatedData);
-        
+
         $response->assertRedirect(route('genres.index'));
         $response->assertSessionHas('success');
-        
+
         // Check database for the updated genre
         $this->assertDatabaseHas('genres', [
             'id' => $genre->id,
@@ -289,21 +289,21 @@ class GenreControllerTest extends TestCase
         // Create two genres
         $genre1 = Genre::factory()->create(['name' => 'First Genre']);
         $genre2 = Genre::factory()->create(['name' => 'Second Genre']);
-        
+
         // Test empty name validation
         $response = $this->put(route('genres.update', $genre1->id), [
             'name' => '',
             'description' => 'Test description',
         ]);
-        
+
         $response->assertSessionHasErrors('name');
-        
+
         // Test duplicate name validation (trying to rename genre1 to genre2's name)
         $response = $this->put(route('genres.update', $genre1->id), [
             'name' => 'Second Genre',
             'description' => 'Test description',
         ]);
-        
+
         $response->assertSessionHasErrors('name');
     }
 
@@ -314,12 +314,12 @@ class GenreControllerTest extends TestCase
     {
         // Create a genre
         $genre = Genre::factory()->create();
-        
+
         $response = $this->delete(route('genres.destroy', $genre->id));
-        
+
         $response->assertRedirect(route('genres.index'));
         $response->assertSessionHas('success');
-        
+
         // Check that genre is removed from database
         $this->assertDatabaseMissing('genres', [
             'id' => $genre->id,
@@ -335,23 +335,23 @@ class GenreControllerTest extends TestCase
         $genre = Genre::factory()->create();
         $track = Track::factory()->create();
         $track->genres()->attach($genre->id);
-        
+
         $response = $this->delete(route('genres.destroy', $genre->id));
-        
+
         // The genre should be deleted and the pivot relationship removed
         $response->assertRedirect(route('genres.index'));
         $response->assertSessionHas('success');
-        
+
         // Check that genre is removed from database
         $this->assertDatabaseMissing('genres', [
             'id' => $genre->id,
         ]);
-        
+
         // Check that the track still exists
         $this->assertDatabaseHas('tracks', [
             'id' => $track->id,
         ]);
-        
+
         // Check that the genre-track relationship is removed
         $this->assertDatabaseMissing('genre_track', [
             'genre_id' => $genre->id,
@@ -365,20 +365,20 @@ class GenreControllerTest extends TestCase
     public function test_genre_show()
     {
         $genre = Genre::factory()->create();
-        
+
         // Create some tracks associated with this genre
         $tracks = Track::factory()->count(3)->create();
         foreach ($tracks as $track) {
             $track->genres()->attach($genre->id);
         }
-        
+
         $response = $this->get(route('genres.show', $genre->id));
-        
+
         $response->assertStatus(200);
         $response->assertViewIs('genres.show');
         $response->assertViewHas('genre', $genre);
-        
+
         // Check that the view has tracks
         $this->assertEquals(3, $response->viewData('tracks')->count());
     }
-} 
+}

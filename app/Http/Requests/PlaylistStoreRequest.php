@@ -32,4 +32,4 @@ final class PlaylistStoreRequest extends FormRequest
             'tracks.*' => 'exists:tracks,id',
         ];
     }
-} 
+}

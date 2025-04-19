@@ -15,7 +15,7 @@ return new class extends Migration
             if (Schema::hasColumn('tracks', 'url')) {
                 $table->dropColumn('url');
             }
-            
+
             if (Schema::hasColumn('tracks', 'cover_image')) {
                 $table->dropColumn('cover_image');
             }
@@ -28,13 +28,13 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('tracks', function (Blueprint $table) {
-            if (!Schema::hasColumn('tracks', 'url')) {
+            if (! Schema::hasColumn('tracks', 'url')) {
                 $table->string('url')->nullable()->after('audio_url');
             }
-            
-            if (!Schema::hasColumn('tracks', 'cover_image')) {
+
+            if (! Schema::hasColumn('tracks', 'cover_image')) {
                 $table->string('cover_image')->nullable()->after('image_url');
             }
         });
     }
-}; 
+};

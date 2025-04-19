@@ -6,8 +6,8 @@ namespace App\Services\Logging;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Throwable;
 use Symfony\Component\HttpFoundation\Response;
+use Throwable;
 
 final readonly class LoggingService
 {
@@ -15,9 +15,9 @@ final readonly class LoggingService
      * Log an application error with standardized format
      */
     public function logError(
-        Throwable $exception, 
-        ?Request $request = null, 
-        ?string $context = null, 
+        Throwable $exception,
+        ?Request $request = null,
+        ?string $context = null,
         ?int $userId = null
     ): void {
         $logData = [
@@ -38,21 +38,21 @@ final readonly class LoggingService
             $logData['request_ip'] = $request->ip();
             $logData['request_referrer'] = $request->header('referer');
             $logData['request_user_agent'] = $request->userAgent();
-            
+
             // Include request data, but filter out sensitive information
             $logData['request_data'] = $this->filterSensitiveData($request->all());
         }
 
-        Log::error('Application error: ' . $exception->getMessage(), $logData);
+        Log::error('Application error: '.$exception->getMessage(), $logData);
     }
 
     /**
      * Log an API error with standardized format
      */
     public function logApiError(
-        Throwable $exception, 
-        Request $request, 
-        Response $response = null, 
+        Throwable $exception,
+        Request $request,
+        ?Response $response = null,
         ?string $context = null
     ): void {
         $logData = [
@@ -76,16 +76,16 @@ final readonly class LoggingService
             $logData['response_content'] = $response->getContent();
         }
 
-        Log::error('API error: ' . $exception->getMessage(), $logData);
+        Log::error('API error: '.$exception->getMessage(), $logData);
     }
 
     /**
      * Log a database error with standardized format
      */
     public function logDatabaseError(
-        Throwable $exception, 
-        ?string $query = null, 
-        ?array $bindings = null, 
+        Throwable $exception,
+        ?string $query = null,
+        ?array $bindings = null,
         ?string $context = null
     ): void {
         $logData = [
@@ -106,9 +106,9 @@ final readonly class LoggingService
             }
         }
 
-        Log::error('Database error: ' . $exception->getMessage(), $logData);
+        Log::error('Database error: '.$exception->getMessage(), $logData);
     }
-    
+
     /**
      * Log informational message with standardized format
      */
@@ -121,22 +121,22 @@ final readonly class LoggingService
             'timestamp' => now()->toDateTimeString(),
             'user_id' => auth()->id(),
         ]);
-        
+
         // Add request data if available
         if ($request) {
             $logData['request_method'] = $request->method();
             $logData['request_url'] = $request->fullUrl();
             $logData['request_ip'] = $request->ip();
-            
+
             // Include request data, filtered
-            if (!isset($logData['request_data'])) {
+            if (! isset($logData['request_data'])) {
                 $logData['request_data'] = $this->filterSensitiveData($request->all());
             }
         }
-        
+
         Log::info($message, $this->filterSensitiveData($logData));
     }
-    
+
     /**
      * Log warning message with standardized format
      */
@@ -149,22 +149,22 @@ final readonly class LoggingService
             'timestamp' => now()->toDateTimeString(),
             'user_id' => auth()->id(),
         ]);
-        
+
         // Add request data if available
         if ($request) {
             $logData['request_method'] = $request->method();
             $logData['request_url'] = $request->fullUrl();
             $logData['request_ip'] = $request->ip();
-            
+
             // Include request data, filtered
-            if (!isset($logData['request_data'])) {
+            if (! isset($logData['request_data'])) {
                 $logData['request_data'] = $this->filterSensitiveData($request->all());
             }
         }
-        
+
         Log::warning($message, $this->filterSensitiveData($logData));
     }
-    
+
     /**
      * Log debug message with standardized format
      */
@@ -177,19 +177,19 @@ final readonly class LoggingService
             'timestamp' => now()->toDateTimeString(),
             'user_id' => auth()->id(),
         ]);
-        
+
         // Add request data if available
         if ($request) {
             $logData['request_method'] = $request->method();
             $logData['request_url'] = $request->fullUrl();
             $logData['request_ip'] = $request->ip();
-            
+
             // Include request data, filtered
-            if (!isset($logData['request_data'])) {
+            if (! isset($logData['request_data'])) {
                 $logData['request_data'] = $this->filterSensitiveData($request->all());
             }
         }
-        
+
         Log::debug($message, $this->filterSensitiveData($logData));
     }
 
@@ -198,7 +198,7 @@ final readonly class LoggingService
      */
     private function formatTrace(array $trace): array
     {
-        return array_map(function($item) {
+        return array_map(function ($item) {
             // Keep only relevant information and filter out arguments
             return [
                 'file' => $item['file'] ?? null,
@@ -216,12 +216,12 @@ final readonly class LoggingService
     private function filterSensitiveData(array $data): array
     {
         $sensitiveFields = [
-            'password', 
-            'password_confirmation', 
-            'token', 
-            'access_token', 
-            'secret', 
-            'credit_card', 
+            'password',
+            'password_confirmation',
+            'token',
+            'access_token',
+            'secret',
+            'credit_card',
             'card_number',
             'api_key',
             'api_secret',
@@ -230,7 +230,7 @@ final readonly class LoggingService
             'private_key',
             'ssn',
             'social_security',
-            'cvv'
+            'cvv',
         ];
 
         foreach ($data as $key => $value) {
@@ -243,4 +243,4 @@ final readonly class LoggingService
 
         return $data;
     }
-} 
+}

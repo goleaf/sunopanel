@@ -3,7 +3,9 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
-        "dev": "vite"
+        "dev": "vite",
+        "lint:php": "php artisan lint:psr12",
+        "lint:fix": "php artisan lint:psr12 --fix"
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.0.0",

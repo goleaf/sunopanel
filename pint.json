@@ -1,0 +1,9 @@
+{
+    "preset": "laravel",
+    "exclude": [
+        ".well-known",
+        "vendor",
+        "storage",
+        "node_modules"
+    ]
+} 

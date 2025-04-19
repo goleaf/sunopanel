@@ -19,12 +19,12 @@ class PlaylistFactory extends Factory
     {
         // Ensure a genre exists for the relationship
         $genre = Genre::first() ?? Genre::factory()->create();
-        
+
         return [
-            'name' => $this->faker->words(3, true) . ' Playlist',
+            'name' => $this->faker->words(3, true).' Playlist',
             'description' => $this->faker->paragraph(),
             'cover_image' => $this->faker->imageUrl(640, 480, 'music', true),
-            'genre_id' => $genre->id
+            'genre_id' => $genre->id,
         ];
     }
-} 
+}

@@ -26,10 +26,10 @@ final class TrackUpdateRequest extends FormRequest
     {
         return [
             'title' => [
-                'required', 
-                'string', 
-                'max:255', 
-                Rule::unique('tracks')->ignore($this->route('track'))
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('tracks')->ignore($this->route('track')),
             ],
             'audio_url' => ['required', 'url'],
             'image_url' => ['required', 'url'],
@@ -60,4 +60,4 @@ final class TrackUpdateRequest extends FormRequest
             'genre_ids.required_without' => 'Either genres or genre IDs must be provided.',
         ];
     }
-} 
+}

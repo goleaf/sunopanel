@@ -27,4 +27,4 @@ final class PlaylistRemoveTrackRequest extends FormRequest
             'track_id' => 'sometimes|exists:tracks,id',
         ];
     }
-} 
+}

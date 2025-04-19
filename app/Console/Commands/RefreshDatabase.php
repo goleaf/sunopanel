@@ -37,12 +37,12 @@ class RefreshDatabase extends Command
         $this->info('Seeding tracks...');
         Artisan::call('db:seed', [
             '--class' => 'Database\\Seeders\\TrackSeeder',
-            '--force' => true
+            '--force' => true,
         ]);
         $this->info(Artisan::output());
 
         $this->info('Database refresh completed successfully!');
-        
+
         return Command::SUCCESS;
     }
 }

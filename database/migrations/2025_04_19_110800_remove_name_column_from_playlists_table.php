@@ -2,8 +2,8 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -18,13 +18,13 @@ return new class extends Migration
                 ->whereNull('title')
                 ->whereNotNull('name')
                 ->get();
-            
+
             foreach ($playlists as $playlist) {
                 DB::table('playlists')
                     ->where('id', $playlist->id)
                     ->update(['title' => $playlist->name]);
             }
-            
+
             Schema::table('playlists', function (Blueprint $table) {
                 $table->dropColumn('name');
             });
@@ -39,7 +39,7 @@ return new class extends Migration
         Schema::table('playlists', function (Blueprint $table) {
             $table->string('name')->nullable()->after('title');
         });
-        
+
         // Copy title values to name
         DB::table('playlists')
             ->whereNotNull('title')

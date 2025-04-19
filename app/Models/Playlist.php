@@ -54,6 +54,7 @@ final class Playlist extends Model
                 $genres[$genre->id] = $genre;
             }
         }
+
         return array_values($genres);
     }
 
@@ -64,8 +65,9 @@ final class Playlist extends Model
     {
         Log::info('Using deprecated name attribute. Use title instead.', [
             'class' => self::class,
-            'id' => $this->id
+            'id' => $this->id,
         ]);
+
         return $this->title;
     }
 
@@ -76,7 +78,7 @@ final class Playlist extends Model
     {
         Log::info('Using deprecated name attribute. Use title instead.', [
             'class' => self::class,
-            'id' => $this->id ?? 'new'
+            'id' => $this->id ?? 'new',
         ]);
         $this->attributes['title'] = $value;
     }

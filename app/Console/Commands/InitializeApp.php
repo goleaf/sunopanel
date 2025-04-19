@@ -32,23 +32,23 @@ class InitializeApp extends Command
 
         $this->info('Migrating database...');
         $this->comment(Artisan::call('migrate:fresh', ['--force' => true]));
-        
+
         $this->info('Linking storage...');
         $this->comment(Artisan::call('storage:link'));
-        
+
         $this->info('Seeding the database with tracks...');
         $this->comment(Artisan::call('db:seed', ['--class' => 'Database\\Seeders\\TrackSeeder', '--force' => true]));
-        
+
         $this->info('Clearing cache...');
         $this->comment(Artisan::call('cache:clear'));
         $this->comment(Artisan::call('view:clear'));
         $this->comment(Artisan::call('config:clear'));
-        
+
         $this->info('Creating storage directories...');
-        if (!is_dir(storage_path('app/public/uploads'))) {
+        if (! is_dir(storage_path('app/public/uploads'))) {
             mkdir(storage_path('app/public/uploads'), 0755, true);
         }
-        
+
         $this->info('Application initialization complete!');
         $this->info('');
         $this->info('You can now access the application at the configured URL.');
@@ -57,7 +57,7 @@ class InitializeApp extends Command
         $this->info('Genres: /genres');
         $this->info('Playlists: /playlists');
         $this->info('Batch Operations: /batch');
-        
+
         return Command::SUCCESS;
     }
-} 
+}

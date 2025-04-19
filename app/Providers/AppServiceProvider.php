@@ -4,10 +4,10 @@ namespace App\Providers;
 
 use App\Http\Middleware\LoggingMiddleware;
 use App\Services\Logging\LoggingService;
+use Illuminate\Contracts\Http\Kernel;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Contracts\Http\Kernel;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -18,7 +18,7 @@ class AppServiceProvider extends ServiceProvider
     {
         // Register the LoggingService as a singleton
         $this->app->singleton(LoggingService::class, function ($app) {
-            return new LoggingService();
+            return new LoggingService;
         });
     }
 
@@ -30,7 +30,7 @@ class AppServiceProvider extends ServiceProvider
         // Register the logging middleware
         $kernel = $this->app->make(Kernel::class);
         $kernel->pushMiddleware(LoggingMiddleware::class);
-        
+
         // Register a null authentication driver
         Auth::viaRequest('null', function ($request) {
             return null; // Always return null to disable authentication
@@ -40,7 +40,7 @@ class AppServiceProvider extends ServiceProvider
         Blade::component('components.search', 'search');
         Blade::component('components.sorting', 'sorting');
         Blade::component('components.audio-player', 'audio-player');
-        
+
         // Form components
         Blade::component('playlists.form', 'playlists-form');
         Blade::component('genres.form', 'genres-form');

@@ -2,8 +2,6 @@
 
 namespace Tests\Unit;
 
-use App\Http\Controllers\TrackController;
-use Illuminate\Http\JsonResponse;
 use Tests\TestCase;
 
 class Mp4StatusTest extends TestCase
@@ -15,7 +13,7 @@ class Mp4StatusTest extends TestCase
     {
         $this->markTestSkipped('File download functionality has been removed and merged into tracks');
     }
-    
+
     /**
      * Test that the dashboard page includes the MP4 Downloads section.
      */
@@ -23,7 +21,7 @@ class Mp4StatusTest extends TestCase
     {
         $this->markTestSkipped('File download functionality has been removed and merged into tracks');
     }
-    
+
     /**
      * Test the MP4 status API endpoint by mocking the controller and repository.
      */
@@ -31,4 +29,4 @@ class Mp4StatusTest extends TestCase
     {
         $this->markTestSkipped('File download functionality has been removed and merged into tracks');
     }
-} 
+}

@@ -22,11 +22,11 @@ class GenreRequestTest extends TestCase
             'name' => 'Test Genre',
             'description' => 'Test Description',
         ];
-        
+
         $response = $this->post(route('genres.store'), $validData);
         $response->assertSessionHasNoErrors();
         $response->assertRedirect(route('genres.index'));
-        
+
         $this->assertDatabaseHas('genres', [
             'name' => 'Test Genre',
             'description' => 'Test Description',
@@ -46,11 +46,11 @@ class GenreRequestTest extends TestCase
             'name' => 'Updated Genre',
             'description' => 'Updated Description',
         ];
-        
+
         $response = $this->put(route('genres.update', $genre->id), $validData);
         $response->assertSessionHasNoErrors();
         $response->assertRedirect(route('genres.index'));
-        
+
         $this->assertDatabaseHas('genres', [
             'id' => $genre->id,
             'name' => 'Updated Genre',
@@ -81,18 +81,18 @@ class GenreRequestTest extends TestCase
         $response = $this->delete(route('genres.destroy', $genre->id));
         $response->assertSessionHasNoErrors();
         $response->assertRedirect(route('genres.index'));
-        
+
         // Check if genre was deleted
         $this->assertDatabaseMissing('genres', [
             'id' => $genre->id,
         ]);
-        
+
         // Check if track was detached but not deleted
         $this->assertDatabaseMissing('genre_track', [
             'genre_id' => $genre->id,
             'track_id' => $track->id,
         ]);
-        
+
         $this->assertDatabaseHas('tracks', [
             'id' => $track->id,
         ]);
@@ -111,20 +111,20 @@ class GenreRequestTest extends TestCase
             'name' => 'Unique Genre',
             'description' => 'Another Description',
         ]);
-        
+
         $response->assertSessionHasErrors(['name']);
-        
+
         // Test updating a genre with a unique name
         $genre2 = Genre::create([
             'name' => 'Another Genre',
             'description' => 'Description',
         ]);
-        
+
         $response = $this->put(route('genres.update', $genre2->id), [
             'name' => 'Unique Genre',
             'description' => 'Updated Description',
         ]);
-        
+
         $response->assertSessionHasErrors(['name']);
     }
-} 
+}

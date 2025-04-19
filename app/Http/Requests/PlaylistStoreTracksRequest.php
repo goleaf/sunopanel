@@ -28,4 +28,4 @@ final class PlaylistStoreTracksRequest extends FormRequest
             'track_ids.*' => 'exists:tracks,id',
         ];
     }
-} 
+}

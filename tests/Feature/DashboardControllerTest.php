@@ -2,11 +2,11 @@
 
 namespace Tests\Feature;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
-use App\Models\Track;
 use App\Models\Genre;
 use App\Models\Playlist;
+use App\Models\Track;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 class DashboardControllerTest extends TestCase
 {
@@ -18,12 +18,12 @@ class DashboardControllerTest extends TestCase
     public function test_dashboard_page_loads(): void
     {
         $response = $this->get('/dashboard');
-        
+
         $response->assertStatus(200);
         $response->assertViewIs('dashboard');
         $response->assertSee('Welcome to SunoPanel');
     }
-    
+
     /**
      * Test dashboard displays system stats.
      */
@@ -33,9 +33,9 @@ class DashboardControllerTest extends TestCase
         Track::factory()->count(3)->create();
         Genre::factory()->count(2)->create();
         Playlist::factory()->count(1)->create();
-        
+
         $response = $this->get('/dashboard');
-        
+
         $response->assertStatus(200);
         $response->assertSee('System Statistics', false);
         $response->assertSee('Total Tracks');
@@ -43,7 +43,7 @@ class DashboardControllerTest extends TestCase
         $response->assertSee('Playlists');
         $response->assertSee('Total Duration');
     }
-    
+
     /**
      * Test system stats API endpoint.
      */
@@ -53,16 +53,16 @@ class DashboardControllerTest extends TestCase
         Track::factory()->count(3)->create();
         Genre::factory()->count(2)->create();
         Playlist::factory()->count(1)->create();
-        
+
         $response = $this->getJson('/system-stats');
-        
+
         $response->assertStatus(200)
-                ->assertJsonStructure([
-                    'tracks',
-                    'genres',
-                    'playlists',
-                    'storage',
-                    'totalDuration'
-                ]);
+            ->assertJsonStructure([
+                'tracks',
+                'genres',
+                'playlists',
+                'storage',
+                'totalDuration',
+            ]);
     }
-} 
+}
