@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Http\Middleware\LoggingMiddleware;
 use App\Services\Logging\LoggingService;
+use App\Services\CacheService;
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Blade;
@@ -19,6 +20,11 @@ class AppServiceProvider extends ServiceProvider
         // Register the LoggingService as a singleton
         $this->app->singleton(LoggingService::class, function ($app) {
             return new LoggingService;
+        });
+
+        // Register the CacheService as a singleton
+        $this->app->singleton(CacheService::class, function ($app) {
+            return new CacheService();
         });
     }
 
@@ -40,6 +46,8 @@ class AppServiceProvider extends ServiceProvider
         Blade::component('components.search', 'search');
         Blade::component('components.sorting', 'sorting');
         Blade::component('components.audio-player', 'audio-player');
+        Blade::component('components.dashboard-widget', 'dashboard-widget');
+        Blade::component('components.notification', 'notification');
 
         // Form components
         Blade::component('playlists.form', 'playlists-form');
