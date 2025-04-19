@@ -322,12 +322,12 @@ final class TrackController extends Controller
     /**
      * Play the specified track.
      */
-    public function play(int $id): View
+    public function play(int $id): RedirectResponse
     {
         try {
-            $track = Track::with('genres')->findOrFail($id);
+            $track = Track::findOrFail($id);
             Log::info('Track played', ['id' => $id, 'title' => $track->title]);
-            return view('tracks.play', compact('track'));
+            return redirect()->away($track->audio_url);
         } catch (\Exception $e) {
             Log::error('Error playing track', ['id' => $id, 'error' => $e->getMessage()]);
             abort(404);
