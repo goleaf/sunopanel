@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="text-xl font-semibold text-base-content">
-            {{ __('Edit Playlist') }}: {{ $playlist->name }}
+            {{ __('Edit Playlist') }}: {{ $playlist->title }}
         </h2>
     </x-slot>
 
@@ -39,18 +39,18 @@
                     @method('PUT')
 
                     <div class="form-control mb-4">
-                        <label for="name" class="label">
-                            <span class="label-text">Playlist Name <span class="text-error">*</span></span>
+                        <label for="title" class="label">
+                            <span class="label-text">Playlist Title <span class="text-error">*</span></span>
                         </label>
                         <input 
-                            id="name" 
-                            name="name" 
+                            id="title" 
+                            name="title" 
                             type="text" 
-                            value="{{ old('name', $playlist->name) }}" 
-                            class="input input-bordered w-full @error('name') input-error @enderror" 
+                            value="{{ old('title', $playlist->title) }}" 
+                            class="input input-bordered w-full @error('title') input-error @enderror" 
                             required 
                         />
-                        @error('name')
+                        @error('title')
                             <span class="text-error text-sm mt-1">{{ $message }}</span>
                         @enderror
                     </div>
@@ -90,7 +90,7 @@
                             <div class="mt-2">
                                 <div class="avatar">
                                     <div class="w-32 rounded">
-                                        <img src="{{ $playlist->cover_image }}" alt="{{ $playlist->name }}">
+                                        <img src="{{ $playlist->cover_image }}" alt="{{ $playlist->title }}">
                                     </div>
                                 </div>
                             </div>

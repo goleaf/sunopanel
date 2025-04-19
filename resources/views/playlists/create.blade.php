@@ -38,18 +38,18 @@
                     @csrf
 
                     <div class="form-control mb-4">
-                        <label for="name" class="label">
-                            <span class="label-text">Playlist Name <span class="text-error">*</span></span>
+                        <label for="title" class="label">
+                            <span class="label-text">Playlist Title <span class="text-error">*</span></span>
                         </label>
                         <input 
-                            id="name" 
-                            name="name" 
+                            id="title" 
+                            name="title" 
                             type="text" 
-                            value="{{ old('name') }}" 
-                            class="input input-bordered w-full @error('name') input-error @enderror" 
+                            value="{{ old('title') }}" 
+                            class="input input-bordered w-full @error('title') input-error @enderror" 
                             required 
                         />
-                        @error('name')
+                        @error('title')
                             <span class="text-error text-sm mt-1">{{ $message }}</span>
                         @enderror
                     </div>
