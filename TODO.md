@@ -33,11 +33,11 @@
 - [x] Standardize button styles across all components
 
 ### Section Pages
-- [ ] Review and update track-related views:
-  - [ ] `tracks/index.blade.php`
-  - [ ] `tracks/show.blade.php`
-  - [ ] `tracks/create.blade.php`
-  - [ ] `tracks/edit.blade.php`
+- [x] Review and update track-related views:
+  - [x] `tracks/index.blade.php`
+  - [x] `tracks/show.blade.php`
+  - [x] `tracks/create.blade.php`
+  - [x] `tracks/edit.blade.php`
 - [ ] Review and update genre-related views
 - [ ] Review and update playlist-related views
 

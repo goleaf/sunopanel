@@ -2,9 +2,12 @@
 
 namespace App\Providers;
 
+use App\Http\Middleware\ErrorLoggingMiddleware;
+use App\Services\Logging\ErrorLogService;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Contracts\Http\Kernel;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -13,7 +16,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Register the ErrorLogService as a singleton
+        $this->app->singleton(ErrorLogService::class, function ($app) {
+            return new ErrorLogService();
+        });
     }
 
     /**
@@ -21,6 +27,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Register the error logging middleware
+        $kernel = $this->app->make(Kernel::class);
+        $kernel->pushMiddleware(ErrorLoggingMiddleware::class);
+        
         // Register a null authentication driver
         Auth::viaRequest('null', function ($request) {
             return null; // Always return null to disable authentication

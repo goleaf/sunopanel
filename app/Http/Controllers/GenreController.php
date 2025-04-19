@@ -18,47 +18,35 @@ final class GenreController extends Controller
      */
     public function index(Request $request): View
     {
-        try {
-            $query = Genre::query()->withCount('tracks');
+        $query = Genre::query()->withCount('tracks');
 
-            // Handle search
-            if ($request->has('search')) {
-                $query->where('name', 'like', '%' . $request->search . '%');
-            }
-            
-            // Handle sorting
-            $sortField = $request->sort ?? 'name';
-            $direction = $request->direction ?? 'asc';
-            
-            // Validate sort field to prevent SQL injection
-            $allowedSortFields = ['name', 'tracks_count', 'created_at'];
-            if (!in_array($sortField, $allowedSortFields)) {
-                $sortField = 'name';
-            }
-            
-            $query->orderBy($sortField, $direction === 'desc' ? 'desc' : 'asc');
-            
-            $genres = $query->paginate(15)->withQueryString();
-
-            Log::info('Genres index page accessed', [
-                'search' => $request->search,
-                'sort' => $sortField,
-                'direction' => $direction,
-                'count' => $genres->count()
-            ]);
-
-            return view('genres.index', compact('genres'));
-        } catch (\Exception $e) {
-            Log::error('Error in GenreController@index', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            
-            return view('genres.index', [
-                'genres' => collect(),
-                'error' => 'An error occurred while loading genres.'
-            ]);
+        // Handle search
+        if ($request->has('search')) {
+            $query->where('name', 'like', '%' . $request->search . '%');
         }
+        
+        // Handle sorting
+        $sortField = $request->sort ?? 'name';
+        $direction = $request->direction ?? 'asc';
+        
+        // Validate sort field to prevent SQL injection
+        $allowedSortFields = ['name', 'tracks_count', 'created_at'];
+        if (!in_array($sortField, $allowedSortFields)) {
+            $sortField = 'name';
+        }
+        
+        $query->orderBy($sortField, $direction === 'desc' ? 'desc' : 'asc');
+        
+        $genres = $query->paginate(15)->withQueryString();
+
+        Log::info('Genres index page accessed', [
+            'search' => $request->search,
+            'sort' => $sortField,
+            'direction' => $direction,
+            'count' => $genres->count()
+        ]);
+
+        return view('genres.index', compact('genres'));
     }
 
     /**
@@ -82,23 +70,12 @@ final class GenreController extends Controller
             'description' => 'nullable|string',
         ]);
 
-        try {
-            $genre = Genre::create($validated);
+        $genre = Genre::create($validated);
 
-            Log::info('Genre created successfully', ['genre_id' => $genre->id, 'name' => $genre->name]);
-            
-            return redirect()->route('genres.index')
-                ->with('success', 'Genre created successfully.');
-        } catch (\Exception $e) {
-            Log::error('Error creating genre', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            
-            return redirect()->back()
-                ->with('error', 'Failed to create genre: ' . $e->getMessage())
-                ->withInput();
-        }
+        Log::info('Genre created successfully', ['genre_id' => $genre->id, 'name' => $genre->name]);
+        
+        return redirect()->route('genres.index')
+            ->with('success', 'Genre created successfully.');
     }
 
     /**
@@ -159,24 +136,12 @@ final class GenreController extends Controller
             'description' => 'nullable|string',
         ]);
 
-        try {
-            $genre->update($validated);
+        $genre->update($validated);
 
-            Log::info('Genre updated successfully', ['genre_id' => $genre->id, 'name' => $genre->name]);
-            
-            return redirect()->route('genres.index')
-                ->with('success', 'Genre updated successfully.');
-        } catch (\Exception $e) {
-            Log::error('Error updating genre', [
-                'genre_id' => $genre->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            
-            return redirect()->back()
-                ->with('error', 'Failed to update genre: ' . $e->getMessage())
-                ->withInput();
-        }
+        Log::info('Genre updated successfully', ['genre_id' => $genre->id, 'name' => $genre->name]);
+        
+        return redirect()->route('genres.index')
+            ->with('success', 'Genre updated successfully.');
     }
 
     /**
@@ -186,33 +151,22 @@ final class GenreController extends Controller
     {
         Log::info('Genre delete method called', ['genre_id' => $genre->id, 'name' => $genre->name]);
         
-        try {
-            // Get track count for logging
-            $trackCount = $genre->tracks()->count();
-            
-            // Detach tracks instead of deleting them
-            $genre->tracks()->detach();
-            
-            // Now delete the genre
-            $genre->delete();
+        // Get track count for logging
+        $trackCount = $genre->tracks()->count();
+        
+        // Detach tracks instead of deleting them
+        $genre->tracks()->detach();
+        
+        // Now delete the genre
+        $genre->delete();
 
-            Log::info('Genre deleted successfully', [
-                'genre_id' => $genre->id, 
-                'name' => $genre->name,
-                'detached_tracks' => $trackCount
-            ]);
-            
-            return redirect()->route('genres.index')
-                ->with('success', 'Genre deleted successfully.');
-        } catch (\Exception $e) {
-            Log::error('Error deleting genre', [
-                'genre_id' => $genre->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            
-            return redirect()->back()
-                ->with('error', 'Failed to delete genre: ' . $e->getMessage());
-        }
+        Log::info('Genre deleted successfully', [
+            'genre_id' => $genre->id, 
+            'name' => $genre->name,
+            'detached_tracks' => $trackCount
+        ]);
+        
+        return redirect()->route('genres.index')
+            ->with('success', 'Genre deleted successfully.');
     }
 }

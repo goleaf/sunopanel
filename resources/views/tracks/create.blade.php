@@ -4,28 +4,22 @@
 <div class="container mx-auto px-4 py-6">
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-3xl font-bold text-primary">Add New Track</h1>
-        <a href="{{ route('tracks.index') }}" class="btn btn-ghost">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
-            </svg>
+        <x-button href="{{ route('tracks.index') }}" color="ghost">
+            <x-icon name="back" size="5" class="mr-2" />
             Back to Tracks
-        </a>
+        </x-button>
     </div>
 
     @if(session('success'))
         <div class="alert alert-success mb-4">
-            <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+            <x-icon name="check" size="6" />
             <span>{{ session('success') }}</span>
         </div>
     @endif
 
     @if(session('error'))
         <div class="alert alert-error mb-4">
-            <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+            <x-icon name="x" size="6" />
             <span>{{ session('error') }}</span>
         </div>
     @endif
@@ -82,15 +76,13 @@
                             </div>
 
                             <div class="flex justify-end mt-6">
-                                <a href="{{ route('tracks.index') }}" class="btn btn-ghost mr-2">
+                                <x-button href="{{ route('tracks.index') }}" color="ghost" class="mr-2">
                                     Cancel
-                                </a>
-                                <button type="submit" class="btn btn-primary">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-                                    </svg>
+                                </x-button>
+                                <x-button type="submit" color="primary">
+                                    <x-icon name="upload" size="5" class="mr-2" />
                                     Import Tracks
-                                </button>
+                                </x-button>
                             </div>
                         </form>
                     </div>

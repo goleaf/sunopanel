@@ -62,7 +62,8 @@
     </div>
 
     <div class="flex justify-end">
-        <x-button type="submit" color="indigo">
+        <x-button type="submit" color="primary">
+            <x-icon name="{{ $track ? 'pencil' : 'plus' }}" size="5" class="mr-2" />
             {{ $track ? 'Update Track' : 'Create Track' }}
         </x-button>
     </div>
