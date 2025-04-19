@@ -7,7 +7,7 @@
 - [x] Review `home.blade.php` - Alternative home page
 - [x] Update `dashboard.blade.php` to use more consistent Tailwind/DaisyUI styling
 - [x] Update `home.blade.php` to use more consistent Tailwind/DaisyUI styling
-- [ ] Standardize layout between dashboard and home views
+- [x] Standardize layout between dashboard and home views
 
 ### Layout Pages
 - [ ] Review and update `layouts/app.blade.php` - Main application layout
