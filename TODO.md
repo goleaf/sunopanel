@@ -1,5 +1,12 @@
 # SunoPanel Update Tasks
 
+## Progress Summary
+- [x] Fixed all issues related to Playlist title/name consolidation
+- [x] All Playlist-related tests now pass 
+- [x] Fixed test failures in PlaylistControllerTest and PlaylistRoutesTest
+- [x] Created migration to remove redundant name column from playlists table
+- [ ] Several other test failures still exist in other test classes (TrackRequestTest, GenreControllerTest, etc.)
+
 ## View Templates to Update
 
 ### Main Pages
@@ -58,6 +65,8 @@
 - [x] Update PlaylistController validation rules to require 'title' instead of 'name'
 - [x] Update all playlist form templates to use 'title' field instead of 'name'
 - [x] Fix routing issues in PlaylistController that cause redirect test failures
+- [ ] Fix session validation errors in TrackRequestTest
+- [ ] Fix genre capitalization in BubblegumBassSeederTest and GenreControllerTest
 
 ## Database & Model Updates
 - [x] Update Playlist model fields:
