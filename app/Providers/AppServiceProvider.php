@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Http\Middleware\LoggingMiddleware;
 use App\Services\Logging\LoggingService;
 use App\Services\CacheService;
+use App\Services\NotificationService;
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Blade;
@@ -25,6 +26,10 @@ class AppServiceProvider extends ServiceProvider
         // Register the CacheService as a singleton
         $this->app->singleton(CacheService::class, function ($app) {
             return new CacheService();
+        });
+
+        $this->app->singleton(NotificationService::class, function ($app) {
+            return new NotificationService();
         });
     }
 
