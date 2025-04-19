@@ -6,44 +6,56 @@
     'disabled' => false,
     'outline' => false,
     'icon' => false,
-    'full' => false,
+    'fullWidth' => false,
+    'loading' => false,
     'rounded' => false
 ])
 
 @php
     // Base classes for all buttons
-    $baseClasses = 'inline-flex items-center justify-center transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 font-medium';
-
-    // Color variations (using DaisyUI classes)
+    $baseClasses = 'btn inline-flex items-center transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2';
+    
+    // Color variants mapping
     $colorClasses = [
-        'primary' => $outline ? 'btn-outline btn-primary' : 'btn-primary',
-        'secondary' => $outline ? 'btn-outline btn-secondary' : 'btn-secondary',
-        'accent' => $outline ? 'btn-outline btn-accent' : 'btn-accent',
-        'info' => $outline ? 'btn-outline btn-info' : 'btn-info',
-        'success' => $outline ? 'btn-outline btn-success' : 'btn-success',
-        'warning' => $outline ? 'btn-outline btn-warning' : 'btn-warning',
-        'error' => $outline ? 'btn-outline btn-error' : 'btn-error',
-        'ghost' => 'btn-ghost',
-        'link' => 'btn-link',
-        'base' => $outline ? 'btn-outline' : 'btn',
+        'primary' => 'btn-primary focus:ring-primary/50',
+        'secondary' => 'btn-secondary focus:ring-secondary/50',
+        'accent' => 'btn-accent focus:ring-accent/50',
+        'info' => 'btn-info focus:ring-info/50',
+        'success' => 'btn-success focus:ring-success/50',
+        'warning' => 'btn-warning focus:ring-warning/50',
+        'error' => 'btn-error focus:ring-error/50',
+        'ghost' => 'btn-ghost hover:bg-base-200',
+        'link' => 'btn-link hover:underline',
+        'gray' => 'btn-neutral focus:ring-neutral/50',
+        'indigo' => 'btn-primary focus:ring-primary/50', // Map indigo to primary for consistency
+        'yellow' => 'btn-warning focus:ring-warning/50', // Map yellow to warning for consistency
+        'red' => 'btn-error focus:ring-error/50', // Map red to error for consistency
     ];
-
-    // Size variations
+    
+    // Size variants
     $sizeClasses = [
         'xs' => 'btn-xs',
         'sm' => 'btn-sm',
         'md' => 'btn-md',
         'lg' => 'btn-lg',
     ];
-
+    
     // Special states
-    $iconClasses = $icon ? 'btn-square' : '';
-    $disabledClasses = $disabled ? 'btn-disabled opacity-60 cursor-not-allowed' : '';
-    $fullClasses = $full ? 'w-full' : '';
-    $roundedClasses = $rounded ? 'rounded-full' : '';
-
-    // Combine all classes
-    $classes = trim("btn {$colorClasses[$color]} {$sizeClasses[$size]} {$iconClasses} {$disabledClasses} {$fullClasses} {$roundedClasses}");
+    $outlineClass = $outline ? 'btn-outline' : '';
+    $iconClass = $icon ? 'btn-square' : '';
+    $disabledClass = $disabled ? 'btn-disabled opacity-60 cursor-not-allowed' : '';
+    $fullWidthClass = $fullWidth ? 'w-full' : '';
+    $loadingClass = $loading ? 'loading' : '';
+    $roundedClass = $rounded ? 'rounded-full' : '';
+    
+    // Get the appropriate color class, defaulting to primary if not found
+    $colorClass = $colorClasses[$color] ?? $colorClasses['primary'];
+    
+    // Get the appropriate size class, defaulting to medium if not found
+    $sizeClass = $sizeClasses[$size] ?? $sizeClasses['md'];
+    
+    // Combined classes
+    $classes = "{$baseClasses} {$colorClass} {$sizeClass} {$outlineClass} {$iconClass} {$disabledClass} {$fullWidthClass} {$loadingClass} {$roundedClass}";
 @endphp
 
 @if ($href && !$disabled)
@@ -51,9 +63,9 @@
         {{ $slot }}
     </a>
 @else
-    <button 
-        type="{{ $type }}" 
-        {{ $disabled ? 'disabled' : '' }} 
+    <button
+        type="{{ $type }}"
+        {{ $disabled ? 'disabled' : '' }}
         {{ $attributes->merge(['class' => $classes]) }}
     >
         {{ $slot }}
