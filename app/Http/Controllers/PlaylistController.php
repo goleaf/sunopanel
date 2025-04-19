@@ -233,7 +233,10 @@ final class PlaylistController extends Controller
             ->orderBy('title')
             ->paginate(20);
         
-        return view('playlists.add-tracks', compact('playlist', 'tracks'));
+        // Get all genres for filtering
+        $genres = Genre::orderBy('name')->get();
+        
+        return view('playlists.add-tracks', compact('playlist', 'tracks', 'genres'));
     }
 
     /**

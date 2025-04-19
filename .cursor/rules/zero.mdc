@@ -6,8 +6,9 @@ alwaysApply: true
 # rule content
 
 - before starting task create list of todo and edit todo.md and run all tasks
-- after making changes of code, fiinshinng small things of changing put code to git with message about changes
+- after making changes of code, after finishing small things of changing put code to git with message about changes to "main" branch and do not create additional and remove another branches
 - after commiting to git continue given task and do not stop while all list fof task wil finish
 - always remove not usable file
 - before start editinng/modify file check does file is usable in code
 - after fininshing of task mark in todo.md file what task is done 
+- move all commits from another brannches to "main", remove another branches 
