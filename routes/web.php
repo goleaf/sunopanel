@@ -7,6 +7,7 @@ use App\Http\Controllers\TrackController;
 use App\Http\Controllers\TestController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Livewire\Dashboard;
+use App\Http\Livewire\Genres;
 
 /*
 |--------------------------------------------------------------------------
@@ -29,7 +30,7 @@ Route::get('tracks/{id}/play', [TrackController::class, 'play'])->name('tracks.p
 Route::post('tracks/bulk-upload', [TrackController::class, 'processBulkUpload'])->name('tracks.bulk-upload');
 
 // Genre routes
-Route::resource('genres', GenreController::class);
+Route::get('/genres', Genres::class)->middleware(['auth', 'verified'])->name('genres.index');
 
 // Playlist routes
 Route::resource('playlists', PlaylistController::class);
