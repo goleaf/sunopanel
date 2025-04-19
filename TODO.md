@@ -15,11 +15,11 @@
 - [x] Add theme toggle functionality for light/dark mode
 
 ### Components
-- [ ] Review and update table components:
-  - [ ] `components/table/table.blade.php`
-  - [ ] `components/table/cell.blade.php`
-  - [ ] `components/table/header-cell.blade.php`
-  - [ ] `components/table/row.blade.php`
+- [x] Review and update table components:
+  - [x] `components/table/table.blade.php`
+  - [x] `components/table/cell.blade.php`
+  - [x] `components/table/header-cell.blade.php`
+  - [x] `components/table/row.blade.php`
 - [ ] Update audio player components for better UX
 - [ ] Standardize button styles across all components
 

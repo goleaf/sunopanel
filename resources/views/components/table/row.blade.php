@@ -1,5 +1,5 @@
-@props(['zebra' => false, 'index' => 0])
+@props(['active' => false, 'hover' => true])
 
-<tr class="{{ $zebra && $index % 2 === 1 ? 'bg-gray-50' : 'bg-white' }}">
+<tr class="{{ $active ? 'active' : '' }} {{ $hover ? 'hover' : '' }}">
     {{ $slot }}
 </tr> 
