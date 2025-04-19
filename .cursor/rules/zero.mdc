@@ -11,4 +11,4 @@ alwaysApply: true
 - always remove not usable file
 - before start editinng/modify file check does file is usable in code
 - after fininshing of task mark in todo.md file what task is done 
-- move all commits from another brannches to "main", remove another branches 
+- move all commits from another brannches to "origin/main", remove another branches 
