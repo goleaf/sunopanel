@@ -62,7 +62,7 @@
 ## Database & Model Updates
 - [x] Update Playlist model fields:
   - [x] Consolidate 'name' and 'title' fields to use only 'title'
-  - [ ] Create migration to remove redundant columns from playlists table
+  - [x] Create migration to remove redundant columns from playlists table
 - [x] Update test factories to use consistent field names
 - [x] Update form request validation for playlist creation and editing
 
