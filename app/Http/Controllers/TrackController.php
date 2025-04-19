@@ -115,6 +115,7 @@ final class TrackController extends Controller
 
             // Check if this is a bulk upload request
             if ($request->has('bulk_tracks') && ! empty($request->validated('bulk_tracks'))) {
+                // Call processBulkUpload directly instead of redirecting
                 return $this->processBulkUpload($request);
             }
 

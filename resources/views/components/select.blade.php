@@ -10,6 +10,8 @@
     'error' => '',
     'required' => false,
     'disabled' => false,
+    'tooltip' => '',
+    'tooltipPosition' => 'top',
 ])
 
 @php

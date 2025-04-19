@@ -76,4 +76,84 @@ When uploading tracks in bulk, follow these guidelines:
 4. Error handling:
    - The system validates each line individually
    - Successfully processed tracks are saved even if some lines have errors
-   - Errors are reported in the session with line numbers for easy fixing 
+   - Errors are reported in the session with line numbers for easy fixing
+
+## Testing Commands
+
+SunoPanel includes several commands to help improve the quality of tests.
+
+### Converting PHPUnit Doc-Comments to Attributes
+
+PHPUnit 12 deprecates the use of doc-comments for test annotations and recommends using attributes instead. This command helps convert existing doc-comments to the new attribute syntax:
+
+```bash
+php artisan test:convert-comments
+```
+
+To see what would be changed without making actual changes:
+
+```bash
+php artisan test:convert-comments --dry-run
+```
+
+### Generating Test Stubs
+
+When adding new classes to the application, you can quickly generate test stubs using:
+
+```bash
+# Generate a feature test (default)
+php artisan test:generate-stub "App\Services\MyService"
+
+# Generate a unit test
+php artisan test:generate-stub "App\Services\MyService" --unit
+
+# Overwrite an existing test
+php artisan test:generate-stub "App\Services\MyService" --force
+```
+
+The command will:
+1. Create the appropriate directory structure
+2. Generate test methods for all public methods in the class
+3. Set up the appropriate namespace and imports
+
+### Fixing Test Coding Style
+
+To maintain consistent coding style in tests, use:
+
+```bash
+# Fix style issues in test files
+php artisan test:style
+
+# Check for style issues without fixing them
+php artisan test:style --check
+
+# Show detailed output
+php artisan test:style --details
+```
+
+## Composer Scripts
+
+SunoPanel includes several Composer scripts for common development tasks:
+
+```bash
+# Run tests
+composer test
+
+# Fix coding style issues
+composer lint
+
+# Optimize database tables
+composer db:optimize
+
+# Fix test style issues
+composer test:style
+
+# Check test style without fixing
+composer test:style:check
+
+# Convert PHPUnit doc-comments to attributes
+composer test:convert-comments
+
+# Run all tests and style checks
+composer test:all
+``` 

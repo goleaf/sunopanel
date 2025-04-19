@@ -6,6 +6,8 @@
     'name' => null,
     'required' => false,
     'helpText' => '',
+    'tooltip' => '',
+    'tooltipPosition' => 'top',
 ])
 
 @php
@@ -16,10 +18,18 @@
 
 <div>
     @if($label)
-        <label for="{{ $inputId }}" class="block text-sm font-medium text-base-content mb-1">
-            {{ $label }}
-            @if($required) <span class="text-error">*</span> @endif
-        </label>
+        @if($tooltip)
+            <x-label-with-tooltip 
+                :for="$inputId" 
+                :value="$label" 
+                :required="$required" 
+                :tooltip="$tooltip"
+                :tooltipPosition="$tooltipPosition"
+                class="mb-1"
+            />
+        @else
+            <x-label :for="$inputId" :value="$label" :required="$required" />
+        @endif
     @endif
 
     <div class="relative rounded-md">
