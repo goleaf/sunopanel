@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -86,11 +88,12 @@ final class Playlist extends Model
     /**
      * Add a track to the playlist.
      */
-    public function addTrack(Track $track, $position = null)
+    public function addTrack(Track $track, ?int $position = null): void
     {
         if ($position === null) {
             // Get the highest position and add 1
-            $position = $this->tracks()->max('position') + 1;
+            $position = $this->tracks()->max('position') ?? -1;
+            $position++;
         }
 
         $this->tracks()->attach($track->id, ['position' => $position]);
@@ -99,7 +102,7 @@ final class Playlist extends Model
     /**
      * Remove a track from the playlist.
      */
-    public function removeTrack(Track $track)
+    public function removeTrack(Track $track): void
     {
         $this->tracks()->detach($track->id);
     }
@@ -107,8 +110,8 @@ final class Playlist extends Model
     /**
      * Get tracks count
      */
-    public function getTracksCountAttribute()
+    public function getTracksCountAttribute(): int
     {
-        return $this->tracks()->count();
+        return (int) $this->tracks()->count();
     }
 }
