@@ -54,11 +54,11 @@
                             <tr>
                                 <th>
                                     <a href="{{ route('playlists.index', array_merge(request()->query(), [
-                                        'sort' => 'name',
-                                        'direction' => request('sort') === 'name' && request('direction') === 'asc' ? 'desc' : 'asc'
+                                        'sort' => 'title',
+                                        'direction' => request('sort') === 'title' && request('direction') === 'asc' ? 'desc' : 'asc'
                                     ])) }}" class="flex items-center">
-                                        Name
-                                        @if(request('sort') === 'name')
+                                        Title
+                                        @if(request('sort') === 'title')
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 @if(request('direction') === 'asc')
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
@@ -132,13 +132,13 @@
                                             @if($playlist->cover_image)
                                                 <div class="avatar">
                                                     <div class="mask mask-squircle w-12 h-12">
-                                                        <img src="{{ $playlist->cover_image }}" alt="{{ $playlist->name }}" />
+                                                        <img src="{{ $playlist->cover_image }}" alt="{{ $playlist->title }}" />
                                                     </div>
                                                 </div>
                                             @endif
                                             <div>
                                                 <a href="{{ route('playlists.show', $playlist) }}" class="font-bold text-primary hover:underline">
-                                                    {{ $playlist->name }}
+                                                    {{ $playlist->title }}
                                                 </a>
                                             </div>
                                         </div>

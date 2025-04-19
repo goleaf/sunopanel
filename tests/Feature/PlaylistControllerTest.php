@@ -28,7 +28,7 @@ class PlaylistControllerTest extends TestCase
         
         // Check if all playlists are displayed
         foreach ($playlists as $playlist) {
-            $response->assertSee($playlist->name);
+            $response->assertSee($playlist->title);
         }
     }
     
@@ -54,7 +54,7 @@ class PlaylistControllerTest extends TestCase
         $genre = Genre::factory()->create();
         
         $playlistData = [
-            'name' => 'Test Playlist',
+            'title' => 'Test Playlist',
             'description' => 'This is a test playlist',
             'genre_id' => $genre->id,
         ];
@@ -63,7 +63,7 @@ class PlaylistControllerTest extends TestCase
         
         $response->assertRedirect('/playlists');
         $this->assertDatabaseHas('playlists', [
-            'name' => 'Test Playlist',
+            'title' => 'Test Playlist',
             'description' => 'This is a test playlist',
             'genre_id' => $genre->id,
         ]);
@@ -90,7 +90,7 @@ class PlaylistControllerTest extends TestCase
         $response->assertStatus(200);
         $response->assertViewIs('playlists.show');
         $response->assertViewHas('playlist');
-        $response->assertSee($playlist->name);
+        $response->assertSee($playlist->title);
         
         // Check if tracks are displayed
         foreach ($tracks as $track) {
@@ -110,7 +110,7 @@ class PlaylistControllerTest extends TestCase
         $response->assertStatus(200);
         $response->assertViewIs('playlists.edit');
         $response->assertViewHas('playlist');
-        $response->assertSee($playlist->name);
+        $response->assertSee($playlist->title);
     }
     
     /**
@@ -122,7 +122,7 @@ class PlaylistControllerTest extends TestCase
         $newGenre = Genre::factory()->create();
         
         $updateData = [
-            'name' => 'Updated Playlist',
+            'title' => 'Updated Playlist',
             'description' => 'This is an updated description',
             'genre_id' => $newGenre->id,
         ];
@@ -132,7 +132,7 @@ class PlaylistControllerTest extends TestCase
         $response->assertRedirect('/playlists');
         $this->assertDatabaseHas('playlists', [
             'id' => $playlist->id,
-            'name' => 'Updated Playlist',
+            'title' => 'Updated Playlist',
             'description' => 'This is an updated description',
             'genre_id' => $newGenre->id,
         ]);
@@ -219,15 +219,15 @@ class PlaylistControllerTest extends TestCase
         
         // Create the playlist from this genre
         $response = $this->post(route('playlists.create-from-genre', $genre->id), [
-            'name' => 'Genre Playlist',
+            'title' => 'Genre Playlist',
             'description' => 'Playlist created from genre'
         ]);
         
         $response->assertRedirect('/playlists');
         
-        // Check if playlist was created with the correct genre - skip the name check 
-        // since the implementation might use a different naming convention
+        // Check if playlist was created with the correct genre
         $this->assertDatabaseHas('playlists', [
+            'title' => 'Genre Playlist',
             'genre_id' => $genre->id,
         ]);
     }

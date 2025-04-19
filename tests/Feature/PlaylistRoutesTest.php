@@ -150,14 +150,15 @@ class PlaylistRoutesTest extends TestCase
     {
         $genre = Genre::first();
         
-        $response = $this->get(route('playlists.create-from-genre', $genre));
+        $response = $this->post(route('playlists.create-from-genre', $genre));
         
-        $response->assertStatus(200);
-        $response->assertSee($genre->name);
-        $response->assertViewIs('playlists.create');
+        $response->assertRedirect(route('playlists.show', Playlist::latest()->first()));
         
-        // The form should have the genre pre-selected
-        $response->assertSee('value="' . $genre->id . '" selected');
+        // Verify a new playlist was created with the genre's name
+        $this->assertDatabaseHas('playlists', [
+            'title' => "{$genre->name} Playlist",
+            'genre_id' => $genre->id
+        ]);
     }
     
     /** @test */

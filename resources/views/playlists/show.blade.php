@@ -1,5 +1,112 @@
 <x-app-layout>
     <x-slot name="header">
+        {{ $playlist->title }}
+    </x-slot>
+
+    <div class="py-12">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <div class="mb-6 flex flex-wrap justify-between items-center gap-4">
+                <div class="flex flex-wrap items-center gap-2">
+                    <x-button href="{{ route('playlists.index') }}" color="gray">
+                        <x-icon name="arrow-left" class="h-5 w-5 mr-1" />
+                        Back to Playlists
+                    </x-button>
+                    
+                    <x-button href="{{ route('playlists.edit', $playlist) }}" color="yellow">
+                        <x-icon name="pencil" class="h-5 w-5 mr-1" />
+                        Edit Playlist
+                    </x-button>
+                </div>
+                
+                <div class="flex items-center">
+                    <form action="{{ route('playlists.destroy', $playlist) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this playlist?');">
+                        @csrf
+                        @method('DELETE')
+                        <x-button type="submit" color="red">
+                            <x-icon name="trash" class="h-5 w-5 mr-1" />
+                            Delete Playlist
+                        </x-button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="mb-8">
+                <x-card rounded="lg">
+                    <div class="md:flex">
+                        <div class="md:flex-shrink-0 mb-4 md:mb-0 md:mr-6">
+                            @if($playlist->cover_image)
+                                <img src="{{ $playlist->cover_image }}" alt="{{ $playlist->title }}"
+                                     class="h-48 w-48 object-cover rounded-lg">
+                            @else
+                                <div class="h-48 w-48 bg-indigo-100 flex items-center justify-center rounded-lg">
+                                    <x-icon name="music-note" class="h-20 w-20 text-indigo-500" />
+                                </div>
+                            @endif
+                        </div>
+                        <div class="flex-1">
+                            <h2 class="text-3xl font-bold text-gray-900 mb-2">{{ $playlist->title }}</h2>
+                            
+                            @if($playlist->description)
+                                <p class="text-gray-700 mb-4">{{ $playlist->description }}</p>
+                            @endif
+                            
+                            <div class="flex flex-wrap gap-6 mb-4">
+                                <div>
+                                    <span class="text-gray-500 text-sm">Tracks</span>
+                                    <p class="font-semibold">{{ $playlist->tracks->count() }}</p>
+                                </div>
+                                
+                                @if($playlist->genre)
+                                    <div>
+                                        <span class="text-gray-500 text-sm">Genre</span>
+                                        <p class="font-semibold">{{ $playlist->genre->name }}</p>
+                                    </div>
+                                @endif
+                                
+                                <div>
+                                    <span class="text-gray-500 text-sm">Created</span>
+                                    <p class="font-semibold">{{ $playlist->created_at->format('M d, Y') }}</p>
+                                </div>
+                            </div>
+                            
+                            @if($playlist->tracks->count() > 0)
+                                <div class="mt-4">
+                                    <x-button href="#tracklist" color="indigo">
+                                        <x-icon name="collection" class="h-5 w-5 mr-1" />
+                                        View Tracks
+                                    </x-button>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                </x-card>
+            </div>
+
+            <div class="mb-8 flex flex-wrap justify-between items-center gap-4">
+                <h2 class="text-2xl font-bold text-gray-900" id="tracklist">
+                    @if($playlist->tracks->count() > 0)
+                        Tracks ({{ $playlist->tracks->count() }})
+                    @else
+                        No tracks in this playlist
+                    @endif
+                </h2>
+                
+                <div class="flex gap-2">
+                    @if($playlist->tracks->count() > 0)
+                        <a href="#" id="playAllButton" class="btn btn-primary flex items-center gap-2">
+                            <x-icon name="play" class="h-5 w-5" />
+                            Play All
+                        </a>
+                    @endif
+                    
+                    <x-button href="{{ route('playlists.add-tracks', $playlist) }}" color="indigo">
+                        <x-icon name="plus" class="h-5 w-5 mr-1" />
+                        Add Tracks
+                    </x-button>
+                </div>
+            </div>
+
+            @if (session('success'))
         <h2 class="text-xl font-semibold text-base-content">
             {{ $playlist->name }}
             @if($playlist->genre)
