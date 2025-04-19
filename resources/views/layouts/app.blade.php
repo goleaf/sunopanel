@@ -17,6 +17,15 @@
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- DaisyUI -->
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@latest/dist/full.css" rel="stylesheet" type="text/css" />
+    <!-- Livewire Styles -->
+    @livewireStyles
+    <!-- Custom Styles -->
+    <link href="{{ asset('css/app.css') }}" rel="stylesheet">
+
     {{-- Inline script to set theme immediately to avoid FOUC --}}
     <script>
         (function() {
@@ -141,6 +150,11 @@
             @endif
         });
     </script>
+
+    <!-- Livewire Scripts -->
+    @livewireScripts
+    <!-- Custom Scripts -->
+    <script src="{{ asset('js/app.js') }}"></script>
 </body>
 </html>
 

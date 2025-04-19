@@ -8,6 +8,7 @@ use App\Http\Controllers\TestController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Livewire\Dashboard;
 use App\Http\Livewire\Genres;
+use App\Http\Livewire\Tracks;
 
 /*
 |--------------------------------------------------------------------------
@@ -25,7 +26,7 @@ Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 Route::get('/dashboard', Dashboard::class)->middleware(['auth', 'verified'])->name('dashboard');
 
 // Track routes
-Route::resource('tracks', TrackController::class);
+Route::get('/tracks', Tracks::class)->middleware(['auth', 'verified'])->name('tracks.index');
 Route::get('tracks/{id}/play', [TrackController::class, 'play'])->name('tracks.play');
 Route::post('tracks/bulk-upload', [TrackController::class, 'processBulkUpload'])->name('tracks.bulk-upload');
 

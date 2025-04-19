@@ -414,14 +414,14 @@ composer test:convert-comments
 
 # TODO List for Livewire Conversion
 
-1. **Audit Existing Structure**: Review current controllers, views, and routes to identify components that need conversion.
-2. **Create Livewire Components**: Convert traditional Laravel controllers and views into Livewire components.
-3. **Update Routing**: Adjust routes to point to Livewire components instead of traditional controllers.
-4. **Refactor Views**: Transform Blade views to work with Livewire, using directives like `wire:model` for data binding.
-5. **State Management**: Implement Livewire's reactive properties for state management.
-6. **Testing**: Ensure all components are tested for functionality after conversion.
-7. **Commit Changes**: Regularly commit changes to the `main` branch as per instructions.
-8. **Remove Unused Files**: Clean up any unused files or old controller/view structures post-conversion.
+- [x] Update `composer.json` to ensure Livewire is installed.
+- [ ] Check and register `LivewireServiceProvider` in `config/app.php`.
+- [ ] Convert existing controllers and views to Livewire components.
+- [ ] Update routes to use Livewire components.
+- [ ] Migrate Blade views to Livewire-compatible views.
+- [ ] Test all components to ensure functionality.
+- [ ] Commit changes to git with appropriate messages.
+- [ ] Remove unused files and branches after completion.
 
 ## Conversion to Livewire
 
