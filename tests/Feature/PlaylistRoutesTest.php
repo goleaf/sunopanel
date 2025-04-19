@@ -152,7 +152,11 @@ class PlaylistRoutesTest extends TestCase
         
         $response = $this->post(route('playlists.create-from-genre', $genre));
         
-        $response->assertRedirect(route('playlists.show', Playlist::latest()->first()));
+        // Get the newly created playlist
+        $newPlaylist = Playlist::where('title', "{$genre->name} Playlist")->first();
+        $this->assertNotNull($newPlaylist);
+        
+        $response->assertRedirect(route('playlists.show', $newPlaylist));
         
         // Verify a new playlist was created with the genre's name
         $this->assertDatabaseHas('playlists', [
