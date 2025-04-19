@@ -54,10 +54,10 @@
         </div>
 
         <div class="flex justify-end">
-            <x-button href="{{ route('genres.index') }}" color="gray" class="mr-2">
+            <x-button href="{{ route('genres.index') }}" color="ghost" class="mr-2">
                 Cancel
             </x-button>
-            <x-button type="submit" color="indigo">
+            <x-button type="submit" color="primary">
                 {{ $genre ? 'Update Genre' : 'Save Genre' }}
             </x-button>
         </div>

@@ -98,10 +98,10 @@
         </div>
 
         <div class="flex justify-end">
-            <x-button href="{{ $playlist ? route('playlists.show', $playlist) : route('playlists.index') }}" color="gray" class="mr-2">
+            <x-button href="{{ $playlist ? route('playlists.show', $playlist) : route('playlists.index') }}" color="ghost" class="mr-2">
                 Cancel
             </x-button>
-            <x-button type="submit" color="indigo">
+            <x-button type="submit" color="primary">
                 {{ $playlist ? 'Update Playlist' : 'Create Playlist' }}
             </x-button>
         </div>
