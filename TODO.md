@@ -91,10 +91,10 @@
 
 ## Error Logging Implementation Tasks
 
-- [ ] Create a universal error logging service
-- [ ] Create middleware for global exception handling
-- [ ] Register the service and middleware in the service provider
-- [ ] Update the exception handler to use our logging service
-- [ ] Remove error logging from controllers
-- [ ] Create tests for the logging service
+- [x] Create a universal error logging service
+- [x] Create middleware for global exception handling
+- [x] Register the service and middleware in the service provider
+- [x] Update the exception handler to use our logging service
+- [x] Remove error logging from controllers
+- [x] Create tests for the logging service
 - [ ] Commit the changes to Git  
