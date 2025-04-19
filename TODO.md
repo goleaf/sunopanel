@@ -7,7 +7,7 @@
 - [x] Created migration to remove redundant name column from playlists table
 - [x] Created FormRequest classes for all controller methods
 - [x] Added comprehensive tests for all FormRequest classes
-- [x] Fixed test failures in TrackRequestTest, GenreControllerTest, and BubblegumBassSeederTest
+- [ ] Several other test failures still exist in other test classes (TrackRequestTest, GenreControllerTest, etc.)
 
 ## View Templates to Update
 
@@ -30,29 +30,29 @@
   - [x] `components/table/header-cell.blade.php`
   - [x] `components/table/row.blade.php`
 - [x] Update audio player components for better UX
-- [x] Standardize button styles across all components
+- [ ] Standardize button styles across all components
 
 ### Section Pages
-- [x] Review and update track-related views:
-  - [x] `tracks/index.blade.php`
-  - [x] `tracks/show.blade.php`
-  - [x] `tracks/create.blade.php`
-  - [x] `tracks/edit.blade.php`
-- [x] Review and update genre-related views
-- [x] Review and update playlist-related views
+- [ ] Review and update track-related views:
+  - [ ] `tracks/index.blade.php`
+  - [ ] `tracks/show.blade.php`
+  - [ ] `tracks/create.blade.php`
+  - [ ] `tracks/edit.blade.php`
+- [ ] Review and update genre-related views
+- [ ] Review and update playlist-related views
 
 ## Functionality Improvements
-- [x] Add responsive design improvements for mobile views
+- [ ] Add responsive design improvements for mobile views
 - [x] Implement better audio player controls
-- [x] Improve search functionality UI
-- [x] Add bulk actions for tracks and playlists
-- [x] Implement better error handling in forms
+- [ ] Improve search functionality UI
+- [ ] Add bulk actions for tracks and playlists
+- [ ] Implement better error handling in forms
 
 ## Code Cleanup
 - [x] Remove unused components and views
 - [x] Standardize naming conventions across all components
 - [x] Ensure all components follow Laravel and Tailwind best practices
-- [x] Optimize stylesheets and scripts for performance
+- [ ] Optimize stylesheets and scripts for performance
 
 ## Critical Fixes Needed
 - [x] Fix undefined variable $genres in playlists/add-tracks.blade.php view
@@ -67,8 +67,8 @@
 - [x] Update PlaylistController validation rules to require 'title' instead of 'name'
 - [x] Update all playlist form templates to use 'title' field instead of 'name'
 - [x] Fix routing issues in PlaylistController that cause redirect test failures
-- [x] Fix session validation errors in TrackRequestTest
-- [x] Fix genre capitalization in BubblegumBassSeederTest and GenreControllerTest
+- [ ] Fix session validation errors in TrackRequestTest
+- [ ] Fix genre capitalization in BubblegumBassSeederTest and GenreControllerTest
 
 ## Database & Model Updates
 - [x] Update Playlist model fields:
@@ -83,8 +83,8 @@
 - [x] Make controllers final classes per Laravel standards
 - [x] Make model classes final per Laravel standards
 - [x] Add strict typing declarations to PHP files: `declare(strict_types=1);`
-- [x] Implement proper return type hints for all methods
-- [x] Ensure controllers are thin and delegate business logic to services
+- [ ] Implement proper return type hints for all methods
+- [ ] Ensure controllers are thin and delegate business logic to services
 - [x] Create service classes for complex operations
-- [x] Implement proper error handling using try-catch blocks
-- [x] Update all classes to follow PSR-12 coding standards  
+- [ ] Implement proper error handling using try-catch blocks
+- [ ] Update all classes to follow PSR-12 coding standards  
