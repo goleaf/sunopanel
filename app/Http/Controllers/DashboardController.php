@@ -1,21 +1,25 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Models\Track;
 use App\Models\Genre;
 use App\Models\Playlist;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use Illuminate\View\View;
 
-class DashboardController extends Controller
+final class DashboardController extends Controller
 {
     /**
      * Display the dashboard with system stats
      */
-    public function index()
+    public function index(): View
     {
         Log::info('Loading dashboard index page');
         // Get basic system stats
@@ -27,7 +31,7 @@ class DashboardController extends Controller
     /**
      * Return system statistics JSON for API use
      */
-    public function systemStats()
+    public function systemStats(): JsonResponse
     {
         Log::info('API request for system stats');
         $stats = $this->getSystemStats();
@@ -48,9 +52,9 @@ class DashboardController extends Controller
     /**
      * Get system statistics
      * 
-     * @return array
+     * @return array<string, int|string|float>
      */
-    private function getSystemStats()
+    private function getSystemStats(): array
     {
         // Calculate storage usage in MB - check if directory exists first
         $storageUsage = 0;

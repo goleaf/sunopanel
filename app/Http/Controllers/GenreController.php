@@ -1,17 +1,22 @@
 <?php
+
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Models\Genre;
 use App\Models\Track;
 use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Log;
+use Illuminate\View\View;
 
-class GenreController extends Controller
+final class GenreController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Display a listing of the genres.
      */
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         try {
             $query = Genre::query()->withCount('tracks');
@@ -49,36 +54,36 @@ class GenreController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
             
-            return redirect()->back()->with('error', 'An error occurred while loading genres.');
+            return view('genres.index', [
+                'genres' => collect(),
+                'error' => 'An error occurred while loading genres.'
+            ]);
         }
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Show the form for creating a new genre.
      */
-    public function create()
+    public function create(): View
     {
         Log::info('Genre create form accessed');
         return view('genres.create');
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Store a newly created genre in storage.
      */
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
         Log::info('Genre store method called', ['request' => $request->except(['_token'])]);
 
-        $request->validate([
+        $validated = $request->validate([
             'name' => 'required|string|max:255|unique:genres,name',
             'description' => 'nullable|string',
         ]);
 
         try {
-            $genre = Genre::create([
-                'name' => $request->name,
-                'description' => $request->description,
-            ]);
+            $genre = Genre::create($validated);
 
             Log::info('Genre created successfully', ['genre_id' => $genre->id, 'name' => $genre->name]);
             
@@ -97,9 +102,9 @@ class GenreController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * Display the specified genre.
      */
-    public function show(Request $request, Genre $genre)
+    public function show(Request $request, Genre $genre): View
     {
         Log::info('Genre show page accessed', ['genre_id' => $genre->id, 'name' => $genre->name]);
         
@@ -107,12 +112,12 @@ class GenreController extends Controller
         $perPage = $request->input('per_page', 10);
         
         // Sorting for tracks within a genre
-        $sortField = request('sort') ?? 'name';
-        $sortOrder = request('order') ?? 'asc';
+        $sortField = $request->query('sort', 'title');
+        $sortOrder = $request->query('order', 'asc');
         
-        $allowedSortFields = ['name', 'created_at', 'duration'];
+        $allowedSortFields = ['title', 'created_at', 'duration'];
         if (!in_array($sortField, $allowedSortFields)) {
-            $sortField = 'name';
+            $sortField = 'title';
         }
         
         $query->orderBy($sortField, $sortOrder);
@@ -124,24 +129,24 @@ class GenreController extends Controller
         ]);
         
         $tracks = $query->paginate($perPage);
-        $tracks->appends(request()->query());
+        $tracks->appends($request->query());
         
         return view('genres.show', compact('genre', 'tracks', 'sortField', 'sortOrder'));
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Show the form for editing the specified genre.
      */
-    public function edit(Genre $genre)
+    public function edit(Genre $genre): View
     {
         Log::info('Genre edit form accessed', ['genre_id' => $genre->id, 'name' => $genre->name]);
         return view('genres.edit', compact('genre'));
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update the specified genre in storage.
      */
-    public function update(Request $request, Genre $genre)
+    public function update(Request $request, Genre $genre): RedirectResponse
     {
         Log::info('Genre update method called', [
             'genre_id' => $genre->id,
@@ -149,16 +154,13 @@ class GenreController extends Controller
             'request' => $request->except(['_token'])
         ]);
 
-        $request->validate([
+        $validated = $request->validate([
             'name' => 'required|string|max:255|unique:genres,name,' . $genre->id,
             'description' => 'nullable|string',
         ]);
 
         try {
-            $genre->update([
-                'name' => $request->name,
-                'description' => $request->description,
-            ]);
+            $genre->update($validated);
 
             Log::info('Genre updated successfully', ['genre_id' => $genre->id, 'name' => $genre->name]);
             
@@ -178,9 +180,9 @@ class GenreController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Remove the specified genre from storage.
      */
-    public function destroy(Genre $genre)
+    public function destroy(Genre $genre): RedirectResponse
     {
         Log::info('Genre delete method called', ['genre_id' => $genre->id, 'name' => $genre->name]);
         
@@ -209,7 +211,7 @@ class GenreController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
             
-            return redirect()->route('genres.index')
+            return redirect()->back()
                 ->with('error', 'Failed to delete genre: ' . $e->getMessage());
         }
     }
