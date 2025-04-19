@@ -67,6 +67,11 @@
                 </header>
             @endif
 
+            <!-- Notification Component -->
+            <div class="fixed z-50 pointer-events-none w-full flex justify-center">
+                <x-notification id="main-notification" position="top-center" />
+            </div>
+
             <!-- Page Content -->
             <main class="flex-grow p-4">
                 <div class="max-w-7xl mx-auto">
@@ -164,6 +169,43 @@
         document.addEventListener('DOMContentLoaded', function() {
             let savedTheme = localStorage.getItem('theme') || 'light';
             document.querySelector('html').setAttribute('data-theme', savedTheme);
+            
+            // Initialize flash messages from session
+            @if (session('success'))
+                window.dispatchEvent(new CustomEvent('notify', {
+                    detail: {
+                        message: "{{ session('success') }}",
+                        type: "success"
+                    }
+                }));
+            @endif
+            
+            @if (session('error'))
+                window.dispatchEvent(new CustomEvent('notify', {
+                    detail: {
+                        message: "{{ session('error') }}",
+                        type: "error"
+                    }
+                }));
+            @endif
+            
+            @if (session('info'))
+                window.dispatchEvent(new CustomEvent('notify', {
+                    detail: {
+                        message: "{{ session('info') }}",
+                        type: "info"
+                    }
+                }));
+            @endif
+            
+            @if (session('warning'))
+                window.dispatchEvent(new CustomEvent('notify', {
+                    detail: {
+                        message: "{{ session('warning') }}",
+                        type: "warning"
+                    }
+                }));
+            @endif
         });
     </script>
 </body>
