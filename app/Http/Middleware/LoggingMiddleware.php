@@ -7,8 +7,9 @@ namespace App\Http\Middleware;
 use App\Services\Logging\LoggingService;
 use Closure;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpFoundation\Response;
+use Illuminate\Support\Facades\Log;
 use Throwable;
+use Symfony\Component\HttpFoundation\Response;
 
 final class LoggingMiddleware
 {
@@ -69,13 +70,14 @@ final class LoggingMiddleware
             
             return $response;
         } catch (Throwable $exception) {
-            // Log the exception
+            // Log the exception using our logging service
             $this->loggingService->logError(
                 $exception,
                 $request,
                 'Middleware exception handler'
             );
             
+            // Re-throw the exception to be handled by the global exception handler
             throw $exception;
         }
     }

@@ -16,11 +16,11 @@
 ## Action Plan
 
 ### 1. Fix Remaining Test Failures
-1. [ ] Fix genre capitalization issues:
-   - [ ] Review and fix Genre model's naming conventions
-   - [ ] Ensure consistent capitalization in BubblegumBassSeederTest
-   - [ ] Update Genre model's findOrCreateByName and syncGenres methods
-   - [ ] Verify that all genre capitalizations are consistent
+1. [x] Fix genre capitalization issues:
+   - [x] Review and fix Genre model's naming conventions
+   - [x] Ensure consistent capitalization in BubblegumBassSeederTest
+   - [x] Update Genre model's findOrCreateByName and syncGenres methods
+   - [x] Verify that all genre capitalizations are consistent
 
 2. [ ] Fix TrackRequestTest issues:
    - [ ] Investigate session validation errors in TrackRequestTest
@@ -167,7 +167,7 @@ Based on priority and dependencies, we'll tackle these tasks in the following or
 - [x] Update all playlist form templates to use 'title' field instead of 'name'
 - [x] Fix routing issues in PlaylistController that cause redirect test failures
 - [ ] Fix session validation errors in TrackRequestTest
-- [ ] Fix genre capitalization in BubblegumBassSeederTest and GenreControllerTest
+- [x] Fix genre capitalization in BubblegumBassSeederTest and GenreControllerTest
 
 ## Database & Model Updates
 - [x] Update Playlist model fields:
@@ -195,6 +195,6 @@ Based on priority and dependencies, we'll tackle these tasks in the following or
 - [x] Remove error logging from controllers
 - [x] Create tests for the logging service
 - [x] Commit the changes to Git
-- [ ] Fix issues with deleted ErrorLoggingMiddleware
-- [ ] Recreate proper LoggingMiddleware
-- [ ] Update middleware registration in Kernel  
+- [x] Fix issues with deleted ErrorLoggingMiddleware
+- [x] Recreate proper LoggingMiddleware
+- [x] Update middleware registration in Kernel  
