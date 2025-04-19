@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Http\Middleware\LoggingMiddleware;
+use App\Services\Logging\LoggingServiceInterface;
 use App\Services\Logging\LoggingService;
 use App\Services\CacheService;
 use App\Services\NotificationService;
@@ -18,10 +19,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        // Register the LoggingService as a singleton
-        $this->app->singleton(LoggingService::class, function ($app) {
-            return new LoggingService;
-        });
+        // Bind the interface to the concrete implementation
+        $this->app->singleton(LoggingServiceInterface::class, LoggingService::class);
 
         // Register the CacheService as a singleton
         $this->app->singleton(CacheService::class, function ($app) {
