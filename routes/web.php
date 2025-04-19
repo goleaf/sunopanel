@@ -4,6 +4,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GenreController;
 use App\Http\Controllers\PlaylistController;
 use App\Http\Controllers\TrackController;
+use App\Http\Controllers\TestController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -38,3 +39,7 @@ Route::post('genres/{genre}/create-playlist', [PlaylistController::class, 'creat
 
 // System Stats
 Route::get('/system-stats', [DashboardController::class, 'systemStats'])->name('system.stats');
+
+// Test Routes
+Route::get('/test-notification', [TestController::class, 'testNotification'])->name('test.notification');
+Route::get('/flash-message/{type}', [TestController::class, 'setFlashMessage'])->name('test.flash');
