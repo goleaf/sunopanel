@@ -218,16 +218,15 @@ class PlaylistControllerTest extends TestCase
         $genre = Genre::factory()->create();
         
         // Create the playlist from this genre
-        $response = $this->post(route('playlists.create-from-genre', $genre->id), [
-            'title' => 'Genre Playlist',
-            'description' => 'Playlist created from genre'
-        ]);
+        $response = $this->post(route('playlists.create-from-genre', $genre->id));
         
-        $response->assertRedirect('/playlists');
+        // Check that we are redirected to the newly created playlist's show page
+        $newPlaylist = Playlist::latest()->first();
+        $response->assertRedirect(route('playlists.show', $newPlaylist));
         
         // Check if playlist was created with the correct genre
         $this->assertDatabaseHas('playlists', [
-            'title' => 'Genre Playlist',
+            'title' => "{$genre->name} Playlist",
             'genre_id' => $genre->id,
         ]);
     }
