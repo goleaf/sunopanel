@@ -49,7 +49,7 @@
                 </div>
 
                 <div class="overflow-x-auto">
-                    <x-table>
+                    <x-table adaptiveLayout="true" tableClasses="tracks-table">
                         <x-slot name="header">
                             <x-table.heading>Title</x-table.heading>
                             <x-table.heading>Genres</x-table.heading>
@@ -61,7 +61,7 @@
                         <x-slot name="body">
                             @forelse($tracks as $track)
                                 <x-table.row>
-                                    <x-table.cell>
+                                    <x-table.cell label="Title">
                                         <div class="flex items-center">
                                             <div class="flex-shrink-0 h-10 w-10 mr-2">
                                                 <img class="h-10 w-10 rounded-md object-cover" 
@@ -77,20 +77,20 @@
                                             </div>
                                         </div>
                                     </x-table.cell>
-                                    <x-table.cell>
+                                    <x-table.cell label="Genres">
                                         <div class="flex flex-wrap gap-1">
                                             @foreach($track->genres as $genre)
                                                 <x-badge>{{ $genre->name }}</x-badge>
                                             @endforeach
                                         </div>
                                     </x-table.cell>
-                                    <x-table.cell>
+                                    <x-table.cell label="Duration">
                                         {{ formatDuration($track->duration_seconds ?: $track->duration) }}
                                     </x-table.cell>
-                                    <x-table.cell>
+                                    <x-table.cell label="Added">
                                         {{ $track->created_at->diffForHumans() }}
                                     </x-table.cell>
-                                    <x-table.cell>
+                                    <x-table.cell label="Actions">
                                         <div class="flex items-center space-x-1">
                                             <x-button href="{{ route('tracks.edit', $track->id) }}" size="xs" color="secondary" icon title="Edit">
                                                 <x-icon name="pencil" />
