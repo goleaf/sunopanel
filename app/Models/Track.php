@@ -257,15 +257,7 @@ final class Track extends Model
      */
     public function getStoreFields(): array
     {
-        return [
-            'title' => $this->title,
-            'url' => $this->url,
-            'cover_image' => $this->cover_image,
-            'audio_url' => $this->audio_url,
-            'image_url' => $this->image_url,
-            'unique_id' => $this->unique_id,
-            'duration' => $this->duration,
-        ];
+        return ['title', 'audio_url', 'image_url', 'duration', 'unique_id'];
     }
 
     /**
@@ -275,14 +267,7 @@ final class Track extends Model
      */
     public function getUpdateFields(): array
     {
-        return [
-            'title' => $this->title,
-            'url' => $this->url,
-            'cover_image' => $this->cover_image,
-            'audio_url' => $this->audio_url,
-            'image_url' => $this->image_url,
-            'duration' => $this->duration,
-        ];
+        return ['title', 'audio_url', 'image_url', 'duration'];
     }
 
     /**
@@ -292,10 +277,6 @@ final class Track extends Model
      */
     public function getDeleteFields(): array
     {
-        return [
-            'id' => $this->id,
-            'title' => $this->title,
-            'unique_id' => $this->unique_id,
-        ];
+        return ['id', 'title', 'unique_id'];
     }
 }
