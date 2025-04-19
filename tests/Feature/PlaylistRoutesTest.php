@@ -19,7 +19,7 @@ class PlaylistRoutesTest extends TestCase
         // Create test data
         $genre = Genre::factory()->create(['name' => 'Bubblegum bass']);
         $playlist = Playlist::factory()->create([
-            'name' => 'Test Playlist',
+            'title' => 'Test Playlist',
             'description' => 'A test playlist',
             'genre_id' => $genre->id
         ]);
@@ -52,7 +52,7 @@ class PlaylistRoutesTest extends TestCase
         $response = $this->get(route('playlists.show', $playlist));
         
         $response->assertStatus(200);
-        $response->assertSee($playlist->name);
+        $response->assertSee($playlist->title);
         $response->assertSee('Test Track');
         $response->assertViewIs('playlists.show');
     }
@@ -75,7 +75,7 @@ class PlaylistRoutesTest extends TestCase
         $response = $this->get(route('playlists.edit', $playlist));
         
         $response->assertStatus(200);
-        $response->assertSee($playlist->name);
+        $response->assertSee($playlist->title);
         $response->assertViewIs('playlists.edit');
     }
     
@@ -86,16 +86,16 @@ class PlaylistRoutesTest extends TestCase
         $track = Track::first();
         
         $response = $this->post(route('playlists.store'), [
-            'name' => 'New Playlist',
+            'title' => 'New Playlist',
             'description' => 'A new test playlist',
             'genre_id' => $genre->id,
             'track_ids' => [$track->id]
         ]);
         
         $response->assertRedirect(route('playlists.index'));
-        $this->assertDatabaseHas('playlists', ['name' => 'New Playlist']);
+        $this->assertDatabaseHas('playlists', ['title' => 'New Playlist']);
         
-        $playlist = Playlist::where('name', 'New Playlist')->first();
+        $playlist = Playlist::where('title', 'New Playlist')->first();
         $this->assertTrue($playlist->tracks->contains($track->id));
     }
     
@@ -107,7 +107,7 @@ class PlaylistRoutesTest extends TestCase
         $track = Track::first();
         
         $response = $this->put(route('playlists.update', $playlist), [
-            'name' => 'Updated Playlist',
+            'title' => 'Updated Playlist',
             'description' => 'Updated description',
             'genre_id' => $genre->id,
             'track_ids' => [$track->id]
@@ -116,7 +116,7 @@ class PlaylistRoutesTest extends TestCase
         $response->assertRedirect(route('playlists.index'));
         $this->assertDatabaseHas('playlists', [
             'id' => $playlist->id, 
-            'name' => 'Updated Playlist',
+            'title' => 'Updated Playlist',
             'description' => 'Updated description'
         ]);
     }
@@ -136,7 +136,7 @@ class PlaylistRoutesTest extends TestCase
     public function playlists_can_be_searched()
     {
         // Create additional playlist for search test
-        Playlist::factory()->create(['name' => 'Another Playlist']);
+        Playlist::factory()->create(['title' => 'Another Playlist']);
         
         $response = $this->get(route('playlists.index', ['search' => 'Test']));
         
