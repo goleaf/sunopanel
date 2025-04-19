@@ -1,15 +1,16 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-    <x-page-header title="Edit Genre: {{ $genre->name }}">
-        <x-slot name="buttons">
-            <x-button href="{{ route('genres.index') }}" color="gray">
-                <x-icon name="arrow-left" class="-ml-1 mr-2 h-5 w-5" />
-                Back to Genres
-            </x-button>
-        </x-slot>
-    </x-page-header>
+<div class="container mx-auto px-4 py-6">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-primary">Edit Genre: {{ $genre->name }}</h1>
+        <a href="{{ route('genres.index') }}" class="btn btn-ghost">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+            </svg>
+            Back to Genres
+        </a>
+    </div>
 
     <x-genres-form 
         :genre="$genre" 
