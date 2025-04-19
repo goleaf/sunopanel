@@ -36,8 +36,20 @@ class GenreServiceTest extends TestCase
             'description' => 'Test Description'
         ];
         
-        $storeRequest = $this->createMock(GenreStoreRequest::class);
-        $storeRequest->method('validated')->willReturn($requestData);
+        // Create a mocked request that isn't a final class
+        $storeRequest = new class($requestData) extends \Illuminate\Foundation\Http\FormRequest {
+            protected $validatedData;
+            
+            public function __construct(array $data)
+            {
+                $this->validatedData = $data;
+            }
+            
+            public function validated($key = null, $default = null)
+            {
+                return $this->validatedData;
+            }
+        };
         
         // Act
         $genre = $this->genreService->store($storeRequest);
