@@ -13,6 +13,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\UploadedFile;
 
 final readonly class UserService
 {
@@ -186,7 +187,7 @@ final readonly class UserService
     /**
      * Store avatar image
      */
-    private function storeAvatar($file, int $userId): string
+    private function storeAvatar(UploadedFile $file, int $userId): string
     {
         $filename = 'user_'.$userId.'_'.time().'.'.$file->getClientOriginalExtension();
         $path = $file->storeAs('avatars', $filename, 'public');
