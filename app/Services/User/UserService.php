@@ -7,6 +7,8 @@ namespace App\Services\User;
 use App\Http\Requests\UserStoreRequest;
 use App\Http\Requests\UserUpdateRequest;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -110,7 +112,49 @@ final readonly class UserService
     }
 
     /**
-     * Get all users with pagination
+     * Get paginated users with optional searching and sorting.
+     */
+    public function getPaginatedUsers(Request $request): LengthAwarePaginator
+    {
+        $query = User::query()->withCount('playlists');
+
+        // Apply search if provided
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function (Builder $q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+            Log::info('User search applied in service', ['term' => $search]);
+        }
+
+        // Apply sorting
+        $sortField = $request->input('sort', 'id');
+        $direction = $request->input('direction', 'asc'); // Changed from 'order' to 'direction'
+
+        // Validate sort field
+        $allowedSortFields = ['id', 'name', 'email', 'created_at', 'playlists_count']; // Add playlists_count if needed
+        $sortField = in_array($sortField, $allowedSortFields) ? $sortField : 'id';
+        $direction = in_array($direction, ['asc', 'desc']) ? $direction : 'asc';
+
+        $query->orderBy($sortField, $direction);
+        Log::info('User sort applied in service', ['field' => $sortField, 'direction' => $direction]);
+
+        // Paginate
+        $perPage = (int) $request->input('per_page', 15); // Default per page
+        $users = $query->paginate($perPage)->withQueryString(); // Append query string parameters
+
+        Log::info('Retrieved paginated users', [
+            'count' => $users->total(),
+            'per_page' => $perPage,
+            'current_page' => $users->currentPage(),
+        ]);
+
+        return $users;
+    }
+
+    /**
+     * Get all users with pagination (Original method - kept for reference/potential different use case)
      */
     public function getAll(int $perPage = 15): LengthAwarePaginator
     {
@@ -118,7 +162,7 @@ final readonly class UserService
             ->orderBy('created_at', 'desc')
             ->paginate($perPage);
 
-        Log::info('Retrieved all users', [
+        Log::info('Retrieved all users (using getAll method)', [
             'count' => $users->total(),
         ]);
 

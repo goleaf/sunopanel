@@ -16,15 +16,10 @@ use Illuminate\View\View;
 
 final class UserController extends Controller
 {
-    private UserService $userService;
-
-    private LoggingService $loggingService;
-
-    public function __construct(UserService $userService, LoggingService $loggingService)
-    {
-        $this->userService = $userService;
-        $this->loggingService = $loggingService;
-    }
+    public function __construct(
+        private readonly UserService $userService,
+        private readonly LoggingService $loggingService
+    ) {}
 
     /**
      * Display a listing of the resource.
@@ -33,33 +28,14 @@ final class UserController extends Controller
     {
         try {
             $this->loggingService->info('Users index accessed', [
-                'search' => $request->input('search', ''),
+                'search' => $request->input('search'),
                 'sort' => $request->input('sort', 'id'),
-                'order' => $request->input('order', 'asc'),
+                'direction' => $request->input('direction', 'asc'),
+                'per_page' => $request->input('per_page', 15),
             ]);
 
-            $search = $request->input('search', '');
-            $sort = $request->input('sort', 'id');
-            $order = $request->input('order', 'asc');
+            $users = $this->userService->getPaginatedUsers($request);
 
-            // Get paginated users from service
-            $perPage = (int) $request->input('per_page', 10);
-            $users = $this->userService->getAll($perPage);
-
-            // Apply search if provided
-            if (! empty($search)) {
-                $this->loggingService->info('User search applied', ['term' => $search]);
-
-                $users = User::where(function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%");
-                })
-                    ->orderBy($sort, $order)
-                    ->paginate($perPage)
-                    ->withQueryString();
-            }
-
-            // Define headers for the data table
             $headers = [
                 'id' => ['label' => 'ID', 'sortable' => true],
                 'name' => ['label' => 'Name', 'sortable' => true],
@@ -67,20 +43,30 @@ final class UserController extends Controller
                 'actions' => ['label' => 'Actions', 'sortable' => false],
             ];
 
-            return view('users.index', compact('users', 'headers', 'search', 'sort', 'order'));
+            return view('users.index', [
+                'users' => $users,
+                'headers' => $headers,
+                'search' => $request->input('search'),
+                'sort' => $request->input('sort', 'id'),
+                'direction' => $request->input('direction', 'asc'),
+            ]);
         } catch (Exception $e) {
             $this->loggingService->logError($e, $request, 'UserController@index');
 
+            $headers = [
+                'id' => ['label' => 'ID', 'sortable' => true],
+                'name' => ['label' => 'Name', 'sortable' => true],
+                'email' => ['label' => 'Email', 'sortable' => true],
+                'actions' => ['label' => 'Actions', 'sortable' => false],
+            ];
+
             return view('users.index', [
                 'users' => collect(),
-                'headers' => [
-                    'id' => ['label' => 'ID', 'sortable' => true],
-                    'name' => ['label' => 'Name', 'sortable' => true],
-                    'email' => ['label' => 'Email', 'sortable' => true],
-                    'actions' => ['label' => 'Actions', 'sortable' => false],
-                ],
-                'error' => 'An error occurred while retrieving users.',
-            ]);
+                'headers' => $headers,
+                'search' => $request->input('search'),
+                'sort' => 'id',
+                'direction' => 'asc',
+            ])->with('error', 'An error occurred while retrieving users.');
         }
     }
 
@@ -102,7 +88,6 @@ final class UserController extends Controller
         try {
             $this->loggingService->info('User store method called', ['request' => $request->except(['password', 'password_confirmation'])]);
 
-            // Delegate user creation to service
             $user = $this->userService->store($request);
 
             $this->loggingService->info('User created successfully', ['user_id' => $user->id]);
@@ -126,7 +111,6 @@ final class UserController extends Controller
         try {
             $this->loggingService->info('User show accessed', ['user_id' => $user->id]);
 
-            // Get user with their playlists
             $user = $this->userService->getUserWithPlaylists($user);
 
             return view('users.show', compact('user'));
@@ -161,7 +145,6 @@ final class UserController extends Controller
                 'request' => $request->except(['password', 'password_confirmation']),
             ]);
 
-            // Delegate user update to service
             $this->userService->update($request, $user);
 
             $this->loggingService->info('User updated successfully', ['user_id' => $user->id]);
@@ -185,7 +168,6 @@ final class UserController extends Controller
         try {
             $this->loggingService->info('User delete initiated', ['user_id' => $user->id]);
 
-            // Delegate user deletion to service
             $this->userService->delete($user);
 
             $this->loggingService->info('User deleted successfully', ['user_id' => $user->id]);
