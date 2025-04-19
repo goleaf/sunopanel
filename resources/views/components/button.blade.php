@@ -6,92 +6,56 @@
     'disabled' => false,
     'outline' => false,
     'icon' => false,
-    'circle' => false,
-    'square' => false,
-    'block' => false,
-    'loading' => false,
-    'wide' => false,
+    'full' => false,
+    'rounded' => false
 ])
 
 @php
-    $baseClasses = 'btn ';
-    
-    // Color variants
-    if ($outline) {
-        $baseClasses .= match($color) {
-            'primary' => 'btn-outline btn-primary ',
-            'secondary' => 'btn-outline btn-secondary ',
-            'accent' => 'btn-outline btn-accent ',
-            'info' => 'btn-outline btn-info ',
-            'success' => 'btn-outline btn-success ',
-            'warning' => 'btn-outline btn-warning ',
-            'error' => 'btn-outline btn-error ',
-            'ghost' => 'btn-ghost ',
-            'link' => 'btn-link ',
-            'neutral' => 'btn-outline btn-neutral ',
-            default => 'btn-outline ',
-        };
-    } else {
-        $baseClasses .= match($color) {
-            'primary' => 'btn-primary ',
-            'secondary' => 'btn-secondary ',
-            'accent' => 'btn-accent ',
-            'info' => 'btn-info ',
-            'success' => 'btn-success ',
-            'warning' => 'btn-warning ',
-            'error' => 'btn-error ',
-            'ghost' => 'btn-ghost ',
-            'link' => 'btn-link ',
-            'neutral' => 'btn-neutral ',
-            default => '',
-        };
-    }
-    
-    // Size variants
-    $baseClasses .= match($size) {
-        'xs' => 'btn-xs ',
-        'sm' => 'btn-sm ',
-        'lg' => 'btn-lg ',
-        default => '',
-    };
-    
-    // Special variants
-    if ($icon || $square) {
-        $baseClasses .= 'btn-square ';
-    }
-    
-    if ($circle) {
-        $baseClasses .= 'btn-circle ';
-    }
-    
-    if ($disabled) {
-        $baseClasses .= 'btn-disabled ';
-    }
-    
-    if ($block) {
-        $baseClasses .= 'btn-block ';
-    }
-    
-    if ($wide) {
-        $baseClasses .= 'btn-wide ';
-    }
-    
-    if ($loading) {
-        $baseClasses .= 'loading ';
-    }
-    
-    $attributes = $attributes->class([$baseClasses])->merge([
-        'type' => $href ? null : $type,
-        'disabled' => $disabled,
-    ]);
+    // Base classes for all buttons
+    $baseClasses = 'inline-flex items-center justify-center transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 font-medium';
+
+    // Color variations (using DaisyUI classes)
+    $colorClasses = [
+        'primary' => $outline ? 'btn-outline btn-primary' : 'btn-primary',
+        'secondary' => $outline ? 'btn-outline btn-secondary' : 'btn-secondary',
+        'accent' => $outline ? 'btn-outline btn-accent' : 'btn-accent',
+        'info' => $outline ? 'btn-outline btn-info' : 'btn-info',
+        'success' => $outline ? 'btn-outline btn-success' : 'btn-success',
+        'warning' => $outline ? 'btn-outline btn-warning' : 'btn-warning',
+        'error' => $outline ? 'btn-outline btn-error' : 'btn-error',
+        'ghost' => 'btn-ghost',
+        'link' => 'btn-link',
+        'base' => $outline ? 'btn-outline' : 'btn',
+    ];
+
+    // Size variations
+    $sizeClasses = [
+        'xs' => 'btn-xs',
+        'sm' => 'btn-sm',
+        'md' => 'btn-md',
+        'lg' => 'btn-lg',
+    ];
+
+    // Special states
+    $iconClasses = $icon ? 'btn-square' : '';
+    $disabledClasses = $disabled ? 'btn-disabled opacity-60 cursor-not-allowed' : '';
+    $fullClasses = $full ? 'w-full' : '';
+    $roundedClasses = $rounded ? 'rounded-full' : '';
+
+    // Combine all classes
+    $classes = trim("btn {$colorClasses[$color]} {$sizeClasses[$size]} {$iconClasses} {$disabledClasses} {$fullClasses} {$roundedClasses}");
 @endphp
 
-@if ($href)
-    <a href="{{ $href }}" {{ $attributes }}>
+@if ($href && !$disabled)
+    <a href="{{ $href }}" {{ $attributes->merge(['class' => $classes]) }}>
         {{ $slot }}
     </a>
 @else
-    <button {{ $attributes }}>
+    <button 
+        type="{{ $type }}" 
+        {{ $disabled ? 'disabled' : '' }} 
+        {{ $attributes->merge(['class' => $classes]) }}
+    >
         {{ $slot }}
     </button>
-@endif 
+@endif

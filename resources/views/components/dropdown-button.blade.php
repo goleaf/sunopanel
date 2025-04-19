@@ -1,10 +1,20 @@
-@props(['action' => '#', 'method' => 'DELETE'])
+@props([
+    'action' => '#', 
+    'method' => 'DELETE',
+    'color' => 'base',
+    'size' => 'sm',
+    'confirmMessage' => null
+])
 
-<form method="POST" action="{{ $action }}">
+<form method="POST" action="{{ $action }}" class="inline-block">
     @csrf
     @method($method)
     
-    <button type="submit" {{ $attributes->merge(['class' => 'block w-full px-4 py-2 text-sm leading-5 text-left text-base-content hover:bg-base-200 focus:outline-none focus:bg-base-200 transition']) }}>
+    <button 
+        type="submit" 
+        {{ $confirmMessage ? "onclick=\"return confirm('{$confirmMessage}')\"" : '' }}
+        {{ $attributes->merge(['class' => "btn btn-{$color} btn-{$size} w-full text-left justify-start"]) }}
+    >
         {{ $slot }}
     </button>
 </form> 

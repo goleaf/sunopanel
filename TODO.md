@@ -30,7 +30,7 @@
   - [x] `components/table/header-cell.blade.php`
   - [x] `components/table/row.blade.php`
 - [x] Update audio player components for better UX
-- [ ] Standardize button styles across all components
+- [x] Standardize button styles across all components
 
 ### Section Pages
 - [ ] Review and update track-related views:
@@ -88,3 +88,13 @@
 - [x] Create service classes for complex operations
 - [x] Implement proper error handling using try-catch blocks
 - [ ] Update all classes to follow PSR-12 coding standards  
+
+## Error Logging Implementation Tasks
+
+- [ ] Create a universal error logging service
+- [ ] Create middleware for global exception handling
+- [ ] Register the service and middleware in the service provider
+- [ ] Update the exception handler to use our logging service
+- [ ] Remove error logging from controllers
+- [ ] Create tests for the logging service
+- [ ] Commit the changes to Git  

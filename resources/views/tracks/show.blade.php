@@ -1,191 +1,197 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container mx-auto px-4 py-6">
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-3xl font-bold text-primary">{{ $track->title }}</h1>
-        <div class="flex gap-2">
-            <x-button :href="route('tracks.edit', $track)" color="warning" size="sm">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+    <div class="container mx-auto px-4 py-8">
+        <!-- Back button and heading -->
+        <div class="flex justify-between items-center mb-6">
+            <x-heading.h1>{{ $track->title }}</x-heading.h1>
+            <x-button href="{{ route('tracks.index') }}" color="ghost">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-1">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
                 </svg>
-                Edit
+                Back to Tracks
             </x-button>
-            <x-button :href="route('tracks.play', $track)" color="success" size="sm" target="_blank">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                Play
-            </x-button>
-            <form action="{{ route('tracks.destroy', $track) }}" method="POST" class="inline">
-                @csrf
-                @method('DELETE')
-                <x-button type="submit" color="error" size="sm" onclick="return confirm('Are you sure you want to delete this track?')">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                    Delete
-                </x-button>
-            </form>
         </div>
-    </div>
 
-    @if(session('success'))
-        <div class="alert alert-success mb-4">
-            <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span>{{ session('success') }}</span>
-        </div>
-    @endif
+        <!-- Success/Error messages -->
+        @if(session('success'))
+            <div class="alert alert-success mb-4">
+                {{ session('success') }}
+            </div>
+        @endif
 
-    @if(session('error'))
-        <div class="alert alert-error mb-4">
-            <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span>{{ session('error') }}</span>
-        </div>
-    @endif
+        @if(session('error'))
+            <div class="alert alert-error mb-4">
+                {{ session('error') }}
+            </div>
+        @endif
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="md:col-span-2">
-            <div class="card bg-base-100 shadow-xl">
-                <div class="card-body">
-                    <div class="flex items-start gap-4">
-                        <div class="avatar">
-                            <div class="w-32 rounded-lg">
-                                <img src="{{ $track->image_url }}" alt="{{ $track->title }}" />
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Track Information -->
+            <div class="lg:col-span-2">
+                <div class="card bg-base-100 shadow-lg">
+                    <div class="card-body">
+                        <div class="flex flex-col md:flex-row gap-6">
+                            <!-- Album Art -->
+                            <div class="w-full md:w-48 flex-shrink-0">
+                                @if($track->artwork_url)
+                                    <img src="{{ $track->artwork_url }}" alt="{{ $track->title }}" class="w-full h-auto rounded-lg shadow-md">
+                                @else
+                                    <div class="w-full aspect-square bg-base-200 rounded-lg shadow-md flex items-center justify-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 text-base-content/30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                                        </svg>
+                                    </div>
+                                @endif
                             </div>
-                        </div>
-                        <div class="space-y-2 flex-1">
-                            <h3 class="text-2xl font-semibold">{{ $track->title }}</h3>
-                            <div class="badge badge-outline">{{ $track->unique_id }}</div>
-                            <div class="text-sm opacity-70">Added on {{ $track->created_at->format('F j, Y') }}</div>
-                            
-                            <div class="flex flex-wrap gap-1 mt-2">
-                                @foreach($track->genres as $genre)
-                                    <a href="{{ route('genres.show', $genre) }}" class="badge badge-primary">
-                                        {{ $genre->name }}
-                                    </a>
-                                @endforeach
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="divider"></div>
-                    
-                    <div class="space-y-4">
-                        <div>
-                            <h3 class="text-lg font-semibold mb-2">Media Player</h3>
-                            
-                            @php
-                                $isAudio = str_contains($track->audio_url, '.mp3') || 
-                                          str_contains($track->audio_url, '.wav') || 
-                                          str_contains($track->audio_url, '.ogg');
+
+                            <!-- Track Details -->
+                            <div class="flex-1">
+                                <h2 class="text-xl font-bold mb-2">{{ $track->title }}</h2>
                                 
-                                $isVideo = str_contains($track->audio_url, '.mp4') || 
-                                          str_contains($track->audio_url, '.webm') || 
-                                          str_contains($track->audio_url, '.mov');
-                            @endphp
-                            
-                            <div class="card bg-base-200">
-                                <div class="card-body p-4">
-                                    @if($isAudio)
-                                        <x-audio-player 
-                                            src="{{ $track->audio_url }}" 
-                                            trackTitle="{{ $track->title }}"
-                                            showDownload="true"
-                                        />
-                                    @elseif($isVideo)
-                                        <video controls class="w-full max-h-[500px]" preload="metadata">
-                                            <source src="{{ $track->audio_url }}" type="video/mp4">
-                                            Your browser does not support the video element.
-                                        </video>
-                                    @else
-                                        <div class="alert alert-warning">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                            </svg>
-                                            <span>Unknown media format. Direct link: <a href="{{ $track->audio_url }}" target="_blank" class="link link-primary">Open Media</a></span>
+                                <div class="mb-4">
+                                    @if($track->genres->count() > 0)
+                                        <div class="flex flex-wrap gap-2 mb-2">
+                                            @foreach($track->genres as $genre)
+                                                <span class="badge badge-primary">{{ $genre->name }}</span>
+                                            @endforeach
                                         </div>
                                     @endif
+                                </div>
+                                
+                                <!-- Media Player -->
+                                <div class="mb-4">
+                                    <x-audio-player :track="$track" />
+                                </div>
+                                
+                                <!-- Action Buttons -->
+                                <div class="flex flex-wrap gap-2">
+                                    <x-button 
+                                        href="{{ route('tracks.edit', $track) }}" 
+                                        color="primary"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-1">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                                        </svg>
+                                        Edit Track
+                                    </x-button>
+                                    
+                                    <form action="{{ route('tracks.destroy', $track) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this track?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <x-button 
+                                            type="submit" 
+                                            color="error"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-1">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                                            </svg>
+                                            Delete Track
+                                        </x-button>
+                                    </form>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-        
-        <div class="space-y-6">
-            <!-- Media Details -->
-            <div class="card bg-base-100 shadow-xl">
-                <div class="card-body">
-                    <h3 class="text-lg font-semibold card-title">Media Details</h3>
-                    
-                    <div class="space-y-3 mt-2">
-                        <div>
-                            <div class="text-sm font-semibold text-primary">Audio URL</div>
-                            <a href="{{ $track->audio_url }}" target="_blank" class="link link-primary text-sm break-all">
-                                {{ $track->audio_url }}
-                            </a>
-                        </div>
-                        
-                        <div>
-                            <div class="text-sm font-semibold text-primary">Image URL</div>
-                            <a href="{{ $track->image_url }}" target="_blank" class="link link-primary text-sm break-all">
-                                {{ $track->image_url }}
-                            </a>
-                        </div>
-                        
-                        @if($track->duration)
-                        <div>
-                            <div class="text-sm font-semibold text-primary">Duration</div>
-                            <div class="text-sm">{{ $track->duration }}</div>
-                        </div>
-                        @endif
-                        
-                        <div>
-                            <div class="text-sm font-semibold text-primary">Unique ID</div>
-                            <div class="text-sm font-mono">{{ $track->unique_id }}</div>
+
+                <!-- Media Details -->
+                <div class="card bg-base-100 shadow-lg mt-8">
+                    <div class="card-body">
+                        <h2 class="card-title">Media Details</h2>
+                        <div class="overflow-x-auto">
+                            <table class="table w-full">
+                                <tbody>
+                                    <tr>
+                                        <td class="font-semibold">Title</td>
+                                        <td>{{ $track->title }}</td>
+                                    </tr>
+                                    @if($track->artist)
+                                    <tr>
+                                        <td class="font-semibold">Artist</td>
+                                        <td>{{ $track->artist }}</td>
+                                    </tr>
+                                    @endif
+                                    @if($track->album)
+                                    <tr>
+                                        <td class="font-semibold">Album</td>
+                                        <td>{{ $track->album }}</td>
+                                    </tr>
+                                    @endif
+                                    <tr>
+                                        <td class="font-semibold">File Path</td>
+                                        <td>{{ $track->file_path }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-semibold">File Size</td>
+                                        <td>{{ $track->formatted_file_size }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-semibold">Duration</td>
+                                        <td>{{ $track->formatted_duration }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-semibold">Uploaded</td>
+                                        <td>{{ $track->created_at->format('M d, Y \a\t h:i A') }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
             </div>
-            
-            <!-- In Playlists -->
-            <div class="card bg-base-100 shadow-xl">
-                <div class="card-body">
-                    <h3 class="text-lg font-semibold card-title">In Playlists</h3>
-                    
-                    @if($track->playlists->count() > 0)
-                        <ul class="space-y-2">
-                            @foreach($track->playlists as $playlist)
-                                <li>
-                                    <x-button :href="route('playlists.show', $playlist)" outline size="sm" color="primary" block class="justify-start">
-                                        <span class="truncate">{{ $playlist->title }}</span>
-                                        <span class="badge badge-neutral">Position: {{ $playlist->pivot->position }}</span>
-                                    </x-button>
-                                </li>
-                            @endforeach
-                        </ul>
-                    @else
-                        <div class="text-sm opacity-70">This track is not in any playlists yet.</div>
-                    @endif
+
+            <!-- Playlists -->
+            <div class="lg:col-span-1">
+                <div class="card bg-base-100 shadow-lg">
+                    <div class="card-body">
+                        <h2 class="card-title flex justify-between items-center">
+                            <span>Playlists</span>
+                            <span class="badge badge-primary">{{ $track->playlists->count() }}</span>
+                        </h2>
+                        @if($track->playlists->isEmpty())
+                            <div class="text-center py-4">
+                                <p class="text-base-content/60">This track is not in any playlists yet.</p>
+                                <x-button 
+                                    href="{{ route('playlists.create') }}" 
+                                    color="primary"
+                                    class="mt-4"
+                                >
+                                    Create a Playlist
+                                </x-button>
+                            </div>
+                        @else
+                            <div class="overflow-x-auto">
+                                <table class="table">
+                                    <tbody>
+                                        @foreach($track->playlists as $playlist)
+                                            <tr>
+                                                <td>
+                                                    <a href="{{ route('playlists.show', $playlist) }}" class="flex items-center">
+                                                        <div class="w-10 h-10 bg-base-200 rounded-md flex items-center justify-center mr-3">
+                                                            @if($playlist->artwork_url)
+                                                                <img src="{{ $playlist->artwork_url }}" class="w-full h-full object-cover rounded-md" alt="{{ $playlist->name }}">
+                                                            @else
+                                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-base-content/30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                                                                </svg>
+                                                            @endif
+                                                        </div>
+                                                        <div>
+                                                            <div class="font-semibold">{{ $playlist->name }}</div>
+                                                            <div class="text-xs text-base-content/60">{{ $playlist->tracks->count() }} tracks</div>
+                                                        </div>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @endif
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-    
-    <div class="mt-6">
-        <x-button :href="route('tracks.index')" color="ghost">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
-            </svg>
-            Back to Tracks
-        </x-button>
-    </div>
-</div>
 @endsection
