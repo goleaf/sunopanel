@@ -93,10 +93,11 @@
                             <div class="card bg-base-200">
                                 <div class="card-body p-4">
                                     @if($isAudio)
-                                        <audio controls class="w-full" preload="metadata">
-                                            <source src="{{ $track->audio_url }}" type="audio/mpeg">
-                                            Your browser does not support the audio element.
-                                        </audio>
+                                        <x-audio-player 
+                                            src="{{ $track->audio_url }}" 
+                                            trackTitle="{{ $track->title }}"
+                                            showDownload="true"
+                                        />
                                     @elseif($isVideo)
                                         <video controls class="w-full max-h-[500px]" preload="metadata">
                                             <source src="{{ $track->audio_url }}" type="video/mp4">

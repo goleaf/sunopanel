@@ -29,7 +29,7 @@
   - [x] `components/table/cell.blade.php`
   - [x] `components/table/header-cell.blade.php`
   - [x] `components/table/row.blade.php`
-- [ ] Update audio player components for better UX
+- [x] Update audio player components for better UX
 - [ ] Standardize button styles across all components
 
 ### Section Pages
@@ -43,7 +43,7 @@
 
 ## Functionality Improvements
 - [ ] Add responsive design improvements for mobile views
-- [ ] Implement better audio player controls
+- [x] Implement better audio player controls
 - [ ] Improve search functionality UI
 - [ ] Add bulk actions for tracks and playlists
 - [ ] Implement better error handling in forms
