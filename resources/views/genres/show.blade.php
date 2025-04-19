@@ -99,10 +99,10 @@
                                 <table class="table table-zebra table-sm w-full">
                                     <thead>
                                         <tr>
-                                            <th>Title</th>
+                                            <th><x-sort-link :sortField="$sortField" :direction="$direction" routeName="genres.show" :routeParams="['genre' => $genre]" field="title">Title</x-sort-link></th>
                                             <th>Other Genres</th>
-                                            <th><x-sort-link routeName="genres.show" :routeParams="['genre' => $genre]" column="duration">Duration</x-sort-link></th>
-                                            <th><x-sort-link routeName="genres.show" :routeParams="['genre' => $genre]" column="created_at">Added</x-sort-link></th>
+                                            <th><x-sort-link :sortField="$sortField" :direction="$direction" routeName="genres.show" :routeParams="['genre' => $genre]" field="duration">Duration</x-sort-link></th>
+                                            <th><x-sort-link :sortField="$sortField" :direction="$direction" routeName="genres.show" :routeParams="['genre' => $genre]" field="created_at">Added</x-sort-link></th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>

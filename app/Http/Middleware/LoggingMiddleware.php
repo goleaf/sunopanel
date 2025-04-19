@@ -36,33 +36,43 @@ final class LoggingMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Log API request info (conditionally)
-        if ($this->isApiRequest($request)) {
-            $this->loggingService->info('API request received', [
-                'path' => $request->path(),
-                'method' => $request->method(),
+        // Log request info before processing
+        $this->loggingService->logInfoMessage('Incoming Request', [
+            'method' => $request->method(),
+            'url' => $request->fullUrl(),
+            'ip' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'user_id' => $request->user()?->id, // Add user ID if authenticated
+        ]);
+
+        try {
+            $response = $next($request);
+
+            // Log response info after processing
+            $this->loggingService->logInfoMessage('Outgoing Response', [
+                'status_code' => $response->getStatusCode(),
+                'url' => $request->fullUrl(),
                 'ip' => $request->ip(),
-                'user_agent' => $request->userAgent(),
+                'user_id' => $request->user()?->id,
             ]);
+
+            return $response;
+        } catch (\Exception $e) {
+            // Log exception details
+            $this->loggingService->logErrorMessage('Request Exception', [
+                'exception_class' => get_class($e),
+                'message' => $e->getMessage(),
+                'code' => $e->getCode(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'url' => $request->fullUrl(),
+                'ip' => $request->ip(),
+                'user_id' => $request->user()?->id,
+            ]);
+
+            // Rethrow the exception to let Laravel's handler manage it
+            throw $e;
         }
-
-        $response = $next($request);
-
-        // Log failed API responses (conditionally)
-        if ($this->isApiRequest($request) && $response->getStatusCode() >= 400) {
-            $responseData = json_decode($response->getContent(), true);
-            $this->loggingService->warning(
-                "API response with status {$response->getStatusCode()}",
-                [
-                    'status' => $response->getStatusCode(),
-                    'path' => $request->path(),
-                    'method' => $request->method(),
-                    'response' => $responseData, // Keep response logging for now, but could be revisited
-                ]
-            );
-        }
-
-        return $response;
     }
 
     /**

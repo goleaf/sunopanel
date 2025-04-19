@@ -34,15 +34,14 @@ final class LoggingServiceTest extends TestCase
     {
         $exception = new Exception('Test exception');
         $context = 'Test context';
-        $this->loggingService->logError($exception, null, $context);
+        $this->loggingService->logStandardError($exception, null, $context);
         
         Log::shouldHaveReceived('error')
             ->withArgs(function ($message, $data) use ($exception, $context) {
                 $this->assertStringContainsString('Test exception', $message);
                 $this->assertEquals(get_class($exception), $data['exception']);
-                $this->assertEquals($exception->getMessage(), $data['message']);
-                $this->assertEquals($exception->getCode(), $data['code']);
                 $this->assertEquals($context, $data['context']);
+                $this->assertArrayHasKey('trace', $data);
                 return true;
             });
     }

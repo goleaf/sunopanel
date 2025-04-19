@@ -14,6 +14,7 @@ use Tests\TestCase;
 
 class RequestValidationTest extends TestCase
 {
+    use RefreshDatabase, WithFaker;
     
     public function test_playlist_store_tracks_request_validation()
     {

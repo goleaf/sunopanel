@@ -10,52 +10,86 @@ use Illuminate\Support\Facades\Log;
 use Mockery;
 use Symfony\Component\HttpFoundation\Response;
 use Tests\TestCase;
+use App\Models\User;
+use Mockery\MockInterface;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 class LoggingMiddlewareTest extends TestCase
 {
-    protected $middleware;
+    use RefreshDatabase;
 
-    protected $request;
+    private LoggingServiceInterface $loggingServiceMock;
+    private LoggingMiddleware $middleware;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $loggingService = app(LoggingService::class);
-        $this->middleware = new LoggingMiddleware($loggingService);
-        $this->request = Mockery::mock(Request::class);
-        $this->request->shouldReceive('fullUrl')->andReturn('http://example.com/test');
-        $this->request->shouldReceive('method')->andReturn('GET');
-        $this->request->shouldReceive('ip')->andReturn('127.0.0.1');
-        $this->request->shouldReceive('userAgent')->andReturn('PHPUnit');
-        $this->request->shouldReceive('path')->andReturn('test');
-        $this->request->shouldReceive('expectsJson')->andReturn(false);
-        $this->request->shouldReceive('wantsJson')->andReturn(false);
-        $this->request->shouldReceive('all')->andReturn([]);
-        $this->request->shouldReceive('header')->withAnyArgs()->andReturn(null);
-        Log::spy();
+        $this->loggingServiceMock = Mockery::mock(LoggingServiceInterface::class);
+        $this->middleware = new LoggingMiddleware($this->loggingServiceMock);
     }
 
-    public function test_handle_passes_request_to_next_callable(): void
+    #[Test]
+    public function handle_passes_request_to_next_callable(): void
     {
-        $called = false;
-        $next = function ($request) use (&$called) {
-            $called = true;
-            $this->assertSame($this->request, $request);
+        // Arrange
+        $request = Mockery::mock(Request::class);
+        $response = Mockery::mock(Response::class);
+        $next = fn() => $response;
 
-            return new Response();
-        };
-        $this->middleware->handle($this->request, $next);
-        $this->assertTrue($called);
+        // Expectations
+        $request->shouldReceive('method')->andReturn('GET');
+        $request->shouldReceive('fullUrl')->times(2)->andReturn('http://test.com');
+        $request->shouldReceive('ip')->times(2)->andReturn('127.0.0.1');
+        $request->shouldReceive('userAgent')->andReturn('TestAgent');
+        $request->shouldReceive('user')->times(2)->andReturn(null); // Expect user() call, return null (no auth)
+
+        $this->loggingServiceMock->shouldReceive('logInfoMessage')->twice(); // Expect info logs
+        $response->shouldReceive('getStatusCode')->andReturn(200); 
+
+        // Act
+        $result = $this->middleware->handle($request, $next);
+
+        // Assert
+        $this->assertSame($response, $result);
     }
 
-    public function test_handle_logs_exception_and_rethrows(): void
+    #[Test]
+    public function handle_logs_exception_and_rethrows(): void
     {
+        // Arrange
+        $request = Mockery::mock(Request::class);
         $exception = new Exception('Test exception');
-        $next = function () use ($exception) {
-            throw $exception;
-        };
+        $next = fn() => throw $exception;
+
+        // Expectations
+        $request->shouldReceive('method')->andReturn('POST');
+        $request->shouldReceive('fullUrl')->times(2)->andReturn('http://test.com/error');
+        $request->shouldReceive('ip')->times(2)->andReturn('192.168.1.1');
+        $request->shouldReceive('userAgent')->andReturn('ErrorAgent');
+        $request->shouldReceive('user')->times(2)->andReturn(null); // Expect user() call
+
+        $this->loggingServiceMock->shouldReceive('logInfoMessage')->once(); // Expect request info log
+        $this->loggingServiceMock->shouldReceive('logErrorMessage') // Expect error log
+            ->once()
+            ->withArgs(function (string $message, array $context) use ($exception, $request) {
+                return $message === 'Request Exception' &&
+                       $context['exception_class'] === get_class($exception) &&
+                       $context['message'] === $exception->getMessage() &&
+                       $context['url'] === 'http://test.com/error' && // Use the mocked URL
+                       $context['ip'] === '192.168.1.1'; // Use the mocked IP
+            });
+
+        // Assert
         $this->expectException(Exception::class);
         $this->expectExceptionMessage('Test exception');
-        $this->middleware->handle($this->request, $next);
+
+        // Act
+        $this->middleware->handle($request, $next);
+    }
+
+    protected function tearDown(): void
+    {
+        Mockery::close();
+        parent::tearDown();
     }
 }

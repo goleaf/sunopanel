@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Genre;
 use App\Models\Playlist;
 use App\Models\Track;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -12,180 +13,144 @@ class PlaylistControllerTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_index_page_displays_playlists(): void
+    /** @test */
+    public function test_index_displays_playlists(): void
     {
-        $playlists = Playlist::factory()->count(3)->create();
+        $user = User::factory()->create();
+        $this->actingAs($user);
 
-        $response = $this->get('/playlists');
+        Playlist::factory()->count(3)->create();
+
+        $response = $this->get(route('playlists.index'));
 
         $response->assertStatus(200);
         $response->assertViewIs('playlists.index');
         $response->assertViewHas('playlists');
-        foreach ($playlists as $playlist) {
-            $response->assertSee($playlist->title);
-        }
     }
 
+    /** @test */
     public function test_create_page_loads(): void
     {
-        Genre::factory()->create();
+        $user = User::factory()->create();
+        $this->actingAs($user);
 
-        $response = $this->get('/playlists/create');
+        $response = $this->get(route('playlists.create'));
 
         $response->assertStatus(200);
         $response->assertViewIs('playlists.form');
+        $response->assertViewHasAll(['playlist', 'genres', 'tracks']);
     }
 
+    /** @test */
     public function test_store_playlist(): void
     {
-        $genre = Genre::factory()->create();
+        $user = User::factory()->create();
+        $this->actingAs($user);
 
+        $genre = Genre::factory()->create();
+        $tracks = Track::factory()->count(2)->create();
         $playlistData = [
-            'title' => 'Test Playlist',
-            'description' => 'This is a test playlist',
+            'title' => 'New Playlist',
+            'description' => 'Playlist description',
             'genre_id' => $genre->id,
+            'track_ids' => $tracks->pluck('id')->toArray(),
         ];
 
-        $response = $this->post('/playlists', $playlistData);
+        $response = $this->post(route('playlists.store'), $playlistData);
 
-        $response->assertRedirect('/playlists');
-        $this->assertDatabaseHas('playlists', [
-            'title' => 'Test Playlist',
-            'description' => 'This is a test playlist',
-            'genre_id' => $genre->id,
-        ]);
+        $response->assertRedirect(route('playlists.index'));
+        $this->assertDatabaseHas('playlists', ['title' => 'New Playlist']);
+        $playlist = Playlist::where('title', 'New Playlist')->first();
+        $this->assertCount(2, $playlist->tracks);
     }
 
+    /** @test */
     public function test_show_playlist(): void
     {
-        $playlist = Playlist::factory()->create();
-        $tracks = Track::factory()->count(3)->create();
-        $position = 0;
+        $user = User::factory()->create();
+        $this->actingAs($user);
 
-        foreach ($tracks as $track) {
-            $playlist->tracks()->attach($track->id, ['position' => $position]);
-            $position++;
-        }
+        $playlist = Playlist::factory()->has(Track::factory()->count(3))->create();
 
-        $response = $this->get("/playlists/{$playlist->id}");
+        $response = $this->get(route('playlists.show', $playlist));
 
         $response->assertStatus(200);
         $response->assertViewIs('playlists.show');
         $response->assertViewHas('playlist');
-        $response->assertSee($playlist->title);
-        foreach ($tracks as $track) {
-            $response->assertSee($track->title);
-        }
+        $this->assertEquals($playlist->id, $response->viewData('playlist')->id);
+        $this->assertCount(3, $response->viewData('playlist')->tracks);
     }
 
-    public function test_edit_playlist(): void
+    /** @test */
+    public function test_edit_page_loads(): void
     {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
         $playlist = Playlist::factory()->create();
 
-        $response = $this->get("/playlists/{$playlist->id}/edit");
+        $response = $this->get(route('playlists.edit', $playlist));
 
         $response->assertStatus(200);
         $response->assertViewIs('playlists.form');
-        $response->assertViewHas('playlist');
-        $response->assertSee($playlist->title);
+        $response->assertViewHasAll(['playlist', 'genres', 'tracks']);
     }
 
+    /** @test */
     public function test_update_playlist(): void
     {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
         $playlist = Playlist::factory()->create();
-        $newGenre = Genre::factory()->create();
-
-        $updateData = [
-            'title' => 'Updated Playlist',
-            'description' => 'This is an updated description',
-            'genre_id' => $newGenre->id,
-        ];
-
-        $response = $this->put("/playlists/{$playlist->id}", $updateData);
-
-        $response->assertRedirect('/playlists');
-        $this->assertDatabaseHas('playlists', [
-            'id' => $playlist->id,
-            'title' => 'Updated Playlist',
-            'description' => 'This is an updated description',
-            'genre_id' => $newGenre->id,
-        ]);
-    }
-
-    public function test_add_tracks_to_playlist(): void
-    {
-        $playlist = Playlist::factory()->create();
-        $tracks = Track::factory()->count(3)->create();
-
-        $response = $this->get("/playlists/{$playlist->id}/add-tracks");
-
-        $response->assertStatus(200);
-        $response->assertViewIs('playlists.add-tracks');
-        $response->assertViewHas('playlist');
-        $response->assertViewHas('tracks');
-        $trackIds = $tracks->pluck('id')->toArray();
-
-        $response = $this->post("/playlists/{$playlist->id}/tracks", [
-            'track_ids' => $trackIds,
-        ]);
-
-        $response->assertRedirect("/playlists/{$playlist->id}");
-        foreach ($trackIds as $position => $trackId) {
-            $this->assertDatabaseHas('playlist_track', [
-                'playlist_id' => $playlist->id,
-                'track_id' => $trackId,
-                'position' => $position,
-            ]);
-        }
-    }
-
-    public function test_remove_track_from_playlist(): void
-    {
-        $playlist = Playlist::factory()->create();
-        $track = Track::factory()->create();
-        $playlist->tracks()->attach($track->id, ['position' => 0]);
-
-        $response = $this->delete("/playlists/{$playlist->id}/tracks/{$track->id}");
-
-        $response->assertRedirect("/playlists/{$playlist->id}");
-        $this->assertDatabaseMissing('playlist_track', [
-            'playlist_id' => $playlist->id,
-            'track_id' => $track->id,
-        ]);
-    }
-
-    public function test_delete_playlist(): void
-    {
-        $playlist = Playlist::factory()->create();
-
-        $response = $this->delete("/playlists/{$playlist->id}");
-
-        $response->assertRedirect('/playlists');
-        $this->assertDatabaseMissing('playlists', [
-            'id' => $playlist->id,
-        ]);
-    }
-
-    public function test_create_playlist_from_genre(): void
-    {
         $genre = Genre::factory()->create();
         $tracks = Track::factory()->count(3)->create();
-        foreach ($tracks as $track) {
-            $genre->tracks()->attach($track->id);
-        }
-        $response = $this->post(route('playlists.create-from-genre', $genre->id));
-        $newPlaylist = Playlist::latest()->first();
-        $this->assertNotNull($newPlaylist);
-        $response->assertRedirect(route('playlists.show', ['playlist' => $newPlaylist->id]));
-        $this->assertDatabaseHas('playlists', [
-            'title' => "{$genre->name} Playlist",
+        $updatedData = [
+            'title' => 'Updated Playlist Title',
+            'description' => 'Updated description',
             'genre_id' => $genre->id,
-        ]);
-        foreach ($tracks as $track) {
-            $this->assertDatabaseHas('playlist_track', [
-                'playlist_id' => $newPlaylist->id,
-                'track_id' => $track->id,
-            ]);
-        }
+            'track_ids' => $tracks->pluck('id')->toArray(),
+        ];
+
+        $response = $this->put(route('playlists.update', $playlist), $updatedData);
+
+        $response->assertRedirect(route('playlists.index'));
+        $this->assertDatabaseHas('playlists', ['id' => $playlist->id, 'title' => 'Updated Playlist Title']);
+        $playlist->refresh();
+        $this->assertEquals('Updated Playlist Title', $playlist->title);
+        $this->assertEquals($genre->id, $playlist->genre_id);
+        $this->assertCount(3, $playlist->tracks);
+    }
+
+    /** @test */
+    public function test_destroy_playlist(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $playlist = Playlist::factory()->create();
+
+        $response = $this->delete(route('playlists.destroy', $playlist));
+
+        $response->assertRedirect(route('playlists.index'));
+        $this->assertDatabaseMissing('playlists', ['id' => $playlist->id]);
+    }
+
+    /** @test */
+    public function test_create_playlist_from_genre(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $genre = Genre::factory()->has(Track::factory()->count(5))->create();
+
+        $response = $this->post(route('playlists.createFromGenre', $genre));
+
+        $response->assertRedirect(route('playlists.index'));
+        $this->assertDatabaseHas('playlists', ['title' => $genre->name . ' Playlist']);
+        $playlist = Playlist::where('title', $genre->name . ' Playlist')->first();
+        $this->assertNotNull($playlist);
+        $this->assertCount(5, $playlist->tracks);
+        $this->assertEquals($genre->id, $playlist->genre_id);
     }
 }

@@ -110,7 +110,7 @@ final class GenreController extends Controller
                 'genre' => $genre,
                 'tracks' => $tracks,
                 'sortField' => $request->query('sort', 'title'),
-                'sortOrder' => $request->query('direction', 'asc'),
+                'direction' => $request->query('direction', 'asc'),
             ]);
         } catch (\Exception $e) {
             $this->loggingService->logErrorMessage('Error in GenreController@show', [

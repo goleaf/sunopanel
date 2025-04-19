@@ -38,7 +38,7 @@ class GenreControllerTest extends TestCase
         $response = $this->get('/genres/create');
 
         $response->assertStatus(200);
-        $response->assertViewIs('genres.create');
+        $response->assertViewIs('genres.form');
     }
 
     public function test_store_genre(): void
@@ -83,7 +83,7 @@ class GenreControllerTest extends TestCase
         $response = $this->get("/genres/{$genre->id}/edit");
 
         $response->assertStatus(200);
-        $response->assertViewIs('genres.edit');
+        $response->assertViewIs('genres.form');
         $response->assertViewHas('genre');
         $response->assertSee($genre->name);
     }
@@ -146,7 +146,7 @@ class GenreControllerTest extends TestCase
         $response = $this->get(route('genres.create'));
 
         $response->assertStatus(200);
-        $response->assertViewIs('genres.create');
+        $response->assertViewIs('genres.form');
     }
 
     public function test_genre_store()
@@ -190,7 +190,7 @@ class GenreControllerTest extends TestCase
         $response = $this->get(route('genres.edit', $genre->id));
 
         $response->assertStatus(200);
-        $response->assertViewIs('genres.edit');
+        $response->assertViewIs('genres.form');
         $response->assertViewHas('genre', $genre);
     }
 

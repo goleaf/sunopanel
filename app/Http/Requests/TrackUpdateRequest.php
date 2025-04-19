@@ -34,8 +34,8 @@ final class TrackUpdateRequest extends FormRequest
             'audio_url' => ['required', 'url'],
             'image_url' => ['required', 'url'],
             'duration' => ['nullable', 'string', 'max:10'],
-            'genres' => ['nullable', 'string'],
-            'genre_ids' => ['nullable', 'array'],
+            'genres' => ['nullable', 'required_without:genre_ids', 'string'],
+            'genre_ids' => ['nullable', 'required_without:genres', 'array'],
             'genre_ids.*' => ['exists:genres,id'],
             'playlists' => ['nullable', 'array'],
             'playlists.*' => ['exists:playlists,id'],
@@ -57,7 +57,9 @@ final class TrackUpdateRequest extends FormRequest
             'image_url.required' => 'The image URL is required.',
             'image_url.url' => 'The image URL must be a valid URL.',
             'genres.string' => 'Genres must be a comma-separated string.',
+            'genres.required_without' => 'Please provide genres either as a string or an array of IDs.',
             'genre_ids.array' => 'Genre IDs must be an array.',
+            'genre_ids.required_without' => 'Please provide genres either as a string or an array of IDs.',
             'genre_ids.*.exists' => 'One or more selected genres do not exist.',
         ];
     }

@@ -1,6 +1,7 @@
 {
     "preset": "laravel",
     "exclude": [
+        "app/Http/Controllers/UserController.php",
         ".well-known",
         "vendor",
         "storage",

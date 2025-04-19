@@ -13,7 +13,7 @@
                     </ul>
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
-                    <x-button href="{{ route('playlists.addTracks', $playlist) }}" variant="outline" size="sm">
+                    <x-button href="{{ route('playlists.add-tracks', $playlist) }}" variant="outline" size="sm">
                         <x-icon name="adjustments" size="4" class="mr-1" />
                         Add/Remove Tracks
                     </x-button>
@@ -146,11 +146,11 @@
                                                                 </x-button>
                                                             </x-tooltip>
                                                             <x-tooltip text="Remove from Playlist" position="top">
-                                                                <form action="{{ route('playlists.removeTrack', [$playlist, $track]) }}" method="POST" onsubmit="return confirm('Remove \'{{ addslashes($track->title) }}\' from this playlist?')" class="inline">
+                                                                <form action="{{ route('playlists.remove-track', [$playlist, $track]) }}" method="POST" class="inline">
                                                                     @csrf
                                                                     @method('DELETE')
-                                                                    <x-button type="submit" variant="ghost" color="error" size="xs" icon>
-                                                                        <x-icon name="trash" />
+                                                                    <x-button type="submit" variant="ghost" size="xs" icon class="text-red-500 hover:text-red-700" onclick="return confirm('Remove this track?');">
+                                                                        <x-icon name="trash" size="4" />
                                                                     </x-button>
                                                                 </form>
                                                             </x-tooltip>

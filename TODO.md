@@ -411,3 +411,14 @@ composer test:convert-comments
 - [x] **Review Repository/Service Pattern:** Evaluate if the current service structure adequately separates concerns or if a Repository pattern is needed for data access logic. (Evaluated: Current service pattern is sufficient; no repositories needed now).
 
 - [x] **Check for Unused Files:** Identify and remove any unused classes, views, or other files. (Removed unused Playlist Store/Update requests & tests).
+
+# TODO List for Livewire Conversion
+
+1. **Audit Existing Structure**: Review current controllers, views, and routes to identify components that need conversion.
+2. **Create Livewire Components**: Convert traditional Laravel controllers and views into Livewire components.
+3. **Update Routing**: Adjust routes to point to Livewire components instead of traditional controllers.
+4. **Refactor Views**: Transform Blade views to work with Livewire, using directives like `wire:model` for data binding.
+5. **State Management**: Implement Livewire's reactive properties for state management.
+6. **Testing**: Ensure all components are tested for functionality after conversion.
+7. **Commit Changes**: Regularly commit changes to the `main` branch as per instructions.
+8. **Remove Unused Files**: Clean up any unused files or old controller/view structures post-conversion.

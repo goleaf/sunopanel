@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Genre;
 use App\Models\Playlist;
 use App\Models\Track;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -39,8 +40,11 @@ class AppRouteTest extends TestCase
         $this->get('/system-stats')->assertStatus(200);
     }
 
-    public function test_post_routes_work_without_auth(): void
+    public function test_post_routes_work_with_auth(): void
     {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
         $response = $this->post('/genres', [
             'name' => 'New Genre',
             'description' => 'This is a test genre',
@@ -58,7 +62,13 @@ class AppRouteTest extends TestCase
         ];
 
         $response = $this->post('/playlists', $playlistData);
-        $response->assertRedirect('/playlists');
+
+        // Get the newly created playlist to construct the correct redirect URL
+        $playlist = Playlist::where('title', 'Test Playlist')->first();
+        $this->assertNotNull($playlist, 'Playlist was not created successfully.');
+
+        // Assert redirect to the route for adding tracks to the new playlist
+        $response->assertRedirect(route('playlists.add_tracks', ['playlist' => $playlist]));
         $this->assertDatabaseHas('playlists', ['title' => 'Test Playlist']);
     }
 }

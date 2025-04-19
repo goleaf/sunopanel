@@ -80,8 +80,8 @@
                                             </x-button>
                                         </x-tooltip>
                                         <x-tooltip text="Add/Remove Tracks" position="top">
-                                             <x-button href="{{ route('playlists.addTracks', $playlist) }}" variant="ghost" size="xs" icon>
-                                                <x-icon name="adjustments" /> {{-- Or musical-notes --}}
+                                             <x-button href="{{ route('playlists.add-tracks', $playlist) }}" variant="ghost" size="xs" icon>
+                                                <x-icon name="plus-circle" size="4" />
                                             </x-button>
                                         </x-tooltip>
                                         <x-tooltip text="Edit Playlist" position="top">

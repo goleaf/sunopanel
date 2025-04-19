@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Genre;
 use App\Models\Playlist;
 use App\Models\Track;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -45,22 +46,27 @@ class MusicAppTest extends TestCase
 
     public function test_can_create_track_with_genres(): void
     {
-        $genre = Genre::factory()->create(['name' => 'Rock']);
+        $user = User::factory()->create();
+        $this->actingAs($user);
 
-        $trackData = [
-            'title' => 'Test Track',
-            'audio_url' => 'https://example.com/test_audio.mp3',
-            'image_url' => 'https://example.com/test_image.jpg',
-            'genres' => 'Rock, Pop',
-        ];
+        $genre1 = Genre::factory()->create();
+        $genre2 = Genre::factory()->create();
 
-        $response = $this->post('/tracks', $trackData);
+        $response = $this->post('/tracks', [
+            'title' => 'New Track',
+            'artist' => 'New Artist',
+            'audio_url' => 'http://example.com/audio.mp3',
+            'genre_ids' => [$genre1->id, $genre2->id]
+        ]);
 
+        $response->assertStatus(302);
         $response->assertRedirect('/tracks');
-        $this->assertDatabaseHas('tracks', ['title' => 'Test Track']);
-        $track = Track::where('title', 'Test Track')->first();
-        $this->assertTrue($track->genres->contains('name', 'Rock'));
-        $this->assertTrue($track->genres->contains('name', 'Pop'));
+        $this->assertDatabaseHas('tracks', ['title' => 'New Track']);
+        $track = Track::where('title', 'New Track')->first();
+        $this->assertNotNull($track);
+        $this->assertCount(2, $track->genres);
+        $this->assertTrue($track->genres->contains($genre1));
+        $this->assertTrue($track->genres->contains($genre2));
     }
 
     public function test_playlists_page_loads_successfully(): void
@@ -71,18 +77,26 @@ class MusicAppTest extends TestCase
 
     public function test_can_create_playlist(): void
     {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
         $genre = Genre::factory()->create();
+        $track1 = Track::factory()->create();
+        $track2 = Track::factory()->create();
 
-        $playlistData = [
-            'title' => 'Test Playlist',
-            'description' => 'This is a test playlist',
+        $response = $this->post('/playlists', [
+            'title' => 'My Awesome Playlist',
+            'description' => 'A description',
             'genre_id' => $genre->id,
-        ];
+            'track_ids' => [$track1->id, $track2->id]
+        ]);
 
-        $response = $this->post('/playlists', $playlistData);
-
+        $response->assertStatus(302);
         $response->assertRedirect('/playlists');
-        $this->assertDatabaseHas('playlists', ['title' => 'Test Playlist']);
+        $this->assertDatabaseHas('playlists', ['title' => 'My Awesome Playlist']);
+        $playlist = Playlist::where('title', 'My Awesome Playlist')->first();
+        $this->assertNotNull($playlist);
+        $this->assertCount(2, $playlist->tracks);
     }
 
     public function test_can_add_tracks_to_playlist(): void

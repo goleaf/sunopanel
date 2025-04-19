@@ -103,7 +103,7 @@ class TrackUpdateRequestTest extends TestCase
         $this->assertEquals('The audio URL must be a valid URL.', $messages['audio_url.url']);
         $this->assertEquals('The image URL is required.', $messages['image_url.required']);
         $this->assertEquals('The image URL must be a valid URL.', $messages['image_url.url']);
-        $this->assertEquals('Either genres or genre IDs must be provided.', $messages['genres.required_without']);
-        $this->assertEquals('Either genres or genre IDs must be provided.', $messages['genre_ids.required_without']);
+        $this->assertEquals('Please provide genres either as a string or an array of IDs.', $messages['genres.required_without']);
+        $this->assertEquals('Please provide genres either as a string or an array of IDs.', $messages['genre_ids.required_without']);
     }
 }

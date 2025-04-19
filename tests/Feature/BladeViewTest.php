@@ -11,6 +11,7 @@ use Tests\TestCase;
 
 class BladeViewTest extends TestCase
 {
+    use RefreshDatabase, WithFaker;
     
     public function test_tracks_index_view_renders()
     {
