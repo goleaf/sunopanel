@@ -333,7 +333,13 @@ final class TrackController extends Controller
         try {
             $track = Track::findOrFail($id);
             Log::info('Track played', ['id' => $id, 'title' => $track->title]);
-            return redirect()->away($track->url);
+            
+            if (empty($track->audio_url)) {
+                return redirect()->back()
+                    ->with('error', 'Track has no audio URL');
+            }
+            
+            return redirect()->away($track->audio_url);
         } catch (\Exception $e) {
             Log::error('Error playing track', ['id' => $id, 'error' => $e->getMessage()]);
             abort(404);

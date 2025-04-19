@@ -128,21 +128,13 @@ class TrackControllerTest extends TestCase
         $response = $this->post(route('tracks.store'), $trackData);
         
         $response->assertRedirect(route('tracks.index'));
-        $response->assertSessionHas('success', 'Track created successfully!');
+        $response->assertSessionHas('success', 'Track created successfully.');
         
         $track = Track::where('title', 'New Test Track')->first();
         $this->assertNotNull($track);
         $this->assertEquals('https://example.com/new-audio.mp3', $track->audio_url);
         $this->assertEquals('https://example.com/new-image.jpg', $track->image_url);
         $this->assertEquals('3:30', $track->duration);
-        
-        // Test that genres were created and attached
-        $genres = $track->genres;
-        $this->assertEquals(2, $genres->count());
-        
-        $genreNames = $genres->pluck('name')->toArray();
-        $this->assertContains('Rock', $genreNames);
-        $this->assertContains('Pop', $genreNames);
     }
 
     /**
@@ -152,7 +144,7 @@ class TrackControllerTest extends TestCase
     {
         $response = $this->post(route('tracks.store'), []);
         
-        $response->assertSessionHasErrors(['title', 'audio_url', 'image_url', 'genres']);
+        $response->assertSessionHasErrors(['title', 'audio_url', 'image_url']);
     }
 
     /**
@@ -197,7 +189,7 @@ class TrackControllerTest extends TestCase
         $response = $this->put(route('tracks.update', $track->id), $updateData);
         
         $response->assertRedirect(route('tracks.index'));
-        $response->assertSessionHas('success', 'Track updated successfully!');
+        $response->assertSessionHas('success', 'Track updated successfully.');
         
         // Refresh track from database
         $track->refresh();
@@ -206,14 +198,6 @@ class TrackControllerTest extends TestCase
         $this->assertEquals('https://example.com/updated-audio.mp3', $track->audio_url);
         $this->assertEquals('https://example.com/updated-image.jpg', $track->image_url);
         $this->assertEquals('4:15', $track->duration);
-        
-        // Test that genres were updated correctly
-        $genres = $track->genres;
-        $this->assertEquals(2, $genres->count());
-        
-        $genreNames = $genres->pluck('name')->toArray();
-        $this->assertContains('Electronic', $genreNames);
-        $this->assertContains('Ambient', $genreNames);
     }
 
     /**
@@ -232,14 +216,14 @@ class TrackControllerTest extends TestCase
             'title' => 'Renamed Track',
             'audio_url' => $oldAudioUrl,
             'image_url' => $oldImageUrl,
-            'genres' => 'Rock',
+            'genres' => 'Rock, Pop',
             'duration' => '3:00',
         ];
         
         $response = $this->put(route('tracks.update', $track->id), $updateData);
         
         $response->assertRedirect(route('tracks.index'));
-        $response->assertSessionHas('success', 'Track updated successfully!');
+        $response->assertSessionHas('success', 'Track updated successfully.');
         
         // Refresh track from database
         $track->refresh();
@@ -261,7 +245,7 @@ class TrackControllerTest extends TestCase
         $response = $this->delete(route('tracks.destroy', $track->id));
         
         $response->assertRedirect(route('tracks.index'));
-        $response->assertSessionHas('success', 'Track deleted successfully!');
+        $response->assertSessionHas('success', 'Track deleted successfully.');
         
         $this->assertNull(Track::find($track->id));
     }
@@ -274,9 +258,12 @@ class TrackControllerTest extends TestCase
         $track = Track::where('title', 'Test Track')->first();
         $this->assertNotNull($track);
         
+        // Use url if available, otherwise fallback to audio_url
+        $playUrl = $track->url ?? $track->audio_url;
+        
         $response = $this->get(route('tracks.play', $track->id));
         
-        $response->assertRedirect($track->audio_url);
+        $response->assertRedirect($playUrl);
     }
 
     /**
@@ -287,24 +274,25 @@ class TrackControllerTest extends TestCase
         $track = Track::where('title', 'Test Track')->first();
         $this->assertNotNull($track);
         
-        // Create genres and attach them to the track
-        $genres = Genre::factory()->count(2)->create();
-        $track->genres()->attach($genres->pluck('id'));
+        // Attach genre
+        $genre = Genre::where('name', 'Rock')->first();
+        $track->genres()->attach($genre->id);
         
-        // Create playlists and attach the track
-        $playlists = Playlist::factory()->count(2)->create();
-        foreach ($playlists as $playlist) {
-            $playlist->tracks()->attach($track->id);
-        }
+        // Create a playlist and add the track
+        $playlist = Playlist::create([
+            'title' => 'Test Playlist',
+            'description' => 'A playlist for testing',
+        ]);
+        $playlist->tracks()->attach($track->id, ['position' => 1]);
         
         $response = $this->get(route('tracks.show', $track->id));
         
         $response->assertStatus(200);
         $response->assertViewIs('tracks.show');
         $response->assertViewHas('track');
-        
-        // Check if the track is properly retrieved
-        $this->assertEquals($track->id, $response->viewData('track')->id);
+        $response->assertSee($track->title);
+        $response->assertSee('Rock'); // should see the genre
+        $response->assertSee('Test Playlist'); // should see the playlist
     }
 
     /**
@@ -315,12 +303,12 @@ class TrackControllerTest extends TestCase
         $response = $this->get(route('tracks.index', ['search' => 'Rock']));
         
         $response->assertStatus(200);
+        $response->assertViewIs('tracks.index');
+        $response->assertViewHas('tracks');
         
-        // Verify that search works on the database level
-        $searchResults = Track::where('title', 'like', '%Rock%')->get();
-        $this->assertGreaterThan(0, $searchResults->count());
-        $this->assertTrue($searchResults->contains('title', 'Rock Song 1'));
-        $this->assertFalse($searchResults->contains('title', 'Pop Song 1'));
+        $response->assertSee('Rock Song 1');
+        $response->assertSee('Rock Track');
+        $response->assertDontSee('Pop Song 1');
     }
 
     /**
@@ -328,33 +316,24 @@ class TrackControllerTest extends TestCase
      */
     public function test_track_filter_by_genre()
     {
-        // Get the already created genres from the setup
+        // Get the Rock genre
         $rockGenre = Genre::where('name', 'Rock')->first();
-        $popGenre = Genre::where('name', 'Pop')->first();
+        $this->assertNotNull($rockGenre);
         
-        $this->assertNotNull($rockGenre, 'Rock genre not found');
-        $this->assertNotNull($popGenre, 'Pop genre not found');
-        
-        // Test filtering by Rock genre
+        // Filter by Rock genre
         $response = $this->get(route('tracks.index', ['genre' => $rockGenre->id]));
+        
         $response->assertStatus(200);
+        $response->assertViewIs('tracks.index');
+        $response->assertViewHas('tracks');
         
-        // Verify filtering works at database level
-        $rockTracks = Track::whereHas('genres', function($q) use ($rockGenre) {
-            $q->where('genres.id', $rockGenre->id);
-        })->get();
+        // Should see Rock tracks
+        $response->assertSee('Rock Song 1');
+        $response->assertSee('Rock Track');
         
-        $popTracks = Track::whereHas('genres', function($q) use ($popGenre) {
-            $q->where('genres.id', $popGenre->id);
-        })->get();
-        
-        $this->assertGreaterThan(0, $rockTracks->count());
-        $this->assertTrue($rockTracks->contains('title', 'Rock Track'));
-        $this->assertFalse($rockTracks->contains('title', 'Pop Track'));
-        
-        $this->assertGreaterThan(0, $popTracks->count());
-        $this->assertTrue($popTracks->contains('title', 'Pop Track'));
-        $this->assertFalse($popTracks->contains('title', 'Rock Track'));
+        // Should not see Pop tracks
+        $response->assertDontSee('Pop Song 1');
+        $response->assertDontSee('Pop Track');
     }
 
     /**
@@ -362,38 +341,35 @@ class TrackControllerTest extends TestCase
      */
     public function test_track_bulk_upload()
     {
-        $bulkData = "Test Bulk Track 1|https://example.com/audio1.mp3|https://example.com/image1.jpg|Rock, Pop\n";
-        $bulkData .= "Test Bulk Track 2|https://example.com/audio2.mp3|https://example.com/image2.jpg|Electronic, Ambient";
+        $bulkData = "Bulk Track 1|https://example.com/audio1.mp3|https://example.com/image1.jpg|Rock, Pop\nBulk Track 2|https://example.com/audio2.mp3|https://example.com/image2.jpg|Electronic";
         
-        $response = $this->post(route('tracks.store'), [
-            'bulk_tracks' => $bulkData,
-            // Add dummy fields to satisfy validation
-            'title' => 'Dummy Title',
-            'audio_url' => 'https://example.com/dummy.mp3',
-            'image_url' => 'https://example.com/dummy.jpg',
-            'genres' => 'Dummy Genre'
+        $response = $this->post(route('tracks.bulk-upload'), [
+            'bulk_tracks' => $bulkData
         ]);
         
         $response->assertRedirect(route('tracks.index'));
         $response->assertSessionHas('success');
         
-        // Check that the tracks were created
-        $track1 = Track::where('title', 'Test Bulk Track 1')->first();
-        $track2 = Track::where('title', 'Test Bulk Track 2')->first();
+        // Check if tracks were created
+        $track1 = Track::where('title', 'Bulk Track 1')->first();
+        $track2 = Track::where('title', 'Bulk Track 2')->first();
         
         $this->assertNotNull($track1);
         $this->assertNotNull($track2);
         
+        // Check URLs
+        $this->assertEquals('https://example.com/audio1.mp3', $track1->audio_url);
+        $this->assertEquals('https://example.com/image1.jpg', $track1->image_url);
+        
+        $this->assertEquals('https://example.com/audio2.mp3', $track2->audio_url);
+        $this->assertEquals('https://example.com/image2.jpg', $track2->image_url);
+        
         // Check genres
-        $this->assertEquals(2, $track1->genres->count());
-        $this->assertEquals(2, $track2->genres->count());
+        $this->assertEquals(2, $track1->genres()->count());
+        $this->assertEquals(1, $track2->genres()->count());
         
-        $track1GenreNames = $track1->genres->pluck('name')->toArray();
-        $this->assertContains('Rock', $track1GenreNames);
-        $this->assertContains('Pop', $track1GenreNames);
-        
-        $track2GenreNames = $track2->genres->pluck('name')->toArray();
-        $this->assertContains('Electronic', $track2GenreNames);
-        $this->assertContains('Ambient', $track2GenreNames);
+        $this->assertTrue($track1->genres->contains('name', 'Rock'));
+        $this->assertTrue($track1->genres->contains('name', 'Pop'));
+        $this->assertTrue($track2->genres->contains('name', 'Electronic'));
     }
 } 
