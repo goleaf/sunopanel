@@ -70,6 +70,7 @@ final class Genre extends Model
         $specialCases = [
             'bubblegum bass' => 'Bubblegum bass',
             'bubblegum-bass' => 'Bubblegum bass',
+            'bubblegumbass' => 'Bubblegum bass',
             'drum and bass' => 'Drum and bass', 
             'drum & bass' => 'Drum and bass',
             'dnb' => 'Drum and bass',
@@ -81,8 +82,10 @@ final class Genre extends Model
         
         if (array_key_exists($lowercaseValue, $specialCases)) {
             $formattedName = $specialCases[$lowercaseValue];
+            Log::info("Using special case formatting for: {$name} -> {$formattedName}");
         } else {
             $formattedName = ucwords(strtolower($name));
+            Log::info("Standard formatting for: {$name} -> {$formattedName}");
         }
         
         // First check if a genre with this name (case-insensitive) already exists
@@ -133,6 +136,7 @@ final class Genre extends Model
         $specialCases = [
             'bubblegum bass' => 'Bubblegum bass',
             'bubblegum-bass' => 'Bubblegum bass',
+            'bubblegumbass' => 'Bubblegum bass',
             'drum and bass' => 'Drum and bass', 
             'drum & bass' => 'Drum and bass',
             'dnb' => 'Drum and bass',

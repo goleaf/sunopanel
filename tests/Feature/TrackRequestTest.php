@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Track;
+use App\Models\Genre;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -35,6 +36,10 @@ class TrackRequestTest extends TestCase
             'image_url' => 'https://example.com/image.jpg',
             'duration' => '3:30'
         ]);
+        
+        // Verify the "Bubblegum bass" genre was properly assigned
+        $track = Track::where('title', 'Test Track')->first();
+        $this->assertTrue($track->genres()->where('name', 'Bubblegum bass')->exists());
     }
 
     public function test_track_update_validation()
@@ -48,6 +53,10 @@ class TrackRequestTest extends TestCase
             'duration' => '3:00'
         ]);
 
+        // Assign an initial genre
+        $genre = Genre::findOrCreateByName('Rock');
+        $track->genres()->attach($genre);
+
         // Test missing required fields
         $response = $this->put(route('tracks.update', $track->id), []);
         $response->assertSessionHasErrors(['title', 'audio_url', 'image_url', 'genres']);
@@ -57,7 +66,7 @@ class TrackRequestTest extends TestCase
             'title' => 'Updated Track',
             'audio_url' => 'https://example.com/updated-audio.mp3',
             'image_url' => 'https://example.com/updated-image.jpg',
-            'genres' => 'Bubblegum bass, Chillwave',
+            'genres' => 'bubblegum bass, Chillwave',  // lowercase intentionally to test case-insensitivity
             'duration' => '4:15'
         ];
         
@@ -72,12 +81,19 @@ class TrackRequestTest extends TestCase
             'image_url' => 'https://example.com/updated-image.jpg',
             'duration' => '4:15'
         ]);
+        
+        // Verify genres were properly updated
+        $track->refresh();
+        $genreNames = $track->genres->pluck('name')->toArray();
+        $this->assertContains('Bubblegum bass', $genreNames);
+        $this->assertContains('Chillwave', $genreNames);
+        $this->assertCount(2, $genreNames);
     }
 
     public function test_bulk_track_upload()
     {
         $bulkData = "Test Track 1|https://example.com/audio1.mp3|https://example.com/image1.jpg|Bubblegum bass\n";
-        $bulkData .= "Test Track 2|https://example.com/audio2.mp3|https://example.com/image2.jpg|Chillwave";
+        $bulkData .= "Test Track 2|https://example.com/audio2.mp3|https://example.com/image2.jpg|chillwave";
         
         $response = $this->post(route('tracks.store'), [
             'bulk_tracks' => $bulkData,
@@ -103,7 +119,7 @@ class TrackRequestTest extends TestCase
             'image_url' => 'https://example.com/image2.jpg'
         ]);
         
-        // Check if genres were created and attached properly
+        // Check if genres were created and attached properly with correct capitalization
         $track1 = Track::where('title', 'Test Track 1')->first();
         $this->assertTrue($track1->genres()->where('name', 'Bubblegum bass')->exists());
         

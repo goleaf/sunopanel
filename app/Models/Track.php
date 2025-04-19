@@ -120,10 +120,14 @@ final class Track extends Model
                 continue;
             }
 
+            // Normalize the name to lowercase for consistent comparison
+            $normalizedName = strtolower(trim($name));
+            
             // Special handling for "bubblegum bass"
-            if (strcasecmp(trim($name), 'bubblegum bass') === 0 || strcasecmp(trim($name), 'bubblegum-bass') === 0) {
-                $formattedName = 'Bubblegum bass';
-                $genre = Genre::firstOrCreate(['name' => $formattedName]);
+            if ($normalizedName === 'bubblegum bass' || 
+                $normalizedName === 'bubblegum-bass' || 
+                $normalizedName === 'bubblegumbass') {
+                $genre = Genre::findOrCreateByName('Bubblegum bass');
             } else {
                 $genre = Genre::findOrCreateByName($name);
             }
@@ -134,7 +138,8 @@ final class Track extends Model
                 'track_id' => $this->id,
                 'track_title' => $this->title,
                 'genre_id' => $genre->id,
-                'genre_name' => $genre->name
+                'genre_name' => $genre->name,
+                'original_name' => $name
             ]);
         }
     }

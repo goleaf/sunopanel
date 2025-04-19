@@ -129,10 +129,13 @@
                                         {{ $track->created_at->format('Y-m-d') }}
                                     </td>
                                     <td>
-                                        <audio controls src="{{ $track->audio_url }}" class="w-full h-8"></audio>
+                                        <x-audio-player 
+                                            src="{{ $track->audio_url }}" 
+                                            showDownload="false"
+                                        />
                                     </td>
                                     <td>
-                                        <div class="flex flex-col md:flex-row gap-2">
+                                        <div class="flex flex-wrap gap-2">
                                             <a href="{{ route('tracks.show', $track) }}" class="btn btn-info btn-xs">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
