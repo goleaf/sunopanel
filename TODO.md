@@ -1,86 +1,73 @@
-# SunoPanel Update Tasks
+# SunoPanel Music Platform - TODO List
 
 ## Current Status Assessment
-- [x] Fixed all issues related to Playlist title/name consolidation
-- [x] All Playlist-related tests now pass 
-- [x] Fixed test failures in PlaylistControllerTest and PlaylistRoutesTest
-- [x] Created migration to remove redundant name column from playlists table
-- [x] Created FormRequest classes for all controller methods
-- [x] Added comprehensive tests for all FormRequest classes
-- [x] Verified UI framework implementation (TailwindCSS + DaisyUI)
-- [x] Confirmed Bootstrap has been completely removed
-- [x] Centralized error logging using LoggingService
-- [x] Removed direct Log::error calls from controllers
-- [ ] Several other test failures still exist in other test classes (TrackRequestTest, GenreControllerTest, etc.)
+- [x] Test failures: Multiple tests are failing, mostly related to authentication and file upload functionality
+- [x] UI needs improvements for better user experience
+- [x] Error handling & logging needs improvement
+- [x] Performance optimization required for large music libraries
+- [x] Mobile responsiveness issues in some views
 
 ## Action Plan
 
-### 1. Fix Remaining Test Failures
-1. [x] Fix genre capitalization issues:
-   - [x] Review and fix Genre model's naming conventions
-   - [x] Ensure consistent capitalization in BubblegumBassSeederTest
-   - [x] Update Genre model's findOrCreateByName and syncGenres methods
-   - [x] Verify that all genre capitalizations are consistent
+### Fixing Test Failures
+- [ ] Debug and fix authentication tests
+- [ ] Resolve file upload test issues
+- [ ] Fix genre service tests
+- [ ] Ensure all playlist tests pass
+- [ ] Implement proper mocks for external service tests
 
-2. [ ] Fix TrackRequestTest issues:
-   - [ ] Investigate session validation errors in TrackRequestTest
-   - [ ] Ensure FormRequest validation rules are correctly implemented
-   - [ ] Check TrackStoreRequest and TrackUpdateRequest for proper validation
-   - [ ] Validate bulk upload functionality
+### UI/UX Improvements
+- [x] Update color scheme to be more consistent
+- [x] Improve mobile responsiveness
+- [x] Add dark mode toggle
+- [x] Create and implement a notification component for temporary messages
+- [x] Add loading indicators for asynchronous operations
+- [ ] Improve table designs for better data visualization
+- [ ] Add better feedback for user actions
+- [ ] Create comprehensive API documentation page
 
-3. [ ] Review all controller validation:
-   - [ ] Ensure all controllers use FormRequest classes consistently
-   - [x] Verify validation error handling is consistent
+### Code Quality & Performance
+- [ ] Implement proper caching for frequently accessed data
+- [ ] Optimize database queries (especially for track listings)
+- [ ] Refactor service classes to follow SOLID principles
+- [ ] Add proper PHPDoc annotations throughout the codebase
+- [ ] Implement rate limiting for API endpoints
+- [ ] Set up proper CI/CD pipeline
 
-### 2. Clean Up Logger Implementation
-1. [x] Fix LoggingMiddleware issues:
-   - [x] Create new LoggingMiddleware class to replace the deleted one
-   - [x] Ensure it properly integrates with the LoggingService
-   - [x] Register the middleware in the Kernel
+### Critical Fixes Needed
+- [ ] Fix file upload handling for large audio files
+- [ ] Resolve user permission issues in playlist management
+- [ ] Fix batch processing of tracks
+- [ ] Add proper validation for all form inputs
+- [ ] Fix search functionality
 
-2. [ ] Standardize logging formats:
-   - [ ] Ensure consistent log message format across the application
-   - [ ] Remove any remaining direct references to Log facade
-   - [ ] Verify LoggingService is properly injected in all controllers
+## Error Logging Implementation
+- [ ] Configure proper logging channels
+- [ ] Implement structured logging in services
+- [ ] Set up error monitoring service
+- [ ] Add context to log messages for better debugging
+- [ ] Create dashboard for monitoring error rates
 
-3. [x] Update LoggingServiceProvider:
-   - [x] Review and consolidate logging provider registrations
-   - [x] Ensure proper binding of LoggingService in service container
+## Additional Items to Fix
+### High Priority
+- [ ] Update dependencies to latest versions
+- [ ] Fix security vulnerabilities in authentication
+- [ ] Address performance bottlenecks in track processing
+- [ ] Fix memory leaks in batch processing
 
-### 3. UI/UX Improvements
-1. [x] Enhance mobile responsiveness:
-   - [x] Improve table display on small screens
-   - [x] Optimize form controls for mobile devices
-   - [x] Test and refine responsive breakpoints
+### Medium Priority  
+- [ ] Improve test coverage
+- [ ] Refactor controllers to be more RESTful
+- [ ] Implement proper API versioning
+- [ ] Add pagination to all listings
+- [ ] Optimize front-end assets
 
-2. [x] Implement advanced UI features:
-   - [x] Add loading indicators for AJAX operations
-   - [x] Enhance form validation feedback
-   - [x] Add tooltips for improved user guidance
-   - [x] Create reusable notification component for temporary messages
-   - [x] Create reusable button component with variants and sizes
-   - [x] Create demo page showcasing UI components
-
-3. [x] Dashboard improvements:
-   - [x] Create widgets for key statistics
-   - [x] Optimize dashboard layout for all screen sizes
-   - [x] Create comprehensive dashboard demo page
-
-### 4. Code Quality & Performance
-1. [x] Complete PSR-12 compliance:
-   - [x] Review all PHP files for PSR-12 compliance
-   - [x] Fix any formatting inconsistencies
-   - [x] Ensure proper docblocks for all methods
-
-2. [x] Optimize frontend assets:
-   - [x] Implement PurgeCSS to remove unused styles
-   - [x] Configure Vite for proper asset versioning
-   - [x] Minify production JavaScript
-
-3. [ ] Database optimization:
-   - [ ] Review and optimize database queries
-   - [ ] Add indexes for frequently queried columns
-   - [x] Implement eager loading where appropriate
+### Low Priority
+- [ ] Add additional music metadata fields
+- [ ] Implement more advanced search features
+- [ ] Add social sharing functionality
+- [ ] Create user preference settings
+- [ ] Add statistics and analytics dashboard
 
 ## Immediate Focus
 Based on priority and dependencies, we'll tackle these tasks in the following order:
