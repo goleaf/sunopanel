@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
@@ -8,7 +10,7 @@ use App\Models\Track;
 use App\Models\Genre;
 use App\Models\Playlist;
 
-class BatchController extends Controller
+final class BatchController extends Controller
 {
     /**
      * Display a listing of all batches
