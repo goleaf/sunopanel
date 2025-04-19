@@ -9,12 +9,12 @@ use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 use Throwable;
 
-final readonly class LoggingService
+final readonly class LoggingService implements LoggingServiceInterface
 {
     /**
      * Log an application error with standardized format
      */
-    public function logError(
+    public function logStandardError(
         Throwable $exception,
         ?Request $request = null,
         ?string $context = null,
@@ -112,7 +112,7 @@ final readonly class LoggingService
     /**
      * Log informational message with standardized format
      */
-    public function info(
+    public function logStandardInfo(
         string $message,
         array $context = [],
         ?Request $request = null
@@ -242,5 +242,35 @@ final readonly class LoggingService
         }
 
         return $data;
+    }
+
+    /**
+     * Log a generic informational message.
+     */
+    public function logInfoMessage(string $message, array $context = []): void
+    {
+        // Delegate to the standard info logger, adding minimal context
+        $logData = array_merge($context, [
+            'timestamp' => now()->toDateTimeString(),
+            'user_id' => auth()->id(),
+        ]);
+        Log::info($message, $this->filterSensitiveData($logData));
+    }
+
+    /**
+     * Log a generic error message.
+     */
+    public function logErrorMessage(string $message, array $context = []): void
+    {
+        // Delegate to the standard error logger using a generic Exception
+        // This provides a basic structure similar to logStandardError but without a specific Throwable
+        $logData = array_merge($context, [
+            'message' => $message, // Use the provided message
+            'file' => __FILE__, // Approximate location
+            'line' => __LINE__,
+            'user_id' => auth()->id(),
+            'context' => 'Generic Error Message',
+        ]);
+        Log::error('Error: '.$message, $this->filterSensitiveData($logData));
     }
 }

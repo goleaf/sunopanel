@@ -9,17 +9,17 @@ use App\Http\Requests\TrackStoreRequest;
 use App\Http\Requests\TrackUpdateRequest;
 use App\Models\Genre;
 use App\Models\Track;
+use App\Services\Logging\LoggingServiceInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Throwable;
 
 final readonly class TrackService
 {
-    public function __construct(private readonly LoggingService $loggingService)
+    public function __construct(private readonly LoggingServiceInterface $loggingService)
     {
         // Optionally inject LoggingService if needed within the service itself
     }
@@ -88,7 +88,8 @@ final readonly class TrackService
             $track->playlists()->attach(Arr::wrap($validated['playlists']));
         }
 
-        Log::info('Track stored successfully', ['track_id' => $track->id, 'title' => $track->title]);
+        // Use the interface method for logging
+        $this->loggingService->logInfoMessage('Track stored successfully', ['track_id' => $track->id, 'title' => $track->title]);
 
         return $track;
     }
@@ -119,7 +120,8 @@ final readonly class TrackService
              $track->playlists()->sync(Arr::wrap($validated['playlists'] ?? []));
         }
 
-        Log::info('Track updated successfully', ['track_id' => $track->id, 'title' => $track->title]);
+        // Use the interface method for logging
+        $this->loggingService->logInfoMessage('Track updated successfully', ['track_id' => $track->id, 'title' => $track->title]);
 
         return $track->fresh(['genres', 'playlists']); // Return fresh model with relations
     }
@@ -141,15 +143,18 @@ final readonly class TrackService
                 // Delete the track
                 $deleted = $track->delete();
 
-                Log::info('Track deleted successfully', ['track_id' => $track->id, 'title' => $track->title]);
+                // Use the interface method for logging
+                $this->loggingService->logInfoMessage('Track deleted successfully', ['track_id' => $track->id, 'title' => $track->title]);
                 return (bool) $deleted;
             });
         } catch (Throwable $e) {
-            Log::error('Error deleting track', [
+            // Use the interface method for logging errors
+            $this->loggingService->logErrorMessage('Error deleting track', [
                 'track_id' => $trackId,
                 'title' => $trackTitle,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
+                // Optionally add trace if needed, but keep context simple for interface
+                // 'trace' => $e->getTraceAsString(),
             ]);
             return false;
         }
@@ -159,7 +164,7 @@ final readonly class TrackService
      * Process bulk track upload from text data.
      * Returns [processedCount, errors[]]
      */
-    public function processBulkImport(string $bulkTracksData, LoggingService $loggingService): array
+    public function processBulkImport(string $bulkTracksData, LoggingServiceInterface $loggingService): array
     {
         $lines = explode(PHP_EOL, trim($bulkTracksData));
         $processedCount = 0;
@@ -204,12 +209,14 @@ final readonly class TrackService
 
                 // Check existence (optional, could update instead)
                 if (Track::where('title', $title)->exists()) {
+                    // Maybe use warning level if available?
+                    // $this->loggingService->logWarningMessage("Line {$lineNumber}: Track '{$title}' already exists. Skipping.");
                     $errors[] = "Line {$lineNumber}: Track '{$title}' already exists. Skipping.";
                     continue;
                 }
 
                 // Create the track within a transaction
-                DB::transaction(function () use ($title, $audioUrl, $imageUrl, $duration, $genresRaw, &$processedCount) {
+                DB::transaction(function () use ($title, $audioUrl, $imageUrl, $duration, $genresRaw, &$processedCount, $loggingService) {
                     $track = Track::create([
                         'title' => $title,
                         'audio_url' => $audioUrl,
@@ -221,7 +228,8 @@ final readonly class TrackService
                     // Assuming syncGenres method exists on Track model
                     $track->syncGenres($genresRaw);
                     $processedCount++;
-                    Log::debug("Bulk processed track: {$title}", ['track_id' => $track->id]);
+                    // Use the interface method for logging
+                    $loggingService->logInfoMessage("Bulk processed track: {$title}", ['track_id' => $track->id]);
                 });
 
             } catch (Throwable $e) {
@@ -229,12 +237,13 @@ final readonly class TrackService
                 $trackTitleForError = $title ?? '[unknown title]';
                 $errorMsg = "Line {$lineNumber}: Error processing track '{$trackTitleForError}': " . $e->getMessage();
                 $errors[] = $errorMsg;
-                $loggingService->error('Error during bulk track processing', [
+                // Use the interface method for logging errors
+                $loggingService->logErrorMessage('Error during bulk track processing', [
                     'line' => $lineNumber,
                     'data' => $line,
-                     'error' => $e->getMessage(),
-                     'trace' => $e->getTraceAsString(),
-                 ]);
+                    'error' => $e->getMessage(),
+                    // 'trace' => $e->getTraceAsString(), // Keep context simple
+                ]);
             }
         }
 
