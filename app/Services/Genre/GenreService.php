@@ -18,8 +18,14 @@ final readonly class GenreService
      */
     public function store(GenreStoreRequest $request): Genre
     {
-        $validatedData = $request->validated();
-
+        return $this->storeFromArray($request->validated());
+    }
+    
+    /**
+     * Store a new genre from array data
+     */
+    public function storeFromArray(array $validatedData): Genre
+    {
         // Generate a slug from the name if not provided
         if (! isset($validatedData['slug'])) {
             $validatedData['slug'] = Str::slug($validatedData['name']);
@@ -45,8 +51,14 @@ final readonly class GenreService
      */
     public function update(GenreUpdateRequest $request, Genre $genre): Genre
     {
-        $validatedData = $request->validated();
-
+        return $this->updateFromArray($request->validated(), $genre);
+    }
+    
+    /**
+     * Update an existing genre from array data
+     */
+    public function updateFromArray(array $validatedData, Genre $genre): Genre
+    {
         // Update slug if name changes and slug is not explicitly provided
         if (isset($validatedData['name']) && $validatedData['name'] !== $genre->name && ! isset($validatedData['slug'])) {
             $validatedData['slug'] = Str::slug($validatedData['name']);

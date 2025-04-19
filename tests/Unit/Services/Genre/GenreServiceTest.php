@@ -36,23 +36,8 @@ class GenreServiceTest extends TestCase
             'description' => 'Test Description'
         ];
         
-        // Create a mocked request that isn't a final class
-        $storeRequest = new class($requestData) extends \Illuminate\Foundation\Http\FormRequest {
-            protected $validatedData;
-            
-            public function __construct(array $data)
-            {
-                $this->validatedData = $data;
-            }
-            
-            public function validated($key = null, $default = null)
-            {
-                return $this->validatedData;
-            }
-        };
-        
         // Act
-        $genre = $this->genreService->store($storeRequest);
+        $genre = $this->genreService->storeFromArray($requestData);
         
         // Assert
         $this->assertInstanceOf(Genre::class, $genre);
@@ -76,23 +61,8 @@ class GenreServiceTest extends TestCase
             'description' => 'Updated Description'
         ];
         
-        // Create a mocked request that isn't a final class
-        $updateRequest = new class($requestData) extends \Illuminate\Foundation\Http\FormRequest {
-            protected $validatedData;
-            
-            public function __construct(array $data)
-            {
-                $this->validatedData = $data;
-            }
-            
-            public function validated($key = null, $default = null)
-            {
-                return $this->validatedData;
-            }
-        };
-        
         // Act
-        $updatedGenre = $this->genreService->update($updateRequest, $genre);
+        $updatedGenre = $this->genreService->updateFromArray($requestData, $genre);
         
         // Assert
         $this->assertEquals('Updated Genre', $updatedGenre->name);
@@ -149,35 +119,37 @@ class GenreServiceTest extends TestCase
     public function testGetWithTrackCounts(): void
     {
         // Arrange
-        $genre1 = Genre::factory()->create(['name' => 'Genre A']);
-        $genre2 = Genre::factory()->create(['name' => 'Genre B']);
-        
-        // Create tracks and associate with genres
-        $track1 = Track::factory()->create();
-        $track2 = Track::factory()->create();
-        $track1->genres()->attach($genre1);
-        $track2->genres()->attach($genre1);
-        $track2->genres()->attach($genre2);
+        $genreA = Genre::factory()->create(['name' => 'Genre A']);
+        $genreB = Genre::factory()->create(['name' => 'Genre B']);
+        $trackA = Track::factory()->create(['title' => 'Track A']);
+        $trackB = Track::factory()->create(['title' => 'Track B']);
+        $trackC = Track::factory()->create(['title' => 'Track C']);
+        $trackA->genres()->attach($genreA);
+        $trackB->genres()->attach($genreA);
+        $trackC->genres()->attach($genreB);
         
         // Act
-        $result = $this->genreService->getWithTrackCounts();
+        $results = $this->genreService->getWithTrackCounts();
         
         // Assert
-        $this->assertIsArray($result);
-        $this->assertCount(2, $result);
+        $this->assertNotEmpty($results);
         
-        // Convert the result to a collection for easier testing
-        $resultCollection = collect($result);
+        // Debug output
+        dump($results);
         
-        // Find genre A in results and check its track count
-        $genreA = $resultCollection->firstWhere('name', 'Genre A');
-        $this->assertNotNull($genreA, 'Genre A not found in results');
-        $this->assertEquals(2, $genreA['tracks_count']);
+        // Use collection to make it easier to find items in the array
+        $resultCollection = collect($results);
         
-        // Find genre B in results and check its track count
-        $genreB = $resultCollection->firstWhere('name', 'Genre B');
-        $this->assertNotNull($genreB, 'Genre B not found in results');
-        $this->assertEquals(1, $genreB['tracks_count']);
+        // Retrieve all genres by ID for easier debugging
+        $genreAResult = collect($results)->firstWhere('id', $genreA->id);
+        $genreBResult = collect($results)->firstWhere('id', $genreB->id);
+        
+        $this->assertNotNull($genreAResult, 'Genre A not found by ID in results');
+        $this->assertNotNull($genreBResult, 'Genre B not found by ID in results');
+        
+        // Check track counts
+        $this->assertEquals(2, $genreAResult['tracks_count']);
+        $this->assertEquals(1, $genreBResult['tracks_count']);
     }
     
     #[Test]

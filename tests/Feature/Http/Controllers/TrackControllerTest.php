@@ -100,34 +100,30 @@ class TrackControllerTest extends TestCase
     public function testProcessBulkUpload(): void
     {
         // Arrange
-        // Register a separate bulk upload route for testing
-        Route::post('tracks/bulk-upload', [TrackController::class, 'processBulkUpload'])
-            ->middleware('web')
-            ->name('tracks.bulk-upload');
-            
         $bulkData = [
             'bulk_tracks' => "Test Track 1|https://example.com/audio1.mp3|https://example.com/image1.jpg|Rock\n" .
-                           "Test Track 2|https://example.com/audio2.mp3|https://example.com/image2.jpg|Pop, Jazz"
+                          "Test Track 2|https://example.com/audio2.mp3|https://example.com/image2.jpg|Pop, Jazz"
         ];
         
         // Act
-        $request = BulkTrackRequest::create('tracks/bulk-upload', 'POST', $bulkData);
-        $request->setContainer(app())->setRedirector(app()->make('redirect'));
-        
-        $controller = app()->make(TrackController::class);
-        $response = $controller->processBulkUpload($request);
+        $response = $this->post(route('tracks.store'), $bulkData);
         
         // Assert
-        $this->assertTrue($response->isRedirect(route('tracks.index')));
+        $response->assertRedirect(route('tracks.index'));
+        $response->assertSessionHas('success');
+        
+        // Check that the tracks were created
         $this->assertDatabaseHas('tracks', ['title' => 'Test Track 1']);
         $this->assertDatabaseHas('tracks', ['title' => 'Test Track 2']);
         
         // Check genres
         $track1 = Track::where('title', 'Test Track 1')->first();
+        $this->assertNotNull($track1, 'Track 1 was not found in the database');
         $this->assertCount(1, $track1->genres);
         $this->assertEquals('Rock', $track1->genres->first()->name);
         
         $track2 = Track::where('title', 'Test Track 2')->first();
+        $this->assertNotNull($track2, 'Track 2 was not found in the database');
         $this->assertCount(2, $track2->genres);
     }
 
