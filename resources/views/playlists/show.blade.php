@@ -94,17 +94,13 @@
                 <div class="flex gap-2">
                     @if($playlist->tracks->count() > 0)
                         <x-button href="#" id="playAllButton" color="primary" class="flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
-                            </svg>
+                            <x-icon name="play" size="5" />
                             Play All
                         </x-button>
                     @endif
                     
                     <x-button href="{{ route('playlists.add-tracks', $playlist) }}" color="primary" size="sm">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                        </svg>
+                        <x-icon name="plus" size="4" class="mr-1" />
                         Add Tracks
                     </x-button>
                 </div>
@@ -112,18 +108,14 @@
 
             @if (session('success'))
                 <div class="alert alert-success mb-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+                    <x-icon name="check" size="6" />
                     <span>{{ session('success') }}</span>
                 </div>
             @endif
 
             @if (session('error'))
                 <div class="alert alert-error mb-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+                    <x-icon name="x" size="6" />
                     <span>{{ session('error') }}</span>
                 </div>
             @endif
@@ -169,9 +161,7 @@
                                     @csrf
                                     @method('DELETE')
                                     <x-button type="submit" color="error" class="w-full justify-center">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                        </svg>
+                                        <x-icon name="trash" size="5" class="mr-2" />
                                         Delete Playlist
                                     </x-button>
                                 </form>
@@ -187,9 +177,7 @@
                             <div class="flex justify-between items-center mb-4">
                                 <h2 class="card-title">Tracks</h2>
                                 <x-button href="{{ route('playlists.add-tracks', $playlist) }}" color="primary" size="sm">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                    </svg>
+                                    <x-icon name="plus" size="4" class="mr-1" />
                                     Add Tracks
                                 </x-button>
                             </div>
@@ -198,9 +186,7 @@
                                 <div class="text-center py-8 opacity-70">
                                     <p>No tracks in this playlist yet.</p>
                                     <x-button href="{{ route('playlists.add-tracks', $playlist) }}" color="primary" class="mt-4">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                        </svg>
+                                        <x-icon name="plus" size="5" class="mr-2" />
                                         Add Tracks to Playlist
                                     </x-button>
                                 </div>
@@ -249,18 +235,13 @@
                                                     <td>
                                                         <div class="flex gap-2">
                                                             <x-button href="{{ route('tracks.show', $track) }}" color="ghost" size="sm" icon>
-                                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                                                </svg>
+                                                                <x-icon name="eye" size="4" />
                                                             </x-button>
                                                             <form action="{{ route('playlists.remove-track', [$playlist->id, $track->id]) }}" method="POST" class="inline-flex">
                                                                 @csrf
                                                                 @method('DELETE')
                                                                 <x-button type="submit" color="ghost" size="sm" icon class="text-error" onclick="return confirm('Are you sure you want to remove this track from the playlist?')">
-                                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                                    </svg>
+                                                                    <x-icon name="trash" size="4" />
                                                                 </x-button>
                                                             </form>
                                                         </div>
