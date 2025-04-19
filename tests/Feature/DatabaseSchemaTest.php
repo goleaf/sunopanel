@@ -37,7 +37,7 @@ class DatabaseSchemaTest extends TestCase
     {
         $this->assertTrue(Schema::hasTable('playlists'));
         $this->assertTrue(Schema::hasColumns('playlists', [
-            'id', 'name', 'description', 'cover_image', 'genre_id',
+            'id', 'title', 'description', 'cover_image', 'genre_id',
             'created_at', 'updated_at'
         ]));
     }

@@ -57,11 +57,11 @@ class ModelFactoryTest extends TestCase
         $playlist = Playlist::factory()->create();
         
         $this->assertInstanceOf(Playlist::class, $playlist);
-        $this->assertNotNull($playlist->name);
+        $this->assertNotNull($playlist->title);
         $this->assertNotNull($playlist->description);
         $this->assertDatabaseHas('playlists', [
             'id' => $playlist->id,
-            'name' => $playlist->name,
+            'title' => $playlist->title,
             'description' => $playlist->description
         ]);
     }

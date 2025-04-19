@@ -173,7 +173,7 @@ class PlaylistRoutesTest extends TestCase
             'image_url' => 'https://example.com/new.jpg',
         ]);
         
-        $response = $this->post(route('playlists.add-tracks', $playlist), [
+        $response = $this->post(route('playlists.store-tracks', $playlist), [
             'track_ids' => [$newTrack->id]
         ]);
         

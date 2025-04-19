@@ -94,15 +94,15 @@ class MusicAppTest extends TestCase
     }
     
     /**
-     * Test if we can create a playlist with a genre.
+     * Test creating a playlist.
      */
     public function test_can_create_playlist(): void
     {
-        // Create a genre first
+        // Create a genre for the playlist
         $genre = Genre::factory()->create();
         
         $playlistData = [
-            'name' => 'Test Playlist',
+            'title' => 'Test Playlist',
             'description' => 'This is a test playlist',
             'genre_id' => $genre->id,
         ];
@@ -110,7 +110,7 @@ class MusicAppTest extends TestCase
         $response = $this->post('/playlists', $playlistData);
         
         $response->assertRedirect('/playlists');
-        $this->assertDatabaseHas('playlists', ['name' => 'Test Playlist']);
+        $this->assertDatabaseHas('playlists', ['title' => 'Test Playlist']);
     }
     
     /**
