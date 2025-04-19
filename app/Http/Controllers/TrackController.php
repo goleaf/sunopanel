@@ -9,7 +9,7 @@ use App\Http\Requests\TrackStoreRequest;
 use App\Http\Requests\TrackUpdateRequest;
 use App\Models\Genre;
 use App\Models\Track;
-use App\Services\Logging\LoggingService;
+use App\Services\Logging\LoggingServiceInterface;
 use App\Services\Track\TrackService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,7 +19,7 @@ use Illuminate\View\View;
 final class TrackController extends Controller
 {
     public function __construct(
-        private readonly LoggingService $loggingService,
+        private readonly LoggingServiceInterface $loggingService,
         private readonly TrackService $trackService
     ) {}
 
@@ -32,7 +32,7 @@ final class TrackController extends Controller
             $tracks = $this->trackService->getPaginatedTracks($request);
             $genres = $this->trackService->getGenresForFilter();
 
-            $this->loggingService->info('Tracks index page accessed', [
+            $this->loggingService->logInfoMessage('Tracks index page accessed', [
                 'search' => $request->search,
                 'genre' => $request->genre,
                 'sort' => $request->input('sort', 'title'),
@@ -47,7 +47,11 @@ final class TrackController extends Controller
                 'direction' => $request->input('direction', 'asc'),
             ]);
         } catch (\Exception $e) {
-            $this->loggingService->logError($e, $request, 'TrackController@index');
+            $this->loggingService->logErrorMessage('Error in TrackController@index', [
+                'error' => $e->getMessage(),
+                'trace' => substr($e->getTraceAsString(), 0, 500),
+                'user_id' => auth()->id(),
+            ]);
 
             return view('tracks.index', [
                 'tracks' => collect(),
@@ -63,7 +67,7 @@ final class TrackController extends Controller
      */
     public function create(): View
     {
-        $this->loggingService->info('Track create form accessed');
+        $this->loggingService->logInfoMessage('Track create form accessed');
         $genres = $this->trackService->getGenresForFilter();
         $track = null;
 
@@ -76,16 +80,20 @@ final class TrackController extends Controller
     public function store(TrackStoreRequest $request): RedirectResponse
     {
         try {
-            $this->loggingService->info('TrackController: store method called', ['request_data_keys' => array_keys($request->validated())]);
+            $this->loggingService->logInfoMessage('TrackController: store method called', ['request_data_keys' => array_keys($request->validated())]);
 
             $track = $this->trackService->storeTrack($request);
 
-            $this->loggingService->info('TrackController: track created successfully via service', ['track_id' => $track->id]);
+            $this->loggingService->logInfoMessage('TrackController: track created successfully via service', ['track_id' => $track->id]);
 
             return redirect()->route('tracks.index')
                 ->with('success', "Track '{$track->title}' created successfully.");
         } catch (\Exception $e) {
-            $this->loggingService->logError($e, $request, 'TrackController@store');
+            $this->loggingService->logErrorMessage('Error in TrackController@store', [
+                'error' => $e->getMessage(),
+                'trace' => substr($e->getTraceAsString(), 0, 500),
+                'user_id' => auth()->id(),
+            ]);
 
             return redirect()->back()
                 ->withInput()
@@ -98,7 +106,7 @@ final class TrackController extends Controller
      */
     public function showBulkUploadForm(): View
     {
-        $this->loggingService->info('Bulk track upload form accessed');
+        $this->loggingService->logInfoMessage('Bulk track upload form accessed');
         return view('tracks.bulk-upload');
     }
 
@@ -109,24 +117,28 @@ final class TrackController extends Controller
     {
         try {
             $bulkTracksData = $request->validated('bulk_tracks');
-            $this->loggingService->info('Bulk track upload initiated', ['lines_count' => substr_count($bulkTracksData, "\n") + 1]);
+            $this->loggingService->logInfoMessage('Bulk track upload initiated', ['lines_count' => substr_count($bulkTracksData, "\n") + 1]);
 
             [$processedCount, $errors] = $this->trackService->processBulkImport($bulkTracksData, $this->loggingService);
 
             $message = "Processed {$processedCount} tracks successfully.";
             if (! empty($errors)) {
                 $errorMessage = "Bulk upload completed with errors: \n" . implode("\n", $errors);
-                $this->loggingService->warning('Bulk upload completed with errors', ['error_count' => count($errors), 'errors' => $errors]);
+                $this->loggingService->logErrorMessage('Bulk upload completed with errors (warning)', ['error_count' => count($errors), 'errors' => $errors]);
                 return redirect()->route('tracks.bulk-upload.form')
                     ->with('warning', $message)
                     ->with('bulk_errors', $errors);
             } else {
-                $this->loggingService->info('Bulk upload completed successfully', ['processed_count' => $processedCount]);
+                $this->loggingService->logInfoMessage('Bulk upload completed successfully', ['processed_count' => $processedCount]);
                 return redirect()->route('tracks.index')
                     ->with('success', $message);
             }
         } catch (\Exception $e) {
-            $this->loggingService->logError($e, $request, 'TrackController@processBulkUpload');
+            $this->loggingService->logErrorMessage('Error in TrackController@processBulkUpload', [
+                'error' => $e->getMessage(),
+                'trace' => substr($e->getTraceAsString(), 0, 500),
+                'user_id' => auth()->id(),
+            ]);
             return redirect()->route('tracks.bulk-upload.form')
                 ->with('error', 'An unexpected error occurred during bulk upload: ' . $e->getMessage());
         }
@@ -138,12 +150,17 @@ final class TrackController extends Controller
     public function show(Track $track): View
     {
         try {
-            $this->loggingService->info('Track show page accessed', ['track_id' => $track->id, 'title' => $track->title]);
+            $this->loggingService->logInfoMessage('Track show page accessed', ['track_id' => $track->id, 'title' => $track->title]);
             $track->load(['genres', 'playlists']);
 
             return view('tracks.show', compact('track'));
         } catch (\Exception $e) {
-            $this->loggingService->logError($e, request(), 'TrackController@show', $track->id ?? null);
+            $this->loggingService->logErrorMessage('Error in TrackController@show', [
+                'track_id' => $track->id ?? null,
+                'error' => $e->getMessage(),
+                'trace' => substr($e->getTraceAsString(), 0, 500),
+                'user_id' => auth()->id(),
+            ]);
             return redirect()->route('tracks.index')->with('error', 'Track not found or an error occurred.');
         }
     }
@@ -153,7 +170,7 @@ final class TrackController extends Controller
      */
     public function edit(Track $track): View
     {
-        $this->loggingService->info('Track edit form accessed', ['track_id' => $track->id, 'title' => $track->title]);
+        $this->loggingService->logInfoMessage('Track edit form accessed', ['track_id' => $track->id, 'title' => $track->title]);
         $genres = $this->trackService->getGenresForFilter();
         $track->load('genres');
 
@@ -166,19 +183,24 @@ final class TrackController extends Controller
     public function update(TrackUpdateRequest $request, Track $track): RedirectResponse
     {
         try {
-            $this->loggingService->info('TrackController: update method called', [
+            $this->loggingService->logInfoMessage('TrackController: update method called', [
                 'track_id' => $track->id,
                 'request_data_keys' => array_keys($request->validated())
             ]);
 
             $updatedTrack = $this->trackService->updateTrack($request, $track);
 
-            $this->loggingService->info('TrackController: track updated successfully via service', ['track_id' => $updatedTrack->id]);
+            $this->loggingService->logInfoMessage('TrackController: track updated successfully via service', ['track_id' => $updatedTrack->id]);
 
             return redirect()->route('tracks.show', $updatedTrack)
                 ->with('success', "Track '{$updatedTrack->title}' updated successfully.");
         } catch (\Exception $e) {
-            $this->loggingService->logError($e, $request, 'TrackController@update', $track->id);
+            $this->loggingService->logErrorMessage('Error in TrackController@update', [
+                'track_id' => $track->id,
+                'error' => $e->getMessage(),
+                'trace' => substr($e->getTraceAsString(), 0, 500),
+                'user_id' => auth()->id(),
+            ]);
 
             return redirect()->back()
                 ->withInput()
@@ -193,21 +215,26 @@ final class TrackController extends Controller
     {
         $trackTitle = $track->title;
         try {
-            $this->loggingService->info('Track delete initiated', ['track_id' => $track->id, 'title' => $trackTitle]);
+            $this->loggingService->logInfoMessage('Track delete initiated', ['track_id' => $track->id, 'title' => $trackTitle]);
 
             $deleted = $this->trackService->deleteTrack($track);
 
             if ($deleted) {
-                $this->loggingService->info('Track deleted successfully via service', ['track_id' => $track->id, 'title' => $trackTitle]);
+                $this->loggingService->logInfoMessage('Track deleted successfully via service', ['track_id' => $track->id, 'title' => $trackTitle]);
                 return redirect()->route('tracks.index')
                     ->with('success', "Track '{$trackTitle}' deleted successfully.");
             } else {
-                $this->loggingService->warning('Track deletion failed via service', ['track_id' => $track->id, 'title' => $trackTitle]);
+                $this->loggingService->logErrorMessage('Track deletion failed via service (warning)', ['track_id' => $track->id, 'title' => $trackTitle]);
                 return redirect()->route('tracks.index')
                     ->with('error', "Failed to delete track '{$trackTitle}'.");
             }
         } catch (\Exception $e) {
-            $this->loggingService->logError($e, $request, 'TrackController@destroy', $track->id);
+            $this->loggingService->logErrorMessage('Error in TrackController@destroy', [
+                'track_id' => $track->id,
+                'error' => $e->getMessage(),
+                'trace' => substr($e->getTraceAsString(), 0, 500),
+                'user_id' => auth()->id(),
+            ]);
             return redirect()->route('tracks.index')
                 ->with('error', 'An error occurred while deleting the track: ' . $e->getMessage());
         }
@@ -218,7 +245,7 @@ final class TrackController extends Controller
      */
     public function play(Track $track): RedirectResponse
     {
-        $this->loggingService->info('Track play action triggered', ['track_id' => $track->id, 'title' => $track->title]);
+        $this->loggingService->logInfoMessage('Track play action triggered', ['track_id' => $track->id, 'title' => $track->title]);
         return redirect()->back()->with('info', "Playing track '{$track->title}'...");
     }
 }
