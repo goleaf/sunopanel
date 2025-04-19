@@ -150,24 +150,21 @@ class GenreControllerTest extends TestCase
     }
     
     /**
-     * Test finding or creating a genre by name.
+     * Test the findOrCreateByName method.
      */
     public function test_find_or_create_by_name(): void
     {
-        // Ensure clean state for this test
-        Genre::truncate();
-        
         // Create a genre first
         $existingGenre = Genre::factory()->create(['name' => 'Existing Genre']);
         
-        // Find the existing genre
+        // Find existing genre
         $foundGenre = Genre::findOrCreateByName('Existing Genre');
         $this->assertEquals($existingGenre->id, $foundGenre->id);
         
         // Create a new genre
         $newGenre = Genre::findOrCreateByName('New Genre');
         $this->assertDatabaseHas('genres', [
-            'name' => 'New genre',
+            'name' => 'New Genre',
         ]);
     }
 

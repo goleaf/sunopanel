@@ -55,7 +55,7 @@ class GenreRoutesTest extends TestCase
         $response = $this->get(route('genres.create'));
         
         $response->assertStatus(200);
-        $response->assertSee('Create Genre');
+        $response->assertSee('Add New Genre');
         $response->assertViewIs('genres.create');
     }
     

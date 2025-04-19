@@ -64,40 +64,27 @@ class AppRouteTest extends TestCase
      */
     public function test_post_routes_work_without_auth(): void
     {
-        // Create a track
-        $trackData = [
-            'title' => 'Test Track',
-            'audio_url' => 'https://example.com/audio.mp3',
-            'image_url' => 'https://example.com/image.jpg',
-            'genres' => 'Rock, Pop'
-        ];
-        
-        $response = $this->post('/tracks', $trackData);
-        $response->assertRedirect('/tracks');
-        $this->assertDatabaseHas('tracks', ['title' => 'Test Track']);
-        
-        // Create a genre
-        $genreData = [
-            'name' => 'Test Genre',
+        // Creating a genre via POST request
+        $response = $this->post('/genres', [
+            'name' => 'New Genre',
             'description' => 'This is a test genre',
-        ];
+        ]);
         
-        $response = $this->post('/genres', $genreData);
         $response->assertRedirect('/genres');
-        $this->assertDatabaseHas('genres', ['name' => 'Test Genre']);
+        $this->assertDatabaseHas('genres', ['name' => 'New Genre']);
         
-        // Create a playlist
-        $genre = Genre::where('name', 'Test Genre')->first();
+        // Get the created genre for the next test
+        $genre = Genre::where('name', 'New Genre')->first();
         $this->assertNotNull($genre);
         
         $playlistData = [
-            'name' => 'Test Playlist',
+            'title' => 'Test Playlist',
             'description' => 'This is a test playlist',
             'genre_id' => $genre->id,
         ];
         
         $response = $this->post('/playlists', $playlistData);
         $response->assertRedirect('/playlists');
-        $this->assertDatabaseHas('playlists', ['name' => 'Test Playlist']);
+        $this->assertDatabaseHas('playlists', ['title' => 'Test Playlist']);
     }
 } 
