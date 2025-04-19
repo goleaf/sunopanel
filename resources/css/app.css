@@ -63,6 +63,7 @@
         margin-bottom: 1rem;
         border-radius: 0.5rem;
         box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        background-color: var(--b1, oklab(var(--b1)));
     }
     
     .table-compact-mobile td {
@@ -83,13 +84,64 @@
         font-weight: 600;
         margin-right: 1rem;
         text-align: left;
+        flex-shrink: 0;
+        min-width: 30%;
+        color: var(--bc, oklab(var(--bc)));
     }
     
     /* Stack buttons on mobile */
-    .table-compact-mobile .action-buttons {
-        flex-direction: column;
-        align-items: stretch;
+    .table-compact-mobile .action-buttons,
+    .table-compact-mobile td div.flex.items-center.space-x-1 {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        align-items: center;
         gap: 0.5rem;
+    }
+    
+    /* Handle images in mobile card view */
+    .table-compact-mobile td .flex.items-center {
+        justify-content: flex-end;
+    }
+    
+    /* Better space for image+text combinations */
+    .table-compact-mobile td .flex-shrink-0 {
+        margin-left: 0.5rem;
+        margin-right: 0;
+    }
+    
+    /* Table adaptive styles - transforming to cards on mobile */
+    .table-adaptive {
+        width: 100%;
+    }
+    
+    @media (max-width: 768px) {
+        .table-adaptive {
+            display: block;
+            border: none;
+            box-shadow: none;
+            background: transparent;
+        }
+        
+        .table-adaptive tbody {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
+        }
+        
+        .table-adaptive tr {
+            display: flex;
+            flex-direction: column;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 0.5rem;
+            overflow: hidden;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .table-adaptive tr:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
     }
 }
 
