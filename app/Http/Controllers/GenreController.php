@@ -61,7 +61,8 @@ final class GenreController extends Controller
     public function create(): View
     {
         $this->loggingService->logInfoMessage('Genre create form accessed');
-        return view('genres.form');
+        $genre = null;
+        return view('genres.form', compact('genre'));
     }
 
     /**
