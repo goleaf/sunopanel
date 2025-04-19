@@ -105,12 +105,19 @@ class TrackControllerTest extends TestCase
                           "Test Track 2|https://example.com/audio2.mp3|https://example.com/image2.jpg|Pop, Jazz"
         ];
         
-        // Act
+        // Act - First post to tracks.store which should redirect to bulk-upload
         $response = $this->post(route('tracks.store'), $bulkData);
         
+        // Assert the redirect
+        $response->assertRedirect();
+        $this->assertTrue(str_contains($response->headers->get('Location'), route('tracks.bulk-upload')));
+        
+        // Now post directly to the bulk-upload endpoint
+        $bulkResponse = $this->post(route('tracks.bulk-upload'), $bulkData);
+        
         // Assert
-        $response->assertRedirect(route('tracks.index'));
-        $response->assertSessionHas('success');
+        $bulkResponse->assertRedirect(route('tracks.index'));
+        $bulkResponse->assertSessionHas('success');
         
         // Check that the tracks were created
         $this->assertDatabaseHas('tracks', ['title' => 'Test Track 1']);
