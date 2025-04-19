@@ -278,72 +278,22 @@ final class Track extends Model
     }
 
     /**
-     * Get the track duration in seconds
+     * Get the duration in seconds 
      */
-    public function getDurationSecondsAttribute(): int
+    public function getDurationSecondsAttribute()
     {
-        if (empty($this->duration)) {
+        if (!$this->duration) {
             return 0;
         }
 
-        // Parse from format like "3:45"
+        // Parse duration in format MM:SS
         $parts = explode(':', $this->duration);
-        
         if (count($parts) === 2) {
             $minutes = (int)$parts[0];
             $seconds = (int)$parts[1];
             return ($minutes * 60) + $seconds;
         }
-        
+
         return 0;
-    }
-
-    /**
-     * Get the fields used for storing a track
-     * 
-     * @return array<string, mixed>
-     */
-    public function getStoreFields(): array
-    {
-        return [
-            'title' => $this->title,
-            'url' => $this->url,
-            'cover_image' => $this->cover_image,
-            'audio_url' => $this->audio_url,
-            'image_url' => $this->image_url,
-            'unique_id' => $this->unique_id,
-            'duration' => $this->duration,
-        ];
-    }
-
-    /**
-     * Get the fields used for updating a track
-     * 
-     * @return array<string, mixed>
-     */
-    public function getUpdateFields(): array
-    {
-        return [
-            'title' => $this->title,
-            'url' => $this->url, 
-            'cover_image' => $this->cover_image,
-            'audio_url' => $this->audio_url,
-            'image_url' => $this->image_url,
-            'duration' => $this->duration,
-        ];
-    }
-
-    /**
-     * Get fields for deletion logging
-     * 
-     * @return array<string, mixed>
-     */
-    public function getDeleteFields(): array
-    {
-        return [
-            'id' => $this->id,
-            'title' => $this->title,
-            'unique_id' => $this->unique_id,
-        ];
     }
 }
