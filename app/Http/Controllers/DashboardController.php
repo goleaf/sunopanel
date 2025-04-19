@@ -66,13 +66,32 @@ final class DashboardController extends Controller
         $genreCount = Genre::count();
         $playlistCount = Playlist::count();
         
-        Log::info("System stats - Tracks: {$trackCount}, Genres: {$genreCount}, Playlists: {$playlistCount}");
+        // Calculate total duration of all tracks - database agnostic approach
+        $totalSeconds = 0;
+        $tracks = Track::whereNotNull('duration')->where('duration', '!=', '')->get(['duration']);
+        
+        foreach ($tracks as $track) {
+            // Parse from format like "3:45"
+            $parts = explode(':', $track->duration);
+            if (count($parts) === 2) {
+                $minutes = (int)$parts[0];
+                $seconds = (int)$parts[1];
+                $totalSeconds += ($minutes * 60) + $seconds;
+            }
+        }
+        
+        // Format total seconds to MM:SS format
+        $minutes = floor($totalSeconds / 60);
+        $seconds = $totalSeconds % 60;
+        $totalDuration = sprintf('%d:%02d', $minutes, $seconds);
+        
+        Log::info("System stats - Tracks: {$trackCount}, Genres: {$genreCount}, Playlists: {$playlistCount}, Total Duration: {$totalDuration}");
         
         return [
             'tracksCount' => $trackCount,
             'genresCount' => $genreCount,
             'playlistsCount' => $playlistCount,
-            'totalDuration' => '0:00', // Add total duration calculation if needed
+            'totalDuration' => $totalDuration,
             'storage' => $storageUsage
         ];
     }

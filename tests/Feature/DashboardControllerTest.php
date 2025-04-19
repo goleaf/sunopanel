@@ -41,6 +41,7 @@ class DashboardControllerTest extends TestCase
         $response->assertSee('Total Tracks');
         $response->assertSee('Total Genres');
         $response->assertSee('Total Playlists');
+        $response->assertSee('Total Duration');
     }
     
     /**
@@ -60,7 +61,8 @@ class DashboardControllerTest extends TestCase
                     'tracks',
                     'genres',
                     'playlists',
-                    'storage'
+                    'storage',
+                    'totalDuration'
                 ]);
     }
 } 

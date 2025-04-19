@@ -150,80 +150,97 @@ final class TrackController extends Controller
     /**
      * Process bulk upload of tracks.
      */
-    public function processBulkUpload(BulkTrackRequest $request): RedirectResponse
+    public function processBulkUpload(Request $request): RedirectResponse
     {
-        Log::info('Bulk track upload initiated', ['lines_count' => substr_count($request->validated('bulk_tracks'), PHP_EOL) + 1]);
-
-        $bulkText = $request->validated('bulk_tracks');
-        $lines = explode(PHP_EOL, $bulkText);
-        $processedCount = 0;
-        $errors = [];
-
-        foreach ($lines as $index => $line) {
-            $line = trim($line);
-            if (empty($line)) continue;
-
-            try {
-                $parts = explode('|', $line);
-                if (count($parts) < 4) {
-                    $errors[] = "Line " . ($index + 1) . ": Invalid format - expected at least 4 parts separated by |";
-                    continue;
-                }
-
-                $title = trim($parts[0]);
-                $audioUrl = trim($parts[1]);
-                $imageUrl = trim($parts[2]);
-                $genresRaw = trim($parts[3]);
-                $duration = isset($parts[4]) ? trim($parts[4]) : '3:00';
-
-                // Skip if track with this title already exists
-                if (Track::where('title', $title)->exists()) {
-                    $errors[] = "Line " . ($index + 1) . ": Track '$title' already exists";
-                    continue;
-                }
-
-                // Create track
-                $track = Track::create([
-                    'title' => $title,
-                    'audio_url' => $audioUrl,
-                    'image_url' => $imageUrl,
-                    'unique_id' => Track::generateUniqueId($title),
-                    'duration' => $duration
-                ]);
-
-                // Sync genres
-                $track->syncGenres($genresRaw);
-
-                $processedCount++;
-                Log::info('Bulk track created', ['index' => $index, 'title' => $title, 'track_id' => $track->id]);
-            } catch (\Exception $e) {
-                $errors[] = "Line " . ($index + 1) . ": Error - " . $e->getMessage();
-                Log::error('Bulk track import error', [
-                    'line' => $line,
-                    'line_number' => $index + 1,
-                    'error' => $e->getMessage()
-                ]);
+        try {
+            // Get bulk tracks data from the request
+            $bulkTracks = $request->input('bulk_tracks');
+            
+            if (empty($bulkTracks)) {
+                throw new \Exception('No bulk tracks data provided');
             }
-        }
+            
+            Log::info('Bulk track upload initiated', ['lines_count' => substr_count($bulkTracks, PHP_EOL) + 1]);
 
-        Log::info('Bulk track upload completed', [
-            'processed' => $processedCount,
-            'errors' => count($errors)
-        ]);
+            $lines = explode(PHP_EOL, $bulkTracks);
+            $processedCount = 0;
+            $errors = [];
 
-        if ($processedCount > 0) {
-            $message = "$processedCount tracks imported successfully!";
-            if (count($errors) > 0) {
-                $message .= " There were " . count($errors) . " errors.";
+            foreach ($lines as $index => $line) {
+                $line = trim($line);
+                if (empty($line)) continue;
+
+                try {
+                    $parts = explode('|', $line);
+                    if (count($parts) < 4) {
+                        $errors[] = "Line " . ($index + 1) . ": Invalid format - expected at least 4 parts separated by |";
+                        continue;
+                    }
+
+                    $title = trim($parts[0]);
+                    $audioUrl = trim($parts[1]);
+                    $imageUrl = trim($parts[2]);
+                    $genresRaw = trim($parts[3]);
+                    $duration = isset($parts[4]) ? trim($parts[4]) : '3:00';
+
+                    // Skip if track with this title already exists
+                    if (Track::where('title', $title)->exists()) {
+                        $errors[] = "Line " . ($index + 1) . ": Track '$title' already exists";
+                        continue;
+                    }
+
+                    // Create track
+                    $track = Track::create([
+                        'title' => $title,
+                        'audio_url' => $audioUrl,
+                        'image_url' => $imageUrl,
+                        'unique_id' => Track::generateUniqueId($title),
+                        'duration' => $duration
+                    ]);
+
+                    // Sync genres
+                    $track->syncGenres($genresRaw);
+
+                    $processedCount++;
+                    Log::info('Bulk track created', ['index' => $index, 'title' => $title, 'track_id' => $track->id]);
+                } catch (\Exception $e) {
+                    $errors[] = "Line " . ($index + 1) . ": Error - " . $e->getMessage();
+                    Log::error('Bulk track import error', [
+                        'line' => $line,
+                        'line_number' => $index + 1,
+                        'error' => $e->getMessage()
+                    ]);
+                }
             }
-            return redirect()->route('tracks.index')
-                ->with('success', $message)
-                ->with('import_errors', $errors);
-        } else {
+
+            Log::info('Bulk track upload completed', [
+                'processed' => $processedCount,
+                'errors' => count($errors)
+            ]);
+
+            if ($processedCount > 0) {
+                $message = "$processedCount tracks imported successfully!";
+                if (count($errors) > 0) {
+                    $message .= " There were " . count($errors) . " errors.";
+                }
+                return redirect()->route('tracks.index')
+                    ->with('success', $message)
+                    ->with('import_errors', $errors);
+            } else {
+                return redirect()->back()
+                    ->withInput()
+                    ->with('error', 'No tracks were imported. Please check the errors.')
+                    ->with('import_errors', $errors);
+            }
+        } catch (\Exception $e) {
+            Log::error('Error processing bulk upload', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             return redirect()->back()
                 ->withInput()
-                ->with('error', 'No tracks were imported. Please check the errors.')
-                ->with('import_errors', $errors);
+                ->with('error', 'Error processing bulk upload: ' . $e->getMessage());
         }
     }
 

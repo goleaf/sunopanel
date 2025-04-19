@@ -26,15 +26,15 @@ final class TrackUpdateRequest extends FormRequest
     {
         return [
             'title' => [
-                'sometimes', 
+                'required', 
                 'string', 
                 'max:255', 
                 Rule::unique('tracks')->ignore($this->route('track'))
             ],
-            'audio_url' => ['sometimes', 'url'],
+            'audio_url' => ['required', 'url'],
             'image_url' => ['required', 'url'],
             'duration' => ['nullable', 'string', 'max:10'],
-            'genres' => ['nullable', 'string'],
+            'genres' => ['required', 'string'],
             'playlists' => ['nullable', 'array'],
             'playlists.*' => ['exists:playlists,id'],
         ];

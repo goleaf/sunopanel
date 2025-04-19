@@ -66,11 +66,23 @@ final class Genre extends Model
         $name = trim($name);
         Log::info("Finding or creating genre: {$name}");
         
-        // Special case for "bubblegum bass"
-        if (strcasecmp($name, 'bubblegum bass') === 0 || strcasecmp($name, 'bubblegum-bass') === 0) {
-            $formattedName = 'Bubblegum bass';
+        // Handle special cases
+        $specialCases = [
+            'bubblegum bass' => 'Bubblegum bass',
+            'bubblegum-bass' => 'Bubblegum bass',
+            'drum and bass' => 'Drum and bass', 
+            'drum & bass' => 'Drum and bass',
+            'dnb' => 'Drum and bass',
+            'symphonic metal' => 'Symphonic metal',
+            'hypnotic trance' => 'Hypnotic trance'
+        ];
+        
+        $lowercaseValue = strtolower($name);
+        
+        if (array_key_exists($lowercaseValue, $specialCases)) {
+            $formattedName = $specialCases[$lowercaseValue];
         } else {
-            $formattedName = ucfirst(strtolower($name));
+            $formattedName = ucwords(strtolower($name));
         }
         
         // First check if a genre with this name (case-insensitive) already exists
@@ -117,11 +129,24 @@ final class Genre extends Model
      */
     public function setNameAttribute(string $value): void
     {
-        // Special case for "bubblegum bass"
-        if (strcasecmp(trim($value), 'bubblegum bass') === 0 || strcasecmp(trim($value), 'bubblegum-bass') === 0) {
-            $this->attributes['name'] = 'Bubblegum bass';
+        // Handle special cases
+        $specialCases = [
+            'bubblegum bass' => 'Bubblegum bass',
+            'bubblegum-bass' => 'Bubblegum bass',
+            'drum and bass' => 'Drum and bass', 
+            'drum & bass' => 'Drum and bass',
+            'dnb' => 'Drum and bass',
+            'symphonic metal' => 'Symphonic metal',
+            'hypnotic trance' => 'Hypnotic trance'
+        ];
+        
+        $lowercaseValue = strtolower(trim($value));
+        
+        if (array_key_exists($lowercaseValue, $specialCases)) {
+            $this->attributes['name'] = $specialCases[$lowercaseValue];
         } else {
-            $this->attributes['name'] = ucfirst(strtolower(trim($value)));
+            // Use ucwords to capitalize the first letter of each word instead of just the first letter
+            $this->attributes['name'] = ucwords(strtolower(trim($value)));
         }
         
         $this->attributes['slug'] = Str::slug($this->attributes['name']);
