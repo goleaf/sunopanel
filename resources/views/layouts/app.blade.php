@@ -34,106 +34,97 @@
         })();
     </script>
 </head>
-<body class="font-sans antialiased min-h-screen bg-base-200/50"> {{-- Changed background for subtle contrast --}}
-    {{-- Using lg drawer variant for persistent sidebar on large screens --}}
-    <div class="drawer lg:drawer-open">
-        <input id="drawer-toggle" type="checkbox" class="drawer-toggle" />
-        <div class="drawer-content flex flex-col items-stretch">
-            <!-- Navbar -->
-            <div class="navbar bg-base-100 shadow-md sticky top-0 z-30">
-                {{-- Drawer Toggle (Mobile) --}}
-                <div class="flex-none lg:hidden">
-                    <label for="drawer-toggle" class="btn btn-square btn-ghost" aria-label="Open menu">
-                        <x-icon name="menu" class="inline-block w-5 h-5 stroke-current" />
-                    </label>
-                </div>
-                {{-- App Name / Logo --}}
-                <div class="flex-1 px-2 mx-2">
-                    <a href="{{ route('dashboard') }}" class="text-lg font-bold text-primary">
+<body class="font-sans antialiased min-h-screen bg-base-200/50">
+    <div class="min-h-screen flex flex-col">
+        <!-- Top Navigation Bar -->
+        <div class="bg-base-100 shadow-md sticky top-0 z-30">
+            <div class="navbar container mx-auto">
+                <!-- Logo and Brand -->
+                <div class="flex-1">
+                    <a href="{{ route('dashboard') }}" class="text-xl font-bold text-primary flex items-center">
+                        <svg class="w-7 h-7 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
                         {{ config('app.name', 'Sunopanel') }}
                     </a>
                 </div>
-                {{-- Navbar actions (Desktop) --}}
-                <div class="flex-none hidden lg:flex items-center gap-4">
-                    {{-- Theme Toggle --}}
-                    <x-theme-toggle />
+                
+                <!-- Desktop Navigation -->
+                <div class="hidden md:flex">
+                    <ul class="menu menu-horizontal px-1">
+                        <li><a href="{{ route('dashboard') }}" @class(['font-medium', 'active' => request()->routeIs('dashboard')])>
+                            <x-icon name="home" class="w-5 h-5" />
+                            Dashboard
+                        </a></li>
+                        <li><a href="{{ route('tracks.index') }}" @class(['font-medium', 'active' => request()->routeIs('tracks.*')])>
+                            <x-icon name="music-note" class="w-5 h-5" />
+                            Tracks
+                        </a></li>
+                        <li><a href="{{ route('genres.index') }}" @class(['font-medium', 'active' => request()->routeIs('genres.*')])>
+                            <x-icon name="tag" class="w-5 h-5" />
+                            Genres
+                        </a></li>
+                        <li><a href="{{ route('playlists.index') }}" @class(['font-medium', 'active' => request()->routeIs('playlists.*')])>
+                            <x-icon name="collection" class="w-5 h-5" />
+                            Playlists
+                        </a></li>
+                    </ul>
+                </div>
+                
+                <!-- Theme toggle and mobile menu button -->
+                <div class="flex-none gap-2">
+                    <x-theme-toggle class="btn btn-ghost btn-circle" />
+                    <div class="dropdown dropdown-end md:hidden">
+                        <label tabindex="0" class="btn btn-ghost btn-circle">
+                            <x-icon name="menu" class="h-6 w-6" />
+                        </label>
+                        <ul tabindex="0" class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52">
+                            <li><a href="{{ route('dashboard') }}" @class(['font-medium', 'active' => request()->routeIs('dashboard')])>
+                                <x-icon name="home" class="w-5 h-5" />
+                                Dashboard
+                            </a></li>
+                            <li><a href="{{ route('tracks.index') }}" @class(['font-medium', 'active' => request()->routeIs('tracks.*')])>
+                                <x-icon name="music-note" class="w-5 h-5" />
+                                Tracks
+                            </a></li>
+                            <li><a href="{{ route('genres.index') }}" @class(['font-medium', 'active' => request()->routeIs('genres.*')])>
+                                <x-icon name="tag" class="w-5 h-5" />
+                                Genres
+                            </a></li>
+                            <li><a href="{{ route('playlists.index') }}" @class(['font-medium', 'active' => request()->routeIs('playlists.*')])>
+                                <x-icon name="collection" class="w-5 h-5" />
+                                Playlists
+                            </a></li>
+                        </ul>
+                    </div>
                 </div>
             </div>
-
-            <!-- Page Content -->
-            {{-- Added consistent padding --}}
-            <main class="flex-grow p-6">
-                 {{-- Removed max-width-7xl mx-auto wrapper - let content decide max width --}}
-                 {{-- Removed duplicate session alerts, handled by notification component --}}
-                 @hasSection('content')
-                     @yield('content')
-                 @else
-                     {{ $slot ?? '' }}
-                 @endif
-            </main>
-
-            <!-- Footer -->
-            <footer class="footer footer-center p-4 bg-base-300 text-base-content mt-auto">
-                <aside>
-                    <p>Copyright © {{ date('Y') }} - All right reserved by {{ config('app.name', 'Sunopanel') }}</p>
-                </aside>
-            </footer>
         </div>
 
-        <!-- Drawer side menu -->
-        <aside class="drawer-side z-40">
-            <label for="drawer-toggle" aria-label="close sidebar" class="drawer-overlay"></label>
-            <div class="flex flex-col h-full">
-                {{-- Sidebar Header (Optional) --}}
-                <div class="h-16 flex items-center px-4 bg-base-100 border-b border-base-300 lg:hidden">
-                    <span class="text-lg font-bold text-primary">{{ config('app.name', 'Sunopanel') }}</span>
-                </div>
-                {{-- Sidebar Menu --}}
-                <ul class="menu p-4 w-64 min-h-full bg-base-100 text-base-content flex-grow">
-                     {{-- Dashboard Link --}}
-                    <li>
-                        <a href="{{ route('dashboard') }}" @class(['active' => request()->routeIs('dashboard')])>
-                            <x-icon name="home" class="h-5 w-5" />
-                            Dashboard
-                        </a>
-                    </li>
-                    {{-- Tracks Link --}}
-                    <li>
-                        <a href="{{ route('tracks.index') }}" @class(['active' => request()->routeIs('tracks.*')])>
-                            <x-icon name="music-note" class="h-5 w-5" />
-                            Tracks
-                        </a>
-                    </li>
-                    {{-- Genres Link --}}
-                    <li>
-                        <a href="{{ route('genres.index') }}" @class(['active' => request()->routeIs('genres.*')])>
-                             <x-icon name="tag" class="h-5 w-5" />
-                            Genres
-                        </a>
-                    </li>
-                    {{-- Playlists Link --}}
-                    <li>
-                        <a href="{{ route('playlists.index') }}" @class(['active' => request()->routeIs('playlists.*')])>
-                            <x-icon name="collection" class="h-5 w-5" />
-                            Playlists
-                        </a>
-                    </li>
-                    {{-- Theme Toggle (Mobile Sidebar Footer) --}}
-                    <li class="mt-auto lg:hidden">
-                         <x-theme-toggle text="Toggle Theme" />
-                    </li>
-                </ul>
-            </div>
-        </aside>
+        <!-- Page Content -->
+        <main class="flex-grow p-4 md:p-6">
+            @hasSection('content')
+                @yield('content')
+            @else
+                {{ $slot ?? '' }}
+            @endif
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer footer-center p-4 bg-base-300 text-base-content">
+            <aside>
+                <p>Copyright © {{ date('Y') }} - All right reserved by {{ config('app.name', 'Sunopanel') }}</p>
+            </aside>
+        </footer>
 
         {{-- Notification Component --}}
-        {{-- Positioned absolutely within body for better context --}}
-        <div class="absolute top-5 right-5 z-50">
+        <div class="fixed top-5 right-5 z-50">
             <x-notification id="main-notification" />
         </div>
     </div>
 
-    {{-- Moved flash message dispatching here --}}
+    {{-- Flash message dispatching --}}
     <script>
         document.addEventListener('alpine:init', () => {
             @if (session('success'))
