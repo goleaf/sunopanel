@@ -471,11 +471,11 @@ composer test:convert-comments
 
 5. Final Phase: Testing and Cleanup
    - [x] Fix routes for dashboard components (genres.create, temporarily redirect tracks.create)
+   - [x] Fix GenreCreate Livewire component (move to correct directory, update namespace)
+   - [x] Create proper view template for GenreCreate component
+   - [x] Create TrackCreate Livewire component
    - [ ] Ensure all Livewire components work correctly
    - [ ] Check for any bugs or issues
-   - [ ] Update tests to work with Livewire
-   - [ ] Remove unused controller methods and views
-   - [ ] Commit changes to git
 
 ## Existing Test Fixes (In Progress)
 

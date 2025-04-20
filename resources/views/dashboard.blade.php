@@ -52,7 +52,7 @@
         {{-- Quick Actions Section --}}
         <x-card title="Quick Actions">
             <div class="flex flex-col space-y-2">
-                <a href="{{ route('tracks.index') }}" class="btn btn-primary">Add New Track</a>
+                <a href="{{ route('tracks.create') }}" class="btn btn-primary">Add New Track</a>
                 <a href="{{ route('playlists.create') }}" class="btn btn-secondary">Create Playlist</a>
                 <a href="{{ route('genres.create') }}" class="btn btn-accent">Add Genre</a>
             </div>

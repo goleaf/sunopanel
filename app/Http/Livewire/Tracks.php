@@ -6,7 +6,6 @@ use Livewire\Component;
 use App\Models\Track;
 use App\Models\Genre;
 use App\Services\Track\TrackService;
-use Illuminate\Support\Facades\Auth;
 use Livewire\WithFileUploads;
 
 class Tracks extends Component
@@ -43,7 +42,7 @@ class Tracks extends Component
 
     private function getMockUser()
     {
-        return Auth::user() ?? new class {
+        return new class {
             public $id = 1;
             public function __get($key) {
                 if ($key === 'id') return 1;

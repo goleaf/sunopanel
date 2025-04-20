@@ -6,7 +6,6 @@ use Livewire\Component;
 use App\Models\Playlist;
 use App\Services\Playlist\PlaylistService;
 use App\Services\Logging\LoggingServiceInterface;
-use Illuminate\Support\Facades\Auth;
 
 class PlaylistShow extends Component
 {
@@ -32,7 +31,6 @@ class PlaylistShow extends Component
             $this->loggingService->logInfoMessage('PlaylistShow component mounted', [
                 'playlist_id' => $playlist->id,
                 'title' => $playlist->title,
-                'user_id' => Auth::id(),
             ]);
             
             $playlistWithDetails = $this->playlistService->getPlaylistWithTrackDetails($playlist);
@@ -46,7 +44,6 @@ class PlaylistShow extends Component
                 'playlist_id' => $playlist->id,
                 'error' => $e->getMessage(),
                 'trace' => substr($e->getTraceAsString(), 0, 500),
-                'user_id' => Auth::id(),
             ]);
             
             $this->playlist = $playlist;
@@ -82,7 +79,6 @@ class PlaylistShow extends Component
                 'playlist_id' => $this->playlist->id,
                 'track_count' => $count,
                 'track_ids' => $this->selectedTracks,
-                'user_id' => Auth::id(),
             ]);
             
             $this->playlistService->removeTracks($this->playlist, $this->selectedTracks);
@@ -104,7 +100,6 @@ class PlaylistShow extends Component
                 'track_ids' => $this->selectedTracks,
                 'error' => $e->getMessage(),
                 'trace' => substr($e->getTraceAsString(), 0, 500),
-                'user_id' => Auth::id(),
             ]);
             
             $this->dispatchBrowserEvent('alert', [
@@ -131,7 +126,6 @@ class PlaylistShow extends Component
             $this->loggingService->logInfoMessage('Removing track from playlist', [
                 'playlist_id' => $playlist->id,
                 'track_id' => $trackId,
-                'user_id' => Auth::id(),
             ]);
             
             $removed = $this->playlistService->removeTrack($playlist, $trackToRemove);
@@ -159,7 +153,6 @@ class PlaylistShow extends Component
                 'track_id' => $trackId,
                 'error' => $e->getMessage(),
                 'trace' => substr($e->getTraceAsString(), 0, 500),
-                'user_id' => Auth::id(),
             ]);
             
             $this->dispatchBrowserEvent('alert', [
@@ -208,7 +201,6 @@ class PlaylistShow extends Component
             $this->loggingService->logInfoMessage('Updating track positions in playlist', [
                 'playlist_id' => $this->playlist->id,
                 'track_positions' => $trackPositions,
-                'user_id' => Auth::id(),
             ]);
             
             $success = $this->playlistService->updateTrackPositions($this->playlist, $trackPositions);
@@ -234,7 +226,6 @@ class PlaylistShow extends Component
                 'playlist_id' => $this->playlist->id,
                 'error' => $e->getMessage(),
                 'trace' => substr($e->getTraceAsString(), 0, 500),
-                'user_id' => Auth::id(),
             ]);
             
             $this->dispatchBrowserEvent('alert', [
@@ -246,7 +237,7 @@ class PlaylistShow extends Component
 
     private function getMockUser()
     {
-        return Auth::user() ?? new class {
+        return new class {
             public $id = 1;
             public function __get($key) {
                 if ($key === 'id') return 1;

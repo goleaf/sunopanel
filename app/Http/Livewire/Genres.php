@@ -5,7 +5,6 @@ namespace App\Http\Livewire;
 use Livewire\Component;
 use App\Models\Genre;
 use App\Services\Genre\GenreService;
-use Illuminate\Support\Facades\Auth;
 
 class Genres extends Component
 {
@@ -33,7 +32,7 @@ class Genres extends Component
 
     private function getMockUser()
     {
-        return Auth::user() ?? new class {
+        return new class {
             public $id = 1;
             public function __get($key) {
                 if ($key === 'id') return 1;
@@ -91,7 +90,7 @@ class Genres extends Component
         }
     }
 
-    public function resetInput()
+    public function resetInputFields()
     {
         $this->name = '';
         $this->description = '';

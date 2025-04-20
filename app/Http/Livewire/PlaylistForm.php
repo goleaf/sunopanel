@@ -7,7 +7,6 @@ use App\Models\Playlist;
 use App\Models\Genre;
 use App\Services\Playlist\PlaylistService;
 use App\Services\Logging\LoggingServiceInterface;
-use Illuminate\Support\Facades\Auth;
 
 class PlaylistForm extends Component
 {
@@ -20,6 +19,7 @@ class PlaylistForm extends Component
     
     public $isEditing = false;
     public $genres = [];
+    public $playlist;
 
     protected $rules = [
         'title' => 'required|string|max:255',
@@ -43,6 +43,7 @@ class PlaylistForm extends Component
         $this->genres = Genre::orderBy('name')->get();
         
         if ($playlist) {
+            $this->playlist = $playlist;
             $this->playlistId = $playlist->id;
             $this->title = $playlist->title;
             $this->description = $playlist->description;
@@ -54,70 +55,21 @@ class PlaylistForm extends Component
             $this->loggingService->logInfoMessage('PlaylistForm loaded for editing', [
                 'playlist_id' => $this->playlistId,
                 'title' => $this->title,
-                'user_id' => Auth::id(),
             ]);
         } else {
-            $this->loggingService->logInfoMessage('PlaylistForm loaded for creation', [
-                'user_id' => Auth::id(),
-            ]);
+            $this->loggingService->logInfoMessage('PlaylistForm loaded for creation');
         }
     }
 
-    public function save()
+    private function getMockUser()
     {
-        $validatedData = $this->validate();
-        
-        try {
-            if ($this->isEditing) {
-                $playlist = Playlist::findOrFail($this->playlistId);
-                $this->loggingService->logInfoMessage('Updating playlist', [
-                    'playlist_id' => $this->playlistId,
-                    'title' => $this->title,
-                    'user_id' => Auth::id(),
-                ]);
-                
-                $playlist = $this->playlistService->updateFromArray($validatedData, $playlist);
-                
-                $this->dispatchBrowserEvent('alert', [
-                    'type' => 'success',
-                    'message' => "Playlist '{$playlist->title}' updated successfully."
-                ]);
-                
-                return redirect()->route('playlists.show', $playlist);
-            } else {
-                $this->loggingService->logInfoMessage('Creating new playlist', [
-                    'title' => $this->title,
-                    'user_id' => Auth::id(),
-                ]);
-                
-                $playlist = $this->playlistService->storeFromArray($validatedData, Auth::user());
-                
-                $this->dispatchBrowserEvent('alert', [
-                    'type' => 'success',
-                    'message' => "Playlist '{$playlist->title}' created successfully."
-                ]);
-                
-                return redirect()->route('playlists.add-tracks', $playlist);
+        return new class {
+            public $id = 1;
+            public function __get($key) {
+                if ($key === 'id') return 1;
+                return null;
             }
-        } catch (\Exception $e) {
-            $this->loggingService->logErrorMessage('Error in PlaylistForm save method', [
-                'error' => $e->getMessage(),
-                'trace' => substr($e->getTraceAsString(), 0, 500),
-                'is_editing' => $this->isEditing,
-                'playlist_id' => $this->playlistId,
-                'user_id' => Auth::id(),
-            ]);
-            
-            $this->dispatchBrowserEvent('alert', [
-                'type' => 'error',
-                'message' => 'Failed to save playlist: ' . $e->getMessage()
-            ]);
-        }
-    }
-
-    public function render()
-    {
-        return view('livewire.playlist-form');
+        };
     }
 
     public function store()
@@ -127,18 +79,9 @@ class PlaylistForm extends Component
         try {
             $this->loggingService->logInfoMessage('PlaylistForm: Storing new playlist', [
                 'data' => $validatedData,
-                'user_id' => Auth::id(),
             ]);
             
-            // Create a mock user for systems without authentication
-            $user = Auth::user() ?? new class {
-                public $id = 1;
-                public function __get($key) {
-                    if ($key === 'id') return 1;
-                    return null;
-                }
-            };
-            
+            $user = $this->getMockUser();
             $playlist = $this->playlistService->storeFromArray($validatedData, $user);
             
             $this->dispatchBrowserEvent('alert', [
@@ -151,7 +94,6 @@ class PlaylistForm extends Component
             $this->loggingService->logErrorMessage('Error in PlaylistForm store method', [
                 'error' => $e->getMessage(),
                 'trace' => substr($e->getTraceAsString(), 0, 500),
-                'user_id' => Auth::id(),
             ]);
             
             $this->dispatchBrowserEvent('alert', [
@@ -169,18 +111,9 @@ class PlaylistForm extends Component
             $this->loggingService->logInfoMessage('PlaylistForm: Updating playlist', [
                 'playlist_id' => $this->playlist->id,
                 'data' => $validatedData,
-                'user_id' => Auth::id(),
             ]);
             
-            // Create a mock user for systems without authentication
-            $user = Auth::user() ?? new class {
-                public $id = 1;
-                public function __get($key) {
-                    if ($key === 'id') return 1;
-                    return null;
-                }
-            };
-            
+            $user = $this->getMockUser();
             $this->playlistService->updateFromArray($this->playlist, $validatedData, $user);
             
             $this->dispatchBrowserEvent('alert', [
@@ -194,7 +127,6 @@ class PlaylistForm extends Component
                 'error' => $e->getMessage(),
                 'trace' => substr($e->getTraceAsString(), 0, 500),
                 'playlist_id' => $this->playlist->id,
-                'user_id' => Auth::id(),
             ]);
             
             $this->dispatchBrowserEvent('alert', [
@@ -202,5 +134,10 @@ class PlaylistForm extends Component
                 'message' => 'Failed to update playlist: ' . $e->getMessage()
             ]);
         }
+    }
+
+    public function render()
+    {
+        return view('livewire.playlist-form');
     }
 } 

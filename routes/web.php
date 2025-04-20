@@ -14,6 +14,7 @@ use App\Http\Livewire\PlaylistForm;
 use App\Http\Livewire\PlaylistShow;
 use App\Http\Livewire\PlaylistAddTracks;
 use App\Http\Livewire\GenreCreate;
+use App\Http\Livewire\TrackCreate;
 
 /*
 |--------------------------------------------------------------------------
@@ -32,6 +33,7 @@ Route::get('/dashboard', Dashboard::class)->name('dashboard');
 
 // Track routes
 Route::get('/tracks', Tracks::class)->name('tracks.index');
+Route::get('/tracks/create', TrackCreate::class)->name('tracks.create');
 Route::get('tracks/{id}/play', [TrackController::class, 'play'])->name('tracks.play');
 Route::post('tracks/bulk-upload', [TrackController::class, 'processBulkUpload'])->name('tracks.bulk-upload');
 
