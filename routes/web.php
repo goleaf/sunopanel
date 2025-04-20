@@ -13,6 +13,7 @@ use App\Http\Livewire\Playlists;
 use App\Http\Livewire\PlaylistForm;
 use App\Http\Livewire\PlaylistShow;
 use App\Http\Livewire\PlaylistAddTracks;
+use App\Http\Livewire\GenreCreate;
 
 /*
 |--------------------------------------------------------------------------
@@ -36,6 +37,7 @@ Route::post('tracks/bulk-upload', [TrackController::class, 'processBulkUpload'])
 
 // Genre routes
 Route::get('/genres', Genres::class)->middleware(['auth', 'verified'])->name('genres.index');
+Route::get('/genres/create', GenreCreate::class)->middleware(['auth', 'verified'])->name('genres.create');
 
 // Playlist routes
 Route::get('/playlists', Playlists::class)->middleware(['auth', 'verified'])->name('playlists.index');
