@@ -1,69 +1,71 @@
 @props([
     'type' => 'button',
-    'variant' => 'primary', // primary, secondary, success, warning, error, ghost, link
-    'size' => 'md', // xs, sm, md, lg
-    'icon' => null,
+    'href' => null,
+    'color' => 'primary',
+    'size' => 'md',
+    'icon' => false,
     'iconPosition' => 'left',
     'disabled' => false,
-    'outline' => false,
-    'square' => false,
-    'loading' => false,
     'fullWidth' => false,
+    'withIcon' => false,
 ])
 
 @php
-    $base = 'btn transition-all duration-200 ease-in-out focus:outline-none';
+    $baseClasses = 'inline-flex items-center justify-center font-medium rounded-md focus:outline-none transition-colors duration-150 ease-in-out';
     
-    $variants = [
-        'primary' => 'btn-primary',
-        'secondary' => 'btn-secondary',
-        'success' => 'btn-success',
-        'warning' => 'btn-warning',
-        'error' => 'btn-error',
-        'ghost' => 'btn-ghost',
-        'link' => 'btn-link',
-        'info' => 'btn-info',
-        'accent' => 'btn-accent',
-        'neutral' => 'btn-neutral',
-        'base' => 'hover:bg-base-200',
-    ];
+    $sizeClasses = [
+        'xs' => 'px-2 py-1 text-xs',
+        'sm' => 'px-3 py-1.5 text-sm',
+        'md' => 'px-4 py-2 text-sm',
+        'lg' => 'px-5 py-2.5 text-base',
+        'xl' => 'px-6 py-3 text-lg',
+    ][$size] ?? 'px-4 py-2 text-sm';
     
-    $sizes = [
-        'xs' => 'btn-xs',
-        'sm' => 'btn-sm',
-        'md' => 'btn-md',
-        'lg' => 'btn-lg',
-    ];
+    $colorClasses = match($color) {
+        'primary' => 'bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 border border-transparent',
+        'secondary' => 'bg-gray-100 text-gray-700 hover:bg-gray-200 focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 border border-transparent',
+        'success' => 'bg-green-600 text-white hover:bg-green-700 focus:ring-2 focus:ring-offset-2 focus:ring-green-500 border border-transparent',
+        'danger' => 'bg-red-600 text-white hover:bg-red-700 focus:ring-2 focus:ring-offset-2 focus:ring-red-500 border border-transparent',
+        'warning' => 'bg-yellow-500 text-white hover:bg-yellow-600 focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 border border-transparent',
+        'outline' => 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500',
+        'ghost' => 'text-gray-700 hover:bg-gray-100 focus:ring-2 focus:ring-gray-200 border border-transparent',
+        'link' => 'text-indigo-600 hover:text-indigo-900 underline p-0 border-none',
+        default => 'bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 border border-transparent',
+    };
     
-    $classes = implode(' ', [
-        $base,
-        $variants[$variant] ?? $variants['primary'],
-        $sizes[$size] ?? $sizes['md'],
-        $outline ? 'btn-outline' : '',
-        $square ? 'btn-square' : '',
-        $disabled || $loading ? 'btn-disabled' : '',
-        $fullWidth ? 'w-full' : '',
-    ]);
+    $iconClasses = $icon ? 'p-2' : null;
+    $disabledClasses = $disabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : '';
+    $fullWidthClasses = $fullWidth ? 'w-full' : '';
+    
+    $classes = trim("{$baseClasses} {$sizeClasses} {$colorClasses} {$iconClasses} {$disabledClasses} {$fullWidthClasses}");
 @endphp
 
-<button 
-    type="{{ $type }}"
-    {{ $attributes->merge(['class' => $classes]) }}
-    @disabled($disabled || $loading)
->
-    @if($loading)
-        <span class="loading loading-spinner"></span>
-    @endif
-    
-    @if($icon && $iconPosition === 'left' && !$loading)
-        <span class="mr-2">{!! $icon !!}</span>
-    @endif
-
-    <span class="{{ $square ? 'sr-only' : '' }}">
+@if ($href)
+    <a href="{{ $disabled ? '#' : $href }}" {{ $attributes->merge(['class' => $classes]) }}>
+        @if($withIcon && $iconPosition === 'left')
+            <svg class="w-5 h-5 mr-2 -ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+            </svg>
+        @endif
         {{ $slot }}
-    </span>
-
-    @if($icon && $iconPosition === 'right' && !$loading)
-        <span class="ml-2">{!! $icon !!}</span>
-    @endif
-</button>
+        @if($withIcon && $iconPosition === 'right')
+            <svg class="w-5 h-5 ml-2 -mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+            </svg>
+        @endif
+    </a>
+@else
+    <button type="{{ $type }}" {{ $attributes->merge(['class' => $classes]) }} @if($disabled) disabled @endif>
+        @if($withIcon && $iconPosition === 'left')
+            <svg class="w-5 h-5 mr-2 -ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+            </svg>
+        @endif
+        {{ $slot }}
+        @if($withIcon && $iconPosition === 'right')
+            <svg class="w-5 h-5 ml-2 -mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+            </svg>
+        @endif
+    </button>
+@endif

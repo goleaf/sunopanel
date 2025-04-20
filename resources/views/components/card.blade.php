@@ -1,25 +1,25 @@
 @props([
     'title' => null,
-    'subtitle' => null,
-    'image' => null,
-    'bordered' => true,
-    'compact' => false,
-    'class' => ''
+    'actions' => null,
+    'padding' => true,
 ])
 
-<div class="card {{ $bordered ? 'card-bordered' : '' }} {{ $compact ? 'card-compact' : '' }} bg-base-100 shadow-xl {{ $class }}">
-    @if($image)
-        <figure>{!! $image !!}</figure>
-    @endif
-    <div class="card-body">
-        @if($title)
-            <h2 class="card-title">{{ $title }}</h2>
-        @endif
-        @if($subtitle)
-            <p class="text-base-content/70">{{ $subtitle }}</p>
-        @endif
-        <div>
-            {{ $slot }}
+<div {{ $attributes->merge(['class' => 'bg-white shadow-md rounded-lg overflow-hidden']) }}>
+    @if($title || $actions)
+        <div class="flex flex-col sm:flex-row justify-between items-center px-6 py-4 border-b border-gray-200">
+            @if($title)
+                <h2 class="text-xl font-semibold text-gray-900">{{ $title }}</h2>
+            @endif
+            
+            @if($actions)
+                <div class="mt-4 sm:mt-0">
+                    {{ $actions }}
+                </div>
+            @endif
         </div>
+    @endif
+    
+    <div @class(['px-6 py-4' => $padding])>
+        {{ $slot }}
     </div>
 </div> 

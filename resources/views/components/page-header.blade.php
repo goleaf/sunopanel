@@ -1,21 +1,25 @@
-@props(['title'])
+@props([
+    'title',
+    'actions' => null,
+    'description' => null,
+])
 
 <div class="mb-6">
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between">
-        <x-heading :level="1" class="mb-2 md:mb-0">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <h1 class="text-2xl font-semibold text-gray-900">
             {{ $title }}
-        </x-heading>
+        </h1>
         
-        @if (isset($buttons))
-            <div class="flex space-x-2">
-                {{ $buttons }}
+        @if($actions)
+            <div class="mt-4 sm:mt-0 flex space-x-3">
+                {{ $actions }}
             </div>
         @endif
     </div>
     
-    @if (isset($description))
-        <div class="mt-2 text-gray-600">
+    @if($description)
+        <p class="mt-2 text-sm text-gray-600">
             {{ $description }}
-        </div>
+        </p>
     @endif
 </div> 

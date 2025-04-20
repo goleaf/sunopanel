@@ -467,6 +467,9 @@ class Genres extends Component
     {
         $this->resetInputFields();
         $this->editingGenreId = null;
+        
+        // Emit browser event to scroll to form and focus input field
+        $this->dispatchBrowserEvent('scroll-to-form', ['id' => 'name']);
     }
 
     /**
