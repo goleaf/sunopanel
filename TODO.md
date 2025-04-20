@@ -554,7 +554,7 @@ composer test:convert-comments
   - [x] Create test for PlaylistShow component
   - [x] Create test for PlaylistAddTracks component
   - [x] Create test for PlaylistForm component
-  - [ ] Create test for Playlists component
+  - [x] Create test for Playlists component
 - [ ] Implement proper testing utilities for Livewire components
 - [ ] Add integration tests for key user flows
 - [ ] Verify all components handle errors gracefully without LoggingService
