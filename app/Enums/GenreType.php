@@ -45,10 +45,15 @@ enum GenreType: string
 
     public static function tryFromName(string $name): ?self
     {
-        try {
-            return self::fromName($name);
-        } catch (\ValueError $e) {
-            return null;
+        $name = trim($name);
+        $formattedName = ucfirst(strtolower($name));
+
+        foreach (self::cases() as $case) {
+            if (strtolower($case->value) === strtolower($formattedName)) {
+                return $case;
+            }
         }
+
+        return null;
     }
 }

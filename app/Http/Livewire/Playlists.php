@@ -68,58 +68,43 @@ class Playlists extends Component
     {
         $this->validate(['playlistId' => 'exists:playlists,id'], [], ['playlistId' => $id]);
         
-        try {
-            $playlist = Playlist::findOrFail($id);
-            $playlistTitle = $playlist->title;
-            
-            $deleted = $this->playlistService->deletePlaylistAndDetachTracks($playlist);
+        $playlist = Playlist::findOrFail($id);
+        $playlistTitle = $playlist->title;
+        
+        $deleted = $this->playlistService->deletePlaylistAndDetachTracks($playlist);
 
-            if ($deleted) {
-                $this->dispatchBrowserEvent('alert', [
-                    'type' => 'success',
-                    'message' => "Playlist '{$playlistTitle}' deleted successfully."
-                ]);
-            } else {
-                $this->dispatchBrowserEvent('alert', [
-                    'type' => 'error',
-                    'message' => "Failed to delete playlist '{$playlistTitle}'."
-                ]);
-            }
-        } catch (\Exception $e) {
+        if ($deleted) {
+            $this->dispatchBrowserEvent('alert', [
+                'type' => 'success',
+                'message' => "Playlist '{$playlistTitle}' deleted successfully."
+            ]);
+        } else {
             $this->dispatchBrowserEvent('alert', [
                 'type' => 'error',
-                'message' => 'Failed to delete playlist: ' . $e->getMessage()
+                'message' => "Failed to delete playlist '{$playlistTitle}'."
             ]);
         }
     }
 
     public function render()
     {
-        try {
-            $playlists = Playlist::with(['genre', 'user'])
-                ->withCount('tracks')
-                ->when($this->search, function ($query) {
-                    return $query->where('title', 'like', '%' . $this->search . '%')
-                        ->orWhere('description', 'like', '%' . $this->search . '%');
-                })
-                ->when($this->genreFilter, function ($query) {
-                    return $query->where('genre_id', $this->genreFilter);
-                })
-                ->orderBy($this->sortField, $this->direction)
-                ->paginate($this->perPage);
+        $playlists = Playlist::with(['genre', 'user'])
+            ->withCount('tracks')
+            ->when($this->search, function ($query) {
+                return $query->where('title', 'like', '%' . $this->search . '%')
+                    ->orWhere('description', 'like', '%' . $this->search . '%');
+            })
+            ->when($this->genreFilter, function ($query) {
+                return $query->where('genre_id', $this->genreFilter);
+            })
+            ->orderBy($this->sortField, $this->direction)
+            ->paginate($this->perPage);
 
-            $genres = Genre::orderBy('name')->get();
+        $genres = Genre::orderBy('name')->get();
 
-            return view('livewire.playlists', [
-                'playlists' => $playlists,
-                'genres' => $genres,
-            ]);
-        } catch (\Exception $e) {
-            return view('livewire.playlists', [
-                'playlists' => collect(),
-                'genres' => collect(),
-                'error' => 'An error occurred while loading playlists.'
-            ]);
-        }
+        return view('livewire.playlists', [
+            'playlists' => $playlists,
+            'genres' => $genres,
+        ]);
     }
 } 

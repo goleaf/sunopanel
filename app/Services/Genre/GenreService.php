@@ -13,6 +13,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Collection;
 
 final readonly class GenreService
 {
@@ -241,44 +242,91 @@ final readonly class GenreService
         $genreId = $genre->id;
         $genreName = $genre->name;
 
-        try {
-            return DB::transaction(function () use ($genre) {
-                $trackCount = $genre->tracks()->count();
+        return DB::transaction(function () use ($genre) {
+            $trackCount = $genre->tracks()->count();
 
-                // Detach all tracks associated with this genre
-                if ($trackCount > 0) {
-                    $genre->tracks()->detach();
-                    Log::info('Detached tracks from genre before deletion', [
-                        'genre_id' => $genre->id,
-                        'name' => $genre->name,
-                        'detached_tracks' => $trackCount,
-                    ]);
-                }
+            // Detach all tracks associated with this genre
+            if ($trackCount > 0) {
+                $genre->tracks()->detach();
+                Log::info('Detached tracks from genre before deletion', [
+                    'genre_id' => $genre->id,
+                    'name' => $genre->name,
+                    'detached_tracks' => $trackCount,
+                ]);
+            }
 
-                // Now delete the genre
-                $deleted = $genre->delete();
+            // Now delete the genre
+            $deleted = $genre->delete();
 
-                if ($deleted) {
-                    Log::info('Genre deleted successfully after detaching tracks', [
-                        'genre_id' => $genre->id,
-                        'name' => $genre->name,
-                    ]);
-                } else {
-                    Log::warning('Failed to delete genre after detaching tracks', [
-                        'genre_id' => $genre->id,
-                        'name' => $genre->name,
-                    ]);
-                }
-                return (bool) $deleted;
-            });
-        } catch (\Throwable $e) {
-            Log::error('Error deleting genre and detaching tracks', [
-                'genre_id' => $genreId,
-                'name' => $genreName,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(), // Include stack trace for debugging
-            ]);
-            return false; // Indicate failure
-        }
+            if ($deleted) {
+                Log::info('Genre deleted successfully after detaching tracks', [
+                    'genre_id' => $genre->id,
+                    'name' => $genre->name,
+                ]);
+            } else {
+                Log::warning('Failed to delete genre after detaching tracks', [
+                    'genre_id' => $genre->id,
+                    'name' => $genre->name,
+                ]);
+            }
+            return (bool) $deleted;
+        });
+    }
+
+    /**
+     * Get all genres
+     *
+     * @return Collection
+     */
+    public function getAllGenres(): Collection
+    {
+        return Genre::orderBy('name')->get();
+    }
+    
+    /**
+     * Create a new genre
+     *
+     * @param array $data
+     * @param mixed $user
+     * @return Genre
+     */
+    public function createGenre(array $data, $user): Genre
+    {
+        return Genre::create([
+            'name' => $data['name'],
+            'description' => $data['description'] ?? null,
+        ]);
+    }
+
+    /**
+     * Update an existing genre
+     *
+     * @param int $id
+     * @param array $data
+     * @param mixed $user
+     * @return Genre
+     */
+    public function updateGenre(int $id, array $data, $user): Genre
+    {
+        $genre = Genre::findOrFail($id);
+        $genre->update([
+            'name' => $data['name'],
+            'description' => $data['description'] ?? null,
+        ]);
+        
+        return $genre;
+    }
+
+    /**
+     * Delete a genre
+     *
+     * @param int $id
+     * @param mixed $user
+     * @return bool
+     */
+    public function deleteGenre(int $id, $user): bool
+    {
+        $genre = Genre::findOrFail($id);
+        return $genre->delete();
     }
 }

@@ -5,6 +5,8 @@ namespace App\Http\Livewire;
 use App\Http\Requests\TrackUpdateRequest;
 use App\Models\Track;
 use App\Models\Genre;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -84,7 +86,7 @@ class TrackEdit extends Component
     {
         $this->validate();
 
-        try {
+        DB::transaction(function () {
             $this->track->update([
                 'title' => $this->title,
                 'artist' => $this->artist,
@@ -139,16 +141,38 @@ class TrackEdit extends Component
                 // If both are empty, detach all genres
                 $this->track->genres()->detach();
             }
-            
-            session()->flash('success', 'Track updated successfully!');
-            return redirect()->route('tracks.index');
-        } catch (\Exception $e) {
-            Log::error("Failed to update track: " . $e->getMessage(), [
-                'track_id' => $this->track->id
-            ]);
-            
-            session()->flash('error', 'Failed to update track: ' . $e->getMessage());
+        });
+        
+        session()->flash('success', 'Track updated successfully!');
+        return redirect()->route('tracks.index');
+    }
+    
+    /**
+     * Update an existing track from validated data.
+     */
+    protected function updateTrack(array $validated, Track $track): Track
+    {
+        // Update track fields
+        $track->update([
+            'title' => $validated['title'],
+            'audio_url' => $validated['audio_url'] ?? $track->audio_url,
+            'image_url' => $validated['image_url'] ?? $track->image_url,
+            'duration' => $validated['duration'] ?? $track->duration,
+            'artist' => $validated['artist'] ?? $track->artist,
+            'album' => $validated['album'] ?? $track->album,
+        ]);
+
+        // Sync genres if present in the validated data
+        if (array_key_exists('genre_ids', $validated)) {
+            $track->genres()->sync(Arr::wrap($validated['genre_ids'] ?? []));
         }
+
+        // Sync playlists if present in the validated data
+        if (array_key_exists('playlists', $validated)) {
+            $track->playlists()->sync(Arr::wrap($validated['playlists'] ?? []));
+        }
+
+        return $track->fresh(['genres', 'playlists']);
     }
     
     public function render()

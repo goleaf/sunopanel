@@ -152,6 +152,12 @@ Based on priority and dependencies, we'll tackle these tasks in the following or
   - [x] Implement asset versioning
 - [x] Optimize resources directory for Livewire and UI framework
 - [x] Determine if TestController and test-notification.blade.php are needed
+- [x] Move all code from Services to Livewire components
+  - [x] Migrated UserService to Livewire components (Users, UserForm, UserShow)
+  - [ ] Migrate TrackService to Livewire components
+  - [ ] Migrate PlaylistService to Livewire components
+  - [ ] Migrate GenreService to Livewire components
+  - [ ] Migrate NotificationService functionality to Livewire components or a trait
 
 ## Critical Fixes Needed
 - [x] Fix undefined variable $genres in playlists/add-tracks.blade.php view

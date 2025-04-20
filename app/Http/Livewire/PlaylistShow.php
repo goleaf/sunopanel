@@ -5,7 +5,9 @@ namespace App\Http\Livewire;
 use App\Http\Requests\PlaylistRemoveTrackRequest;
 use Livewire\Component;
 use App\Models\Playlist;
-use App\Services\Playlist\PlaylistService;
+use App\Models\Track;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class PlaylistShow extends Component
 {
@@ -16,8 +18,6 @@ class PlaylistShow extends Component
     public $selectedTracks = [];
     public $dragEnabled = false;
     
-    protected $playlistService;
-
     protected function rules()
     {
         return (new PlaylistRemoveTrackRequest())->rules();
@@ -28,25 +28,47 @@ class PlaylistShow extends Component
         return (new PlaylistRemoveTrackRequest())->messages();
     }
 
-    public function boot(PlaylistService $playlistService)
-    {
-        $this->playlistService = $playlistService;
-    }
-
     public function mount(Playlist $playlist)
     {
-        try {
-            $playlistWithDetails = $this->playlistService->getPlaylistWithTrackDetails($playlist);
-            
-            $this->playlist = $playlistWithDetails;
-            $this->tracks = $playlistWithDetails->tracks;
-            $this->totalDurationFormatted = $playlistWithDetails->total_duration_formatted;
-            $this->genreName = $playlistWithDetails->genre?->name ?? 'None';
-        } catch (\Exception $e) {
-            $this->playlist = $playlist;
-            $this->tracks = collect();
-            session()->flash('error', 'Failed to load playlist details: ' . $e->getMessage());
+        $this->loadPlaylistDetails($playlist);
+    }
+    
+    protected function loadPlaylistDetails(Playlist $playlist)
+    {
+        // Load the playlist with its tracks
+        $playlist->load(['tracks' => function($query) {
+            $query->orderBy('pivot.position', 'asc');
+        }, 'genre']);
+        
+        // Calculate total duration
+        $totalSeconds = 0;
+        foreach ($playlist->tracks as $track) {
+            if (is_numeric($track->duration)) {
+                $totalSeconds += (int) $track->duration;
+            } elseif (strpos($track->duration, ':') !== false) {
+                $parts = explode(':', $track->duration);
+                if (count($parts) === 2) {
+                    $totalSeconds += (int) $parts[0] * 60 + (int) $parts[1];
+                }
+            }
         }
+        
+        // Format total duration
+        $hours = floor($totalSeconds / 3600);
+        $minutes = floor(($totalSeconds % 3600) / 60);
+        $seconds = $totalSeconds % 60;
+        
+        if ($hours > 0) {
+            $totalDurationFormatted = sprintf('%d:%02d:%02d', $hours, $minutes, $seconds);
+        } else {
+            $totalDurationFormatted = sprintf('%d:%02d', $minutes, $seconds);
+        }
+        
+        // Set component properties
+        $this->playlist = $playlist;
+        $this->tracks = $playlist->tracks;
+        $this->totalDurationFormatted = $totalDurationFormatted;
+        $this->genreName = $playlist->genre?->name ?? 'None';
     }
 
     public function selectAll()
@@ -74,28 +96,42 @@ class PlaylistShow extends Component
             return;
         }
         
-        try {
-            $count = count($this->selectedTracks);
+        $count = count($this->selectedTracks);
+        $user = $this->getMockUser();
+        
+        DB::transaction(function () {
+            $this->playlist->tracks()->detach($this->selectedTracks);
             
-            $this->playlistService->removeTracks($this->playlist, $this->selectedTracks);
+            // After detaching, reorder the remaining tracks to keep positions consistent
+            $remainingTracks = $this->playlist->tracks()
+                ->orderBy('pivot.position')
+                ->get();
             
-            // Refresh playlist data
-            $playlistWithDetails = $this->playlistService->getPlaylistWithTrackDetails($this->playlist->fresh());
-            $this->playlist = $playlistWithDetails;
-            $this->tracks = $playlistWithDetails->tracks;
-            $this->totalDurationFormatted = $playlistWithDetails->total_duration_formatted;
-            $this->selectedTracks = []; // Clear selection
-            
-            $this->dispatchBrowserEvent('alert', [
-                'type' => 'success',
-                'message' => "{$count} track(s) removed from playlist successfully."
-            ]);
-        } catch (\Exception $e) {
-            $this->dispatchBrowserEvent('alert', [
-                'type' => 'error',
-                'message' => 'Error removing tracks: ' . $e->getMessage()
-            ]);
-        }
+            $position = 1;
+            foreach ($remainingTracks as $track) {
+                DB::table('playlist_track')
+                    ->where('playlist_id', $this->playlist->id)
+                    ->where('track_id', $track->id)
+                    ->update(['position' => $position]);
+                $position++;
+            }
+        });
+        
+        Log::info('Tracks removed from playlist', [
+            'playlist_id' => $this->playlist->id,
+            'track_ids' => $this->selectedTracks,
+            'user_id' => $user->id,
+            'count' => $count
+        ]);
+        
+        // Refresh playlist data
+        $this->loadPlaylistDetails($this->playlist->fresh());
+        $this->selectedTracks = []; // Clear selection
+        
+        $this->dispatchBrowserEvent('alert', [
+            'type' => 'success',
+            'message' => "{$count} track(s) removed from playlist successfully."
+        ]);
     }
 
     public function removeTrack($trackId)
@@ -105,43 +141,50 @@ class PlaylistShow extends Component
             'trackId' => 'exists:tracks,id',
         ], [], ['trackId' => $trackId]);
         
-        try {
-            $playlist = $this->playlist;
-            $trackToRemove = $playlist->tracks->firstWhere('id', $trackId);
-            
-            if (!$trackToRemove) {
-                $this->dispatchBrowserEvent('alert', [
-                    'type' => 'error',
-                    'message' => 'Track not found in this playlist.'
-                ]);
-                return;
-            }
-            
-            $removed = $this->playlistService->removeTrack($playlist, $trackToRemove);
-            
-            if ($removed) {
-                // Refresh playlist data
-                $playlistWithDetails = $this->playlistService->getPlaylistWithTrackDetails($playlist->fresh());
-                $this->playlist = $playlistWithDetails;
-                $this->tracks = $playlistWithDetails->tracks;
-                $this->totalDurationFormatted = $playlistWithDetails->total_duration_formatted;
-                
-                $this->dispatchBrowserEvent('alert', [
-                    'type' => 'success',
-                    'message' => "Track removed from playlist successfully."
-                ]);
-            } else {
-                $this->dispatchBrowserEvent('alert', [
-                    'type' => 'error',
-                    'message' => "Failed to remove track from playlist."
-                ]);
-            }
-        } catch (\Exception $e) {
+        $playlist = $this->playlist;
+        $trackToRemove = $playlist->tracks->firstWhere('id', $trackId);
+        $user = $this->getMockUser();
+        
+        if (!$trackToRemove) {
             $this->dispatchBrowserEvent('alert', [
                 'type' => 'error',
-                'message' => 'Error removing track: ' . $e->getMessage()
+                'message' => 'Track not found in this playlist.'
             ]);
+            return;
         }
+        
+        DB::transaction(function () use ($trackId) {
+            // Detach the track
+            $this->playlist->tracks()->detach($trackId);
+            
+            // Reorder remaining tracks
+            $remainingTracks = $this->playlist->tracks()
+                ->orderBy('pivot.position')
+                ->get();
+            
+            $position = 1;
+            foreach ($remainingTracks as $track) {
+                DB::table('playlist_track')
+                    ->where('playlist_id', $this->playlist->id)
+                    ->where('track_id', $track->id)
+                    ->update(['position' => $position]);
+                $position++;
+            }
+        });
+        
+        Log::info('Track removed from playlist', [
+            'playlist_id' => $this->playlist->id,
+            'track_id' => $trackId,
+            'user_id' => $user->id
+        ]);
+        
+        // Refresh playlist data
+        $this->loadPlaylistDetails($this->playlist->fresh());
+        
+        $this->dispatchBrowserEvent('alert', [
+            'type' => 'success',
+            'message' => "Track removed from playlist successfully."
+        ]);
     }
 
     public function play($trackId)
@@ -177,42 +220,35 @@ class PlaylistShow extends Component
             ], [], ['trackId' => $trackId]);
         }
         
-        try {
-            // Prepare the positions array
-            $trackPositions = [];
+        $user = $this->getMockUser();
+        
+        DB::transaction(function () use ($orderedTracks) {
+            $playlist = $this->playlist;
+            
+            // Update each track position
             foreach ($orderedTracks as $index => $trackId) {
-                $trackPositions[] = [
-                    'id' => $trackId,
-                    'position' => $index + 1, // 1-based position
-                ];
+                DB::table('playlist_track')
+                    ->where('playlist_id', $playlist->id)
+                    ->where('track_id', $trackId)
+                    ->update(['position' => $index + 1]); // 1-based position
             }
-            
-            $success = $this->playlistService->updateTrackPositions($this->playlist, $trackPositions);
-            
-            if ($success) {
-                // Refresh playlist data
-                $playlistWithDetails = $this->playlistService->getPlaylistWithTrackDetails($this->playlist->fresh());
-                $this->playlist = $playlistWithDetails;
-                $this->tracks = $playlistWithDetails->tracks;
-                
-                $this->dispatchBrowserEvent('alert', [
-                    'type' => 'success',
-                    'message' => 'Track order updated successfully.'
-                ]);
-            } else {
-                $this->dispatchBrowserEvent('alert', [
-                    'type' => 'error',
-                    'message' => 'Failed to update track order.'
-                ]);
-            }
-        } catch (\Exception $e) {
-            $this->dispatchBrowserEvent('alert', [
-                'type' => 'error',
-                'message' => 'Error updating track order: ' . $e->getMessage()
-            ]);
-        }
+        });
+        
+        Log::info('Track order updated', [
+            'playlist_id' => $this->playlist->id,
+            'track_count' => count($orderedTracks),
+            'user_id' => $user->id
+        ]);
+        
+        // Refresh playlist data
+        $this->loadPlaylistDetails($this->playlist->fresh());
+        
+        $this->dispatchBrowserEvent('alert', [
+            'type' => 'success',
+            'message' => 'Track order updated successfully.'
+        ]);
     }
-
+    
     private function getMockUser()
     {
         return new class {
@@ -223,7 +259,7 @@ class PlaylistShow extends Component
             }
         };
     }
-
+    
     public function render()
     {
         return view('livewire.playlist-show');

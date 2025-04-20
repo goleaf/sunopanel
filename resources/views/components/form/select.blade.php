@@ -11,7 +11,12 @@
 
 <div class="{{ $wrapperClass }}" x-data="{ open: false, search: '' }">
     @if($label)
-        <x-form.label :for="$name" :value="$label" :required="$required" />
+        <label for="{{ $name }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            {{ $label }}
+            @if($required)
+                <span class="text-red-500">*</span>
+            @endif
+        </label>
     @endif
     
     <div class="relative mt-1">

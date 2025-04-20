@@ -135,43 +135,33 @@ final readonly class PlaylistService
         $playlistId = $playlist->id;
         $playlistTitle = $playlist->title;
 
-        try {
-            return DB::transaction(function () use ($playlist) {
-                // Detach tracks
-                $detachedCount = $playlist->tracks()->detach();
-                Log::info('Tracks detached from playlist before deletion', [
-                    'playlist_id' => $playlist->id,
-                    'detached_count' => $detachedCount,
-                ]);
-
-                // Delete cover image if exists
-                if ($playlist->cover_path) {
-                    Storage::disk('public')->delete($playlist->cover_path);
-                    Log::info('Playlist cover deleted', [
-                        'playlist_id' => $playlist->id,
-                        'cover_path' => $playlist->cover_path,
-                    ]);
-                }
-
-                // Delete the playlist
-                $deleted = $playlist->delete();
-
-                if ($deleted) {
-                    Log::info('Playlist deleted successfully', ['playlist_id' => $playlist->id, 'title' => $playlist->title]);
-                } else {
-                    Log::warning('Failed to delete playlist model', ['playlist_id' => $playlist->id]);
-                }
-                return (bool) $deleted;
-            });
-        } catch (\Throwable $e) {
-            Log::error('Error deleting playlist and detaching tracks', [
-                'playlist_id' => $playlistId,
-                'title' => $playlistTitle,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
+        return DB::transaction(function () use ($playlist) {
+            // Detach tracks
+            $detachedCount = $playlist->tracks()->detach();
+            Log::info('Tracks detached from playlist before deletion', [
+                'playlist_id' => $playlist->id,
+                'detached_count' => $detachedCount,
             ]);
-            return false;
-        }
+
+            // Delete cover image if exists
+            if ($playlist->cover_path) {
+                Storage::disk('public')->delete($playlist->cover_path);
+                Log::info('Playlist cover deleted', [
+                    'playlist_id' => $playlist->id,
+                    'cover_path' => $playlist->cover_path,
+                ]);
+            }
+
+            // Delete the playlist
+            $deleted = $playlist->delete();
+
+            if ($deleted) {
+                Log::info('Playlist deleted successfully', ['playlist_id' => $playlist->id, 'title' => $playlist->title]);
+            } else {
+                Log::warning('Failed to delete playlist model', ['playlist_id' => $playlist->id]);
+            }
+            return (bool) $deleted;
+        });
     }
 
     /**
@@ -465,39 +455,27 @@ final readonly class PlaylistService
      */
     public function updateTrackPositions(Playlist $playlist, array $trackPositions): bool
     {
-        try {
-            DB::beginTransaction();
-            
-            foreach ($trackPositions as $trackPosition) {
-                if (isset($trackPosition['id']) && isset($trackPosition['position'])) {
-                    $trackId = $trackPosition['id'];
-                    $position = $trackPosition['position'];
+        DB::beginTransaction();
+        
+        foreach ($trackPositions as $trackPosition) {
+            if (isset($trackPosition['id']) && isset($trackPosition['position'])) {
+                $trackId = $trackPosition['id'];
+                $position = $trackPosition['position'];
+                
+                // Check if the track exists in the playlist
+                if ($playlist->tracks()->where('track_id', $trackId)->exists()) {
+                    $playlist->tracks()->updateExistingPivot($trackId, ['position' => $position]);
                     
-                    // Check if the track exists in the playlist
-                    if ($playlist->tracks()->where('track_id', $trackId)->exists()) {
-                        $playlist->tracks()->updateExistingPivot($trackId, ['position' => $position]);
-                        
-                        Log::info('Track position updated in playlist', [
-                            'playlist_id' => $playlist->id,
-                            'track_id' => $trackId,
-                            'position' => $position,
-                        ]);
-                    }
+                    Log::info('Track position updated in playlist', [
+                        'playlist_id' => $playlist->id,
+                        'track_id' => $trackId,
+                        'position' => $position,
+                    ]);
                 }
             }
-            
-            DB::commit();
-            return true;
-        } catch (\Exception $e) {
-            DB::rollBack();
-            
-            Log::error('Error updating track positions in playlist', [
-                'playlist_id' => $playlist->id,
-                'error' => $e->getMessage(),
-                'trace' => substr($e->getTraceAsString(), 0, 500),
-            ]);
-            
-            return false;
         }
+        
+        DB::commit();
+        return true;
     }
 }

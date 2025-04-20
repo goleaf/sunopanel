@@ -74,7 +74,7 @@
                                         Genres
                                     </label>
                                     <div class="mt-2 space-y-2">
-                                        @foreach($genres as $genre)
+                                        @foreach($allGenres as $genre)
                                             <label class="inline-flex items-center mr-3">
                                                 <input type="checkbox" wire:model="selectedGenres" value="{{ $genre->id }}" 
                                                     class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">

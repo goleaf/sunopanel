@@ -27,28 +27,19 @@ class TrackShow extends Component
 
     public function delete(): void
     {
-        try {
-            DB::beginTransaction();
-            
-            $trackName = $this->track->title;
-            $trackId = $this->track->id;
-            
-            $this->track->delete();
-            
-            Log::info('Track deleted', ['track_id' => $trackId, 'track_name' => $trackName]);
-            
-            DB::commit();
-            
-            session()->flash('message', "Track '{$trackName}' has been deleted.");
-            $this->redirect(route('tracks.index'));
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Failed to delete track', [
-                'track_id' => $this->track->id,
-                'error' => $e->getMessage()
-            ]);
-            session()->flash('error', 'Failed to delete track: ' . $e->getMessage());
-        }
+        DB::beginTransaction();
+        
+        $trackName = $this->track->title;
+        $trackId = $this->track->id;
+        
+        $this->track->delete();
+        
+        Log::info('Track deleted', ['track_id' => $trackId, 'track_name' => $trackName]);
+        
+        DB::commit();
+        
+        session()->flash('message', "Track '{$trackName}' has been deleted.");
+        $this->redirect(route('tracks.index'));
     }
 
     public function toggleDeleteModal(): void

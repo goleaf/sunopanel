@@ -8,7 +8,8 @@ use Livewire\WithPagination;
 use App\Models\Playlist;
 use App\Models\Track;
 use App\Models\Genre;
-use App\Services\Playlist\PlaylistService;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class PlaylistAddTracks extends Component
 {
@@ -19,8 +20,6 @@ class PlaylistAddTracks extends Component
     public $genreFilter = '';
     public $selectedTracks = [];
     public $playlistTrackIds = [];
-    
-    protected $playlistService;
     
     protected $queryString = [
         'search' => ['except' => ''],
@@ -48,11 +47,6 @@ class PlaylistAddTracks extends Component
             'selectedTracks.required' => 'Please select at least one track.',
             'selectedTracks.*.exists' => 'One or more selected tracks do not exist.',
         ];
-    }
-
-    public function boot(PlaylistService $playlistService)
-    {
-        $this->playlistService = $playlistService;
     }
 
     public function mount(Playlist $playlist)
@@ -106,27 +100,48 @@ class PlaylistAddTracks extends Component
             return;
         }
 
-        try {
-            $count = $this->playlistService->addTracks($this->playlist, $this->selectedTracks);
-            
-            if ($count > 0) {
-                $this->loadPlaylistTrackIds(); // Refresh the list of tracks in playlist
-                $this->selectedTracks = []; // Clear selection
+        $user = $this->getMockUser();
+        $tracksToAdd = array_diff($this->selectedTracks, $this->playlistTrackIds);
+        $count = count($tracksToAdd);
+        
+        if ($count > 0) {
+            DB::transaction(function () use ($tracksToAdd) {
+                // Get the next position value
+                $maxPosition = DB::table('playlist_track')
+                    ->where('playlist_id', $this->playlist->id)
+                    ->max('position') ?? 0;
                 
-                $this->dispatchBrowserEvent('alert', [
-                    'type' => 'success',
-                    'message' => "{$count} track(s) added to playlist '{$this->playlist->title}'."
-                ]);
-            } else {
-                $this->dispatchBrowserEvent('alert', [
-                    'type' => 'info',
-                    'message' => 'No new tracks were added. They may already be in the playlist.'
-                ]);
-            }
-        } catch (\Exception $e) {
+                $position = $maxPosition + 1;
+                
+                // Add each track with its position
+                foreach ($tracksToAdd as $trackId) {
+                    DB::table('playlist_track')->insert([
+                        'playlist_id' => $this->playlist->id,
+                        'track_id' => $trackId,
+                        'position' => $position++,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                }
+            });
+            
+            Log::info('Tracks added to playlist', [
+                'playlist_id' => $this->playlist->id,
+                'track_count' => $count,
+                'user_id' => $user->id,
+            ]);
+            
+            $this->loadPlaylistTrackIds(); // Refresh the list of tracks in playlist
+            $this->selectedTracks = []; // Clear selection
+            
             $this->dispatchBrowserEvent('alert', [
-                'type' => 'error',
-                'message' => 'An error occurred while adding tracks: ' . $e->getMessage()
+                'type' => 'success',
+                'message' => "{$count} track(s) added to playlist '{$this->playlist->title}'."
+            ]);
+        } else {
+            $this->dispatchBrowserEvent('alert', [
+                'type' => 'info',
+                'message' => 'No new tracks were added. They may already be in the playlist.'
             ]);
         }
     }
@@ -169,19 +184,48 @@ class PlaylistAddTracks extends Component
     {
         $this->validate();
         
-        try {
-            $user = $this->getMockUser();
-            $selectedTracks = array_filter($this->selectedTracks, fn($selected) => $selected);
+        $user = $this->getMockUser();
+        $selectedTracks = array_filter($this->selectedTracks, fn($selected) => $selected);
+        
+        if (empty($selectedTracks)) {
+            $this->dispatchBrowserEvent('alert', [
+                'type' => 'warning',
+                'message' => 'No tracks selected. Please select at least one track to add.'
+            ]);
+            return;
+        }
+        
+        $trackIds = array_keys($selectedTracks);
+        
+        // Filter out tracks that are already in the playlist
+        $newTrackIds = array_diff($trackIds, $this->playlistTrackIds);
+        
+        if (count($newTrackIds) > 0) {
+            DB::transaction(function () use ($newTrackIds) {
+                // Get the next position
+                $maxPosition = DB::table('playlist_track')
+                    ->where('playlist_id', $this->playlist->id)
+                    ->max('position') ?? 0;
+                
+                $position = $maxPosition + 1;
+                
+                // Add each track with incremented position
+                foreach ($newTrackIds as $trackId) {
+                    DB::table('playlist_track')->insert([
+                        'playlist_id' => $this->playlist->id,
+                        'track_id' => $trackId,
+                        'position' => $position++,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                }
+            });
             
-            if (empty($selectedTracks)) {
-                $this->dispatchBrowserEvent('alert', [
-                    'type' => 'warning',
-                    'message' => 'No tracks selected. Please select at least one track to add.'
-                ]);
-                return;
-            }
-            
-            $this->playlistService->addTracksByIds($this->playlist, array_keys($selectedTracks), $user);
+            Log::info('Selected tracks added to playlist', [
+                'playlist_id' => $this->playlist->id,
+                'track_count' => count($newTrackIds),
+                'user_id' => $user->id,
+            ]);
             
             $this->loadPlaylistTrackIds();
             $this->selectedTracks = [];
@@ -190,10 +234,10 @@ class PlaylistAddTracks extends Component
                 'type' => 'success', 
                 'message' => 'Selected tracks added to playlist!'
             ]);
-        } catch (\Exception $e) {
+        } else {
             $this->dispatchBrowserEvent('alert', [
-                'type' => 'error',
-                'message' => 'Failed to add tracks: ' . $e->getMessage()
+                'type' => 'info', 
+                'message' => 'All selected tracks are already in the playlist.'
             ]);
         }
     }

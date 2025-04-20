@@ -5,6 +5,8 @@ namespace App\Http\Livewire;
 use App\Http\Requests\TrackStoreRequest;
 use App\Models\Genre;
 use App\Models\Track;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -60,7 +62,7 @@ class TrackCreate extends Component
             'imageFile' => 'nullable|file|image|max:5000',
         ]));
         
-        try {
+        DB::transaction(function () {
             // Generate a safe filename for audio
             $audioOriginalName = $this->audioFile->getClientOriginalName();
             $audioExtension = $this->audioFile->getClientOriginalExtension();
@@ -78,6 +80,7 @@ class TrackCreate extends Component
             $track->duration = $this->duration;
             $track->file_path = $audioPath;
             $track->audio_url = Storage::url($audioPath);
+            $track->unique_id = Track::generateUniqueId($this->title);
             
             // Handle image upload if provided
             if ($this->imageFile) {
@@ -94,7 +97,7 @@ class TrackCreate extends Component
             
             // Attach genres if selected
             if (!empty($this->selectedGenres)) {
-                $track->genres()->attach($this->selectedGenres);
+                $track->genres()->sync($this->selectedGenres);
             }
             
             Log::info("Track created successfully", [
@@ -104,15 +107,38 @@ class TrackCreate extends Component
             ]);
             
             session()->flash('success', 'Track added successfully!');
-            return redirect()->route('tracks.index');
-        } catch (\Exception $e) {
-            Log::error("Failed to create track", [
-                'error' => $e->getMessage(),
-                'user_id' => auth()->id() ?? 'guest'
-            ]);
-            
-            session()->flash('error', 'Failed to add track: ' . $e->getMessage());
+        });
+        
+        return redirect()->route('tracks.index');
+    }
+    
+    /**
+     * Store a new track from validated data.
+     */
+    protected function storeTrack(array $validated): Track
+    {
+        // Create track
+        $track = Track::create([
+            'title' => $validated['title'],
+            'audio_url' => $validated['audio_url'],
+            'image_url' => $validated['image_url'] ?? null,
+            'duration' => $validated['duration'] ?? null,
+            'artist' => $validated['artist'] ?? null,
+            'album' => $validated['album'] ?? null,
+            'unique_id' => Track::generateUniqueId($validated['title']),
+        ]);
+
+        // Sync genres
+        if (isset($validated['genre_ids'])) {
+            $track->genres()->sync(Arr::wrap($validated['genre_ids']));
         }
+
+        // Attach playlists
+        if (isset($validated['playlists'])) {
+            $track->playlists()->attach(Arr::wrap($validated['playlists']));
+        }
+
+        return $track;
     }
     
     public function save()
