@@ -469,6 +469,14 @@ class Genres extends Component
         $this->editingGenreId = null;
     }
 
+    /**
+     * Alias for resetInputFields to maintain compatibility with template
+     */
+    public function resetInput()
+    {
+        $this->resetInputFields();
+    }
+
     public function render()
     {
         $query = Genre::query()->withCount('tracks');

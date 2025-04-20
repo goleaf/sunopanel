@@ -23,7 +23,11 @@ final class Playlist extends Model
         'title',
         'description',
         'cover_image',
+        'cover_path',
         'genre_id',
+        'user_id',
+        'is_public',
+        'slug',
     ];
 
     /**
