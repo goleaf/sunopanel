@@ -422,16 +422,17 @@ composer test:convert-comments
 - [ ] Complete Livewire component implementation for remaining features:
   - [ ] Create Livewire components for Playlists:
     - [x] Create `app/Http/Livewire/Playlists.php` for index functionality
-    - [ ] Create `app/Http/Livewire/PlaylistForm.php` for create/edit functionality
+    - [x] Create `app/Http/Livewire/PlaylistForm.php` for create/edit functionality
     - [ ] Create `app/Http/Livewire/PlaylistShow.php` for show functionality
     - [ ] Create `app/Http/Livewire/PlaylistAddTracks.php` for adding tracks functionality
   - [ ] Create corresponding Blade views:
     - [x] Create `resources/views/livewire/playlists.blade.php`
-    - [ ] Create `resources/views/livewire/playlist-form.blade.php`
+    - [x] Create `resources/views/livewire/playlist-form.blade.php`
     - [ ] Create `resources/views/livewire/playlist-show.blade.php`
     - [ ] Create `resources/views/livewire/playlist-add-tracks.blade.php`
 - [ ] Update routes in `routes/web.php` to use Livewire components:
   - [x] Replace playlist index route with Livewire component
+  - [x] Replace playlist create/edit routes with Livewire component
   - [ ] Replace other playlist routes with their Livewire counterparts
 - [ ] Update cross-references in existing Livewire components
 - [ ] Ensure all UI interactions (search, sort, pagination) are handled by Livewire
@@ -448,9 +449,10 @@ composer test:convert-comments
    - [ ] Test functionality
 
 2. Second Phase: Create Playlist Form (Create/Edit) Livewire Component
-   - [ ] Create `app/Http/Livewire/PlaylistForm.php` component
-   - [ ] Create `resources/views/livewire/playlist-form.blade.php` view
-   - [ ] Update routes in `routes/web.php`
+   - [x] Create `app/Http/Livewire/PlaylistForm.php` component
+   - [x] Create `resources/views/livewire/playlist-form.blade.php` view
+   - [x] Update routes in `routes/web.php`
+   - [x] Add support methods to PlaylistService for array-based operations
    - [ ] Test functionality
 
 3. Third Phase: Create Playlist Show Livewire Component

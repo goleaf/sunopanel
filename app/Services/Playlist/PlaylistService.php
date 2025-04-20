@@ -411,4 +411,52 @@ final readonly class PlaylistService
 
         return (bool) $detached;
     }
+
+    /**
+     * Store a new playlist from a validated data array.
+     */
+    public function storeFromArray(array $validatedData, User $user): Playlist
+    {
+        // Create the playlist using validated data
+        $playlist = Playlist::create([
+            'title' => $validatedData['title'],
+            'description' => $validatedData['description'] ?? null,
+            'genre_id' => $validatedData['genre_id'] ?? null,
+            'user_id' => $user->id, // Associate with the authenticated user
+            'cover_image' => $validatedData['cover_image'] ?? null,
+            'is_public' => $validatedData['is_public'] ?? true,
+        ]);
+
+        Log::info('Playlist created from array', [
+            'playlist_id' => $playlist->id,
+            'title' => $playlist->title,
+            'user_id' => $user->id,
+        ]);
+
+        // Note: Tracks are added separately via addTracks/storeTracks
+        return $playlist;
+    }
+
+    /**
+     * Update an existing playlist from a validated data array.
+     */
+    public function updateFromArray(array $validatedData, Playlist $playlist): Playlist
+    {
+        $updateData = [
+            'title' => $validatedData['title'],
+            'description' => $validatedData['description'] ?? null,
+            'genre_id' => $validatedData['genre_id'] ?? null,
+            'cover_image' => $validatedData['cover_image'] ?? $playlist->cover_image,
+            'is_public' => $validatedData['is_public'] ?? $playlist->is_public,
+        ];
+
+        $playlist->update($updateData);
+
+        Log::info('Playlist updated from array', [
+            'playlist_id' => $playlist->id,
+            'title' => $playlist->title,
+        ]);
+
+        return $playlist->fresh(); // Return fresh model
+    }
 }
