@@ -484,3 +484,53 @@ composer test:convert-comments
 - [ ] Add authentication to `tests/Feature/PlaylistRequestTest.php`.
 - [ ] Verify all tests pass after authentication fixes.
 - [ ] Update tests to work with new Livewire components.
+
+# Playlist Management Enhancement Tasks
+
+## Multiple Track Selection and Removal
+- [x] Implement PlaylistShow Livewire component with selectedTracks property
+- [x] Add methods for selecting and deselecting all tracks
+- [x] Implement removeSelectedTracks method in the component
+- [x] Update playlist-show.blade.php view with checkboxes and batch actions
+- [ ] Update PlaylistService to handle multiple track removal efficiently
+- [ ] Test functionality in browser
+- [ ] Add batch removal to playlist-add-tracks component as well (if needed)
+- [ ] Ensure proper error handling and user feedback
+
+## Other Improvements
+- [ ] Consider adding drag-and-drop reordering of tracks in playlist
+- [ ] Add playlist sharing functionality
+- [ ] Implement playlist export options (CSV, PDF, etc.)
+
+# File Cleanup Status
+
+## Removed Unused Files
+- [x] Removed unused Blade templates replaced by Livewire components:
+  - [x] resources/views/playlists/index.blade.php
+  - [x] resources/views/playlists/show.blade.php
+  - [x] resources/views/playlists/form.blade.php
+  - [x] resources/views/playlists/add-tracks.blade.php
+  - [x] resources/views/genres/index.blade.php
+  - [x] resources/views/genres/show.blade.php
+  - [x] resources/views/genres/form.blade.php
+  - [x] resources/views/tracks/index.blade.php
+
+## Files That Need To Be Migrated Before Removal
+- [ ] Complete Livewire migration for remaining controllers/views:
+  - [ ] Create TrackForm Livewire component to replace TrackController@create and TrackController@edit
+  - [ ] Create TrackShow Livewire component to replace TrackController@show
+  - [ ] Update routes/web.php to use new Livewire components
+  - [ ] Once migrated, remove the following files:
+    - [ ] resources/views/tracks/form.blade.php
+    - [ ] resources/views/tracks/show.blade.php
+    - [ ] Remove unused methods from TrackController.php
+    
+- [ ] Review TestController and related views:
+  - [ ] Determine if TestController and test-notification.blade.php are needed
+  - [ ] If not needed for production, move to a separate test directory or remove
+  
+## Remaining Tasks for File Cleanup
+- [ ] Complete Livewire migration for all controller methods
+- [ ] Update tests to work with new Livewire components instead of old controllers
+- [ ] Remove any remaining Blade templates that have been replaced by Livewire
+- [ ] Clean up controllers to only contain methods that are still needed
