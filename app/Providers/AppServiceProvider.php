@@ -8,7 +8,6 @@ use App\Services\Logging\LoggingService;
 use App\Services\CacheService;
 use App\Services\NotificationService;
 use Illuminate\Contracts\Http\Kernel;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 
@@ -61,11 +60,6 @@ class AppServiceProvider extends ServiceProvider
         // Register the logging middleware
         $kernel = $this->app->make(Kernel::class);
         $kernel->pushMiddleware(LoggingMiddleware::class);
-
-        // Register a null authentication driver
-        Auth::viaRequest('null', function ($request) {
-            return null; // Always return null to disable authentication
-        });
 
         // Register components
         Blade::component('components.search', 'search');

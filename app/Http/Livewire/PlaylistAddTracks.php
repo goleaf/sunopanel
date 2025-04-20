@@ -9,7 +9,6 @@ use App\Models\Track;
 use App\Models\Genre;
 use App\Services\Playlist\PlaylistService;
 use App\Services\Logging\LoggingServiceInterface;
-use Illuminate\Support\Facades\Auth;
 
 class PlaylistAddTracks extends Component
 {
@@ -43,7 +42,6 @@ class PlaylistAddTracks extends Component
         $this->loggingService->logInfoMessage('PlaylistAddTracks component mounted', [
             'playlist_id' => $playlist->id,
             'title' => $playlist->title,
-            'user_id' => Auth::id(),
         ]);
     }
     
@@ -93,7 +91,6 @@ class PlaylistAddTracks extends Component
                 'playlist_id' => $this->playlist->id,
                 'track_count' => count($this->selectedTracks),
                 'track_ids' => $this->selectedTracks,
-                'user_id' => Auth::id(),
             ]);
             
             $count = $this->playlistService->addTracks($this->playlist, $this->selectedTracks);
@@ -117,7 +114,6 @@ class PlaylistAddTracks extends Component
                 'playlist_id' => $this->playlist->id,
                 'error' => $e->getMessage(),
                 'trace' => substr($e->getTraceAsString(), 0, 500),
-                'user_id' => Auth::id(),
             ]);
             
             $this->dispatchBrowserEvent('alert', [
@@ -152,7 +148,7 @@ class PlaylistAddTracks extends Component
 
     private function getMockUser()
     {
-        return Auth::user() ?? new class {
+        return new class {
             public $id = 1;
             public function __get($key) {
                 if ($key === 'id') return 1;
@@ -178,7 +174,6 @@ class PlaylistAddTracks extends Component
             $this->loggingService->logInfoMessage('PlaylistAddTracks: Adding tracks to playlist', [
                 'playlist_id' => $this->playlist->id,
                 'track_ids' => array_keys($selectedTracks),
-                'user_id' => Auth::id(),
             ]);
             
             $this->playlistService->addTracksByIds($this->playlist, array_keys($selectedTracks), $user);
@@ -195,7 +190,6 @@ class PlaylistAddTracks extends Component
                 'error' => $e->getMessage(),
                 'trace' => substr($e->getTraceAsString(), 0, 500),
                 'playlist_id' => $this->playlist->id,
-                'user_id' => Auth::id(),
             ]);
             
             $this->dispatchBrowserEvent('alert', [
