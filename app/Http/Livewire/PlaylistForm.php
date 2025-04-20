@@ -6,6 +6,7 @@ use App\Http\Requests\PlaylistRequest;
 use Livewire\Component;
 use App\Models\Playlist;
 use App\Models\Genre;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -49,24 +50,11 @@ class PlaylistForm extends Component
         }
     }
 
-    private function getMockUser()
-    {
-        return new class {
-            public $id = 1;
-            public function __get($key) {
-                if ($key === 'id') return 1;
-                return null;
-            }
-        };
-    }
-
     public function store()
     {
         $validatedData = $this->validate($this->rules());
         
-        $user = $this->getMockUser();
-        
-        $playlist = DB::transaction(function () use ($validatedData, $user) {
+        $playlist = DB::transaction(function () use ($validatedData) {
             // Create the playlist
             $playlist = Playlist::create([
                 'title' => $validatedData['title'],
@@ -74,14 +62,14 @@ class PlaylistForm extends Component
                 'genre_id' => $validatedData['genre_id'] ?? null,
                 'cover_image' => $validatedData['cover_image'] ?? null,
                 'is_public' => $validatedData['is_public'] ?? true,
-                'user_id' => $user->id,
+                'user_id' => Auth::id(),
                 'slug' => Str::slug($validatedData['title']),
             ]);
             
             Log::info('Playlist created successfully', [
                 'playlist_id' => $playlist->id,
                 'title' => $playlist->title,
-                'user_id' => $user->id,
+                'user_id' => Auth::id(),
             ]);
             
             return $playlist;
@@ -99,9 +87,7 @@ class PlaylistForm extends Component
     {
         $validatedData = $this->validate($this->rules());
         
-        $user = $this->getMockUser();
-        
-        DB::transaction(function () use ($validatedData, $user) {
+        DB::transaction(function () use ($validatedData) {
             $this->playlist->update([
                 'title' => $validatedData['title'],
                 'description' => $validatedData['description'] ?? $this->playlist->description,
@@ -114,7 +100,7 @@ class PlaylistForm extends Component
             Log::info('Playlist updated successfully', [
                 'playlist_id' => $this->playlist->id,
                 'title' => $this->playlist->title,
-                'user_id' => $user->id,
+                'user_id' => Auth::id(),
             ]);
         });
         

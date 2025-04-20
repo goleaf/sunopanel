@@ -6,6 +6,7 @@ use App\Http\Requests\PlaylistRemoveTrackRequest;
 use Livewire\Component;
 use App\Models\Playlist;
 use App\Models\Track;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -97,7 +98,6 @@ class PlaylistShow extends Component
         }
         
         $count = count($this->selectedTracks);
-        $user = $this->getMockUser();
         
         DB::transaction(function () {
             $this->playlist->tracks()->detach($this->selectedTracks);
@@ -120,7 +120,7 @@ class PlaylistShow extends Component
         Log::info('Tracks removed from playlist', [
             'playlist_id' => $this->playlist->id,
             'track_ids' => $this->selectedTracks,
-            'user_id' => $user->id,
+            'user_id' => Auth::id(),
             'count' => $count
         ]);
         
@@ -143,7 +143,6 @@ class PlaylistShow extends Component
         
         $playlist = $this->playlist;
         $trackToRemove = $playlist->tracks->firstWhere('id', $trackId);
-        $user = $this->getMockUser();
         
         if (!$trackToRemove) {
             $this->dispatchBrowserEvent('alert', [
@@ -175,7 +174,7 @@ class PlaylistShow extends Component
         Log::info('Track removed from playlist', [
             'playlist_id' => $this->playlist->id,
             'track_id' => $trackId,
-            'user_id' => $user->id
+            'user_id' => Auth::id()
         ]);
         
         // Refresh playlist data
@@ -220,8 +219,6 @@ class PlaylistShow extends Component
             ], [], ['trackId' => $trackId]);
         }
         
-        $user = $this->getMockUser();
-        
         DB::transaction(function () use ($orderedTracks) {
             $playlist = $this->playlist;
             
@@ -237,7 +234,7 @@ class PlaylistShow extends Component
         Log::info('Track order updated', [
             'playlist_id' => $this->playlist->id,
             'track_count' => count($orderedTracks),
-            'user_id' => $user->id
+            'user_id' => Auth::id()
         ]);
         
         // Refresh playlist data
@@ -248,18 +245,7 @@ class PlaylistShow extends Component
             'message' => 'Track order updated successfully.'
         ]);
     }
-    
-    private function getMockUser()
-    {
-        return new class {
-            public $id = 1;
-            public function __get($key) {
-                if ($key === 'id') return 1;
-                return null;
-            }
-        };
-    }
-    
+
     public function render()
     {
         return view('livewire.playlist-show');

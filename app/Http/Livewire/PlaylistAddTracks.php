@@ -8,6 +8,7 @@ use Livewire\WithPagination;
 use App\Models\Playlist;
 use App\Models\Track;
 use App\Models\Genre;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -100,7 +101,6 @@ class PlaylistAddTracks extends Component
             return;
         }
 
-        $user = $this->getMockUser();
         $tracksToAdd = array_diff($this->selectedTracks, $this->playlistTrackIds);
         $count = count($tracksToAdd);
         
@@ -128,7 +128,7 @@ class PlaylistAddTracks extends Component
             Log::info('Tracks added to playlist', [
                 'playlist_id' => $this->playlist->id,
                 'track_count' => $count,
-                'user_id' => $user->id,
+                'user_id' => Auth::id(),
             ]);
             
             $this->loadPlaylistTrackIds(); // Refresh the list of tracks in playlist
@@ -169,22 +169,10 @@ class PlaylistAddTracks extends Component
         return $query;
     }
 
-    private function getMockUser()
-    {
-        return new class {
-            public $id = 1;
-            public function __get($key) {
-                if ($key === 'id') return 1;
-                return null;
-            }
-        };
-    }
-
     public function addSelectedTracks()
     {
         $this->validate();
         
-        $user = $this->getMockUser();
         $selectedTracks = array_filter($this->selectedTracks, fn($selected) => $selected);
         
         if (empty($selectedTracks)) {
@@ -224,7 +212,7 @@ class PlaylistAddTracks extends Component
             Log::info('Selected tracks added to playlist', [
                 'playlist_id' => $this->playlist->id,
                 'track_count' => count($newTrackIds),
-                'user_id' => $user->id,
+                'user_id' => Auth::id(),
             ]);
             
             $this->loadPlaylistTrackIds();
