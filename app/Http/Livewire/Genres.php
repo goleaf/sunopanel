@@ -35,6 +35,7 @@ class Genres extends Component
     public $direction = 'asc';
     public $showDeleteModal = false;
     public $genreIdToDelete = null;
+    public $showForm = false;
     
     protected $queryString = [
         'search' => ['except' => ''],
@@ -163,6 +164,7 @@ class Genres extends Component
         $this->editingGenreId = $id;
         $this->name = $genre->name;
         $this->description = $genre->description;
+        $this->showForm = true;
     }
 
     public function update()
@@ -461,23 +463,44 @@ class Genres extends Component
     }
 
     /**
+     * Show the form for creating a new genre
+     */
+    public function showCreateForm()
+    {
+        $this->resetInputFields();
+        $this->editingGenreId = null;
+        $this->showForm = true;
+    }
+    
+    /**
+     * Hide the form
+     */
+    public function hideForm()
+    {
+        $this->showForm = false;
+        $this->resetInputFields();
+    }
+    
+    /**
      * Reset the form to prepare for creating a new genre
      */
     public function createGenre()
     {
         $this->resetInputFields();
         $this->editingGenreId = null;
+        $this->showForm = true;
         
         // Emit browser event to scroll to form and focus input field
         $this->dispatchBrowserEvent('scroll-to-form', ['id' => 'name']);
     }
-
+    
     /**
      * Alias for resetInputFields to maintain compatibility with template
      */
     public function resetInput()
     {
         $this->resetInputFields();
+        $this->showForm = false;
     }
 
     public function render()
