@@ -2,6 +2,7 @@
 
 namespace App\Http\Livewire;
 
+use App\Http\Requests\PlaylistRemoveTrackRequest;
 use Livewire\Component;
 use App\Models\Playlist;
 use App\Services\Playlist\PlaylistService;
@@ -16,6 +17,16 @@ class PlaylistShow extends Component
     public $dragEnabled = false;
     
     protected $playlistService;
+
+    protected function rules()
+    {
+        return (new PlaylistRemoveTrackRequest())->rules();
+    }
+    
+    protected function messages()
+    {
+        return (new PlaylistRemoveTrackRequest())->messages();
+    }
 
     public function boot(PlaylistService $playlistService)
     {
@@ -50,6 +61,11 @@ class PlaylistShow extends Component
     
     public function removeSelectedTracks()
     {
+        // Validate the selected tracks
+        $this->validate([
+            'selectedTracks.*' => 'exists:tracks,id',
+        ]);
+        
         if (empty($this->selectedTracks)) {
             $this->dispatchBrowserEvent('alert', [
                 'type' => 'info',
@@ -84,6 +100,11 @@ class PlaylistShow extends Component
 
     public function removeTrack($trackId)
     {
+        // Validate the track ID
+        $this->validate([
+            'trackId' => 'exists:tracks,id',
+        ], [], ['trackId' => $trackId]);
+        
         try {
             $playlist = $this->playlist;
             $trackToRemove = $playlist->tracks->firstWhere('id', $trackId);
@@ -149,6 +170,13 @@ class PlaylistShow extends Component
     
     public function updateTrackOrder(array $orderedTracks)
     {
+        // Validate each track ID in the ordered tracks array
+        foreach ($orderedTracks as $trackId) {
+            $this->validate([
+                'trackId' => 'exists:tracks,id', 
+            ], [], ['trackId' => $trackId]);
+        }
+        
         try {
             // Prepare the positions array
             $trackPositions = [];

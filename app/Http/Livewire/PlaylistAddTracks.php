@@ -2,6 +2,7 @@
 
 namespace App\Http\Livewire;
 
+use App\Http\Requests\PlaylistStoreTracksRequest;
 use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\Playlist;
@@ -25,6 +26,17 @@ class PlaylistAddTracks extends Component
         'search' => ['except' => ''],
         'genreFilter' => ['except' => ''],
     ];
+
+    protected function rules()
+    {
+        $baseRules = (new PlaylistStoreTracksRequest())->rules();
+        
+        // Map our component's property names to the request's expected format
+        return [
+            'selectedTracks' => $baseRules['track_ids'],
+            'selectedTracks.*' => $baseRules['track_ids.*'],
+        ];
+    }
 
     public function boot(PlaylistService $playlistService)
     {
@@ -70,6 +82,8 @@ class PlaylistAddTracks extends Component
 
     public function addTracks()
     {
+        $this->validate();
+        
         if (empty($this->selectedTracks)) {
             $this->dispatchBrowserEvent('alert', [
                 'type' => 'info',
@@ -139,6 +153,8 @@ class PlaylistAddTracks extends Component
 
     public function addSelectedTracks()
     {
+        $this->validate();
+        
         try {
             $user = $this->getMockUser();
             $selectedTracks = array_filter($this->selectedTracks, fn($selected) => $selected);
@@ -153,7 +169,7 @@ class PlaylistAddTracks extends Component
             
             $this->playlistService->addTracksByIds($this->playlist, array_keys($selectedTracks), $user);
             
-            $this->loadTrackData();
+            $this->loadPlaylistTrackIds();
             $this->selectedTracks = [];
             
             $this->dispatchBrowserEvent('alert', [

@@ -25,6 +25,9 @@ final class BulkTrackRequest extends FormRequest
     {
         return [
             'bulk_tracks' => ['required', 'string', 'min:5'],
+            // File upload rules
+            'files.*' => 'required|file|mimes:mp3,wav,ogg|max:20000',
+            'defaultGenreId' => 'nullable|exists:genres,id',
         ];
     }
 
@@ -39,6 +42,12 @@ final class BulkTrackRequest extends FormRequest
             'bulk_tracks.required' => 'Please provide track data for bulk upload.',
             'bulk_tracks.min' => 'The bulk tracks data is too short. Please provide valid track data.',
             'bulk_tracks.string' => 'Track data must be provided as a string in the format: Title|Audio URL|Image URL|Genres[|Duration]',
+            // File upload messages
+            'files.*.required' => 'Please select at least one file to upload.',
+            'files.*.file' => 'The uploaded item must be a file.',
+            'files.*.mimes' => 'The file must be an audio file (MP3, WAV, OGG).',
+            'files.*.max' => 'The file size must not exceed 20MB.',
+            'defaultGenreId.exists' => 'The selected genre does not exist.',
         ];
     }
 

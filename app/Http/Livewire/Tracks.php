@@ -2,6 +2,7 @@
 
 namespace App\Http\Livewire;
 
+use App\Http\Requests\TrackListRequest;
 use App\Models\Genre;
 use App\Models\Track;
 use Illuminate\Support\Facades\Log;
@@ -30,6 +31,16 @@ class Tracks extends Component
         'direction' => ['except' => 'desc'],
     ];
     
+    protected function rules()
+    {
+        return (new TrackListRequest())->rules();
+    }
+    
+    protected function messages()
+    {
+        return (new TrackListRequest())->messages();
+    }
+    
     public function updatingSearch()
     {
         $this->resetPage();
@@ -52,6 +63,9 @@ class Tracks extends Component
     
     public function confirmDelete($trackId)
     {
+        $this->validate(['trackIdToDelete' => 'exists:tracks,id'], 
+            [], ['trackIdToDelete' => $trackId]);
+        
         $this->trackIdToDelete = $trackId;
         $this->showDeleteModal = true;
     }
@@ -67,6 +81,8 @@ class Tracks extends Component
         if (!$this->trackIdToDelete) {
             return;
         }
+        
+        $this->validate(['trackIdToDelete' => 'exists:tracks,id']);
         
         try {
             $track = Track::findOrFail($this->trackIdToDelete);

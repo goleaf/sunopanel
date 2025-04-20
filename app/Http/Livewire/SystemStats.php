@@ -10,73 +10,51 @@ use Livewire\Component;
 
 class SystemStats extends Component
 {
-    public $stats;
-
-    public function mount()
+    public int $trackCount = 0;
+    public int $genreCount = 0;
+    public int $playlistCount = 0;
+    public string $totalDuration = '00:00';
+    public float $storageUsageMB = 0;
+    
+    public function mount(): void
     {
-        $this->stats = $this->getSystemStats();
+        $this->getSystemStats();
     }
-
-    /**
-     * Get system statistics
-     *
-     * @return array<string, int|string|float>
-     */
-    private function getSystemStats(): array
+    
+    private function getSystemStats(): void
     {
-        // Calculate storage usage in MB - check if directory exists first
-        $storageUsage = 0;
-        if (Storage::disk('public')->exists('tracks')) {
-            $storageUsage = round(Storage::disk('public')->size('tracks') / (1024 * 1024), 2);
-        }
-
-        $trackCount = Track::count();
-        $genreCount = Genre::count();
-        $playlistCount = Playlist::count();
-
-        // Calculate total duration in a more efficient way
-        $totalSeconds = 0;
-
-        // Only select the duration column to minimize data transfer
-        $tracks = Track::select('duration')
-            ->whereNotNull('duration')
-            ->where('duration', '!=', '')
-            ->get();
-
-        foreach ($tracks as $track) {
-            if (strpos($track->duration, ':') !== false) {
-                $parts = explode(':', $track->duration);
-                if (count($parts) === 2) {
-                    $totalSeconds += (int) $parts[0] * 60 + (int) $parts[1];
-                }
-            }
-        }
-
-        // Format total seconds to MM:SS format
+        // Count tracks
+        $this->trackCount = Track::count();
+        
+        // Count genres
+        $this->genreCount = Genre::count();
+        
+        // Count playlists
+        $this->playlistCount = Playlist::count();
+        
+        // Calculate total duration
+        $totalSeconds = Track::sum('duration');
         $minutes = floor($totalSeconds / 60);
         $seconds = $totalSeconds % 60;
-        $totalDuration = sprintf('%d:%02d', $minutes, $seconds);
-
-        return [
-            'tracksCount' => $trackCount,
-            'genresCount' => $genreCount,
-            'playlistsCount' => $playlistCount,
-            'totalDuration' => $totalDuration,
-            'storage' => $storageUsage,
-        ];
+        $this->totalDuration = sprintf('%02d:%02d', $minutes, $seconds);
+        
+        // Calculate storage usage
+        $this->storageUsageMB = 0;
+        $trackDir = public_path('tracks');
+        
+        if (file_exists($trackDir)) {
+            $size = 0;
+            foreach (new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($trackDir)) as $file) {
+                if ($file->isFile()) {
+                    $size += $file->getSize();
+                }
+            }
+            $this->storageUsageMB = round($size / (1024 * 1024), 2);
+        }
     }
-
+    
     public function render()
     {
-        return response()->json([
-            'tracksCount' => $this->stats['tracksCount'],
-            'genresCount' => $this->stats['genresCount'],
-            'playlistsCount' => $this->stats['playlistsCount'],
-            'totalDuration' => $this->stats['totalDuration'],
-            'storage' => $this->stats['storage'],
-            'tracks' => $this->stats['tracksCount'],
-            'genres' => $this->stats['genresCount'],
-            'playlists' => $this->stats['playlistsCount'],
-        ]);
+        return view('livewire.system.stats');
     }
 } 

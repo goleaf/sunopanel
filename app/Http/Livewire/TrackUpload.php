@@ -2,6 +2,7 @@
 
 namespace App\Http\Livewire;
 
+use App\Http\Requests\BulkTrackRequest;
 use App\Models\Genre;
 use App\Models\Track;
 use Illuminate\Support\Facades\Log;
@@ -21,17 +22,15 @@ class TrackUpload extends Component
     public $uploadComplete = false;
     public $genres;
     
-    protected $rules = [
-        'files.*' => 'required|file|mimes:mp3,wav,ogg|max:20000',
-        'defaultGenreId' => 'nullable|exists:genres,id',
-    ];
+    protected function rules()
+    {
+        return (new BulkTrackRequest())->rules();
+    }
     
-    protected $messages = [
-        'files.*.required' => 'Please select at least one file to upload.',
-        'files.*.file' => 'The uploaded item must be a file.',
-        'files.*.mimes' => 'The file must be an audio file (MP3, WAV, OGG).',
-        'files.*.max' => 'The file size must not exceed 20MB.',
-    ];
+    protected function messages()
+    {
+        return (new BulkTrackRequest())->messages();
+    }
     
     public function mount()
     {

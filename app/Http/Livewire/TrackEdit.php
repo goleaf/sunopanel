@@ -2,20 +2,21 @@
 
 namespace App\Http\Livewire;
 
-use App\Http\Requests\TrackStoreRequest;
-use App\Models\Genre;
+use App\Http\Requests\TrackUpdateRequest;
 use App\Models\Track;
+use App\Models\Genre;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\WithFileUploads;
+use Illuminate\Validation\Rule;
 
 class TrackEdit extends Component
 {
     use WithFileUploads;
     
-    public $trackId;
+    public Track $track;
     public $title = '';
     public $artist = '';
     public $album = '';
@@ -25,58 +26,71 @@ class TrackEdit extends Component
     public $imageFile;
     public $currentAudioUrl;
     public $currentImageUrl;
+    public $allGenres = [];
+    public $originalTitle = '';
     
     protected function rules()
     {
-        return (new TrackStoreRequest())->rules();
+        // Get base rules from TrackUpdateRequest
+        $baseRules = (new TrackUpdateRequest())->rules();
+        
+        // Replace the unique rule for title to use our component's track ID
+        if (isset($baseRules['title'])) {
+            foreach ($baseRules['title'] as $key => $rule) {
+                if (is_object($rule) && $rule instanceof Rule) {
+                    $baseRules['title'][$key] = Rule::unique('tracks')->ignore($this->track->id);
+                }
+            }
+        }
+        
+        // Add selectedGenres which is specific to this component
+        $baseRules['selectedGenres'] = ['nullable', 'array'];
+        $baseRules['selectedGenres.*'] = ['exists:genres,id'];
+        
+        return $baseRules;
     }
     
     protected function messages()
     {
-        return (new TrackStoreRequest())->messages();
+        return (new TrackUpdateRequest())->messages();
     }
     
-    public function mount($id)
+    public function mount(Track $track)
     {
-        $this->trackId = $id;
-        $track = Track::findOrFail($id);
-        
+        $this->track = $track;
         $this->title = $track->title;
+        $this->originalTitle = $track->title;
         $this->artist = $track->artist;
         $this->album = $track->album;
         $this->duration = $track->duration;
         $this->selectedGenres = $track->genres->pluck('id')->toArray();
         $this->currentAudioUrl = $track->audio_url;
         $this->currentImageUrl = $track->image_url;
-        
-        Log::info("Track edit form accessed", [
-            'track_id' => $track->id,
-            'user_id' => auth()->id() ?? 'guest'
-        ]);
+        $this->allGenres = Genre::orderBy('name')->get();
     }
     
-    public function updateTrack()
+    public function updated($propertyName)
     {
-        $validationRules = array_merge($this->rules(), [
-            'audioFile' => 'nullable|file|mimes:mp3,wav,ogg|max:20000',
-            'imageFile' => 'nullable|file|image|max:5000',
-        ]);
-        
-        // Title doesn't need to be unique if it's the same as the current track
-        $this->validate($validationRules);
-        
+        $this->validateOnly($propertyName);
+    }
+    
+    public function save()
+    {
+        $this->validate();
+
         try {
-            $track = Track::findOrFail($this->trackId);
-            $track->title = $this->title;
-            $track->artist = $this->artist;
-            $track->album = $this->album;
-            $track->duration = $this->duration;
+            $this->track->update([
+                'title' => $this->title,
+                'artist' => $this->artist,
+                'album' => $this->album,
+                'duration' => $this->duration,
+            ]);
             
             // Handle new audio file upload if provided
             if ($this->audioFile) {
                 // Delete old file if exists
-                if ($track->file_path && Storage::disk('public')->exists($track->file_path)) {
-                    Storage::disk('public')->delete($track->file_path);
+                if ($this->track->file_path && Storage::disk('public')->exists($this->track->file_path)) {
+                    Storage::disk('public')->delete($this->track->file_path);
                 }
                 
                 // Generate a safe filename for audio
@@ -87,15 +101,15 @@ class TrackEdit extends Component
                 
                 // Store the audio file
                 $audioPath = $this->audioFile->storeAs('tracks', $audioFileName, 'public');
-                $track->file_path = $audioPath;
-                $track->audio_url = Storage::url($audioPath);
+                $this->track->file_path = $audioPath;
+                $this->track->audio_url = Storage::url($audioPath);
             }
             
             // Handle new image upload if provided
             if ($this->imageFile) {
                 // Delete old image if exists
-                if ($track->image_url) {
-                    $oldImagePath = str_replace('/storage/', '', $track->image_url);
+                if ($this->track->image_url) {
+                    $oldImagePath = str_replace('/storage/', '', $this->track->image_url);
                     if (Storage::disk('public')->exists($oldImagePath)) {
                         Storage::disk('public')->delete($oldImagePath);
                     }
@@ -107,27 +121,24 @@ class TrackEdit extends Component
                 $imageFileName = $imageBaseFileName . '.' . $imageExtension;
                 
                 $imagePath = $this->imageFile->storeAs('track-images', $imageFileName, 'public');
-                $track->image_url = Storage::url($imagePath);
+                $this->track->image_url = Storage::url($imagePath);
             }
             
-            $track->save();
+            $this->track->save();
             
             // Sync genres
-            $track->genres()->sync($this->selectedGenres);
-            
-            Log::info("Track updated successfully", [
-                'track_id' => $track->id,
-                'title' => $track->title,
-                'user_id' => auth()->id() ?? 'guest'
-            ]);
+            if (!empty($this->selectedGenres)) {
+                $this->track->genres()->sync($this->selectedGenres);
+            } else {
+                // If both are empty, detach all genres
+                $this->track->genres()->detach();
+            }
             
             session()->flash('success', 'Track updated successfully!');
             return redirect()->route('tracks.index');
         } catch (\Exception $e) {
-            Log::error("Failed to update track", [
-                'error' => $e->getMessage(),
-                'track_id' => $this->trackId,
-                'user_id' => auth()->id() ?? 'guest'
+            Log::error("Failed to update track: " . $e->getMessage(), [
+                'track_id' => $this->track->id
             ]);
             
             session()->flash('error', 'Failed to update track: ' . $e->getMessage());
@@ -136,10 +147,6 @@ class TrackEdit extends Component
     
     public function render()
     {
-        $genres = Genre::orderBy('name')->get();
-        
-        return view('livewire.track-edit', [
-            'genres' => $genres,
-        ]);
+        return view('livewire.track-edit');
     }
 } 

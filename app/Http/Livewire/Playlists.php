@@ -2,6 +2,7 @@
 
 namespace App\Http\Livewire;
 
+use App\Http\Requests\PlaylistListRequest;
 use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\Playlist;
@@ -27,6 +28,16 @@ class Playlists extends Component
     ];
 
     protected $playlistService;
+    
+    protected function rules()
+    {
+        return (new PlaylistListRequest())->rules();
+    }
+    
+    protected function messages()
+    {
+        return (new PlaylistListRequest())->messages();
+    }
 
     public function boot(PlaylistService $playlistService)
     {
@@ -55,6 +66,8 @@ class Playlists extends Component
 
     public function delete($id)
     {
+        $this->validate(['playlistId' => 'exists:playlists,id'], [], ['playlistId' => $id]);
+        
         try {
             $playlist = Playlist::findOrFail($id);
             $playlistTitle = $playlist->title;

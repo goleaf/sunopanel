@@ -2,6 +2,7 @@
 
 namespace App\Http\Livewire;
 
+use App\Http\Requests\GenreStoreRequest;
 use App\Models\Genre;
 use Livewire\Component;
 
@@ -10,10 +11,10 @@ class GenreCreate extends Component
     public $name = '';
     public $description = '';
 
-    protected $rules = [
-        'name' => 'required|string|max:255|unique:genres,name',
-        'description' => 'nullable|string',
-    ];
+    protected function rules()
+    {
+        return (new GenreStoreRequest())->rules();
+    }
 
     public function save()
     {
