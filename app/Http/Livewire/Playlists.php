@@ -7,7 +7,6 @@ use Livewire\WithPagination;
 use App\Models\Playlist;
 use App\Models\Genre;
 use App\Services\Playlist\PlaylistService;
-use App\Services\Logging\LoggingServiceInterface;
 use Illuminate\Support\Facades\Auth;
 
 class Playlists extends Component
@@ -28,12 +27,10 @@ class Playlists extends Component
     ];
 
     protected $playlistService;
-    protected $loggingService;
 
-    public function boot(PlaylistService $playlistService, LoggingServiceInterface $loggingService)
+    public function boot(PlaylistService $playlistService)
     {
         $this->playlistService = $playlistService;
-        $this->loggingService = $loggingService;
     }
 
     public function sortBy($field)
@@ -62,39 +59,20 @@ class Playlists extends Component
             $playlist = Playlist::findOrFail($id);
             $playlistTitle = $playlist->title;
             
-            $this->loggingService->logInfoMessage('Playlist delete initiated from Livewire component', [
-                'playlist_id' => $id, 
-                'title' => $playlistTitle
-            ]);
-
             $deleted = $this->playlistService->deletePlaylistAndDetachTracks($playlist);
 
             if ($deleted) {
-                $this->loggingService->logInfoMessage('Playlist deleted successfully via service', [
-                    'playlist_id' => $id, 
-                    'title' => $playlistTitle
-                ]);
                 $this->dispatchBrowserEvent('alert', [
                     'type' => 'success',
                     'message' => "Playlist '{$playlistTitle}' deleted successfully."
                 ]);
             } else {
-                $this->loggingService->logErrorMessage('Playlist deletion failed via service (warning)', [
-                    'playlist_id' => $id, 
-                    'title' => $playlistTitle
-                ]);
                 $this->dispatchBrowserEvent('alert', [
                     'type' => 'error',
                     'message' => "Failed to delete playlist '{$playlistTitle}'."
                 ]);
             }
         } catch (\Exception $e) {
-            $this->loggingService->logErrorMessage('Error in Playlists Livewire component delete method', [
-                'playlist_id' => $id,
-                'error' => $e->getMessage(),
-                'trace' => substr($e->getTraceAsString(), 0, 500),
-                'user_id' => Auth::id(),
-            ]);
             $this->dispatchBrowserEvent('alert', [
                 'type' => 'error',
                 'message' => 'Failed to delete playlist: ' . $e->getMessage()
@@ -105,14 +83,6 @@ class Playlists extends Component
     public function render()
     {
         try {
-            $this->loggingService->logInfoMessage('Playlists Livewire component rendered', [
-                'search' => $this->search,
-                'sortField' => $this->sortField,
-                'direction' => $this->direction,
-                'genreFilter' => $this->genreFilter,
-                'user_id' => Auth::id(),
-            ]);
-
             $playlists = Playlist::with(['genre', 'user'])
                 ->withCount('tracks')
                 ->when($this->search, function ($query) {
@@ -132,12 +102,6 @@ class Playlists extends Component
                 'genres' => $genres,
             ]);
         } catch (\Exception $e) {
-            $this->loggingService->logErrorMessage('Error in Playlists Livewire component render method', [
-                'error' => $e->getMessage(),
-                'trace' => substr($e->getTraceAsString(), 0, 500),
-                'user_id' => Auth::id(),
-            ]);
-
             return view('livewire.playlists', [
                 'playlists' => collect(),
                 'genres' => collect(),

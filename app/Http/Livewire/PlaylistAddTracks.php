@@ -8,7 +8,6 @@ use App\Models\Playlist;
 use App\Models\Track;
 use App\Models\Genre;
 use App\Services\Playlist\PlaylistService;
-use App\Services\Logging\LoggingServiceInterface;
 
 class PlaylistAddTracks extends Component
 {
@@ -21,28 +20,21 @@ class PlaylistAddTracks extends Component
     public $playlistTrackIds = [];
     
     protected $playlistService;
-    protected $loggingService;
     
     protected $queryString = [
         'search' => ['except' => ''],
         'genreFilter' => ['except' => ''],
     ];
 
-    public function boot(PlaylistService $playlistService, LoggingServiceInterface $loggingService)
+    public function boot(PlaylistService $playlistService)
     {
         $this->playlistService = $playlistService;
-        $this->loggingService = $loggingService;
     }
 
     public function mount(Playlist $playlist)
     {
         $this->playlist = $playlist;
         $this->loadPlaylistTrackIds();
-        
-        $this->loggingService->logInfoMessage('PlaylistAddTracks component mounted', [
-            'playlist_id' => $playlist->id,
-            'title' => $playlist->title,
-        ]);
     }
     
     private function loadPlaylistTrackIds()
@@ -87,12 +79,6 @@ class PlaylistAddTracks extends Component
         }
 
         try {
-            $this->loggingService->logInfoMessage('Adding tracks to playlist from Livewire component', [
-                'playlist_id' => $this->playlist->id,
-                'track_count' => count($this->selectedTracks),
-                'track_ids' => $this->selectedTracks,
-            ]);
-            
             $count = $this->playlistService->addTracks($this->playlist, $this->selectedTracks);
             
             if ($count > 0) {
@@ -110,12 +96,6 @@ class PlaylistAddTracks extends Component
                 ]);
             }
         } catch (\Exception $e) {
-            $this->loggingService->logErrorMessage('Error in PlaylistAddTracks component addTracks method', [
-                'playlist_id' => $this->playlist->id,
-                'error' => $e->getMessage(),
-                'trace' => substr($e->getTraceAsString(), 0, 500),
-            ]);
-            
             $this->dispatchBrowserEvent('alert', [
                 'type' => 'error',
                 'message' => 'An error occurred while adding tracks: ' . $e->getMessage()
@@ -171,11 +151,6 @@ class PlaylistAddTracks extends Component
                 return;
             }
             
-            $this->loggingService->logInfoMessage('PlaylistAddTracks: Adding tracks to playlist', [
-                'playlist_id' => $this->playlist->id,
-                'track_ids' => array_keys($selectedTracks),
-            ]);
-            
             $this->playlistService->addTracksByIds($this->playlist, array_keys($selectedTracks), $user);
             
             $this->loadTrackData();
@@ -186,12 +161,6 @@ class PlaylistAddTracks extends Component
                 'message' => 'Selected tracks added to playlist!'
             ]);
         } catch (\Exception $e) {
-            $this->loggingService->logErrorMessage('Error in PlaylistAddTracks addSelectedTracks method', [
-                'error' => $e->getMessage(),
-                'trace' => substr($e->getTraceAsString(), 0, 500),
-                'playlist_id' => $this->playlist->id,
-            ]);
-            
             $this->dispatchBrowserEvent('alert', [
                 'type' => 'error',
                 'message' => 'Failed to add tracks: ' . $e->getMessage()

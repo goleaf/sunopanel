@@ -2,12 +2,8 @@
 
 namespace App\Providers;
 
-use App\Http\Middleware\LoggingMiddleware;
-use App\Services\Logging\LoggingServiceInterface;
-use App\Services\Logging\LoggingService;
-use App\Services\CacheService;
-use App\Services\NotificationService;
-use Illuminate\Contracts\Http\Kernel;
+use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Contracts\Auth\Guard;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 
@@ -18,35 +14,99 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        // Bind the interface to the concrete implementation
-        $this->app->singleton(LoggingServiceInterface::class, LoggingService::class);
+        // Create a mock user that implements Authenticatable
+        $this->app->singleton('mock-user', function () {
+            return new class implements Authenticatable {
+                public function getAuthIdentifierName()
+                {
+                    return 'id';
+                }
 
-        // Register the CacheService as a singleton
-        $this->app->singleton(CacheService::class, function ($app) {
-            return new CacheService();
-        });
+                public function getAuthIdentifier()
+                {
+                    return 1;
+                }
 
-        $this->app->singleton(NotificationService::class, function ($app) {
-            return new NotificationService();
+                public function getAuthPassword()
+                {
+                    return 'password';
+                }
+
+                public function getRememberToken()
+                {
+                    return null;
+                }
+
+                public function setRememberToken($value)
+                {
+                    // Do nothing
+                }
+
+                public function getRememberTokenName()
+                {
+                    return 'remember_token';
+                }
+
+                public function __get($key)
+                {
+                    return $key === 'id' ? 1 : null;
+                }
+            };
         });
 
         // Mock Auth class for systems without authentication
-        $this->app->singleton('auth', function () {
-            return new class {
-                public function user() {
+        $this->app->singleton('auth', function ($app) {
+            return new class implements Guard {
+                private $user = null;
+
+                public function user()
+                {
+                    if ($this->user === null) {
+                        $this->user = app('mock-user');
+                    }
+                    return null; // Return null for mock behavior
+                }
+                
+                public function id()
+                {
                     return null;
                 }
                 
-                public function id() {
-                    return null;
-                }
-                
-                public function check() {
+                public function check()
+                {
                     return false;
                 }
                 
-                public function guest() {
+                public function guest()
+                {
                     return true;
+                }
+                
+                public function extend($driver, $callback)
+                {
+                    return $this;
+                }
+                
+                public function guard($name = null)
+                {
+                    return $this;
+                }
+
+                // Additional methods required by Guard interface
+                public function validate(array $credentials = [])
+                {
+                    return false;
+                }
+
+                public function setUser(?Authenticatable $user)
+                {
+                    $this->user = $user;
+                    return $this;
+                }
+
+                public function hasUser()
+                {
+                    return false;
                 }
             };
         });
@@ -57,10 +117,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Register the logging middleware
-        $kernel = $this->app->make(Kernel::class);
-        $kernel->pushMiddleware(LoggingMiddleware::class);
-
         // Register components
         Blade::component('components.search', 'search');
         Blade::component('components.sorting', 'sorting');

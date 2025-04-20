@@ -2,11 +2,11 @@
 
 namespace App\Http\Livewire;
 
+use App\Http\Requests\PlaylistRequest;
 use Livewire\Component;
 use App\Models\Playlist;
 use App\Models\Genre;
 use App\Services\Playlist\PlaylistService;
-use App\Services\Logging\LoggingServiceInterface;
 
 class PlaylistForm extends Component
 {
@@ -21,21 +21,21 @@ class PlaylistForm extends Component
     public $genres = [];
     public $playlist;
 
-    protected $rules = [
-        'title' => 'required|string|max:255',
-        'description' => 'nullable|string|max:1000',
-        'genre_id' => 'nullable|exists:genres,id',
-        'cover_image' => 'nullable|url|max:255',
-        'is_public' => 'boolean',
-    ];
+    protected function rules()
+    {
+        $baseRules = (new PlaylistRequest())->rules();
+        
+        // Add is_public field that's specific to the Livewire component
+        return array_merge($baseRules, [
+            'is_public' => 'boolean',
+        ]);
+    }
 
     protected $playlistService;
-    protected $loggingService;
 
-    public function boot(PlaylistService $playlistService, LoggingServiceInterface $loggingService)
+    public function boot(PlaylistService $playlistService)
     {
         $this->playlistService = $playlistService;
-        $this->loggingService = $loggingService;
     }
 
     public function mount($playlist = null)
@@ -51,13 +51,6 @@ class PlaylistForm extends Component
             $this->cover_image = $playlist->cover_image;
             $this->is_public = $playlist->is_public;
             $this->isEditing = true;
-            
-            $this->loggingService->logInfoMessage('PlaylistForm loaded for editing', [
-                'playlist_id' => $this->playlistId,
-                'title' => $this->title,
-            ]);
-        } else {
-            $this->loggingService->logInfoMessage('PlaylistForm loaded for creation');
         }
     }
 
@@ -74,13 +67,9 @@ class PlaylistForm extends Component
 
     public function store()
     {
-        $validatedData = $this->validate();
+        $validatedData = $this->validate($this->rules());
         
         try {
-            $this->loggingService->logInfoMessage('PlaylistForm: Storing new playlist', [
-                'data' => $validatedData,
-            ]);
-            
             $user = $this->getMockUser();
             $playlist = $this->playlistService->storeFromArray($validatedData, $user);
             
@@ -91,11 +80,6 @@ class PlaylistForm extends Component
             
             return redirect()->route('playlists.add-tracks', $playlist);
         } catch (\Exception $e) {
-            $this->loggingService->logErrorMessage('Error in PlaylistForm store method', [
-                'error' => $e->getMessage(),
-                'trace' => substr($e->getTraceAsString(), 0, 500),
-            ]);
-            
             $this->dispatchBrowserEvent('alert', [
                 'type' => 'error',
                 'message' => 'Failed to store playlist: ' . $e->getMessage()
@@ -105,14 +89,9 @@ class PlaylistForm extends Component
 
     public function update()
     {
-        $validatedData = $this->validate();
+        $validatedData = $this->validate($this->rules());
         
         try {
-            $this->loggingService->logInfoMessage('PlaylistForm: Updating playlist', [
-                'playlist_id' => $this->playlist->id,
-                'data' => $validatedData,
-            ]);
-            
             $user = $this->getMockUser();
             $this->playlistService->updateFromArray($this->playlist, $validatedData, $user);
             
@@ -123,12 +102,6 @@ class PlaylistForm extends Component
             
             return redirect()->route('playlists.show', $this->playlist);
         } catch (\Exception $e) {
-            $this->loggingService->logErrorMessage('Error in PlaylistForm update method', [
-                'error' => $e->getMessage(),
-                'trace' => substr($e->getTraceAsString(), 0, 500),
-                'playlist_id' => $this->playlist->id,
-            ]);
-            
             $this->dispatchBrowserEvent('alert', [
                 'type' => 'error',
                 'message' => 'Failed to update playlist: ' . $e->getMessage()

@@ -1,57 +1,20 @@
 <?php
 
-declare(strict_types=1);
-
-namespace App\Http\Controllers;
+namespace App\Http\Livewire;
 
 use App\Models\Genre;
 use App\Models\Playlist;
 use App\Models\Track;
-use App\Services\Logging\LoggingServiceInterface;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\View\View;
+use Livewire\Component;
 
-final class DashboardController extends Controller
+class SystemStats extends Component
 {
-    private readonly LoggingServiceInterface $loggingService;
+    public $stats;
 
-    public function __construct(LoggingServiceInterface $loggingService)
+    public function mount()
     {
-        $this->loggingService = $loggingService;
-    }
-
-    /**
-     * Display the dashboard with system stats
-     */
-    public function index(): View
-    {
-        $this->loggingService->logInfoMessage('Loading dashboard index page');
-        // Get basic system stats
-        $stats = $this->getSystemStats();
-
-        return view('dashboard', compact('stats'));
-    }
-
-    /**
-     * Return system statistics JSON for API use
-     */
-    public function systemStats(): JsonResponse
-    {
-        $this->loggingService->logInfoMessage('API request for system stats');
-        $stats = $this->getSystemStats();
-
-        // Include both naming conventions for backwards compatibility
-        return response()->json([
-            'tracksCount' => $stats['tracksCount'],
-            'genresCount' => $stats['genresCount'],
-            'playlistsCount' => $stats['playlistsCount'],
-            'totalDuration' => $stats['totalDuration'],
-            'storage' => $stats['storage'],
-            'tracks' => $stats['tracksCount'],
-            'genres' => $stats['genresCount'],
-            'playlists' => $stats['playlistsCount'],
-        ]);
+        $this->stats = $this->getSystemStats();
     }
 
     /**
@@ -94,8 +57,6 @@ final class DashboardController extends Controller
         $seconds = $totalSeconds % 60;
         $totalDuration = sprintf('%d:%02d', $minutes, $seconds);
 
-        $this->loggingService->logInfoMessage("System stats - Tracks: {$trackCount}, Genres: {$genreCount}, Playlists: {$playlistCount}, Total Duration: {$totalDuration}");
-
         return [
             'tracksCount' => $trackCount,
             'genresCount' => $genreCount,
@@ -104,4 +65,18 @@ final class DashboardController extends Controller
             'storage' => $storageUsage,
         ];
     }
-}
+
+    public function render()
+    {
+        return response()->json([
+            'tracksCount' => $this->stats['tracksCount'],
+            'genresCount' => $this->stats['genresCount'],
+            'playlistsCount' => $this->stats['playlistsCount'],
+            'totalDuration' => $this->stats['totalDuration'],
+            'storage' => $this->stats['storage'],
+            'tracks' => $this->stats['tracksCount'],
+            'genres' => $this->stats['genresCount'],
+            'playlists' => $this->stats['playlistsCount'],
+        ]);
+    }
+} 

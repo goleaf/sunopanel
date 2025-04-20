@@ -2,6 +2,8 @@
 
 namespace App\Http\Livewire;
 
+use App\Http\Requests\GenreStoreRequest;
+use App\Http\Requests\GenreUpdateRequest;
 use Livewire\Component;
 use App\Models\Genre;
 use App\Services\Genre\GenreService;
@@ -43,7 +45,7 @@ class Genres extends Component
 
     public function create()
     {
-        $validatedData = $this->validate(['name' => 'required|max:100']);
+        $validatedData = $this->validate((new GenreStoreRequest())->rules());
         try {
             $user = $this->getMockUser();
             $this->genreService->createGenre($validatedData, $user);
@@ -65,12 +67,20 @@ class Genres extends Component
 
     public function update()
     {
-        $validatedData = $this->validate(['name' => 'required|max:100']);
+        // Get the rules but override unique constraint for the current genre
+        $rules = (new GenreUpdateRequest())->rules();
+        if (isset($rules['name'])) {
+            $uniqueRule = array_search('unique:genres,name', $rules['name']);
+            if ($uniqueRule !== false) {
+                $rules['name'][$uniqueRule] = 'unique:genres,name,' . $this->editingGenreId;
+            }
+        }
+        
+        $validatedData = $this->validate($rules);
         try {
             $user = $this->getMockUser();
             $this->genreService->updateGenre($this->editingGenreId, $validatedData, $user);
             $this->resetInputFields();
-            $this->showEditModal = false;
             $this->dispatchBrowserEvent('alert', ['type' => 'success', 'message' => 'Genre updated successfully!']);
             $this->loadGenres();
         } catch (\Exception $e) {

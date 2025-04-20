@@ -2,75 +2,111 @@
 
 namespace App\Http\Livewire;
 
-use App\Models\Track;
+use App\Http\Requests\TrackStoreRequest;
 use App\Models\Genre;
-use Livewire\Component;
+use App\Models\Track;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Livewire\Component;
+use Livewire\WithFileUploads;
 
 class TrackCreate extends Component
 {
+    use WithFileUploads;
+    
     public $title = '';
-    public $audio_url = '';
-    public $image_url = '';
+    public $artist = '';
+    public $album = '';
     public $duration = '';
-    public $genres = '';
     public $selectedGenres = [];
-    public $allGenres = [];
-
-    protected $rules = [
-        'title' => 'required|string|max:255|unique:tracks',
-        'audio_url' => 'required|url',
-        'image_url' => 'required|url',
-        'duration' => 'nullable|string|max:10',
-        'selectedGenres' => 'nullable|array',
-        'selectedGenres.*' => 'exists:genres,id',
-    ];
-
-    protected $messages = [
-        'title.required' => 'The track title is required.',
-        'title.unique' => 'A track with this title already exists.',
-        'audio_url.required' => 'The audio URL is required.',
-        'audio_url.url' => 'The audio URL must be a valid URL.',
-        'image_url.required' => 'The image URL is required.',
-        'image_url.url' => 'The image URL must be a valid URL.',
-        'selectedGenres.*.exists' => 'One or more selected genres do not exist.',
-    ];
-
+    public $audioFile;
+    public $imageFile;
+    
+    protected function rules()
+    {
+        return (new TrackStoreRequest())->rules();
+    }
+    
+    protected function messages()
+    {
+        return (new TrackStoreRequest())->messages();
+    }
+    
     public function mount()
     {
-        $this->allGenres = Genre::orderBy('name')->get();
+        // Initialize to empty state
     }
-
-    public function updated($propertyName)
+    
+    public function saveTrack()
     {
-        $this->validateOnly($propertyName);
-    }
-
-    public function save()
-    {
-        $this->validate();
-
-        $track = Track::create([
-            'title' => $this->title,
-            'audio_url' => $this->audio_url,
-            'image_url' => $this->image_url,
-            'duration' => $this->duration,
-            'unique_id' => Str::uuid(),
-        ]);
-
-        if (!empty($this->selectedGenres)) {
-            $track->genres()->sync($this->selectedGenres);
-        } elseif (!empty($this->genres)) {
-            $track->syncGenres($this->genres);
+        // Map the component properties to match the request validation
+        $this->validate(array_merge($this->rules(), [
+            'audioFile' => 'required|file|mimes:mp3,wav,ogg|max:20000',
+            'imageFile' => 'nullable|file|image|max:5000',
+        ]));
+        
+        try {
+            // Generate a safe filename for audio
+            $audioOriginalName = $this->audioFile->getClientOriginalName();
+            $audioExtension = $this->audioFile->getClientOriginalExtension();
+            $audioBaseFileName = Str::slug(pathinfo($audioOriginalName, PATHINFO_FILENAME));
+            $audioFileName = $audioBaseFileName . '.' . $audioExtension;
+            
+            // Store the audio file
+            $audioPath = $this->audioFile->storeAs('tracks', $audioFileName, 'public');
+            
+            // Create track record
+            $track = new Track();
+            $track->title = $this->title;
+            $track->artist = $this->artist;
+            $track->album = $this->album;
+            $track->duration = $this->duration;
+            $track->file_path = $audioPath;
+            $track->audio_url = Storage::url($audioPath);
+            
+            // Handle image upload if provided
+            if ($this->imageFile) {
+                $imageOriginalName = $this->imageFile->getClientOriginalName();
+                $imageExtension = $this->imageFile->getClientOriginalExtension();
+                $imageBaseFileName = Str::slug($this->title) . '-cover';
+                $imageFileName = $imageBaseFileName . '.' . $imageExtension;
+                
+                $imagePath = $this->imageFile->storeAs('track-images', $imageFileName, 'public');
+                $track->image_url = Storage::url($imagePath);
+            }
+            
+            $track->save();
+            
+            // Attach genres if selected
+            if (!empty($this->selectedGenres)) {
+                $track->genres()->attach($this->selectedGenres);
+            }
+            
+            Log::info("Track created successfully", [
+                'track_id' => $track->id,
+                'title' => $track->title,
+                'user_id' => auth()->id() ?? 'guest'
+            ]);
+            
+            session()->flash('success', 'Track added successfully!');
+            return redirect()->route('tracks.index');
+        } catch (\Exception $e) {
+            Log::error("Failed to create track", [
+                'error' => $e->getMessage(),
+                'user_id' => auth()->id() ?? 'guest'
+            ]);
+            
+            session()->flash('error', 'Failed to add track: ' . $e->getMessage());
         }
-
-        session()->flash('message', 'Track created successfully.');
-
-        return redirect()->route('tracks.index');
     }
-
+    
     public function render()
     {
-        return view('livewire.track-create');
+        $genres = Genre::orderBy('name')->get();
+        
+        return view('livewire.track-create', [
+            'genres' => $genres,
+        ]);
     }
 } 

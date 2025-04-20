@@ -1,10 +1,5 @@
 <?php
 
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\GenreController;
-use App\Http\Controllers\PlaylistController;
-use App\Http\Controllers\TrackController;
-use App\Http\Controllers\TestController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Livewire\Dashboard;
 use App\Http\Livewire\Genres;
@@ -15,6 +10,9 @@ use App\Http\Livewire\PlaylistShow;
 use App\Http\Livewire\PlaylistAddTracks;
 use App\Http\Livewire\GenreCreate;
 use App\Http\Livewire\TrackCreate;
+use App\Http\Livewire\TrackPlay;
+use App\Http\Livewire\TrackUpload;
+use App\Http\Livewire\SystemStats;
 
 /*
 |--------------------------------------------------------------------------
@@ -27,20 +25,22 @@ use App\Http\Livewire\TrackCreate;
 |
 */
 
-Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
-// Add explicit dashboard route for tests
+// Dashboard route
+Route::get('/', Dashboard::class)->name('dashboard');
 Route::get('/dashboard', Dashboard::class)->name('dashboard');
+
+// System Stats API
+Route::get('/system-stats', SystemStats::class)->name('system.stats');
 
 // Track routes
 Route::get('/tracks', Tracks::class)->name('tracks.index');
 Route::get('/tracks/create', TrackCreate::class)->name('tracks.create');
-Route::get('tracks/{id}/play', [TrackController::class, 'play'])->name('tracks.play');
-Route::post('tracks/bulk-upload', [TrackController::class, 'processBulkUpload'])->name('tracks.bulk-upload');
+Route::get('/tracks/{id}/play', TrackPlay::class)->name('tracks.play');
+Route::get('/tracks/bulk-upload', TrackUpload::class)->name('tracks.bulk-upload');
 
 // Genre routes
 Route::get('/genres', Genres::class)->name('genres.index');
 Route::get('/genres/create', GenreCreate::class)->name('genres.create');
-Route::post('/genres', [GenreController::class, 'store'])->name('genres.store');
 
 // Playlist routes
 Route::get('/playlists', Playlists::class)->name('playlists.index');
@@ -48,18 +48,3 @@ Route::get('playlists/create', PlaylistForm::class)->name('playlists.create');
 Route::get('playlists/{playlist}/edit', PlaylistForm::class)->name('playlists.edit');
 Route::get('playlists/{playlist}', PlaylistShow::class)->name('playlists.show');
 Route::get('playlists/{playlist}/add-tracks', PlaylistAddTracks::class)->name('playlists.add-tracks');
-// Keep these routes for now
-Route::post('playlists', [PlaylistController::class, 'store'])->name('playlists.store');
-Route::put('playlists/{playlist}', [PlaylistController::class, 'update'])->name('playlists.update');
-Route::delete('playlists/{playlist}', [PlaylistController::class, 'destroy'])->name('playlists.destroy');
-Route::post('playlists/{playlist}/tracks', [PlaylistController::class, 'storeTracks'])->name('playlists.store-tracks');
-Route::delete('playlists/{playlist}/tracks/{track}', [PlaylistController::class, 'removeTrack'])->name('playlists.remove-track');
-Route::post('genres/{genre}/create-playlist', [PlaylistController::class, 'createFromGenre'])->name('playlists.create-from-genre');
-
-// System Stats
-Route::get('/system-stats', [DashboardController::class, 'systemStats'])->name('system.stats');
-
-// Test Routes
-Route::get('/test-notification', [TestController::class, 'testNotification'])->name('test.notification');
-Route::get('/flash-message/{type}', [TestController::class, 'setFlashMessage'])->name('test.flash');
-Route::get('/json-notification/{type}', [TestController::class, 'testJsonResponse'])->name('test.json');

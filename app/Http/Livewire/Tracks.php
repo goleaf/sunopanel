@@ -2,142 +2,128 @@
 
 namespace App\Http\Livewire;
 
-use Livewire\Component;
-use App\Models\Track;
 use App\Models\Genre;
-use App\Services\Track\TrackService;
-use Livewire\WithFileUploads;
+use App\Models\Track;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Livewire\Component;
+use Livewire\WithPagination;
 
 class Tracks extends Component
 {
-    use WithFileUploads;
-
-    public $tracks;
-    public $title = '';
-    public $artist = '';
-    public $album = '';
-    public $genre_id;
-    public $audio_file;
-    public $image_url = '';
-    public $editingTrackId = null;
-    public $genres;
-
-    protected $trackService;
-
-    public function boot(TrackService $trackService)
+    use WithPagination;
+    
+    public $search = '';
+    public $genreFilter = '';
+    public $perPage = 10;
+    public $sortField = 'created_at';
+    public $direction = 'desc';
+    
+    public $showDeleteModal = false;
+    public $trackIdToDelete = null;
+    
+    protected $queryString = [
+        'search' => ['except' => ''],
+        'genreFilter' => ['except' => ''],
+        'perPage' => ['except' => 10],
+        'sortField' => ['except' => 'created_at'],
+        'direction' => ['except' => 'desc'],
+    ];
+    
+    public function updatingSearch()
     {
-        $this->trackService = $trackService;
+        $this->resetPage();
     }
-
-    public function mount()
+    
+    public function updatingGenreFilter()
     {
-        $this->loadTracks();
-        $this->genres = Genre::all();
+        $this->resetPage();
     }
-
-    public function loadTracks()
+    
+    public function sortBy($field)
     {
-        $this->tracks = $this->trackService->getAllTracks();
+        if ($this->sortField === $field) {
+            $this->direction = $this->direction === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortField = $field;
+            $this->direction = 'asc';
+        }
     }
-
-    private function getMockUser()
+    
+    public function confirmDelete($trackId)
     {
-        return new class {
-            public $id = 1;
-            public function __get($key) {
-                if ($key === 'id') return 1;
-                return null;
+        $this->trackIdToDelete = $trackId;
+        $this->showDeleteModal = true;
+    }
+    
+    public function cancelDelete()
+    {
+        $this->trackIdToDelete = null;
+        $this->showDeleteModal = false;
+    }
+    
+    public function deleteTrack()
+    {
+        if (!$this->trackIdToDelete) {
+            return;
+        }
+        
+        try {
+            $track = Track::findOrFail($this->trackIdToDelete);
+            
+            // Delete file from storage if it exists
+            if ($track->file_path && Storage::disk('public')->exists($track->file_path)) {
+                Storage::disk('public')->delete($track->file_path);
             }
-        };
-    }
-
-    public function create()
-    {
-        $validatedData = $this->validate([
-            'title' => 'required|string|max:255',
-            'artist' => 'required|string|max:255',
-            'album' => 'nullable|string|max:255',
-            'genre_id' => 'nullable|exists:genres,id',
-            'audio_file' => 'required|file|mimes:mp3,wav|max:10240',
-            'image_url' => 'nullable|url|max:255',
-        ]);
-
-        try {
-            $user = $this->getMockUser();
-            $this->trackService->createTrack($validatedData, $user, $this->audio_file);
-            $this->resetInput();
-            $this->loadTracks();
-            $this->dispatchBrowserEvent('alert', ['type' => 'success', 'message' => 'Track created successfully!']);
+            
+            // Delete track
+            $track->delete();
+            
+            Log::info("Track deleted successfully", [
+                'track_id' => $this->trackIdToDelete,
+                'track_title' => $track->title,
+                'user_id' => auth()->id() ?? 'guest'
+            ]);
+            
+            session()->flash('success', 'Track deleted successfully.');
         } catch (\Exception $e) {
-            $this->dispatchBrowserEvent('alert', ['type' => 'error', 'message' => 'Failed to create track: ' . $e->getMessage()]);
+            Log::error("Failed to delete track", [
+                'track_id' => $this->trackIdToDelete,
+                'error' => $e->getMessage(),
+                'user_id' => auth()->id() ?? 'guest'
+            ]);
+            
+            session()->flash('error', 'Failed to delete track: ' . $e->getMessage());
         }
+        
+        $this->trackIdToDelete = null;
+        $this->showDeleteModal = false;
     }
-
-    public function edit($id)
-    {
-        $track = Track::findOrFail($id);
-        $this->editingTrackId = $id;
-        $this->title = $track->title;
-        $this->artist = $track->artist;
-        $this->album = $track->album;
-        $this->genre_id = $track->genre_id;
-        $this->image_url = $track->image_url;
-    }
-
-    public function update()
-    {
-        $validatedData = $this->validate([
-            'title' => 'required|string|max:255',
-            'artist' => 'required|string|max:255',
-            'album' => 'nullable|string|max:255',
-            'genre_id' => 'nullable|exists:genres,id',
-            'audio_file' => 'nullable|file|mimes:mp3,wav|max:10240',
-            'image_url' => 'nullable|url|max:255',
-        ]);
-
-        try {
-            $user = $this->getMockUser();
-            $this->trackService->updateTrack($this->editingTrackId, $validatedData, $user, $this->audio_file);
-            $this->resetInput();
-            $this->loadTracks();
-            $this->dispatchBrowserEvent('alert', ['type' => 'success', 'message' => 'Track updated successfully!']);
-        } catch (\Exception $e) {
-            $this->dispatchBrowserEvent('alert', ['type' => 'error', 'message' => 'Failed to update track: ' . $e->getMessage()]);
-        }
-    }
-
-    public function delete($id)
-    {
-        try {
-            $user = $this->getMockUser();
-            $this->trackService->deleteTrack($id, $user);
-            $this->loadTracks();
-            $this->dispatchBrowserEvent('alert', ['type' => 'success', 'message' => 'Track deleted successfully!']);
-        } catch (\Exception $e) {
-            $this->dispatchBrowserEvent('alert', ['type' => 'error', 'message' => 'Failed to delete track: ' . $e->getMessage()]);
-        }
-    }
-
-    public function play($id)
-    {
-        $track = Track::findOrFail($id);
-        // Logic to increment play count or log play action can be added here if needed
-        $this->dispatchBrowserEvent('playTrack', ['url' => $track->audio_url]);
-    }
-
-    public function resetInput()
-    {
-        $this->title = '';
-        $this->artist = '';
-        $this->album = '';
-        $this->genre_id = null;
-        $this->audio_file = null;
-        $this->image_url = '';
-        $this->editingTrackId = null;
-    }
-
+    
     public function render()
     {
-        return view('livewire.tracks');
+        $tracks = Track::query()
+            ->with(['genres'])
+            ->when($this->search, function ($query) {
+                return $query->where(function ($q) {
+                    $q->where('title', 'like', '%' . $this->search . '%')
+                      ->orWhere('artist', 'like', '%' . $this->search . '%')
+                      ->orWhere('album', 'like', '%' . $this->search . '%');
+                });
+            })
+            ->when($this->genreFilter, function ($query) {
+                return $query->whereHas('genres', function ($q) {
+                    $q->where('genres.id', $this->genreFilter);
+                });
+            })
+            ->orderBy($this->sortField, $this->direction)
+            ->paginate($this->perPage);
+        
+        $genres = Genre::orderBy('name')->get();
+        
+        return view('livewire.tracks', [
+            'tracks' => $tracks,
+            'genres' => $genres,
+        ]);
     }
 } 

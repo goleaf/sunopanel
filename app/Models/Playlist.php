@@ -45,6 +45,14 @@ final class Playlist extends Model
     }
 
     /**
+     * Get the user that owns the playlist.
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    /**
      * Get all of the genres for the playlist through its tracks.
      */
     public function genres(): array

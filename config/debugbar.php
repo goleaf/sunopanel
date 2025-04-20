@@ -14,7 +14,7 @@ return [
      |
      */
 
-    'enabled' => env('DEBUGBAR_ENABLED', true),
+    'enabled' => env('DEBUGBAR_ENABLED', false),
     'hide_empty_tabs' => false, // Changed to false to show all tabs
     'except' => [
         // Empty the exceptions array to enable on all routes
@@ -170,7 +170,7 @@ return [
         'db' => true,  // Show database (PDO) queries and bindings
         'views' => true,  // Views with their data
         'route' => true,  // Current route information
-        'auth' => true, // Display Laravel authentication status
+        'auth' => false, // Display Laravel authentication status
         'gate' => true,  // Display Laravel Gate checks
         'session' => true,  // Display session data
         'symfony_request' => true,  // Only one can be enabled..

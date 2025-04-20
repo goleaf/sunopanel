@@ -9,7 +9,6 @@ use App\Http\Requests\TrackStoreRequest;
 use App\Http\Requests\TrackUpdateRequest;
 use App\Models\Genre;
 use App\Models\Track;
-use App\Services\Logging\LoggingServiceInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -19,11 +18,6 @@ use Throwable;
 
 final readonly class TrackService
 {
-    public function __construct(private readonly LoggingServiceInterface $loggingService)
-    {
-        // Optionally inject LoggingService if needed within the service itself
-    }
-
     /**
      * Get paginated tracks with filtering and sorting.
      */
@@ -88,9 +82,6 @@ final readonly class TrackService
             $track->playlists()->attach(Arr::wrap($validated['playlists']));
         }
 
-        // Use the interface method for logging
-        $this->loggingService->logInfoMessage('Track stored successfully', ['track_id' => $track->id, 'title' => $track->title]);
-
         return $track;
     }
 
@@ -120,9 +111,6 @@ final readonly class TrackService
              $track->playlists()->sync(Arr::wrap($validated['playlists'] ?? []));
         }
 
-        // Use the interface method for logging
-        $this->loggingService->logInfoMessage('Track updated successfully', ['track_id' => $track->id, 'title' => $track->title]);
-
         return $track->fresh(['genres', 'playlists']); // Return fresh model with relations
     }
 
@@ -131,9 +119,6 @@ final readonly class TrackService
      */
     public function deleteTrack(Track $track): bool
     {
-        $trackId = $track->id;
-        $trackTitle = $track->title;
-
         try {
             return DB::transaction(function () use ($track) {
                 // Detach from genres and playlists
@@ -143,19 +128,9 @@ final readonly class TrackService
                 // Delete the track
                 $deleted = $track->delete();
 
-                // Use the interface method for logging
-                $this->loggingService->logInfoMessage('Track deleted successfully', ['track_id' => $track->id, 'title' => $track->title]);
                 return (bool) $deleted;
             });
         } catch (Throwable $e) {
-            // Use the interface method for logging errors
-            $this->loggingService->logErrorMessage('Error deleting track', [
-                'track_id' => $trackId,
-                'title' => $trackTitle,
-                'error' => $e->getMessage(),
-                // Optionally add trace if needed, but keep context simple for interface
-                // 'trace' => $e->getTraceAsString(),
-            ]);
             return false;
         }
     }
@@ -164,7 +139,7 @@ final readonly class TrackService
      * Process bulk track upload from text data.
      * Returns [processedCount, errors[]]
      */
-    public function processBulkImport(string $bulkTracksData, LoggingServiceInterface $loggingService): array
+    public function processBulkImport(string $bulkTracksData): array
     {
         $lines = explode(PHP_EOL, trim($bulkTracksData));
         $processedCount = 0;
@@ -198,25 +173,20 @@ final readonly class TrackService
                      $errors[] = "Line {$lineNumber}: Title cannot be empty.";
                      continue;
                 }
-                if (! filter_var($audioUrl, FILTER_VALIDATE_URL)) {
-                    $errors[] = "Line {$lineNumber}: Invalid audio URL format: {$audioUrl}";
-                    continue;
-                }
-                if (! filter_var($imageUrl, FILTER_VALIDATE_URL)) {
-                    $errors[] = "Line {$lineNumber}: Invalid image URL format: {$imageUrl}";
-                    continue;
+
+                if (empty($audioUrl)) {
+                     $errors[] = "Line {$lineNumber}: Audio URL cannot be empty.";
+                     continue;
                 }
 
-                // Check existence (optional, could update instead)
+                // Check for existing track with the same title (optional, can allow duplicates)
                 if (Track::where('title', $title)->exists()) {
-                    // Maybe use warning level if available?
-                    // $this->loggingService->logWarningMessage("Line {$lineNumber}: Track '{$title}' already exists. Skipping.");
-                    $errors[] = "Line {$lineNumber}: Track '{$title}' already exists. Skipping.";
+                    // Skip existing tracks to prevent duplicates
                     continue;
                 }
 
-                // Create the track within a transaction
-                DB::transaction(function () use ($title, $audioUrl, $imageUrl, $duration, $genresRaw, &$processedCount, $loggingService) {
+                DB::transaction(function () use ($title, $audioUrl, $imageUrl, $duration, $genresRaw, &$processedCount) {
+                    // Create the track
                     $track = Track::create([
                         'title' => $title,
                         'audio_url' => $audioUrl,
@@ -225,25 +195,13 @@ final readonly class TrackService
                         'unique_id' => Track::generateUniqueId($title),
                     ]);
 
-                    // Assuming syncGenres method exists on Track model
-                    $track->syncGenres($genresRaw);
-                    $processedCount++;
-                    // Use the interface method for logging
-                    $loggingService->logInfoMessage("Bulk processed track: {$title}", ['track_id' => $track->id]);
-                });
+                    // Handle genres
+                    $this->handleGenres($track, $genresRaw);
 
+                    $processedCount++;
+                });
             } catch (Throwable $e) {
-                DB::rollBack(); // Ensure rollback if transaction fails mid-way
-                $trackTitleForError = $title ?? '[unknown title]';
-                $errorMsg = "Line {$lineNumber}: Error processing track '{$trackTitleForError}': " . $e->getMessage();
-                $errors[] = $errorMsg;
-                // Use the interface method for logging errors
-                $loggingService->logErrorMessage('Error during bulk track processing', [
-                    'line' => $lineNumber,
-                    'data' => $line,
-                    'error' => $e->getMessage(),
-                    // 'trace' => $e->getTraceAsString(), // Keep context simple
-                ]);
+                $errors[] = "Line {$lineNumber}: Error processing track: {$e->getMessage()}";
             }
         }
 
@@ -251,10 +209,70 @@ final readonly class TrackService
     }
 
     /**
-     * Get genres suitable for a filter dropdown.
+     * Handle track genres on import
+     */
+    private function handleGenres(Track $track, string $genresRaw): void
+    {
+        if (empty($genresRaw)) {
+            return;
+        }
+
+        // Get all existing genres
+        $existingGenres = Genre::all();
+        
+        // Split and trim genre names
+        $genreNames = array_map('trim', explode(',', $genresRaw));
+
+        $genreIds = [];
+        foreach ($genreNames as $genreName) {
+            if (empty($genreName)) continue;
+
+            // Find or create each genre
+            $genre = $existingGenres->firstWhere('name', $genreName);
+            if (!$genre) {
+                $genre = Genre::create(['name' => $genreName]);
+            }
+
+            $genreIds[] = $genre->id;
+        }
+
+        // Sync genres to the track
+        if (!empty($genreIds)) {
+            $track->genres()->sync($genreIds);
+        }
+    }
+
+    /**
+     * Get all genres for filter dropdowns.
      */
     public function getGenresForFilter(): \Illuminate\Database\Eloquent\Collection
     {
-        return Genre::orderBy('name')->get(['id', 'name']);
+        return Genre::orderBy('name')->get();
+    }
+
+    /**
+     * Get all tracks by popularity.
+     */
+    public function getPopularTracks(int $limit = 10): \Illuminate\Database\Eloquent\Collection
+    {
+        return Track::orderBy('play_count', 'desc')
+            ->limit($limit)
+            ->get();
+    }
+
+    /**
+     * Increment play count for a track.
+     */
+    public function incrementPlayCount(Track $track): void
+    {
+        $track->increment('play_count');
+    }
+
+    /**
+     * Get all tracks.
+     */
+    public function getAllTracks(): \Illuminate\Database\Eloquent\Collection
+    {
+        return Track::with('genres')->orderBy('title')->get();
     }
 }

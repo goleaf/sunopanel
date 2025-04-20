@@ -5,7 +5,6 @@ namespace App\Http\Livewire;
 use Livewire\Component;
 use App\Models\Playlist;
 use App\Services\Playlist\PlaylistService;
-use App\Services\Logging\LoggingServiceInterface;
 
 class PlaylistShow extends Component
 {
@@ -17,22 +16,15 @@ class PlaylistShow extends Component
     public $dragEnabled = false;
     
     protected $playlistService;
-    protected $loggingService;
 
-    public function boot(PlaylistService $playlistService, LoggingServiceInterface $loggingService)
+    public function boot(PlaylistService $playlistService)
     {
         $this->playlistService = $playlistService;
-        $this->loggingService = $loggingService;
     }
 
     public function mount(Playlist $playlist)
     {
         try {
-            $this->loggingService->logInfoMessage('PlaylistShow component mounted', [
-                'playlist_id' => $playlist->id,
-                'title' => $playlist->title,
-            ]);
-            
             $playlistWithDetails = $this->playlistService->getPlaylistWithTrackDetails($playlist);
             
             $this->playlist = $playlistWithDetails;
@@ -40,12 +32,6 @@ class PlaylistShow extends Component
             $this->totalDurationFormatted = $playlistWithDetails->total_duration_formatted;
             $this->genreName = $playlistWithDetails->genre?->name ?? 'None';
         } catch (\Exception $e) {
-            $this->loggingService->logErrorMessage('Error in PlaylistShow component mount method', [
-                'playlist_id' => $playlist->id,
-                'error' => $e->getMessage(),
-                'trace' => substr($e->getTraceAsString(), 0, 500),
-            ]);
-            
             $this->playlist = $playlist;
             $this->tracks = collect();
             session()->flash('error', 'Failed to load playlist details: ' . $e->getMessage());
@@ -75,12 +61,6 @@ class PlaylistShow extends Component
         try {
             $count = count($this->selectedTracks);
             
-            $this->loggingService->logInfoMessage('Removing selected tracks from playlist', [
-                'playlist_id' => $this->playlist->id,
-                'track_count' => $count,
-                'track_ids' => $this->selectedTracks,
-            ]);
-            
             $this->playlistService->removeTracks($this->playlist, $this->selectedTracks);
             
             // Refresh playlist data
@@ -95,13 +75,6 @@ class PlaylistShow extends Component
                 'message' => "{$count} track(s) removed from playlist successfully."
             ]);
         } catch (\Exception $e) {
-            $this->loggingService->logErrorMessage('Error in PlaylistShow component removeSelectedTracks method', [
-                'playlist_id' => $this->playlist->id,
-                'track_ids' => $this->selectedTracks,
-                'error' => $e->getMessage(),
-                'trace' => substr($e->getTraceAsString(), 0, 500),
-            ]);
-            
             $this->dispatchBrowserEvent('alert', [
                 'type' => 'error',
                 'message' => 'Error removing tracks: ' . $e->getMessage()
@@ -123,11 +96,6 @@ class PlaylistShow extends Component
                 return;
             }
             
-            $this->loggingService->logInfoMessage('Removing track from playlist', [
-                'playlist_id' => $playlist->id,
-                'track_id' => $trackId,
-            ]);
-            
             $removed = $this->playlistService->removeTrack($playlist, $trackToRemove);
             
             if ($removed) {
@@ -148,13 +116,6 @@ class PlaylistShow extends Component
                 ]);
             }
         } catch (\Exception $e) {
-            $this->loggingService->logErrorMessage('Error in PlaylistShow component removeTrack method', [
-                'playlist_id' => $this->playlist->id,
-                'track_id' => $trackId,
-                'error' => $e->getMessage(),
-                'trace' => substr($e->getTraceAsString(), 0, 500),
-            ]);
-            
             $this->dispatchBrowserEvent('alert', [
                 'type' => 'error',
                 'message' => 'Error removing track: ' . $e->getMessage()
@@ -198,11 +159,6 @@ class PlaylistShow extends Component
                 ];
             }
             
-            $this->loggingService->logInfoMessage('Updating track positions in playlist', [
-                'playlist_id' => $this->playlist->id,
-                'track_positions' => $trackPositions,
-            ]);
-            
             $success = $this->playlistService->updateTrackPositions($this->playlist, $trackPositions);
             
             if ($success) {
@@ -222,12 +178,6 @@ class PlaylistShow extends Component
                 ]);
             }
         } catch (\Exception $e) {
-            $this->loggingService->logErrorMessage('Error in PlaylistShow component updateTrackOrder method', [
-                'playlist_id' => $this->playlist->id,
-                'error' => $e->getMessage(),
-                'trace' => substr($e->getTraceAsString(), 0, 500),
-            ]);
-            
             $this->dispatchBrowserEvent('alert', [
                 'type' => 'error',
                 'message' => 'Error updating track order: ' . $e->getMessage()

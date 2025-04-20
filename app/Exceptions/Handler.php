@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Exceptions;
 
-use App\Services\Logging\LoggingService;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -12,20 +11,6 @@ use Throwable;
 
 final class Handler extends ExceptionHandler
 {
-    /**
-     * The error log service
-     */
-    private LoggingService $loggingService;
-
-    /**
-     * Constructor
-     */
-    public function __construct(LoggingService $loggingService)
-    {
-        parent::__construct(app());
-        $this->loggingService = $loggingService;
-    }
-
     /**
      * The list of the inputs that are never flashed to the session on validation exceptions.
      *
@@ -51,20 +36,6 @@ final class Handler extends ExceptionHandler
     }
 
     /**
-     * Report or log an exception.
-     *
-     * @throws Throwable
-     */
-    public function report(Throwable $e): void
-    {
-        if ($this->shouldReport($e)) {
-            $this->loggingService->logError($e, null, 'Exception Handler');
-        }
-
-        parent::report($e);
-    }
-
-    /**
      * Render an exception into an HTTP response.
      *
      * @param Request $request
@@ -79,8 +50,6 @@ final class Handler extends ExceptionHandler
         if ($request->expectsJson() || 
             str_starts_with($request->path(), 'api/') || 
             $request->wantsJson()) {
-            
-            $this->loggingService->logApiError($e, $request, null, 'API exception handler');
             
             $statusCode = $this->isHttpException($e) ? $e->getStatusCode() : 500;
             

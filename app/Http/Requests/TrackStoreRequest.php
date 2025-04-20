@@ -23,40 +23,18 @@ final class TrackStoreRequest extends FormRequest
      */
     public function rules(): array
     {
-        // If bulk_tracks is provided, make other fields optional
-        if ($this->filled('bulk_tracks')) {
-            return [
-                'bulk_tracks' => ['required', 'string'],
-                // Still include but make optional for UI form compatibility
-                'title' => ['nullable', 'string', 'max:255'],
-                'audio_url' => ['nullable', 'url'],
-                'image_url' => ['nullable', 'url'],
-                'duration' => ['nullable', 'string', 'max:10'],
-                'genres' => ['nullable', 'string'],
-                'genre_ids' => ['nullable', 'array'],
-                'genre_ids.*' => ['nullable', 'exists:genres,id'],
-                'playlists' => ['nullable', 'array'],
-                'playlists.*' => ['nullable', 'exists:playlists,id'],
-            ];
-        }
-
         return [
-            'title' => ['required', 'string', 'max:255', 'unique:tracks'],
-            'audio_url' => ['required', 'url'],
-            'image_url' => ['required', 'url'],
-            'duration' => ['nullable', 'string', 'max:10'],
-            // Make genres validation more flexible
-            'genres' => ['nullable', 'string', 'required_without:genre_ids'],
-            'genre_ids' => ['nullable', 'array', 'required_without:genres'],
-            'genre_ids.*' => ['exists:genres,id'],
-            'playlists' => ['nullable', 'array'],
-            'playlists.*' => ['exists:playlists,id'],
-            'bulk_tracks' => ['nullable', 'string'],
+            'title' => 'required|string|max:255',
+            'artist' => 'nullable|string|max:255',
+            'album' => 'nullable|string|max:255',
+            'duration' => 'nullable|string|max:10',
+            'selectedGenres' => 'nullable|array',
+            'selectedGenres.*' => 'exists:genres,id',
         ];
     }
 
     /**
-     * Get custom messages for validator errors.
+     * Get custom error messages for validator errors.
      *
      * @return array<string, string>
      */
@@ -64,16 +42,11 @@ final class TrackStoreRequest extends FormRequest
     {
         return [
             'title.required' => 'The track title is required.',
-            'title.unique' => 'A track with this title already exists.',
-            'audio_url.required' => 'The audio URL is required.',
-            'audio_url.url' => 'The audio URL must be a valid URL.',
-            'image_url.required' => 'The image URL is required.',
-            'image_url.url' => 'The image URL must be a valid URL.',
-            'genres.required_without' => 'Either genres or genre IDs must be provided.',
-            'genre_ids.required_without' => 'Either genres or genre IDs must be provided.',
-            'genres.string' => 'Genres must be a comma-separated string.',
-            'genre_ids.array' => 'Genre IDs must be an array.',
-            'genre_ids.*.exists' => 'One or more selected genres do not exist.',
+            'title.max' => 'The track title cannot exceed 255 characters.',
+            'artist.max' => 'The artist name cannot exceed 255 characters.',
+            'album.max' => 'The album name cannot exceed 255 characters.',
+            'duration.max' => 'The duration format is invalid.',
+            'selectedGenres.*.exists' => 'One or more selected genres do not exist in our system.',
         ];
     }
 }
