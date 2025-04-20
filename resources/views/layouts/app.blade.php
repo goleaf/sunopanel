@@ -37,85 +37,122 @@
 <body class="font-sans antialiased min-h-screen bg-base-200/50">
     <div class="min-h-screen flex flex-col">
         <!-- Top Navigation Bar -->
-        <div class="bg-base-100 shadow-md sticky top-0 z-30">
-            <div class="navbar container mx-auto">
-                <!-- Logo and Brand -->
-                <div class="flex-1">
-                    <a href="{{ route('dashboard') }}" class="text-xl font-bold text-primary flex items-center">
-                        <svg class="w-7 h-7 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <header class="bg-base-100 shadow-md py-2">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center">
+                    <!-- Logo and Brand -->
+                    <a href="{{ route('dashboard') }}" class="flex items-center">
+                        <svg class="w-8 h-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="10"></circle>
                             <circle cx="12" cy="12" r="3"></circle>
                         </svg>
-                        {{ config('app.name', 'Sunopanel') }}
+                        <span class="ml-3 text-xl font-bold text-indigo-600">{{ config('app.name', 'Sunopanel') }}</span>
                     </a>
-                </div>
-                
-                <!-- Desktop Navigation -->
-                <div class="hidden md:flex">
-                    <ul class="menu menu-horizontal px-1">
-                        <li><a href="{{ route('dashboard') }}" @class(['font-medium', 'active' => request()->routeIs('dashboard')])>
-                            <x-icon name="home" class="w-5 h-5" />
+                    
+                    <!-- Desktop Navigation -->
+                    <nav class="hidden md:flex items-center space-x-1">
+                        <a href="{{ route('dashboard') }}" class="px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('dashboard') ? 'bg-indigo-100 text-indigo-700' : 'text-gray-700 hover:bg-gray-100' }} flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                            </svg>
                             Dashboard
-                        </a></li>
-                        <li><a href="{{ route('tracks.index') }}" @class(['font-medium', 'active' => request()->routeIs('tracks.*')])>
-                            <x-icon name="music-note" class="w-5 h-5" />
+                        </a>
+                        <a href="{{ route('tracks.index') }}" class="px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('tracks.*') ? 'bg-indigo-100 text-indigo-700' : 'text-gray-700 hover:bg-gray-100' }} flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                            </svg>
                             Tracks
-                        </a></li>
-                        <li><a href="{{ route('genres.index') }}" @class(['font-medium', 'active' => request()->routeIs('genres.*')])>
-                            <x-icon name="tag" class="w-5 h-5" />
+                        </a>
+                        <a href="{{ route('genres.index') }}" class="px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('genres.*') ? 'bg-indigo-100 text-indigo-700' : 'text-gray-700 hover:bg-gray-100' }} flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                            </svg>
                             Genres
-                        </a></li>
-                        <li><a href="{{ route('playlists.index') }}" @class(['font-medium', 'active' => request()->routeIs('playlists.*')])>
-                            <x-icon name="collection" class="w-5 h-5" />
+                        </a>
+                        <a href="{{ route('playlists.index') }}" class="px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('playlists.*') ? 'bg-indigo-100 text-indigo-700' : 'text-gray-700 hover:bg-gray-100' }} flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                            </svg>
                             Playlists
-                        </a></li>
-                    </ul>
-                </div>
-                
-                <!-- Theme toggle and mobile menu button -->
-                <div class="flex-none gap-2">
-                    <x-theme-toggle class="btn btn-ghost btn-circle" />
-                    <div class="dropdown dropdown-end md:hidden">
-                        <label tabindex="0" class="btn btn-ghost btn-circle">
-                            <x-icon name="menu" class="h-6 w-6" />
-                        </label>
-                        <ul tabindex="0" class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52">
-                            <li><a href="{{ route('dashboard') }}" @class(['font-medium', 'active' => request()->routeIs('dashboard')])>
-                                <x-icon name="home" class="w-5 h-5" />
-                                Dashboard
-                            </a></li>
-                            <li><a href="{{ route('tracks.index') }}" @class(['font-medium', 'active' => request()->routeIs('tracks.*')])>
-                                <x-icon name="music-note" class="w-5 h-5" />
-                                Tracks
-                            </a></li>
-                            <li><a href="{{ route('genres.index') }}" @class(['font-medium', 'active' => request()->routeIs('genres.*')])>
-                                <x-icon name="tag" class="w-5 h-5" />
-                                Genres
-                            </a></li>
-                            <li><a href="{{ route('playlists.index') }}" @class(['font-medium', 'active' => request()->routeIs('playlists.*')])>
-                                <x-icon name="collection" class="w-5 h-5" />
-                                Playlists
-                            </a></li>
-                        </ul>
+                        </a>
+                        
+                        <!-- Theme Toggle Button -->
+                        <button 
+                            x-on:click="theme = theme === 'dark' ? 'light' : 'dark'" 
+                            class="ml-3 p-2 rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                        >
+                            <span class="sr-only">Toggle theme</span>
+                            <svg x-show="theme === 'light'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                            </svg>
+                            <svg x-show="theme === 'dark'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="display: none;">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                            </svg>
+                        </button>
+                    </nav>
+                    
+                    <!-- Mobile menu button -->
+                    <div class="flex items-center md:hidden">
+                        <button 
+                            x-on:click="theme = theme === 'dark' ? 'light' : 'dark'" 
+                            class="p-1 mr-2 rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                        >
+                            <span class="sr-only">Toggle theme</span>
+                            <svg x-show="theme === 'light'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                            </svg>
+                            <svg x-show="theme === 'dark'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="display: none;">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                            </svg>
+                        </button>
+                        
+                        <div x-data="{ open: false }" class="relative">
+                            <button 
+                                x-on:click="open = !open" 
+                                class="bg-white rounded-md p-2 inline-flex items-center justify-center text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500" 
+                                aria-expanded="false"
+                            >
+                                <span class="sr-only">Open main menu</span>
+                                <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                                </svg>
+                            </button>
+                            
+                            <div 
+                                x-show="open" 
+                                x-on:click.away="open = false" 
+                                class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50" 
+                                style="display: none;"
+                            >
+                                <a href="{{ route('dashboard') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 {{ request()->routeIs('dashboard') ? 'bg-gray-100 font-medium' : '' }}">Dashboard</a>
+                                <a href="{{ route('tracks.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 {{ request()->routeIs('tracks.*') ? 'bg-gray-100 font-medium' : '' }}">Tracks</a>
+                                <a href="{{ route('genres.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 {{ request()->routeIs('genres.*') ? 'bg-gray-100 font-medium' : '' }}">Genres</a>
+                                <a href="{{ route('playlists.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 {{ request()->routeIs('playlists.*') ? 'bg-gray-100 font-medium' : '' }}">Playlists</a>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </header>
 
         <!-- Page Content -->
-        <main class="flex-grow p-4 md:p-6">
-            @hasSection('content')
-                @yield('content')
-            @else
-                {{ $slot ?? '' }}
-            @endif
+        <main class="flex-grow">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                @hasSection('content')
+                    @yield('content')
+                @else
+                    {{ $slot ?? '' }}
+                @endif
+            </div>
         </main>
 
         <!-- Footer -->
-        <footer class="footer footer-center p-4 bg-base-300 text-base-content">
-            <aside>
-                <p>Copyright © {{ date('Y') }} - All right reserved by {{ config('app.name', 'Sunopanel') }}</p>
-            </aside>
+        <footer class="bg-white border-t border-gray-200 mt-auto">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                <p class="text-center text-sm text-gray-500">
+                    Copyright © {{ date('Y') }} - All rights reserved by {{ config('app.name', 'Sunopanel') }}
+                </p>
+            </div>
         </footer>
 
         {{-- Notification Component --}}
