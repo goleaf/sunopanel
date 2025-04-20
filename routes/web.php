@@ -38,6 +38,7 @@ Route::post('tracks/bulk-upload', [TrackController::class, 'processBulkUpload'])
 // Genre routes
 Route::get('/genres', Genres::class)->middleware(['auth', 'verified'])->name('genres.index');
 Route::get('/genres/create', GenreCreate::class)->middleware(['auth', 'verified'])->name('genres.create');
+Route::post('/genres', [GenreController::class, 'store'])->middleware(['auth', 'verified'])->name('genres.store');
 
 // Playlist routes
 Route::get('/playlists', Playlists::class)->middleware(['auth', 'verified'])->name('playlists.index');
