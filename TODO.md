@@ -150,6 +150,8 @@ Based on priority and dependencies, we'll tackle these tasks in the following or
   - [x] Implement purgeCSS for unused styles
   - [x] Minify production JavaScript
   - [x] Implement asset versioning
+- [x] Optimize resources directory for Livewire and UI framework
+- [x] Determine if TestController and test-notification.blade.php are needed
 
 ## Critical Fixes Needed
 - [x] Fix undefined variable $genres in playlists/add-tracks.blade.php view
