@@ -1,5 +1,13 @@
 @props(['header' => null])
 
-<x-layouts.app :header="$header">
+@extends('layouts.app')
+
+@section('content')
+    @if ($header)
+        <div class="mb-6">
+            {{ $header }}
+        </div>
+    @endif
+    
     {{ $slot }}
-</x-layouts.app> 
+@endsection 
