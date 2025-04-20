@@ -5,30 +5,68 @@ import Sortable from 'sortablejs';
 window.Alpine = Alpine;
 window.Sortable = Sortable; // Make Sortable.js globally available
 
-// Create custom Alpine.js directive for mobile menu
+// Alpine.js directives and data
 document.addEventListener('alpine:init', () => {
+    // Mobile menu toggle directive
     Alpine.directive('menu-toggle', (el) => {
         el.addEventListener('click', () => {
             const mobileMenu = document.getElementById('mobile-menu');
             if (mobileMenu) {
-                if (mobileMenu.classList.contains('hidden')) {
-                    mobileMenu.classList.remove('hidden');
-                    mobileMenu.classList.add('block');
-                } else {
-                    mobileMenu.classList.add('hidden');
-                    mobileMenu.classList.remove('block');
-                }
+                mobileMenu.classList.toggle('hidden');
+                mobileMenu.classList.toggle('block');
             }
         });
     });
+    
+    // Notification component
+    Alpine.data('notifications', () => ({
+        notifications: [],
+        add(message, type = 'info', timeout = 5000) {
+            const id = Date.now();
+            this.notifications.push({ id, message, type });
+            
+            if (timeout) {
+                setTimeout(() => {
+                    this.remove(id);
+                }, timeout);
+            }
+        },
+        remove(id) {
+            this.notifications = this.notifications.filter(notification => notification.id !== id);
+        }
+    }));
+    
+    // Sortable tracks data
+    Alpine.data('sortableTracks', () => ({
+        init() {
+            const el = this.$el.querySelector('.sortable-list');
+            if (!el) return;
+            
+            new Sortable(el, {
+                animation: 150,
+                ghostClass: 'sortable-ghost',
+                dragClass: 'sortable-drag',
+                handle: '.track-draggable',
+                onEnd: (evt) => {
+                    const trackIds = Array.from(evt.to.children).map(
+                        item => item.dataset.trackId
+                    );
+                    
+                    // Dispatch event for Livewire to handle
+                    this.$dispatch('tracks-reordered', { trackIds });
+                }
+            });
+        }
+    }));
 });
 
+// Initialize Alpine.js
 Alpine.start();
 
+// DOM ready event handlers
 document.addEventListener('DOMContentLoaded', function() {
     // Genre filter functionality
     const genreFilter = document.getElementById('genre-filter');
-    
     if (genreFilter) {
         genreFilter.addEventListener('change', function() {
             const url = new URL(window.location);
@@ -43,31 +81,41 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Enhanced mobile menu handling
-    const hamburgerBtn = document.querySelector('button[aria-controls="mobile-menu"]') || 
-                         document.querySelector('nav button');
-    
-    if (hamburgerBtn) {
-        const mobileMenu = document.getElementById('mobile-menu') || 
-                           document.querySelector('div[x-ref="mobile-menu"]') || 
-                           document.querySelector('nav div.hidden.sm\\:hidden');
-        
-        // Add a direct click handler as a fallback
-        hamburgerBtn.addEventListener('click', function(e) {
-            // Only handle click if Alpine.js didn't handle it
-            if (!window.Alpine || !Alpine.version) {
-                e.preventDefault();
-                if (mobileMenu) {
-                    // Toggle mobile menu visibility manually
-                    if (mobileMenu.classList.contains('hidden')) {
-                        mobileMenu.classList.remove('hidden');
-                        mobileMenu.classList.add('block');
-                    } else {
-                        mobileMenu.classList.add('hidden');
-                        mobileMenu.classList.remove('block');
-                    }
-                }
+    // Custom event listener for notifications
+    window.addEventListener('notify', (event) => {
+        if (window.Alpine) {
+            const notifications = Alpine.store('notifications');
+            if (notifications) {
+                notifications.add(
+                    event.detail.message,
+                    event.detail.type || 'info',
+                    event.detail.timeout || 5000
+                );
             }
-        });
-    }
+        }
+    });
+
+    // Global audio player controls
+    setupAudioPlayers();
 });
+
+// Setup audio player functionality
+function setupAudioPlayers() {
+    document.querySelectorAll('audio').forEach(player => {
+        // Add play/pause event listeners
+        player.addEventListener('play', () => {
+            // Pause other players when one starts playing
+            document.querySelectorAll('audio').forEach(otherPlayer => {
+                if (otherPlayer !== player && !otherPlayer.paused) {
+                    otherPlayer.pause();
+                }
+            });
+        });
+        
+        // Add ended event listener
+        player.addEventListener('ended', () => {
+            player.currentTime = 0;
+            // You could trigger an event here if needed
+        });
+    });
+}
