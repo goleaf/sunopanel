@@ -41,6 +41,17 @@ class Tracks extends Component
         $this->tracks = $this->trackService->getAllTracks();
     }
 
+    private function getMockUser()
+    {
+        return Auth::user() ?? new class {
+            public $id = 1;
+            public function __get($key) {
+                if ($key === 'id') return 1;
+                return null;
+            }
+        };
+    }
+
     public function create()
     {
         $validatedData = $this->validate([
@@ -52,11 +63,15 @@ class Tracks extends Component
             'image_url' => 'nullable|url|max:255',
         ]);
 
-        $this->trackService->createTrack($validatedData, Auth::user(), $this->audio_file);
-
-        $this->resetInput();
-        $this->loadTracks();
-        $this->dispatchBrowserEvent('alert', ['type' => 'success', 'message' => 'Track created successfully!']);
+        try {
+            $user = $this->getMockUser();
+            $this->trackService->createTrack($validatedData, $user, $this->audio_file);
+            $this->resetInput();
+            $this->loadTracks();
+            $this->dispatchBrowserEvent('alert', ['type' => 'success', 'message' => 'Track created successfully!']);
+        } catch (\Exception $e) {
+            $this->dispatchBrowserEvent('alert', ['type' => 'error', 'message' => 'Failed to create track: ' . $e->getMessage()]);
+        }
     }
 
     public function edit($id)
@@ -81,18 +96,27 @@ class Tracks extends Component
             'image_url' => 'nullable|url|max:255',
         ]);
 
-        $this->trackService->updateTrack($this->editingTrackId, $validatedData, Auth::user(), $this->audio_file);
-
-        $this->resetInput();
-        $this->loadTracks();
-        $this->dispatchBrowserEvent('alert', ['type' => 'success', 'message' => 'Track updated successfully!']);
+        try {
+            $user = $this->getMockUser();
+            $this->trackService->updateTrack($this->editingTrackId, $validatedData, $user, $this->audio_file);
+            $this->resetInput();
+            $this->loadTracks();
+            $this->dispatchBrowserEvent('alert', ['type' => 'success', 'message' => 'Track updated successfully!']);
+        } catch (\Exception $e) {
+            $this->dispatchBrowserEvent('alert', ['type' => 'error', 'message' => 'Failed to update track: ' . $e->getMessage()]);
+        }
     }
 
     public function delete($id)
     {
-        $this->trackService->deleteTrack($id, Auth::user());
-        $this->loadTracks();
-        $this->dispatchBrowserEvent('alert', ['type' => 'success', 'message' => 'Track deleted successfully!']);
+        try {
+            $user = $this->getMockUser();
+            $this->trackService->deleteTrack($id, $user);
+            $this->loadTracks();
+            $this->dispatchBrowserEvent('alert', ['type' => 'success', 'message' => 'Track deleted successfully!']);
+        } catch (\Exception $e) {
+            $this->dispatchBrowserEvent('alert', ['type' => 'error', 'message' => 'Failed to delete track: ' . $e->getMessage()]);
+        }
     }
 
     public function play($id)

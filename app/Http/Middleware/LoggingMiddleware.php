@@ -42,7 +42,6 @@ final class LoggingMiddleware
             'url' => $request->fullUrl(),
             'ip' => $request->ip(),
             'user_agent' => $request->userAgent(),
-            'user_id' => $request->user()?->id, // Add user ID if authenticated
         ]);
 
         try {
@@ -53,7 +52,6 @@ final class LoggingMiddleware
                 'status_code' => $response->getStatusCode(),
                 'url' => $request->fullUrl(),
                 'ip' => $request->ip(),
-                'user_id' => $request->user()?->id,
             ]);
 
             return $response;
@@ -67,7 +65,6 @@ final class LoggingMiddleware
                 'line' => $e->getLine(),
                 'url' => $request->fullUrl(),
                 'ip' => $request->ip(),
-                'user_id' => $request->user()?->id,
             ]);
 
             // Rethrow the exception to let Laravel's handler manage it

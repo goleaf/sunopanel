@@ -150,6 +150,61 @@ class PlaylistAddTracks extends Component
         return $query;
     }
 
+    private function getMockUser()
+    {
+        return Auth::user() ?? new class {
+            public $id = 1;
+            public function __get($key) {
+                if ($key === 'id') return 1;
+                return null;
+            }
+        };
+    }
+
+    public function addSelectedTracks()
+    {
+        try {
+            $user = $this->getMockUser();
+            $selectedTracks = array_filter($this->selectedTracks, fn($selected) => $selected);
+            
+            if (empty($selectedTracks)) {
+                $this->dispatchBrowserEvent('alert', [
+                    'type' => 'warning',
+                    'message' => 'No tracks selected. Please select at least one track to add.'
+                ]);
+                return;
+            }
+            
+            $this->loggingService->logInfoMessage('PlaylistAddTracks: Adding tracks to playlist', [
+                'playlist_id' => $this->playlist->id,
+                'track_ids' => array_keys($selectedTracks),
+                'user_id' => Auth::id(),
+            ]);
+            
+            $this->playlistService->addTracksByIds($this->playlist, array_keys($selectedTracks), $user);
+            
+            $this->loadTrackData();
+            $this->selectedTracks = [];
+            
+            $this->dispatchBrowserEvent('alert', [
+                'type' => 'success', 
+                'message' => 'Selected tracks added to playlist!'
+            ]);
+        } catch (\Exception $e) {
+            $this->loggingService->logErrorMessage('Error in PlaylistAddTracks addSelectedTracks method', [
+                'error' => $e->getMessage(),
+                'trace' => substr($e->getTraceAsString(), 0, 500),
+                'playlist_id' => $this->playlist->id,
+                'user_id' => Auth::id(),
+            ]);
+            
+            $this->dispatchBrowserEvent('alert', [
+                'type' => 'error',
+                'message' => 'Failed to add tracks: ' . $e->getMessage()
+            ]);
+        }
+    }
+
     public function render()
     {
         $tracks = $this->getFilteredTracks();

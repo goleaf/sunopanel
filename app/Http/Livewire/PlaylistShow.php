@@ -244,6 +244,17 @@ class PlaylistShow extends Component
         }
     }
 
+    private function getMockUser()
+    {
+        return Auth::user() ?? new class {
+            public $id = 1;
+            public function __get($key) {
+                if ($key === 'id') return 1;
+                return null;
+            }
+        };
+    }
+
     public function render()
     {
         return view('livewire.playlist-show');

@@ -28,24 +28,24 @@ use App\Http\Livewire\GenreCreate;
 
 Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 // Add explicit dashboard route for tests
-Route::get('/dashboard', Dashboard::class)->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', Dashboard::class)->name('dashboard');
 
 // Track routes
-Route::get('/tracks', Tracks::class)->middleware(['auth', 'verified'])->name('tracks.index');
+Route::get('/tracks', Tracks::class)->name('tracks.index');
 Route::get('tracks/{id}/play', [TrackController::class, 'play'])->name('tracks.play');
 Route::post('tracks/bulk-upload', [TrackController::class, 'processBulkUpload'])->name('tracks.bulk-upload');
 
 // Genre routes
-Route::get('/genres', Genres::class)->middleware(['auth', 'verified'])->name('genres.index');
-Route::get('/genres/create', GenreCreate::class)->middleware(['auth', 'verified'])->name('genres.create');
-Route::post('/genres', [GenreController::class, 'store'])->middleware(['auth', 'verified'])->name('genres.store');
+Route::get('/genres', Genres::class)->name('genres.index');
+Route::get('/genres/create', GenreCreate::class)->name('genres.create');
+Route::post('/genres', [GenreController::class, 'store'])->name('genres.store');
 
 // Playlist routes
-Route::get('/playlists', Playlists::class)->middleware(['auth', 'verified'])->name('playlists.index');
-Route::get('playlists/create', PlaylistForm::class)->middleware(['auth', 'verified'])->name('playlists.create');
-Route::get('playlists/{playlist}/edit', PlaylistForm::class)->middleware(['auth', 'verified'])->name('playlists.edit');
-Route::get('playlists/{playlist}', PlaylistShow::class)->middleware(['auth', 'verified'])->name('playlists.show');
-Route::get('playlists/{playlist}/add-tracks', PlaylistAddTracks::class)->middleware(['auth', 'verified'])->name('playlists.add-tracks');
+Route::get('/playlists', Playlists::class)->name('playlists.index');
+Route::get('playlists/create', PlaylistForm::class)->name('playlists.create');
+Route::get('playlists/{playlist}/edit', PlaylistForm::class)->name('playlists.edit');
+Route::get('playlists/{playlist}', PlaylistShow::class)->name('playlists.show');
+Route::get('playlists/{playlist}/add-tracks', PlaylistAddTracks::class)->name('playlists.add-tracks');
 // Keep these routes for now
 Route::post('playlists', [PlaylistController::class, 'store'])->name('playlists.store');
 Route::put('playlists/{playlist}', [PlaylistController::class, 'update'])->name('playlists.update');

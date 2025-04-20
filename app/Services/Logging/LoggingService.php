@@ -27,7 +27,6 @@ final readonly class LoggingService implements LoggingServiceInterface
             'file' => $exception->getFile(),
             'line' => $exception->getLine(),
             'trace' => $this->formatTrace($exception->getTrace()),
-            'user_id' => $userId ?? auth()->id(),
             'context' => $context,
         ];
 
@@ -62,7 +61,6 @@ final readonly class LoggingService implements LoggingServiceInterface
             'file' => $exception->getFile(),
             'line' => $exception->getLine(),
             'trace' => $this->formatTrace($exception->getTrace()),
-            'user_id' => auth()->id(),
             'context' => $context,
             'request_method' => $request->method(),
             'request_url' => $request->fullUrl(),
@@ -95,7 +93,6 @@ final readonly class LoggingService implements LoggingServiceInterface
             'file' => $exception->getFile(),
             'line' => $exception->getLine(),
             'trace' => $this->formatTrace($exception->getTrace()),
-            'user_id' => auth()->id(),
             'context' => $context,
         ];
 
@@ -119,7 +116,6 @@ final readonly class LoggingService implements LoggingServiceInterface
     ): void {
         $logData = array_merge($context, [
             'timestamp' => now()->toDateTimeString(),
-            'user_id' => auth()->id(),
         ]);
 
         // Add request data if available
@@ -147,7 +143,6 @@ final readonly class LoggingService implements LoggingServiceInterface
     ): void {
         $logData = array_merge($context, [
             'timestamp' => now()->toDateTimeString(),
-            'user_id' => auth()->id(),
         ]);
 
         // Add request data if available
@@ -175,7 +170,6 @@ final readonly class LoggingService implements LoggingServiceInterface
     ): void {
         $logData = array_merge($context, [
             'timestamp' => now()->toDateTimeString(),
-            'user_id' => auth()->id(),
         ]);
 
         // Add request data if available
@@ -252,7 +246,6 @@ final readonly class LoggingService implements LoggingServiceInterface
         // Delegate to the standard info logger, adding minimal context
         $logData = array_merge($context, [
             'timestamp' => now()->toDateTimeString(),
-            'user_id' => auth()->id(),
         ]);
         Log::info($message, $this->filterSensitiveData($logData));
     }
@@ -268,7 +261,6 @@ final readonly class LoggingService implements LoggingServiceInterface
             'message' => $message, // Use the provided message
             'file' => __FILE__, // Approximate location
             'line' => __LINE__,
-            'user_id' => auth()->id(),
             'context' => 'Generic Error Message',
         ]);
         Log::error('Error: '.$message, $this->filterSensitiveData($logData));

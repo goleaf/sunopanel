@@ -31,18 +31,29 @@ class Genres extends Component
         $this->genres = $this->genreService->getAllGenres();
     }
 
+    private function getMockUser()
+    {
+        return Auth::user() ?? new class {
+            public $id = 1;
+            public function __get($key) {
+                if ($key === 'id') return 1;
+                return null;
+            }
+        };
+    }
+
     public function create()
     {
-        $validatedData = $this->validate([
-            'name' => 'required|string|max:255|unique:genres,name',
-            'description' => 'nullable|string',
-        ]);
-
-        $this->genreService->createGenre($validatedData, Auth::user());
-
-        $this->resetInput();
-        $this->loadGenres();
-        $this->dispatchBrowserEvent('alert', ['type' => 'success', 'message' => 'Genre created successfully!']);
+        $validatedData = $this->validate(['name' => 'required|max:100']);
+        try {
+            $user = $this->getMockUser();
+            $this->genreService->createGenre($validatedData, $user);
+            $this->resetInputFields();
+            $this->dispatchBrowserEvent('alert', ['type' => 'success', 'message' => 'Genre created successfully!']);
+            $this->loadGenres();
+        } catch (\Exception $e) {
+            $this->dispatchBrowserEvent('alert', ['type' => 'error', 'message' => 'Failed to create genre: ' . $e->getMessage()]);
+        }
     }
 
     public function edit($id)
@@ -55,23 +66,29 @@ class Genres extends Component
 
     public function update()
     {
-        $validatedData = $this->validate([
-            'name' => 'required|string|max:255|unique:genres,name,' . $this->editingGenreId,
-            'description' => 'nullable|string',
-        ]);
-
-        $this->genreService->updateGenre($this->editingGenreId, $validatedData, Auth::user());
-
-        $this->resetInput();
-        $this->loadGenres();
-        $this->dispatchBrowserEvent('alert', ['type' => 'success', 'message' => 'Genre updated successfully!']);
+        $validatedData = $this->validate(['name' => 'required|max:100']);
+        try {
+            $user = $this->getMockUser();
+            $this->genreService->updateGenre($this->editingGenreId, $validatedData, $user);
+            $this->resetInputFields();
+            $this->showEditModal = false;
+            $this->dispatchBrowserEvent('alert', ['type' => 'success', 'message' => 'Genre updated successfully!']);
+            $this->loadGenres();
+        } catch (\Exception $e) {
+            $this->dispatchBrowserEvent('alert', ['type' => 'error', 'message' => 'Failed to update genre: ' . $e->getMessage()]);
+        }
     }
 
     public function delete($id)
     {
-        $this->genreService->deleteGenre($id, Auth::user());
-        $this->loadGenres();
-        $this->dispatchBrowserEvent('alert', ['type' => 'success', 'message' => 'Genre deleted successfully!']);
+        try {
+            $user = $this->getMockUser();
+            $this->genreService->deleteGenre($id, $user);
+            $this->dispatchBrowserEvent('alert', ['type' => 'success', 'message' => 'Genre deleted successfully!']);
+            $this->loadGenres();
+        } catch (\Exception $e) {
+            $this->dispatchBrowserEvent('alert', ['type' => 'error', 'message' => 'Failed to delete genre: ' . $e->getMessage()]);
+        }
     }
 
     public function resetInput()

@@ -119,4 +119,88 @@ class PlaylistForm extends Component
     {
         return view('livewire.playlist-form');
     }
+
+    public function store()
+    {
+        $validatedData = $this->validate();
+        
+        try {
+            $this->loggingService->logInfoMessage('PlaylistForm: Storing new playlist', [
+                'data' => $validatedData,
+                'user_id' => Auth::id(),
+            ]);
+            
+            // Create a mock user for systems without authentication
+            $user = Auth::user() ?? new class {
+                public $id = 1;
+                public function __get($key) {
+                    if ($key === 'id') return 1;
+                    return null;
+                }
+            };
+            
+            $playlist = $this->playlistService->storeFromArray($validatedData, $user);
+            
+            $this->dispatchBrowserEvent('alert', [
+                'type' => 'success',
+                'message' => "Playlist '{$playlist->title}' created successfully."
+            ]);
+            
+            return redirect()->route('playlists.add-tracks', $playlist);
+        } catch (\Exception $e) {
+            $this->loggingService->logErrorMessage('Error in PlaylistForm store method', [
+                'error' => $e->getMessage(),
+                'trace' => substr($e->getTraceAsString(), 0, 500),
+                'user_id' => Auth::id(),
+            ]);
+            
+            $this->dispatchBrowserEvent('alert', [
+                'type' => 'error',
+                'message' => 'Failed to store playlist: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    public function update()
+    {
+        $validatedData = $this->validate();
+        
+        try {
+            $this->loggingService->logInfoMessage('PlaylistForm: Updating playlist', [
+                'playlist_id' => $this->playlist->id,
+                'data' => $validatedData,
+                'user_id' => Auth::id(),
+            ]);
+            
+            // Create a mock user for systems without authentication
+            $user = Auth::user() ?? new class {
+                public $id = 1;
+                public function __get($key) {
+                    if ($key === 'id') return 1;
+                    return null;
+                }
+            };
+            
+            $this->playlistService->updateFromArray($this->playlist, $validatedData, $user);
+            
+            $this->dispatchBrowserEvent('alert', [
+                'type' => 'success',
+                'message' => "Playlist '{$this->playlist->title}' updated successfully."
+            ]);
+            
+            return redirect()->route('playlists.show', $this->playlist);
+        } catch (\Exception $e) {
+            $this->loggingService->logErrorMessage('Error in PlaylistForm update method', [
+                'error' => $e->getMessage(),
+                'trace' => substr($e->getTraceAsString(), 0, 500),
+                'playlist_id' => $this->playlist->id,
+                'user_id' => Auth::id(),
+            ]);
+            
+            $this->dispatchBrowserEvent('alert', [
+                'type' => 'error',
+                'message' => 'Failed to update playlist: ' . $e->getMessage()
+            ]);
+        }
+    }
 } 

@@ -30,6 +30,27 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(NotificationService::class, function ($app) {
             return new NotificationService();
         });
+
+        // Mock Auth class for systems without authentication
+        $this->app->singleton('auth', function () {
+            return new class {
+                public function user() {
+                    return null;
+                }
+                
+                public function id() {
+                    return null;
+                }
+                
+                public function check() {
+                    return false;
+                }
+                
+                public function guest() {
+                    return true;
+                }
+            };
+        });
     }
 
     /**
