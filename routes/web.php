@@ -12,6 +12,7 @@ use App\Http\Livewire\Tracks;
 use App\Http\Livewire\Playlists;
 use App\Http\Livewire\PlaylistForm;
 use App\Http\Livewire\PlaylistShow;
+use App\Http\Livewire\PlaylistAddTracks;
 
 /*
 |--------------------------------------------------------------------------
@@ -41,11 +42,11 @@ Route::get('/playlists', Playlists::class)->middleware(['auth', 'verified'])->na
 Route::get('playlists/create', PlaylistForm::class)->middleware(['auth', 'verified'])->name('playlists.create');
 Route::get('playlists/{playlist}/edit', PlaylistForm::class)->middleware(['auth', 'verified'])->name('playlists.edit');
 Route::get('playlists/{playlist}', PlaylistShow::class)->middleware(['auth', 'verified'])->name('playlists.show');
+Route::get('playlists/{playlist}/add-tracks', PlaylistAddTracks::class)->middleware(['auth', 'verified'])->name('playlists.add-tracks');
 // Keep these routes for now
 Route::post('playlists', [PlaylistController::class, 'store'])->name('playlists.store');
 Route::put('playlists/{playlist}', [PlaylistController::class, 'update'])->name('playlists.update');
 Route::delete('playlists/{playlist}', [PlaylistController::class, 'destroy'])->name('playlists.destroy');
-Route::get('playlists/{playlist}/add-tracks', [PlaylistController::class, 'addTracks'])->name('playlists.add-tracks');
 Route::post('playlists/{playlist}/tracks', [PlaylistController::class, 'storeTracks'])->name('playlists.store-tracks');
 Route::delete('playlists/{playlist}/tracks/{track}', [PlaylistController::class, 'removeTrack'])->name('playlists.remove-track');
 Route::post('genres/{genre}/create-playlist', [PlaylistController::class, 'createFromGenre'])->name('playlists.create-from-genre');

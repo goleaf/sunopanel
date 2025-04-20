@@ -420,20 +420,21 @@ composer test:convert-comments
 - [x] Create Livewire components for Genres (Index, Show).
 - [x] Create Livewire components for Dashboard.
 - [ ] Complete Livewire component implementation for remaining features:
-  - [ ] Create Livewire components for Playlists:
+  - [x] Create Livewire components for Playlists:
     - [x] Create `app/Http/Livewire/Playlists.php` for index functionality
     - [x] Create `app/Http/Livewire/PlaylistForm.php` for create/edit functionality
     - [x] Create `app/Http/Livewire/PlaylistShow.php` for show functionality
-    - [ ] Create `app/Http/Livewire/PlaylistAddTracks.php` for adding tracks functionality
-  - [ ] Create corresponding Blade views:
+    - [x] Create `app/Http/Livewire/PlaylistAddTracks.php` for adding tracks functionality
+  - [x] Create corresponding Blade views:
     - [x] Create `resources/views/livewire/playlists.blade.php`
     - [x] Create `resources/views/livewire/playlist-form.blade.php`
     - [x] Create `resources/views/livewire/playlist-show.blade.php`
-    - [ ] Create `resources/views/livewire/playlist-add-tracks.blade.php`
+    - [x] Create `resources/views/livewire/playlist-add-tracks.blade.php`
 - [ ] Update routes in `routes/web.php` to use Livewire components:
   - [x] Replace playlist index route with Livewire component
   - [x] Replace playlist create/edit routes with Livewire component
   - [x] Replace playlist show route with Livewire component
+  - [x] Replace playlist add-tracks route with Livewire component
   - [ ] Replace other playlist routes with their Livewire counterparts
 - [ ] Update cross-references in existing Livewire components
 - [ ] Ensure all UI interactions (search, sort, pagination) are handled by Livewire
@@ -463,9 +464,9 @@ composer test:convert-comments
    - [ ] Test functionality
 
 4. Fourth Phase: Create Playlist Add Tracks Livewire Component
-   - [ ] Create `app/Http/Livewire/PlaylistAddTracks.php` component
-   - [ ] Create `resources/views/livewire/playlist-add-tracks.blade.php` view
-   - [ ] Update route in `routes/web.php`
+   - [x] Create `app/Http/Livewire/PlaylistAddTracks.php` component
+   - [x] Create `resources/views/livewire/playlist-add-tracks.blade.php` view
+   - [x] Update route in `routes/web.php`
    - [ ] Test functionality
 
 5. Final Phase: Testing and Cleanup
