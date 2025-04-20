@@ -4,8 +4,10 @@ namespace App\Providers;
 
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Auth\Guard;
+use Illuminate\Contracts\Auth\StatefulGuard;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
+use Livewire\Livewire;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -28,6 +30,11 @@ class AppServiceProvider extends ServiceProvider
                 }
 
                 public function getAuthPassword()
+                {
+                    return 'password';
+                }
+
+                public function getAuthPasswordName()
                 {
                     return 'password';
                 }
@@ -56,7 +63,7 @@ class AppServiceProvider extends ServiceProvider
 
         // Mock Auth class for systems without authentication
         $this->app->singleton('auth', function ($app) {
-            return new class implements Guard {
+            return new class implements Guard, StatefulGuard {
                 private $user = null;
 
                 public function user()
@@ -64,22 +71,22 @@ class AppServiceProvider extends ServiceProvider
                     if ($this->user === null) {
                         $this->user = app('mock-user');
                     }
-                    return null; // Return null for mock behavior
+                    return $this->user;
                 }
                 
                 public function id()
                 {
-                    return null;
+                    return $this->user() ? $this->user()->getAuthIdentifier() : null;
                 }
                 
                 public function check()
                 {
-                    return false;
+                    return $this->user() !== null;
                 }
                 
                 public function guest()
                 {
-                    return true;
+                    return !$this->check();
                 }
                 
                 public function extend($driver, $callback)
@@ -88,6 +95,11 @@ class AppServiceProvider extends ServiceProvider
                 }
                 
                 public function guard($name = null)
+                {
+                    return $this;
+                }
+
+                public function shouldUse($name)
                 {
                     return $this;
                 }
@@ -105,6 +117,45 @@ class AppServiceProvider extends ServiceProvider
                 }
 
                 public function hasUser()
+                {
+                    return $this->user !== null;
+                }
+                
+                // StatefulGuard methods
+                public function attempt(array $credentials = [], $remember = false)
+                {
+                    return true;
+                }
+                
+                public function once(array $credentials = [])
+                {
+                    return true;
+                }
+                
+                public function login(Authenticatable $user, $remember = false)
+                {
+                    $this->setUser($user);
+                    return true;
+                }
+                
+                public function loginUsingId($id, $remember = false)
+                {
+                    $this->setUser(app('mock-user'));
+                    return $this->user();
+                }
+                
+                public function onceUsingId($id)
+                {
+                    $this->setUser(app('mock-user'));
+                    return $this->user();
+                }
+                
+                public function logout()
+                {
+                    $this->user = null;
+                }
+                
+                public function viaRemember()
                 {
                     return false;
                 }
@@ -128,5 +179,9 @@ class AppServiceProvider extends ServiceProvider
         Blade::component('playlists.form', 'playlists-form');
         Blade::component('genres.form', 'genres-form');
         Blade::component('tracks.form', 'tracks-form');
+
+        // Livewire components
+        Livewire::component('system-stats', \App\Http\Livewire\SystemStats::class);
+        Livewire::component('dashboard-stats', \App\Http\Livewire\DashboardStats::class);
     }
 }
