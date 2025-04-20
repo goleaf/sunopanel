@@ -155,9 +155,9 @@ Based on priority and dependencies, we'll tackle these tasks in the following or
 - [x] Move all code from Services to Livewire components
   - [x] Migrated UserService to Livewire components (Users, UserForm, UserShow)
   - [x] Migrated NotificationService functionality to WithNotifications trait
-  - [ ] Migrate TrackService to Livewire components
-  - [ ] Migrate PlaylistService to Livewire components
-  - [ ] Migrate GenreService to Livewire components
+  - [x] Migrate TrackService to Livewire components
+  - [x] Migrate PlaylistService to Livewire components
+  - [x] Migrate GenreService to Livewire components
 
 ## Critical Fixes Needed
 - [x] Fix undefined variable $genres in playlists/add-tracks.blade.php view
@@ -404,7 +404,7 @@ composer test:convert-comments
 - [x] Create Livewire components for Tracks (Index).
 - [x] Create Livewire components for Genres (Index, Show).
 - [x] Create Livewire components for Dashboard.
-- [ ] Complete Livewire component implementation for remaining features:
+- [x] Complete Livewire component implementation for remaining features:
   - [x] Create Livewire components for Playlists:
     - [x] Create `app/Http/Livewire/Playlists.php` for index functionality
     - [x] Create `app/Http/Livewire/PlaylistForm.php` for create/edit functionality
@@ -604,4 +604,14 @@ composer test:convert-comments
 - [ ] Improve validation error messages to be more user-friendly
 - [ ] Add real-time validation feedback for form fields
 - [ ] Enhance UI to better display validation errors
+
+# Service Migration Progress
+  
+## Services to Remove After Migration
+- [x] NotificationService - Migrated to WithNotifications trait
+- [x] TrackService - Migrated to Tracks, TrackCreate, TrackEdit and TrackShow components
+- [x] PlaylistService - Migrated to Playlists component and related components
+- [x] GenreService - Migrated to Genres component
+- [ ] BatchService - To be migrated
+- [ ] UserService - Partially migrated to Users component
   
