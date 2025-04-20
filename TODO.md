@@ -576,7 +576,7 @@ composer test:convert-comments
 
 ### Testing
 - [x] Add unit tests for Form Request validation
-- [ ] Add feature tests for Livewire components
+- [x] Add feature tests for Livewire components
 - [ ] Create a test suite for validation edge cases
 
 ### Documentation
@@ -645,7 +645,7 @@ composer test:convert-comments
 
 ### Testing
 - [x] Add unit tests for Form Request validation
-- [ ] Add feature tests for Livewire components
+- [x] Add feature tests for Livewire components
 - [ ] Create a test suite for validation edge cases
 
 ### Documentation
