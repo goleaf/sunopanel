@@ -553,7 +553,7 @@ composer test:convert-comments
 - [ ] Create dedicated tests for Livewire components to ensure they're working correctly after LoggingService removal:
   - [x] Create test for PlaylistShow component
   - [x] Create test for PlaylistAddTracks component
-  - [ ] Create test for PlaylistForm component
+  - [x] Create test for PlaylistForm component
   - [ ] Create test for Playlists component
 - [ ] Implement proper testing utilities for Livewire components
 - [ ] Add integration tests for key user flows
