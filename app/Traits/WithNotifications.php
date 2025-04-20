@@ -1,11 +1,13 @@
 <?php
 
-namespace App\Services;
+declare(strict_types=1);
+
+namespace App\Traits;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Session;
 
-class NotificationService
+trait WithNotifications
 {
     /**
      * Flash a success message to the session.
@@ -13,7 +15,7 @@ class NotificationService
      * @param string $message
      * @return void
      */
-    public function success(string $message): void
+    public function notifySuccess(string $message): void
     {
         Session::flash('success', $message);
     }
@@ -24,7 +26,7 @@ class NotificationService
      * @param string $message
      * @return void
      */
-    public function error(string $message): void
+    public function notifyError(string $message): void
     {
         Session::flash('error', $message);
     }
@@ -35,7 +37,7 @@ class NotificationService
      * @param string $message
      * @return void
      */
-    public function warning(string $message): void
+    public function notifyWarning(string $message): void
     {
         Session::flash('warning', $message);
     }
@@ -46,7 +48,7 @@ class NotificationService
      * @param string $message
      * @return void
      */
-    public function info(string $message): void
+    public function notifyInfo(string $message): void
     {
         Session::flash('info', $message);
     }

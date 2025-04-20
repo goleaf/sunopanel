@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Livewire;
 
 use App\Models\User;
+use App\Traits\WithNotifications;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Illuminate\Support\Facades\Hash;
@@ -15,6 +16,7 @@ use Illuminate\Validation\Rule;
 class UserForm extends Component
 {
     use WithFileUploads;
+    use WithNotifications;
 
     public ?User $user = null;
     public string $name = '';
@@ -112,7 +114,7 @@ class UserForm extends Component
                 'email' => $user->email,
             ]);
             
-            session()->flash('success', $message);
+            $this->notifySuccess($message);
             
             // Redirect to users list
             $this->redirect(route('users.index'));
@@ -121,7 +123,7 @@ class UserForm extends Component
                 'error' => $e->getMessage(),
             ]);
             
-            session()->flash('error', 'Error ' . ($this->isEditMode ? 'updating' : 'creating') . ' user: ' . $e->getMessage());
+            $this->notifyError('Error ' . ($this->isEditMode ? 'updating' : 'creating') . ' user: ' . $e->getMessage());
         }
     }
     
@@ -132,7 +134,7 @@ class UserForm extends Component
             $this->user->update(['avatar' => null]);
             $this->currentAvatar = null;
             
-            session()->flash('success', 'Avatar removed successfully');
+            $this->notifySuccess('Avatar removed successfully');
         }
     }
 } 

@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace App\Http\Livewire;
 
 use App\Models\User;
+use App\Traits\WithNotifications;
 use Livewire\Component;
 use Illuminate\Support\Facades\Log;
 
 class UserShow extends Component
 {
+    use WithNotifications;
+    
     public User $user;
     
     public function mount(User $user): void
@@ -41,6 +44,6 @@ class UserShow extends Component
             'user_id' => $this->user->id,
         ]);
         
-        session()->flash('info', 'User data refreshed');
+        $this->notifyInfo('User data refreshed');
     }
 } 

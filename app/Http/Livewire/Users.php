@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Livewire;
 
 use App\Models\User;
+use App\Traits\WithNotifications;
 use Illuminate\Database\Eloquent\Builder;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -17,6 +18,7 @@ class Users extends Component
 {
     use WithPagination;
     use WithFileUploads;
+    use WithNotifications;
 
     public string $search = '';
     public string $sort = 'id';
@@ -97,7 +99,7 @@ class Users extends Component
         $user = User::find($this->userToDelete);
         
         if (!$user) {
-            session()->flash('error', 'User not found.');
+            $this->notifyError('User not found.');
             $this->userToDelete = null;
             return;
         }
@@ -111,14 +113,14 @@ class Users extends Component
         $deleted = $user->delete();
         
         if ($deleted) {
-            session()->flash('success', "User {$username} deleted successfully.");
+            $this->notifySuccess("User {$username} deleted successfully.");
             Log::info('User deleted', [
                 'user_id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
             ]);
         } else {
-            session()->flash('error', "Failed to delete user {$username}.");
+            $this->notifyError("Failed to delete user {$username}.");
         }
         
         $this->userToDelete = null;
