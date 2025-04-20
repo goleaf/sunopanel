@@ -540,3 +540,11 @@ composer test:convert-comments
 - [ ] Update tests to work with new Livewire components instead of old controllers
 - [ ] Remove any remaining Blade templates that have been replaced by Livewire
 - [ ] Clean up controllers to only contain methods that are still needed
+
+- [x] Remove LoggingService from the entire project:
+  - [x] Remove LoggingService from all Livewire components
+  - [x] Remove LoggingService from the Genre model
+  - [x] Delete all LoggingService implementation and interface files
+  - [x] Delete all LoggingService test files
+  - [x] Remove any LoggingMiddleware implementations
+  
