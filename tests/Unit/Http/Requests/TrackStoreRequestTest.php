@@ -25,77 +25,55 @@ class TrackStoreRequestTest extends TestCase
     }
 
     #[Test]
-    public function testRulesWithoutBulkTracks(): void
+    public function testRules(): void
     {
-        $request = new TrackStoreRequest();
-        $request->replace(['title' => 'Test Track']);
-        
-        $rules = $request->rules();
+        $rules = $this->request->rules();
         
         $this->assertIsArray($rules);
         $this->assertArrayHasKey('title', $rules);
+        $this->assertArrayHasKey('artist', $rules);
+        $this->assertArrayHasKey('album', $rules);
+        $this->assertArrayHasKey('duration', $rules);
+        $this->assertArrayHasKey('selectedGenres', $rules);
+        $this->assertArrayHasKey('selectedGenres.*', $rules);
         $this->assertArrayHasKey('audio_url', $rules);
         $this->assertArrayHasKey('image_url', $rules);
-        $this->assertArrayHasKey('duration', $rules);
         $this->assertArrayHasKey('genres', $rules);
         $this->assertArrayHasKey('genre_ids', $rules);
         $this->assertArrayHasKey('genre_ids.*', $rules);
-        $this->assertArrayHasKey('playlists', $rules);
-        $this->assertArrayHasKey('playlists.*', $rules);
-        $this->assertArrayHasKey('bulk_tracks', $rules);
-        $this->assertContains('required', $rules['title']);
-        $this->assertContains('string', $rules['title']);
-        $this->assertContains('max:255', $rules['title']);
-        $this->assertContains('unique:tracks', $rules['title']);
-        $this->assertContains('required', $rules['audio_url']);
-        $this->assertContains('url', $rules['audio_url']);
-        $this->assertContains('required', $rules['image_url']);
-        $this->assertContains('url', $rules['image_url']);
-        $this->assertContains('nullable', $rules['duration']);
-        $this->assertContains('string', $rules['duration']);
-        $this->assertContains('max:10', $rules['duration']);
-        $this->assertContains('nullable', $rules['genres']);
-        $this->assertContains('required_without:genre_ids', $rules['genres']);
-        $this->assertContains('string', $rules['genres']);
-        $this->assertContains('nullable', $rules['genre_ids']);
-        $this->assertContains('required_without:genres', $rules['genre_ids']);
-        $this->assertContains('array', $rules['genre_ids']);
-        $this->assertContains('exists:genres,id', $rules['genre_ids.*']);
-        $this->assertContains('nullable', $rules['playlists']);
-        $this->assertContains('array', $rules['playlists']);
-        $this->assertContains('exists:playlists,id', $rules['playlists.*']);
-        $this->assertContains('nullable', $rules['bulk_tracks']);
-        $this->assertContains('string', $rules['bulk_tracks']);
-    }
-    
-    #[Test]
-    public function testRulesWithBulkTracks(): void
-    {
-        $request = new TrackStoreRequest();
-        $request->replace(['bulk_tracks' => 'Track 1|URL1|URL2']);
         
-        $rules = $request->rules();
+        // Check specific rule values
+        $this->assertStringContainsString('required', $rules['title']);
+        $this->assertStringContainsString('string', $rules['title']);
+        $this->assertStringContainsString('max:255', $rules['title']);
         
-        $this->assertIsArray($rules);
-        $this->assertArrayHasKey('bulk_tracks', $rules);
-        $this->assertArrayHasKey('title', $rules);
-        $this->assertArrayHasKey('audio_url', $rules);
-        $this->assertArrayHasKey('image_url', $rules);
-        $this->assertArrayHasKey('duration', $rules);
-        $this->assertArrayHasKey('genres', $rules);
-        $this->assertArrayHasKey('genre_ids', $rules);
-        $this->assertArrayHasKey('genre_ids.*', $rules);
-        $this->assertArrayHasKey('playlists', $rules);
-        $this->assertArrayHasKey('playlists.*', $rules);
-        $this->assertContains('required', $rules['bulk_tracks']);
-        $this->assertContains('string', $rules['bulk_tracks']);
-        $this->assertContains('nullable', $rules['title']);
-        $this->assertContains('string', $rules['title']);
-        $this->assertContains('max:255', $rules['title']);
-        $this->assertContains('nullable', $rules['audio_url']);
-        $this->assertContains('url', $rules['audio_url']);
-        $this->assertContains('nullable', $rules['image_url']);
-        $this->assertContains('url', $rules['image_url']);
+        $this->assertStringContainsString('nullable', $rules['artist']);
+        $this->assertStringContainsString('string', $rules['artist']);
+        
+        $this->assertStringContainsString('nullable', $rules['album']);
+        $this->assertStringContainsString('string', $rules['album']);
+        
+        $this->assertStringContainsString('nullable', $rules['duration']);
+        $this->assertStringContainsString('string', $rules['duration']);
+        
+        $this->assertStringContainsString('nullable', $rules['selectedGenres']);
+        $this->assertStringContainsString('array', $rules['selectedGenres']);
+        
+        $this->assertStringContainsString('exists:genres,id', $rules['selectedGenres.*']);
+        
+        $this->assertStringContainsString('required', $rules['audio_url']);
+        $this->assertStringContainsString('string', $rules['audio_url']);
+        
+        $this->assertStringContainsString('nullable', $rules['image_url']);
+        $this->assertStringContainsString('string', $rules['image_url']);
+        
+        $this->assertStringContainsString('nullable', $rules['genres']);
+        $this->assertStringContainsString('string', $rules['genres']);
+        
+        $this->assertStringContainsString('nullable', $rules['genre_ids']);
+        $this->assertStringContainsString('array', $rules['genre_ids']);
+        
+        $this->assertStringContainsString('exists:genres,id', $rules['genre_ids.*']);
     }
 
     #[Test]
@@ -105,21 +83,21 @@ class TrackStoreRequestTest extends TestCase
         
         $this->assertIsArray($messages);
         $this->assertArrayHasKey('title.required', $messages);
-        $this->assertArrayHasKey('title.unique', $messages);
+        $this->assertArrayHasKey('title.max', $messages);
+        $this->assertArrayHasKey('artist.max', $messages);
+        $this->assertArrayHasKey('album.max', $messages);
+        $this->assertArrayHasKey('duration.max', $messages);
         $this->assertArrayHasKey('audio_url.required', $messages);
-        $this->assertArrayHasKey('audio_url.url', $messages);
-        $this->assertArrayHasKey('image_url.required', $messages);
-        $this->assertArrayHasKey('image_url.url', $messages);
-        $this->assertArrayHasKey('genres.required_without', $messages);
-        $this->assertArrayHasKey('genre_ids.required_without', $messages);
+        $this->assertArrayHasKey('selectedGenres.*.exists', $messages);
+        $this->assertArrayHasKey('genre_ids.*.exists', $messages);
         
         $this->assertEquals('The track title is required.', $messages['title.required']);
-        $this->assertEquals('A track with this title already exists.', $messages['title.unique']);
+        $this->assertEquals('The track title cannot exceed 255 characters.', $messages['title.max']);
+        $this->assertEquals('The artist name cannot exceed 255 characters.', $messages['artist.max']);
+        $this->assertEquals('The album name cannot exceed 255 characters.', $messages['album.max']);
+        $this->assertEquals('The duration format is invalid.', $messages['duration.max']);
         $this->assertEquals('The audio URL is required.', $messages['audio_url.required']);
-        $this->assertEquals('The audio URL must be a valid URL.', $messages['audio_url.url']);
-        $this->assertEquals('The image URL is required.', $messages['image_url.required']);
-        $this->assertEquals('The image URL must be a valid URL.', $messages['image_url.url']);
-        $this->assertEquals('Either genres or genre IDs must be provided.', $messages['genres.required_without']);
-        $this->assertEquals('Either genres or genre IDs must be provided.', $messages['genre_ids.required_without']);
+        $this->assertEquals('One or more selected genres do not exist in our system.', $messages['selectedGenres.*.exists']);
+        $this->assertEquals('One or more selected genres do not exist in our system.', $messages['genre_ids.*.exists']);
     }
 }
