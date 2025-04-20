@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Livewire\Dashboard;
 use App\Http\Livewire\Genres;
 use App\Http\Livewire\Tracks;
+use App\Http\Livewire\Playlists;
 
 /*
 |--------------------------------------------------------------------------
@@ -34,7 +35,13 @@ Route::post('tracks/bulk-upload', [TrackController::class, 'processBulkUpload'])
 Route::get('/genres', Genres::class)->middleware(['auth', 'verified'])->name('genres.index');
 
 // Playlist routes
-Route::resource('playlists', PlaylistController::class);
+Route::get('/playlists', Playlists::class)->middleware(['auth', 'verified'])->name('playlists.index');
+Route::get('playlists/create', [PlaylistController::class, 'create'])->name('playlists.create');
+Route::post('playlists', [PlaylistController::class, 'store'])->name('playlists.store');
+Route::get('playlists/{playlist}', [PlaylistController::class, 'show'])->name('playlists.show');
+Route::get('playlists/{playlist}/edit', [PlaylistController::class, 'edit'])->name('playlists.edit');
+Route::put('playlists/{playlist}', [PlaylistController::class, 'update'])->name('playlists.update');
+Route::delete('playlists/{playlist}', [PlaylistController::class, 'destroy'])->name('playlists.destroy');
 Route::get('playlists/{playlist}/add-tracks', [PlaylistController::class, 'addTracks'])->name('playlists.add-tracks');
 Route::post('playlists/{playlist}/tracks', [PlaylistController::class, 'storeTracks'])->name('playlists.store-tracks');
 Route::delete('playlists/{playlist}/tracks/{track}', [PlaylistController::class, 'removeTrack'])->name('playlists.remove-track');

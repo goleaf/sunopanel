@@ -415,26 +415,62 @@ composer test:convert-comments
 # TODO List for Livewire Conversion
 
 - [x] Update `composer.json` to ensure Livewire is installed.
-- [ ] Check and register `LivewireServiceProvider` in `config/app.php`.
-- [ ] Convert existing controllers and views to Livewire components.
-- [ ] Update routes to use Livewire components.
-- [ ] Migrate Blade views to Livewire-compatible views.
-- [ ] Test all components to ensure functionality.
-- [ ] Commit changes to git with appropriate messages.
-- [ ] Remove unused files and branches after completion.
+- [x] Check and register `LivewireServiceProvider` in `config/app.php`.
+- [x] Create Livewire components for Tracks (Index).
+- [x] Create Livewire components for Genres (Index, Show).
+- [x] Create Livewire components for Dashboard.
+- [ ] Complete Livewire component implementation for remaining features:
+  - [ ] Create Livewire components for Playlists:
+    - [x] Create `app/Http/Livewire/Playlists.php` for index functionality
+    - [ ] Create `app/Http/Livewire/PlaylistForm.php` for create/edit functionality
+    - [ ] Create `app/Http/Livewire/PlaylistShow.php` for show functionality
+    - [ ] Create `app/Http/Livewire/PlaylistAddTracks.php` for adding tracks functionality
+  - [ ] Create corresponding Blade views:
+    - [x] Create `resources/views/livewire/playlists.blade.php`
+    - [ ] Create `resources/views/livewire/playlist-form.blade.php`
+    - [ ] Create `resources/views/livewire/playlist-show.blade.php`
+    - [ ] Create `resources/views/livewire/playlist-add-tracks.blade.php`
+- [ ] Update routes in `routes/web.php` to use Livewire components:
+  - [x] Replace playlist index route with Livewire component
+  - [ ] Replace other playlist routes with their Livewire counterparts
+- [ ] Update cross-references in existing Livewire components
+- [ ] Ensure all UI interactions (search, sort, pagination) are handled by Livewire
+- [ ] Implement real-time updates and reactivity using Livewire's features
+- [ ] Test and debug the Livewire implementation for any issues
+- [ ] Create Livewire-specific tests for new components
 
-## Conversion to Livewire
+## Implementation Plan
 
-- [ ] Create Livewire components for Tracks (Index, Create, Edit, Show).
-- [ ] Create Livewire components for Genres (Index, Create, Edit, Show).
-- [ ] Create Livewire components for Playlists (Index, Create, Edit, Show, Add/Remove Tracks).
-- [ ] Update routes to use Livewire components.
-- [ ] Update views to render Livewire components instead of Blade views.
-- [ ] Modify controllers to handle Livewire component interactions if necessary.
-- [ ] Update tests to work with Livewire components.
-- [ ] Ensure all UI interactions (search, sort, pagination) are handled by Livewire.
-- [ ] Implement real-time updates and reactivity using Livewire's features.
-- [ ] Test and debug the Livewire implementation for any issues.
+1. First Phase: Create Playlists Index Livewire Component
+   - [x] Create `app/Http/Livewire/Playlists.php` component
+   - [x] Create `resources/views/livewire/playlists.blade.php` view
+   - [x] Update route in `routes/web.php`
+   - [ ] Test functionality
+
+2. Second Phase: Create Playlist Form (Create/Edit) Livewire Component
+   - [ ] Create `app/Http/Livewire/PlaylistForm.php` component
+   - [ ] Create `resources/views/livewire/playlist-form.blade.php` view
+   - [ ] Update routes in `routes/web.php`
+   - [ ] Test functionality
+
+3. Third Phase: Create Playlist Show Livewire Component
+   - [ ] Create `app/Http/Livewire/PlaylistShow.php` component
+   - [ ] Create `resources/views/livewire/playlist-show.blade.php` view
+   - [ ] Update route in `routes/web.php`
+   - [ ] Test functionality
+
+4. Fourth Phase: Create Playlist Add Tracks Livewire Component
+   - [ ] Create `app/Http/Livewire/PlaylistAddTracks.php` component
+   - [ ] Create `resources/views/livewire/playlist-add-tracks.blade.php` view
+   - [ ] Update route in `routes/web.php`
+   - [ ] Test functionality
+
+5. Final Phase: Testing and Cleanup
+   - [ ] Ensure all Livewire components work correctly
+   - [ ] Check for any bugs or issues
+   - [ ] Update tests to work with Livewire
+   - [ ] Remove unused controller methods and views
+   - [ ] Commit changes to git
 
 ## Existing Test Fixes (In Progress)
 
@@ -443,3 +479,4 @@ composer test:convert-comments
 - [x] Add authentication to `tests/Feature/PlaylistControllerTest.php`.
 - [ ] Add authentication to `tests/Feature/PlaylistRequestTest.php`.
 - [ ] Verify all tests pass after authentication fixes.
+- [ ] Update tests to work with new Livewire components.
