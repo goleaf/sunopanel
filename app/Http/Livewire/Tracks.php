@@ -8,6 +8,7 @@ use App\Http\Requests\TrackStoreRequest;
 use App\Http\Requests\TrackUpdateRequest;
 use App\Models\Genre;
 use App\Models\Track;
+use App\Traits\WithNotifications;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -19,6 +20,7 @@ use Throwable;
 class Tracks extends Component
 {
     use WithPagination;
+    use WithNotifications;
     
     public $search = '';
     public $genreFilter = '';
@@ -91,31 +93,42 @@ class Tracks extends Component
         $this->validate(['trackIdToDelete' => 'exists:tracks,id']);
         
         $track = Track::findOrFail($this->trackIdToDelete);
+        $trackTitle = $track->title;
         
-        DB::transaction(function () use ($track) {
-            // Detach from genres and playlists
-            $track->genres()->detach();
-            $track->playlists()->detach();
+        try {
+            DB::transaction(function () use ($track) {
+                // Detach from genres and playlists
+                $track->genres()->detach();
+                $track->playlists()->detach();
+                
+                // Delete file from storage if it exists
+                if ($track->file_path && Storage::disk('public')->exists($track->file_path)) {
+                    Storage::disk('public')->delete($track->file_path);
+                }
+                
+                // Delete track
+                $track->delete();
+            });
             
-            // Delete file from storage if it exists
-            if ($track->file_path && Storage::disk('public')->exists($track->file_path)) {
-                Storage::disk('public')->delete($track->file_path);
-            }
+            Log::info("Track deleted successfully", [
+                'track_id' => $this->trackIdToDelete,
+                'track_title' => $trackTitle,
+                'user_id' => auth()->id() ?? 'guest'
+            ]);
             
-            // Delete track
-            $track->delete();
-        });
-        
-        Log::info("Track deleted successfully", [
-            'track_id' => $this->trackIdToDelete,
-            'track_title' => $track->title,
-            'user_id' => auth()->id() ?? 'guest'
-        ]);
-        
-        session()->flash('success', 'Track deleted successfully.');
-        
-        $this->trackIdToDelete = null;
-        $this->showDeleteModal = false;
+            $this->notifySuccess('Track deleted successfully.');
+            
+            $this->trackIdToDelete = null;
+            $this->showDeleteModal = false;
+        } catch (Throwable $e) {
+            Log::error("Error deleting track", [
+                'track_id' => $this->trackIdToDelete,
+                'error' => $e->getMessage(),
+                'user_id' => auth()->id() ?? 'guest'
+            ]);
+            
+            $this->notifyError('Error deleting track: ' . $e->getMessage());
+        }
     }
     
     /**
@@ -167,21 +180,30 @@ class Tracks extends Component
                 continue;
             }
 
-            DB::transaction(function () use ($title, $audioUrl, $imageUrl, $duration, $genresRaw, &$processedCount) {
-                // Create the track
-                $track = Track::create([
+            try {
+                DB::transaction(function () use ($title, $audioUrl, $imageUrl, $duration, $genresRaw, &$processedCount) {
+                    // Create the track
+                    $track = Track::create([
+                        'title' => $title,
+                        'audio_url' => $audioUrl,
+                        'image_url' => $imageUrl,
+                        'duration' => $duration,
+                        'unique_id' => Track::generateUniqueId($title),
+                    ]);
+
+                    // Handle genres
+                    $this->handleGenres($track, $genresRaw);
+
+                    $processedCount++;
+                });
+            } catch (Throwable $e) {
+                $errors[] = "Line {$lineNumber}: Error processing track: " . $e->getMessage();
+                Log::error('Error during bulk track import', [
+                    'line' => $lineNumber,
                     'title' => $title,
-                    'audio_url' => $audioUrl,
-                    'image_url' => $imageUrl,
-                    'duration' => $duration,
-                    'unique_id' => Track::generateUniqueId($title),
+                    'error' => $e->getMessage()
                 ]);
-
-                // Handle genres
-                $this->handleGenres($track, $genresRaw);
-
-                $processedCount++;
-            });
+            }
         }
 
         return [$processedCount, $errors];
@@ -247,7 +269,7 @@ class Tracks extends Component
 
         return $track;
     }
-
+    
     /**
      * Update an existing track from validated data.
      */
@@ -256,9 +278,11 @@ class Tracks extends Component
         // Update track fields
         $track->update([
             'title' => $validated['title'],
-            'audio_url' => $validated['audio_url'],
+            'audio_url' => $validated['audio_url'] ?? $track->audio_url,
             'image_url' => $validated['image_url'] ?? $track->image_url,
             'duration' => $validated['duration'] ?? $track->duration,
+            'artist' => $validated['artist'] ?? $track->artist,
+            'album' => $validated['album'] ?? $track->album,
         ]);
 
         // Sync genres if present in the validated data
@@ -280,6 +304,7 @@ class Tracks extends Component
     public function getPopularTracks(int $limit = 10)
     {
         return Track::orderBy('play_count', 'desc')
+            ->with('genres')
             ->limit($limit)
             ->get();
     }
@@ -297,29 +322,46 @@ class Tracks extends Component
      */
     public function getAllTracks()
     {
-        return Track::all();
+        return Track::with('genres')->orderBy('title')->get();
+    }
+    
+    /**
+     * Get genres for filter
+     */
+    public function getGenresForFilter()
+    {
+        return Genre::orderBy('name')->get();
     }
     
     public function render()
     {
-        $tracks = Track::query()
-            ->with(['genres'])
-            ->when($this->search, function ($query) {
-                return $query->where(function ($q) {
-                    $q->where('title', 'like', '%' . $this->search . '%')
-                      ->orWhere('artist', 'like', '%' . $this->search . '%')
-                      ->orWhere('album', 'like', '%' . $this->search . '%');
-                });
-            })
-            ->when($this->genreFilter, function ($query) {
-                return $query->whereHas('genres', function ($q) {
-                    $q->where('genres.id', $this->genreFilter);
-                });
-            })
-            ->orderBy($this->sortField, $this->direction)
-            ->paginate($this->perPage);
+        $query = Track::with('genres');
+
+        // Search functionality
+        if (!empty($this->search)) {
+            $searchTerm = $this->search;
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('title', 'like', "%{$searchTerm}%")
+                  ->orWhereHas('genres', function ($gq) use ($searchTerm) {
+                      $gq->where('name', 'like', "%{$searchTerm}%");
+                  });
+            });
+        }
+
+        // Genre filter
+        if (!empty($this->genreFilter)) {
+            $query->whereHas('genres', fn($gq) => $gq->where('genres.id', $this->genreFilter));
+        }
+
+        // Validate sort field
+        $allowedSortFields = ['title', 'created_at', 'duration', 'play_count'];
+        $sortField = in_array($this->sortField, $allowedSortFields) ? $this->sortField : 'created_at';
+        $direction = in_array($this->direction, ['asc', 'desc']) ? $this->direction : 'desc';
+
+        $query->orderBy($sortField, $direction);
         
-        $genres = Genre::orderBy('name')->get();
+        $tracks = $query->paginate($this->perPage);
+        $genres = $this->getGenresForFilter();
         
         return view('livewire.tracks', [
             'tracks' => $tracks,

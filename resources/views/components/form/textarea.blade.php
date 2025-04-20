@@ -1,5 +1,6 @@
 @props([
-    'name',
+    'name' => null,
+    'id' => null,
     'label' => null,
     'error' => null,
     'required' => false,
@@ -10,9 +11,15 @@
     'helpText' => '',
 ])
 
+@php
+    // If name is not provided but id is, use id as name
+    $textareaName = $name ?? $id ?? '';
+    $textareaId = $id ?? $name ?? '';
+@endphp
+
 <div class="{{ $wrapperClass }}">
     @if($label)
-        <label for="{{ $name }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+        <label for="{{ $textareaId }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
             {{ $label }}
             @if($required)
                 <span class="text-red-500">*</span>
@@ -22,8 +29,8 @@
     
     <div class="relative mt-1 rounded-md shadow-sm">
         <textarea 
-            id="{{ $name }}"
-            name="{{ $name }}"
+            id="{{ $textareaId }}"
+            @if($textareaName) name="{{ $textareaName }}" @endif
             rows="{{ $rows }}"
             placeholder="{{ $placeholder }}"
             {{ $attributes->merge(['class' => 'textarea textarea-bordered w-full ' . $textareaClass]) }}
@@ -32,10 +39,10 @@
     </div>
     
     @if($error)
-        <x-form.error :name="$name" :message="$error" />
-    @elseif($name && $errors->has($name))
+        <x-form.error name="{{ $textareaName }}" message="{{ $error }}" />
+    @elseif($textareaName && $errors->has($textareaName))
         <div class="mt-1 text-xs text-red-600 dark:text-red-400">
-            {{ $errors->first($name) }}
+            {{ $errors->first($textareaName) }}
         </div>
     @endif
 

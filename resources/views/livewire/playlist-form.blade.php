@@ -11,60 +11,63 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <!-- Title -->
                             <div class="col-span-2">
-                                <x-form.label for="title" :value="__('Title')" />
+                                <x-form.label for="title">{{ __('Title') }}</x-form.label>
                                 <x-form.input 
-                                    id="title" 
+                                    id="title"
+                                    name="title" 
                                     type="text"
                                     wire:model="title" 
                                     placeholder="Enter playlist title"
                                     required
                                 />
-                                @error('title') <x-form.error>{{ $message }}</x-form.error> @enderror
+                                @error('title') <x-form.error name="title">{{ $message }}</x-form.error> @enderror
                             </div>
 
                             <!-- Description -->
                             <div class="col-span-2">
-                                <x-form.label for="description" :value="__('Description')" />
+                                <x-form.label for="description">{{ __('Description') }}</x-form.label>
                                 <x-form.textarea 
-                                    id="description" 
+                                    id="description"
+                                    name="description" 
                                     wire:model="description" 
                                     placeholder="Enter playlist description (optional)"
                                     rows="4"
                                 />
-                                @error('description') <x-form.error>{{ $message }}</x-form.error> @enderror
+                                @error('description') <x-form.error name="description">{{ $message }}</x-form.error> @enderror
                             </div>
 
                             <!-- Genre -->
                             <div>
-                                <x-form.label for="genre_id" :value="__('Genre (Optional)')" />
-                                <x-form.select id="genre_id" wire:model="genre_id">
+                                <x-form.label for="genre_id">{{ __('Genre (Optional)') }}</x-form.label>
+                                <x-form.select id="genre_id" name="genre_id" wire:model="genre_id">
                                     <option value="">Select a genre</option>
                                     @foreach($genres as $genre)
                                         <option value="{{ $genre->id }}">{{ $genre->name }}</option>
                                     @endforeach
                                 </x-form.select>
-                                @error('genre_id') <x-form.error>{{ $message }}</x-form.error> @enderror
+                                @error('genre_id') <x-form.error name="genre_id">{{ $message }}</x-form.error> @enderror
                             </div>
 
                             <!-- Cover Image URL -->
                             <div>
-                                <x-form.label for="cover_image" :value="__('Cover Image URL (Optional)')" />
+                                <x-form.label for="cover_image">{{ __('Cover Image URL (Optional)') }}</x-form.label>
                                 <x-form.input 
-                                    id="cover_image" 
+                                    id="cover_image"
+                                    name="cover_image" 
                                     type="text" 
                                     wire:model="cover_image" 
                                     placeholder="Enter cover image URL"
                                 />
-                                @error('cover_image') <x-form.error>{{ $message }}</x-form.error> @enderror
+                                @error('cover_image') <x-form.error name="cover_image">{{ $message }}</x-form.error> @enderror
                             </div>
 
                             <!-- Visibility -->
                             <div class="col-span-2">
                                 <div class="flex items-center mt-4">
-                                    <x-form.checkbox id="is_public" wire:model="is_public" />
-                                    <x-form.label for="is_public" class="ml-2" :value="__('Make this playlist public')" />
+                                    <input type="checkbox" id="is_public" wire:model="is_public" class="checkbox" />
+                                    <x-form.label for="is_public" class="ml-2">{{ __('Make this playlist public') }}</x-form.label>
                                 </div>
-                                @error('is_public') <x-form.error>{{ $message }}</x-form.error> @enderror
+                                @error('is_public') <x-form.error name="is_public">{{ $message }}</x-form.error> @enderror
                             </div>
                         </div>
 

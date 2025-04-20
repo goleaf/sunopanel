@@ -1,5 +1,6 @@
 @props([
-    'name',
+    'name' => null,
+    'id' => null,
     'label' => null,
     'type' => 'text',
     'icon' => null,
@@ -9,9 +10,15 @@
     'inputClass' => '',
 ])
 
+@php
+    // If name is not provided but id is, use id as name
+    $inputName = $name ?? $id ?? '';
+    $inputId = $id ?? $name ?? '';
+@endphp
+
 <div class="{{ $wrapperClass }}">
     @if($label)
-        <label for="{{ $name }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+        <label for="{{ $inputId }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
             {{ $label }}
             @if($required)
                 <span class="text-red-500">*</span>
@@ -28,14 +35,18 @@
         
         <input 
             type="{{ $type }}" 
-            id="{{ $name }}"
-            name="{{ $name }}"
+            id="{{ $inputId }}"
+            @if($inputName) name="{{ $inputName }}" @endif
             {{ $attributes->merge(['class' => 'input input-bordered w-full ' . ($icon ? 'pl-10' : '') . ' ' . $inputClass]) }}
             @required($required)
         >
     </div>
     
     @if($error)
-        <x-form.error :name="$name" :message="$error" />
+        <x-form.error name="{{ $inputName }}" message="{{ $error }}" />
+    @elseif($inputName && $errors->has($inputName))
+        <div class="mt-1 text-xs text-red-600 dark:text-red-400">
+            {{ $errors->first($inputName) }}
+        </div>
     @endif
 </div> 

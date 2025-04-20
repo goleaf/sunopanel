@@ -26,7 +26,6 @@ class Genres extends Component
     use WithPagination;
     use WithNotifications;
     
-    public $genres;
     public $name = '';
     public $description = '';
     public $editingGenreId = null;
@@ -54,18 +53,24 @@ class Genres extends Component
 
     public function mount()
     {
-        $this->loadGenres();
+        // Empty mount method - pagination and data fetching happens in render
     }
 
+    /**
+     * Refresh the genres list
+     * @deprecated Use resetPage directly
+     */
     public function loadGenres()
     {
-        $this->genres = $this->getPaginatedGenres();
+        $this->resetPage();
     }
     
     /**
      * Get paginated genres with filtering and sorting
+     * @deprecated Use render method directly
+     * @private
      */
-    public function getPaginatedGenres()
+    private function getPaginatedGenres()
     {
         $query = Genre::query()->withCount('tracks');
 
@@ -116,7 +121,7 @@ class Genres extends Component
             
             $this->resetInputFields();
             $this->notifySuccess('Genre created successfully!');
-            $this->loadGenres();
+            $this->resetPage();
         } catch (Throwable $e) {
             Log::error('Error creating genre', [
                 'error' => $e->getMessage(),
@@ -170,7 +175,7 @@ class Genres extends Component
             
             $this->resetInputFields();
             $this->notifySuccess('Genre updated successfully!');
-            $this->loadGenres();
+            $this->resetPage();
         } catch (Throwable $e) {
             Log::error('Error updating genre', [
                 'genre_id' => $this->editingGenreId,
@@ -247,12 +252,13 @@ class Genres extends Component
             
             if ($deleted) {
                 $this->notifySuccess('Genre deleted successfully!');
+                $this->resetPage();
             } else {
-                $this->notifyError('Failed to delete genre.');
+                $this->notifyError('Error deleting genre. Please try again.');
             }
             
             $this->showDeleteModal = false;
-            $this->loadGenres();
+            $this->genreIdToDelete = null;
         } catch (Throwable $e) {
             Log::error('Error deleting genre', [
                 'genre_id' => $this->genreIdToDelete,
@@ -262,6 +268,7 @@ class Genres extends Component
             
             $this->notifyError('Error deleting genre: ' . $e->getMessage());
             $this->showDeleteModal = false;
+            $this->genreIdToDelete = null;
         }
     }
     
@@ -453,6 +460,15 @@ class Genres extends Component
         $this->editingGenreId = null;
     }
 
+    /**
+     * Reset the form to prepare for creating a new genre
+     */
+    public function createGenre()
+    {
+        $this->resetInputFields();
+        $this->editingGenreId = null;
+    }
+
     public function render()
     {
         $query = Genre::query()->withCount('tracks');
@@ -469,10 +485,8 @@ class Genres extends Component
 
         $query->orderBy($sortField, $direction);
         
-        $genres = $query->paginate($this->perPage);
-        
         return view('livewire.genres', [
-            'paginatedGenres' => $genres
+            'genres' => $query->paginate($this->perPage)
         ]);
     }
 } 

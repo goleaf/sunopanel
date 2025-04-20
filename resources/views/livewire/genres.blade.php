@@ -14,14 +14,14 @@
                 <form wire:submit.prevent="{{ $editingGenreId ? 'update' : 'create' }}">
                     <div class="grid grid-cols-1 gap-4">
                         <div>
-                            <x-form.label for="name">{{ __('Name') }}</x-form.label>
-                            <x-form.input id="name" type="text" wire:model="name" placeholder="{{ __('Enter genre name') }}" />
-                            @error('name') <x-form.error>{{ $message }}</x-form.error> @enderror
+                            <x-form.label for="name" required>{{ __('Name') }}</x-form.label>
+                            <x-form.input id="name" name="name" type="text" wire:model="name" placeholder="{{ __('Enter genre name') }}" required />
+                            @error('name') <x-form.error name="name">{{ $message }}</x-form.error> @enderror
                         </div>
                         <div>
                             <x-form.label for="description">{{ __('Description') }}</x-form.label>
-                            <x-form.input id="description" type="text" wire:model="description" placeholder="{{ __('Enter genre description') }}" />
-                            @error('description') <x-form.error>{{ $message }}</x-form.error> @enderror
+                            <x-form.input id="description" name="description" type="text" wire:model="description" placeholder="{{ __('Enter genre description') }}" />
+                            @error('description') <x-form.error name="description">{{ $message }}</x-form.error> @enderror
                         </div>
                     </div>
                     <div class="mt-4 flex space-x-2">

@@ -15,9 +15,6 @@ use App\Http\Livewire\TrackPlay;
 use App\Http\Livewire\TrackShow;
 use App\Http\Livewire\TrackUpload;
 use App\Http\Livewire\SystemStats;
-use App\Http\Livewire\Users;
-use App\Http\Livewire\UserForm;
-use App\Http\Livewire\UserShow;
 
 /*
 |--------------------------------------------------------------------------
@@ -67,12 +64,6 @@ Route::get('/playlists/{playlist}/add-tracks', PlaylistAddTracks::class)->name('
 Route::post('/playlists/{playlist}/tracks', PlaylistAddTracks::class)->name('playlists.store-tracks');
 Route::delete('/playlists/{playlist}/tracks/{track}', PlaylistShow::class)->name('playlists.remove-track');
 Route::post('/genres/{genre}/playlists', Genres::class)->name('playlists.create-from-genre');
-
-// User routes
-Route::get('/users', Users::class)->name('users.index');
-Route::get('/users/create', UserForm::class)->name('users.create');
-Route::get('/users/{user}', UserShow::class)->name('users.show');
-Route::get('/users/{user}/edit', UserForm::class)->name('users.edit');
 
 // Test route for notifications
 Route::get('/test-notification', function() {
