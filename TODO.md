@@ -158,6 +158,8 @@ Based on priority and dependencies, we'll tackle these tasks in the following or
   - [x] Migrate TrackService to Livewire components
   - [x] Migrate PlaylistService to Livewire components
   - [x] Migrate GenreService to Livewire components
+  - [x] BatchService - Not needed as functionality integrated in Tracks component
+  - [x] UserService - Completed migration but components later removed
 
 ## Critical Fixes Needed
 - [x] Fix undefined variable $genres in playlists/add-tracks.blade.php view
@@ -607,11 +609,11 @@ composer test:convert-comments
 
 # Service Migration Progress
   
-## Services to Remove After Migration
+## Services Removed After Migration
 - [x] NotificationService - Migrated to WithNotifications trait
 - [x] TrackService - Migrated to Tracks, TrackCreate, TrackEdit and TrackShow components
 - [x] PlaylistService - Migrated to Playlists component and related components
 - [x] GenreService - Migrated to Genres component
-- [ ] BatchService - To be migrated
-- [ ] UserService - Partially migrated to Users component
+- [x] BatchService - Not needed as functionality integrated in Tracks component
+- [x] UserService - Users components were created but later removed
   
