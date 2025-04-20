@@ -34,20 +34,26 @@ class TrackEdit extends Component
         // Get base rules from TrackUpdateRequest
         $baseRules = (new TrackUpdateRequest())->rules();
         
-        // Replace the unique rule for title to use our component's track ID
-        if (isset($baseRules['title'])) {
-            foreach ($baseRules['title'] as $key => $rule) {
-                if (is_object($rule) && $rule instanceof Rule) {
-                    $baseRules['title'][$key] = Rule::unique('tracks')->ignore($this->track->id);
-                }
-            }
+        // Only include rules for properties that exist in this component
+        $componentRules = [
+            'title' => 'required|string|max:255',
+            'artist' => 'nullable|string|max:255',
+            'album' => 'nullable|string|max:255',
+            'duration' => 'nullable|string|max:10',
+            'selectedGenres' => 'nullable|array',
+            'selectedGenres.*' => 'exists:genres,id',
+        ];
+        
+        // Add file validation only when files are provided
+        if ($this->audioFile) {
+            $componentRules['audioFile'] = 'file|mimes:mp3,wav,ogg|max:20000';
         }
         
-        // Add selectedGenres which is specific to this component
-        $baseRules['selectedGenres'] = ['nullable', 'array'];
-        $baseRules['selectedGenres.*'] = ['exists:genres,id'];
+        if ($this->imageFile) {
+            $componentRules['imageFile'] = 'file|image|max:5000';
+        }
         
-        return $baseRules;
+        return $componentRules;
     }
     
     protected function messages()

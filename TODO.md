@@ -10,11 +10,11 @@
 ## Action Plan
 
 ### Fixing Test Failures
-- [ ] Debug and fix authentication tests
-- [ ] Resolve file upload test issues
-- [ ] Fix genre service tests
-- [ ] Ensure all playlist tests pass
-- [ ] Implement proper mocks for external service tests
+- [x] Debug and fix authentication tests
+- [x] Resolve file upload test issues
+- [x] Fix genre service tests
+- [x] Ensure all playlist tests pass
+- [x] Implement proper mocks for external service tests
 
 ### UI/UX Improvements
 - [x] Update color scheme to be more consistent

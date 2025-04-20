@@ -25,7 +25,21 @@ class TrackCreate extends Component
     
     protected function rules()
     {
-        return (new TrackStoreRequest())->rules();
+        $trackRequestRules = (new TrackStoreRequest())->rules();
+        
+        // Only include rules for properties that exist in this component
+        $componentRules = [
+            'title' => $trackRequestRules['title'],
+            'artist' => $trackRequestRules['artist'],
+            'album' => $trackRequestRules['album'],
+            'duration' => $trackRequestRules['duration'],
+            'selectedGenres' => 'nullable|array',
+            'selectedGenres.*' => 'exists:genres,id',
+            'audioFile' => 'required|file|mimes:mp3,wav,ogg|max:20000',
+            'imageFile' => 'nullable|file|image|max:5000',
+        ];
+        
+        return $componentRules;
     }
     
     protected function messages()
@@ -99,6 +113,11 @@ class TrackCreate extends Component
             
             session()->flash('error', 'Failed to add track: ' . $e->getMessage());
         }
+    }
+    
+    public function save()
+    {
+        return $this->saveTrack();
     }
     
     public function render()

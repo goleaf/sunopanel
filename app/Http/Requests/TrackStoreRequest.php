@@ -30,6 +30,11 @@ final class TrackStoreRequest extends FormRequest
             'duration' => 'nullable|string|max:10',
             'selectedGenres' => 'nullable|array',
             'selectedGenres.*' => 'exists:genres,id',
+            'audio_url' => 'required|string',
+            'image_url' => 'nullable|string',
+            'genres' => 'nullable|string',
+            'genre_ids' => 'nullable|array',
+            'genre_ids.*' => 'exists:genres,id',
         ];
     }
 
@@ -46,7 +51,9 @@ final class TrackStoreRequest extends FormRequest
             'artist.max' => 'The artist name cannot exceed 255 characters.',
             'album.max' => 'The album name cannot exceed 255 characters.',
             'duration.max' => 'The duration format is invalid.',
+            'audio_url.required' => 'The audio URL is required.',
             'selectedGenres.*.exists' => 'One or more selected genres do not exist in our system.',
+            'genre_ids.*.exists' => 'One or more selected genres do not exist in our system.',
         ];
     }
 }
