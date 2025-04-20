@@ -548,3 +548,59 @@ composer test:convert-comments
   - [x] Delete all LoggingService test files
   - [x] Remove any LoggingMiddleware implementations
   
+# SunoPanel - Task Tracker
+
+## Completed Tasks
+
+### Form Request Refactoring
+- [x] Move validation rules from Livewire components to Form Request classes
+- [x] Merge Livewire-specific Form Requests with main Request classes
+- [x] Update all Livewire components to use consolidated request classes
+- [x] Create new consolidated request classes for list components:
+  - [x] PlaylistListRequest
+  - [x] TrackListRequest
+- [x] Enhance existing request classes:
+  - [x] BulkTrackRequest
+  - [x] PlaylistRemoveTrackRequest
+- [x] Remove the Livewire directory in the Requests folder
+- [x] Add validation for filter parameters in list components
+
+### Code Improvements
+- [x] Ensure proper validation calls before critical operations
+- [x] Add validateOnly calls for real-time validation in components
+- [x] Enhance error messages
+- [x] Fix file structure to adhere to Laravel conventions
+
+## Future Improvements
+
+### Validation & Error Handling
+- [ ] Implement more comprehensive validation for file uploads
+- [ ] Add custom validation rules for common use cases
+- [ ] Improve error display in the UI
+- [ ] Add validation for more edge cases
+
+### Performance Optimization
+- [ ] Optimize query performance in list components
+- [ ] Implement caching for frequently used data
+- [ ] Reduce unnecessary database queries
+
+### Testing
+- [ ] Add unit tests for Form Request validation
+- [ ] Add feature tests for Livewire components
+- [ ] Create a test suite for validation edge cases
+
+### Documentation
+- [ ] Document the validation structure
+- [ ] Add code comments explaining complex validation rules
+- [ ] Create a developer guide for adding new validation rules
+
+### Security
+- [ ] Audit validation rules for security vulnerabilities
+- [ ] Implement more robust authorization checks
+- [ ] Ensure proper CSRF protection
+
+### User Experience
+- [ ] Improve validation error messages to be more user-friendly
+- [ ] Add real-time validation feedback for form fields
+- [ ] Enhance UI to better display validation errors
+  
