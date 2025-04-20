@@ -2,6 +2,7 @@
 
 namespace App\Http\Livewire;
 
+use App\Http\Requests\TrackDeleteRequest;
 use App\Models\Track;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -12,6 +13,11 @@ class TrackShow extends Component
 {
     public Track $track;
     public bool $showDeleteModal = false;
+
+    protected function rules()
+    {
+        return (new TrackDeleteRequest())->rules();
+    }
 
     public function mount(Track $track): void
     {

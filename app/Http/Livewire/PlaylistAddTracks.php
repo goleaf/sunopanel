@@ -32,9 +32,21 @@ class PlaylistAddTracks extends Component
         $baseRules = (new PlaylistStoreTracksRequest())->rules();
         
         // Map our component's property names to the request's expected format
-        return [
+        // Also add rules for search and filter parameters
+        return array_merge([
+            'search' => 'nullable|string|max:255',
+            'genreFilter' => 'nullable|exists:genres,id',
             'selectedTracks' => $baseRules['track_ids'],
             'selectedTracks.*' => $baseRules['track_ids.*'],
+        ]);
+    }
+
+    protected function messages()
+    {
+        return [
+            'genreFilter.exists' => 'The selected genre does not exist.',
+            'selectedTracks.required' => 'Please select at least one track.',
+            'selectedTracks.*.exists' => 'One or more selected tracks do not exist.',
         ];
     }
 
@@ -57,11 +69,13 @@ class PlaylistAddTracks extends Component
 
     public function updatingSearch()
     {
+        $this->validateOnly('search');
         $this->resetPage();
     }
 
     public function updatingGenreFilter()
     {
+        $this->validateOnly('genreFilter');
         $this->resetPage();
     }
 
