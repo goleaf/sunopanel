@@ -14,6 +14,8 @@ class PlaylistShow extends Component
     public $tracks = [];
     public $totalDurationFormatted = '';
     public $genreName = '';
+    public $selectedTracks = [];
+    public $dragEnabled = false;
     
     protected $playlistService;
     protected $loggingService;
@@ -50,6 +52,65 @@ class PlaylistShow extends Component
             $this->playlist = $playlist;
             $this->tracks = collect();
             session()->flash('error', 'Failed to load playlist details: ' . $e->getMessage());
+        }
+    }
+
+    public function selectAll()
+    {
+        $this->selectedTracks = $this->tracks->pluck('id')->toArray();
+    }
+    
+    public function deselectAll()
+    {
+        $this->selectedTracks = [];
+    }
+    
+    public function removeSelectedTracks()
+    {
+        if (empty($this->selectedTracks)) {
+            $this->dispatchBrowserEvent('alert', [
+                'type' => 'info',
+                'message' => 'No tracks selected for removal.'
+            ]);
+            return;
+        }
+        
+        try {
+            $count = count($this->selectedTracks);
+            
+            $this->loggingService->logInfoMessage('Removing selected tracks from playlist', [
+                'playlist_id' => $this->playlist->id,
+                'track_count' => $count,
+                'track_ids' => $this->selectedTracks,
+                'user_id' => Auth::id(),
+            ]);
+            
+            $this->playlistService->removeTracks($this->playlist, $this->selectedTracks);
+            
+            // Refresh playlist data
+            $playlistWithDetails = $this->playlistService->getPlaylistWithTrackDetails($this->playlist->fresh());
+            $this->playlist = $playlistWithDetails;
+            $this->tracks = $playlistWithDetails->tracks;
+            $this->totalDurationFormatted = $playlistWithDetails->total_duration_formatted;
+            $this->selectedTracks = []; // Clear selection
+            
+            $this->dispatchBrowserEvent('alert', [
+                'type' => 'success',
+                'message' => "{$count} track(s) removed from playlist successfully."
+            ]);
+        } catch (\Exception $e) {
+            $this->loggingService->logErrorMessage('Error in PlaylistShow component removeSelectedTracks method', [
+                'playlist_id' => $this->playlist->id,
+                'track_ids' => $this->selectedTracks,
+                'error' => $e->getMessage(),
+                'trace' => substr($e->getTraceAsString(), 0, 500),
+                'user_id' => Auth::id(),
+            ]);
+            
+            $this->dispatchBrowserEvent('alert', [
+                'type' => 'error',
+                'message' => 'Error removing tracks: ' . $e->getMessage()
+            ]);
         }
     }
 
@@ -122,6 +183,63 @@ class PlaylistShow extends Component
             $this->dispatchBrowserEvent('alert', [
                 'type' => 'error',
                 'message' => 'Track not found or audio URL is missing.'
+            ]);
+        }
+    }
+
+    public function toggleDrag()
+    {
+        $this->dragEnabled = !$this->dragEnabled;
+        $this->dispatchBrowserEvent('toggleDragMode', ['enabled' => $this->dragEnabled]);
+    }
+    
+    public function updateTrackOrder(array $orderedTracks)
+    {
+        try {
+            // Prepare the positions array
+            $trackPositions = [];
+            foreach ($orderedTracks as $index => $trackId) {
+                $trackPositions[] = [
+                    'id' => $trackId,
+                    'position' => $index + 1, // 1-based position
+                ];
+            }
+            
+            $this->loggingService->logInfoMessage('Updating track positions in playlist', [
+                'playlist_id' => $this->playlist->id,
+                'track_positions' => $trackPositions,
+                'user_id' => Auth::id(),
+            ]);
+            
+            $success = $this->playlistService->updateTrackPositions($this->playlist, $trackPositions);
+            
+            if ($success) {
+                // Refresh playlist data
+                $playlistWithDetails = $this->playlistService->getPlaylistWithTrackDetails($this->playlist->fresh());
+                $this->playlist = $playlistWithDetails;
+                $this->tracks = $playlistWithDetails->tracks;
+                
+                $this->dispatchBrowserEvent('alert', [
+                    'type' => 'success',
+                    'message' => 'Track order updated successfully.'
+                ]);
+            } else {
+                $this->dispatchBrowserEvent('alert', [
+                    'type' => 'error',
+                    'message' => 'Failed to update track order.'
+                ]);
+            }
+        } catch (\Exception $e) {
+            $this->loggingService->logErrorMessage('Error in PlaylistShow component updateTrackOrder method', [
+                'playlist_id' => $this->playlist->id,
+                'error' => $e->getMessage(),
+                'trace' => substr($e->getTraceAsString(), 0, 500),
+                'user_id' => Auth::id(),
+            ]);
+            
+            $this->dispatchBrowserEvent('alert', [
+                'type' => 'error',
+                'message' => 'Error updating track order: ' . $e->getMessage()
             ]);
         }
     }

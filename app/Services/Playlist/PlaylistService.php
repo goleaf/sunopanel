@@ -459,4 +459,45 @@ final readonly class PlaylistService
 
         return $playlist->fresh(); // Return fresh model
     }
+
+    /**
+     * Update the position of tracks in a playlist.
+     */
+    public function updateTrackPositions(Playlist $playlist, array $trackPositions): bool
+    {
+        try {
+            DB::beginTransaction();
+            
+            foreach ($trackPositions as $trackPosition) {
+                if (isset($trackPosition['id']) && isset($trackPosition['position'])) {
+                    $trackId = $trackPosition['id'];
+                    $position = $trackPosition['position'];
+                    
+                    // Check if the track exists in the playlist
+                    if ($playlist->tracks()->where('track_id', $trackId)->exists()) {
+                        $playlist->tracks()->updateExistingPivot($trackId, ['position' => $position]);
+                        
+                        Log::info('Track position updated in playlist', [
+                            'playlist_id' => $playlist->id,
+                            'track_id' => $trackId,
+                            'position' => $position,
+                        ]);
+                    }
+                }
+            }
+            
+            DB::commit();
+            return true;
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            Log::error('Error updating track positions in playlist', [
+                'playlist_id' => $playlist->id,
+                'error' => $e->getMessage(),
+                'trace' => substr($e->getTraceAsString(), 0, 500),
+            ]);
+            
+            return false;
+        }
+    }
 }

@@ -1,7 +1,9 @@
 import './bootstrap';
 import Alpine from 'alpinejs';
+import Sortable from 'sortablejs';
 
 window.Alpine = Alpine;
+window.Sortable = Sortable; // Make Sortable.js globally available
 
 // Create custom Alpine.js directive for mobile menu
 document.addEventListener('alpine:init', () => {

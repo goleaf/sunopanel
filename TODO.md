@@ -498,7 +498,12 @@ composer test:convert-comments
 - [ ] Ensure proper error handling and user feedback
 
 ## Other Improvements
-- [ ] Consider adding drag-and-drop reordering of tracks in playlist
+- [x] Implement drag-and-drop reordering of tracks in playlists
+  - [x] Add Sortable.js library
+  - [x] Update PlaylistShow Livewire component to handle track reordering
+  - [x] Add support for toggling drag mode
+  - [x] Update PlaylistService to handle track position updates
+  - [x] Add styling for drag-and-drop interface
 - [ ] Add playlist sharing functionality
 - [ ] Implement playlist export options (CSV, PDF, etc.)
 

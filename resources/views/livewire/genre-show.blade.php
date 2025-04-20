@@ -99,10 +99,16 @@
                                 <table class="table table-zebra table-sm w-full">
                                     <thead>
                                         <tr>
-                                            <th><x-sort-link :sortField="$sortField" :direction="$direction" routeName="genres.show" :routeParams="['genre' => $genre]" field="title">Title</x-sort-link></th>
+                                            <th wire:click="sortBy('title')" class="cursor-pointer">
+                                                Title @if($sortField == 'title') <span class="ml-1">{{ $direction == 'asc' ? '↑' : '↓' }}</span> @endif
+                                            </th>
                                             <th>Other Genres</th>
-                                            <th><x-sort-link :sortField="$sortField" :direction="$direction" routeName="genres.show" :routeParams="['genre' => $genre]" field="duration">Duration</x-sort-link></th>
-                                            <th><x-sort-link :sortField="$sortField" :direction="$direction" routeName="genres.show" :routeParams="['genre' => $genre]" field="created_at">Added</x-sort-link></th>
+                                            <th wire:click="sortBy('duration')" class="cursor-pointer">
+                                                Duration @if($sortField == 'duration') <span class="ml-1">{{ $direction == 'asc' ? '↑' : '↓' }}</span> @endif
+                                            </th>
+                                            <th wire:click="sortBy('created_at')" class="cursor-pointer">
+                                                Added @if($sortField == 'created_at') <span class="ml-1">{{ $direction == 'asc' ? '↑' : '↓' }}</span> @endif
+                                            </th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>

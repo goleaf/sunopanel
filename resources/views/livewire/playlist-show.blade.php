@@ -80,7 +80,41 @@
                 <div class="lg:col-span-2">
                     <div class="card bg-base-100 shadow-xl">
                         <div class="card-body">
-                            <h2 class="card-title text-xl mb-4">Tracks in Playlist ({{ count($tracks) }})</h2>
+                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
+                                <h2 class="card-title text-xl">Tracks in Playlist ({{ count($tracks) }})</h2>
+                                
+                                @if(count($tracks) > 0)
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <div class="text-sm font-medium mr-2">
+                                        Selected: <span class="badge badge-primary">{{ count($selectedTracks) }}</span>
+                                    </div>
+                                    <div class="dropdown dropdown-end">
+                                        <label tabindex="0" class="btn btn-sm btn-outline">
+                                            Actions
+                                            <x-icon name="chevron-down" size="4" class="ml-1" />
+                                        </label>
+                                        <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
+                                            <li><button wire:click="selectAll">
+                                                <x-icon name="plus-circle" size="4" />
+                                                Select All
+                                            </button></li>
+                                            <li><button wire:click="deselectAll">
+                                                <x-icon name="minus-circle" size="4" />
+                                                Deselect All
+                                            </button></li>
+                                            <li><button wire:click="removeSelectedTracks" wire:confirm="Are you sure you want to remove the selected tracks?">
+                                                <x-icon name="trash" size="4" />
+                                                Remove Selected
+                                            </button></li>
+                                        </ul>
+                                    </div>
+                                    <button type="button" wire:click="toggleDrag" class="btn btn-sm {{ $dragEnabled ? 'btn-primary' : 'btn-outline' }}">
+                                        <x-icon name="selector" size="4" class="mr-1" />
+                                        {{ $dragEnabled ? 'Exit Reorder Mode' : 'Reorder Tracks' }}
+                                    </button>
+                                </div>
+                                @endif
+                            </div>
                             
                             @if(count($tracks) === 0)
                                 <div class="text-center py-10 text-base-content/70 italic">
@@ -91,6 +125,12 @@
                                     <table class="table table-zebra table-sm w-full">
                                         <thead>
                                             <tr>
+                                                <th class="w-10">
+                                                    <input type="checkbox" class="checkbox checkbox-xs"
+                                                        @if(count($selectedTracks) === count($tracks)) checked @endif
+                                                        @if(count($tracks) === 0) disabled @endif
+                                                        wire:click="$toggle('selectedTracks', {{ json_encode($tracks->pluck('id')->toArray()) }})" />
+                                                </th>
                                                 <th>#</th>
                                                 <th>Title</th>
                                                 <th>Genres</th>
@@ -98,9 +138,15 @@
                                                 <th>Actions</th>
                                             </tr>
                                         </thead>
-                                        <tbody>
+                                        <tbody id="playlist-tracks" class="{{ $dragEnabled ? 'cursor-move' : '' }}">
                                             @foreach($tracks->sortBy('pivot.position') as $index => $track)
-                                                <tr>
+                                                <tr class="{{ $dragEnabled ? 'track-draggable' : '' }}" 
+                                                    data-id="{{ $track->id }}"
+                                                    data-index="{{ $index }}">
+                                                    <td>
+                                                        <input type="checkbox" class="checkbox checkbox-xs" 
+                                                            wire:model="selectedTracks" value="{{ $track->id }}" />
+                                                    </td>
                                                     <td class="text-base-content/70">{{ $index + 1 }}</td>
                                                     <td>
                                                         <div class="flex items-center space-x-3">
@@ -166,7 +212,7 @@
         </div>
     </div>
 
-    {{-- JavaScript for handling alerts and track playing --}}
+    {{-- JavaScript for handling alerts, track playing, and drag-and-drop --}}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             window.addEventListener('alert', event => {
@@ -198,6 +244,49 @@
                     });
                 }
             });
+            
+            // Set up Sortable.js instance for drag-and-drop
+            let sortable = null;
+            
+            function initSortable() {
+                if (sortable) {
+                    sortable.destroy();
+                    sortable = null;
+                }
+                
+                const tracksContainer = document.getElementById('playlist-tracks');
+                if (!tracksContainer) return;
+                
+                sortable = new Sortable(tracksContainer, {
+                    animation: 150,
+                    handle: '.track-draggable',
+                    ghostClass: 'opacity-50',
+                    chosenClass: 'bg-base-300',
+                    disabled: true, // Start with sorting disabled
+                    onEnd: function(evt) {
+                        // Get the new order of track IDs
+                        const trackOrder = Array.from(tracksContainer.querySelectorAll('tr'))
+                            .map(row => row.dataset.id);
+                        
+                        // Send the new order to the Livewire component
+                        @this.updateTrackOrder(trackOrder);
+                    }
+                });
+            }
+            
+            // Initialize Sortable.js
+            initSortable();
+            
+            // Toggle drag mode when requested
+            window.addEventListener('toggleDragMode', event => {
+                const enabled = event.detail.enabled;
+                if (sortable) {
+                    sortable.option('disabled', !enabled);
+                }
+            });
+            
+            // Re-initialize Sortable when Livewire updates the DOM
+            document.addEventListener('livewire:update', initSortable);
         });
     </script>
 </x-app-layout> 

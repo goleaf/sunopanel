@@ -314,3 +314,33 @@ select[multiple] {
     background-color: var(--primary);
     color: var(--primary-content);
 }
+
+/* Track drag-and-drop styles */
+.track-draggable {
+    transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+}
+
+.track-draggable:hover {
+    cursor: grab;
+    background-color: rgba(59, 130, 246, 0.1);
+}
+
+.track-draggable:active {
+    cursor: grabbing;
+}
+
+.sortable-drag {
+    background-color: rgba(59, 130, 246, 0.2);
+    opacity: 0.8;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.sortable-ghost {
+    background-color: rgba(59, 130, 246, 0.05);
+    border: 2px dashed rgba(59, 130, 246, 0.3);
+}
+
+/* Cursor changes to indicate drag mode */
+.cursor-move tbody tr {
+    cursor: move;
+}
