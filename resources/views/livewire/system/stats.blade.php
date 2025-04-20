@@ -1,7 +1,11 @@
 <div>
-    <div class="pb-6">
-        <h2 class="text-2xl font-bold">System Statistics</h2>
-    </div>
+    @if(Route::currentRouteName() === 'system.stats')
+        <x-heading :title="'System Statistics'" :breadcrumbs="['Dashboard' => route('dashboard'), 'System Statistics']" />
+    @else
+        <div class="pb-6">
+            <h2 class="text-2xl font-bold">System Statistics</h2>
+        </div>
+    @endif
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <!-- Tracks Card -->

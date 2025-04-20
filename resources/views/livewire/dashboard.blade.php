@@ -2,50 +2,10 @@
     <x-heading :title="'Dashboard'" :breadcrumbs="['Dashboard']" />
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        {{-- Stats Section --}}
-        <x-card title="System Statistics">
-            <div class="stats shadow w-full">
-                <div class="stat">
-                    <div class="stat-title">Tracks</div>
-                    <div class="stat-value">{{ $stats['tracksCount'] }}</div>
-                    <div class="stat-desc">Total tracks</div>
-                </div>
-
-                <div class="stat">
-                    <div class="stat-title">Genres</div>
-                    <div class="stat-value">{{ $stats['genresCount'] }}</div>
-                    <div class="stat-desc">Unique genres</div>
-                </div>
-
-                <div class="stat">
-                    <div class="stat-title">Playlists</div>
-                    <div class="stat-value">{{ $stats['playlistsCount'] }}</div>
-                    <div class="stat-desc">Created playlists</div>
-                </div>
-
-                <div class="stat">
-                    <div class="stat-title">Total Duration</div>
-                    <div class="stat-value">{{ $stats['totalDuration'] }}</div>
-                    <div class="stat-desc">Across all tracks</div>
-                </div>
-            </div>
-        </x-card>
-
-        {{-- Storage Section --}}
-        <x-card title="Storage Usage">
-            <div class="stat">
-                <div class="stat-figure text-secondary">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                        class="inline-block w-8 h-8 stroke-current">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M13 10V3L4 14h7v7l9-11h-7z"></path> {{-- Placeholder icon, replace if needed --}}
-                    </svg>
-                </div>
-                <div class="stat-title">Track Storage</div>
-                <div class="stat-value">{{ $stats['storage'] }} MB</div>
-                <div class="stat-desc">Used by track files</div>
-            </div>
-        </x-card>
+        {{-- System Stats Section --}}
+        <div class="lg:col-span-2">
+            @livewire('system-stats')
+        </div>
 
         {{-- Quick Actions Section --}}
         <x-card title="Quick Actions">
