@@ -20,11 +20,19 @@ use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Throwable;
+use Livewire\Attributes\Title;
 
 class Genres extends Component
 {
     use WithPagination;
     use WithNotifications;
+    
+    /**
+     * Indicates if the component should be rendered on the server.
+     *
+     * @var bool
+     */
+    protected bool $shouldRenderOnServer = true;
     
     public $name = '';
     public $description = '';
@@ -480,7 +488,7 @@ class Genres extends Component
         $this->showForm = false;
         $this->resetInputFields();
     }
-    
+
     /**
      * Reset the form to prepare for creating a new genre
      */
@@ -493,7 +501,7 @@ class Genres extends Component
         // Emit browser event to scroll to form and focus input field
         $this->dispatchBrowserEvent('scroll-to-form', ['id' => 'name']);
     }
-    
+
     /**
      * Alias for resetInputFields to maintain compatibility with template
      */
@@ -503,24 +511,22 @@ class Genres extends Component
         $this->showForm = false;
     }
 
+    /**
+     * Render the component 
+     */
+    #[Title('Genres Management')]
     public function render()
     {
-        $query = Genre::query()->withCount('tracks');
-
-        // Handle search
-        if (!empty($this->search)) {
-            $query->where('name', 'like', '%'.$this->search.'%');
-        }
-
-        // Handle sorting
-        $allowedSortFields = ['name', 'created_at', 'tracks_count'];
-        $sortField = in_array($this->sortField, $allowedSortFields) ? $this->sortField : 'name';
-        $direction = in_array($this->direction, ['asc', 'desc']) ? $this->direction : 'asc';
-
-        $query->orderBy($sortField, $direction);
-        
+        $genres = Genre::query()
+            ->withCount('tracks')
+            ->when($this->search, function($query) {
+                $query->where('name', 'like', '%' . $this->search . '%');
+            })
+            ->orderBy($this->sortField, $this->direction)
+            ->paginate($this->perPage);
+            
         return view('livewire.genres', [
-            'genres' => $query->paginate($this->perPage)
+            'genres' => $genres
         ]);
     }
 } 

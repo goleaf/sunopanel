@@ -20,12 +20,20 @@ use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 use Throwable;
+use Livewire\Attributes\Title;
 
 class Playlists extends Component
 {
     use WithPagination;
     use WithNotifications;
     use WithFileUploads;
+
+    /**
+     * Indicates if the component should be rendered on the server.
+     *
+     * @var bool
+     */
+    protected bool $shouldRenderOnServer = true;
 
     public $search = '';
     public $sortField = 'created_at';
@@ -467,36 +475,27 @@ class Playlists extends Component
         return count($newTrackIds);
     }
     
+    /**
+     * Render the component
+     */
+    #[Title('Playlists Management')]
     public function render()
     {
-        $query = Playlist::query()
-            ->with('genre')
-            ->withCount('tracks');
-            
-        // Apply search if provided
-        if (!empty($this->search)) {
-            $query->where(function (Builder $q) {
-                $q->where('title', 'like', "%{$this->search}%")
-                  ->orWhere('description', 'like', "%{$this->search}%");
-            });
-        }
-        
-        // Apply genre filter if selected
-        if (!empty($this->genreFilter)) {
-            $query->where('genre_id', $this->genreFilter);
-        }
-        
-        // Apply sorting
-        $query->orderBy($this->sortField, $this->direction);
-        
-        $playlists = $query->paginate($this->perPage);
-        
-        // Get genres for filter dropdown
-        $genres = Genre::orderBy('name')->get();
+        $playlists = Playlist::query()
+            ->with(['genre', 'tracks'])
+            ->withCount('tracks')
+            ->when($this->search, function($query) {
+                $query->where('title', 'like', '%' . $this->search . '%');
+            })
+            ->when($this->genreFilter, function($query) {
+                $query->where('genre_id', $this->genreFilter);
+            })
+            ->orderBy($this->sortField, $this->direction)
+            ->paginate($this->perPage);
         
         return view('livewire.playlists', [
             'playlists' => $playlists,
-            'genres' => $genres
+            'genres' => Genre::orderBy('name')->get(),
         ]);
     }
 } 

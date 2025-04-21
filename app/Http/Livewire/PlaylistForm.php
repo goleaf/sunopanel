@@ -10,9 +10,17 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Livewire\Attributes\Title;
 
 class PlaylistForm extends Component
 {
+    /**
+     * Indicates if the component should be rendered on the server.
+     *
+     * @var bool
+     */
+    protected bool $shouldRenderOnServer = true;
+
     public $playlistId;
     public $title = '';
     public $description = '';
@@ -112,8 +120,14 @@ class PlaylistForm extends Component
         return redirect()->route('playlists.show', $this->playlist);
     }
 
+    /**
+     * Render the component
+     */
+    #[Title('Create/Edit Playlist')]
     public function render()
     {
-        return view('livewire.playlist-form');
+        return view('livewire.playlist-form', [
+            'genres' => $this->genres
+        ]);
     }
 } 

@@ -16,11 +16,19 @@ use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Throwable;
+use Livewire\Attributes\Title;
 
 class Tracks extends Component
 {
     use WithPagination;
     use WithNotifications;
+    
+    /**
+     * Indicates if the component should be rendered on the server.
+     *
+     * @var bool
+     */
+    protected bool $shouldRenderOnServer = true;
     
     public $search = '';
     public $genreFilter = '';
@@ -333,39 +341,28 @@ class Tracks extends Component
         return Genre::orderBy('name')->get();
     }
     
+    /**
+     * Render the component
+     */
+    #[Title('Tracks Management')]
     public function render()
     {
-        $query = Track::with('genres');
+        $tracks = Track::query()
+            ->when($this->search, function ($query) {
+                return $query->where('title', 'like', '%' . $this->search . '%')
+                    ->orWhere('artist', 'like', '%' . $this->search . '%');
+            })
+            ->when($this->genreFilter, function ($query) {
+                return $query->whereHas('genres', function ($q) {
+                    $q->where('genres.id', $this->genreFilter);
+                });
+            })
+            ->orderBy($this->sortField, $this->direction)
+            ->paginate($this->perPage);
 
-        // Search functionality
-        if (!empty($this->search)) {
-            $searchTerm = $this->search;
-            $query->where(function ($q) use ($searchTerm) {
-                $q->where('title', 'like', "%{$searchTerm}%")
-                  ->orWhereHas('genres', function ($gq) use ($searchTerm) {
-                      $gq->where('name', 'like', "%{$searchTerm}%");
-                  });
-            });
-        }
-
-        // Genre filter
-        if (!empty($this->genreFilter)) {
-            $query->whereHas('genres', fn($gq) => $gq->where('genres.id', $this->genreFilter));
-        }
-
-        // Validate sort field
-        $allowedSortFields = ['title', 'created_at', 'duration', 'play_count'];
-        $sortField = in_array($this->sortField, $allowedSortFields) ? $this->sortField : 'created_at';
-        $direction = in_array($this->direction, ['asc', 'desc']) ? $this->direction : 'desc';
-
-        $query->orderBy($sortField, $direction);
-        
-        $tracks = $query->paginate($this->perPage);
-        $genres = $this->getGenresForFilter();
-        
         return view('livewire.tracks', [
             'tracks' => $tracks,
-            'genres' => $genres,
+            'genres' => $this->getGenresForFilter(),
         ]);
     }
 } 

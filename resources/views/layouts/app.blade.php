@@ -34,7 +34,7 @@
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between items-center">
                     <!-- Logo and Brand -->
-                    <a href="{{ route('dashboard') }}" class="flex items-center">
+                    <a href="{{ route('dashboard') }}" wire:navigate class="flex items-center">
                         <svg class="w-8 h-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="10"></circle>
                             <circle cx="12" cy="12" r="3"></circle>
@@ -44,31 +44,31 @@
                     
                     <!-- Desktop Navigation -->
                     <nav class="hidden md:flex items-center space-x-1">
-                        <a href="{{ route('dashboard') }}" class="px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('dashboard') ? 'bg-indigo-100 text-indigo-700' : 'text-gray-700 hover:bg-gray-100' }} flex items-center">
+                        <a href="{{ route('dashboard') }}" wire:navigate class="px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('dashboard') ? 'bg-indigo-100 text-indigo-700' : 'text-gray-700 hover:bg-gray-100' }} flex items-center">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                             </svg>
                             Dashboard
                         </a>
-                        <a href="{{ route('tracks.index') }}" class="px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('tracks.*') ? 'bg-indigo-100 text-indigo-700' : 'text-gray-700 hover:bg-gray-100' }} flex items-center">
+                        <a href="{{ route('tracks.index') }}" wire:navigate class="px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('tracks.*') ? 'bg-indigo-100 text-indigo-700' : 'text-gray-700 hover:bg-gray-100' }} flex items-center">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
                             </svg>
                             Tracks
                         </a>
-                        <a href="{{ route('genres.index') }}" class="px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('genres.*') ? 'bg-indigo-100 text-indigo-700' : 'text-gray-700 hover:bg-gray-100' }} flex items-center">
+                        <a href="{{ route('genres.index') }}" wire:navigate class="px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('genres.*') ? 'bg-indigo-100 text-indigo-700' : 'text-gray-700 hover:bg-gray-100' }} flex items-center">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                             </svg>
                             Genres
                         </a>
-                        <a href="{{ route('playlists.index') }}" class="px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('playlists.*') ? 'bg-indigo-100 text-indigo-700' : 'text-gray-700 hover:bg-gray-100' }} flex items-center">
+                        <a href="{{ route('playlists.index') }}" wire:navigate class="px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('playlists.*') ? 'bg-indigo-100 text-indigo-700' : 'text-gray-700 hover:bg-gray-100' }} flex items-center">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                             </svg>
                             Playlists
                         </a>
-                        <a href="{{ route('system.stats') }}" class="px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('system.*') ? 'bg-indigo-100 text-indigo-700' : 'text-gray-700 hover:bg-gray-100' }} flex items-center">
+                        <a href="{{ route('system.stats') }}" wire:navigate class="px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('system.*') ? 'bg-indigo-100 text-indigo-700' : 'text-gray-700 hover:bg-gray-100' }} flex items-center">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                             </svg>
@@ -96,11 +96,11 @@
                                 class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50" 
                                 style="display: none;"
                             >
-                                <a href="{{ route('dashboard') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 {{ request()->routeIs('dashboard') ? 'bg-gray-100 font-medium' : '' }}">Dashboard</a>
-                                <a href="{{ route('tracks.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 {{ request()->routeIs('tracks.*') ? 'bg-gray-100 font-medium' : '' }}">Tracks</a>
-                                <a href="{{ route('genres.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 {{ request()->routeIs('genres.*') ? 'bg-gray-100 font-medium' : '' }}">Genres</a>
-                                <a href="{{ route('playlists.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 {{ request()->routeIs('playlists.*') ? 'bg-gray-100 font-medium' : '' }}">Playlists</a>
-                                <a href="{{ route('system.stats') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 {{ request()->routeIs('system.*') ? 'bg-gray-100 font-medium' : '' }}">System Stats</a>
+                                <a href="{{ route('dashboard') }}" wire:navigate class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 {{ request()->routeIs('dashboard') ? 'bg-gray-100 font-medium' : '' }}">Dashboard</a>
+                                <a href="{{ route('tracks.index') }}" wire:navigate class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 {{ request()->routeIs('tracks.*') ? 'bg-gray-100 font-medium' : '' }}">Tracks</a>
+                                <a href="{{ route('genres.index') }}" wire:navigate class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 {{ request()->routeIs('genres.*') ? 'bg-gray-100 font-medium' : '' }}">Genres</a>
+                                <a href="{{ route('playlists.index') }}" wire:navigate class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 {{ request()->routeIs('playlists.*') ? 'bg-gray-100 font-medium' : '' }}">Playlists</a>
+                                <a href="{{ route('system.stats') }}" wire:navigate class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 {{ request()->routeIs('system.*') ? 'bg-gray-100 font-medium' : '' }}">System Stats</a>
                             </div>
                         </div>
                     </div>
@@ -153,7 +153,7 @@
     </script>
 
     <!-- Livewire Scripts -->
-    @livewireScripts
+    @livewireScriptConfig
     <!-- Custom Scripts -->
     <script src="{{ asset('js/app.js') }}"></script>
 </body>
