@@ -84,7 +84,7 @@ class HomeController extends Controller
 
         $count = count($createdTracks);
         
-        return redirect()->route('tracks.index')
+        return redirect()->route('genres.index')
             ->with('success', "{$count} tracks have been queued for processing");
     }
 
@@ -174,11 +174,11 @@ class HomeController extends Controller
         if ($failCount > 0) {
             // Store failed tracks in session for display
             $request->session()->flash('failed_tracks', $failedTracks);
-            return redirect()->route('tracks.index')
+            return redirect()->route('genres.index')
                 ->with('warning', "Processed {$successCount} tracks successfully, {$failCount} tracks failed. See details below.");
         }
         
-        return redirect()->route('tracks.index')
+        return redirect()->route('genres.index')
             ->with('success', "All {$successCount} tracks were processed successfully!");
     }
 }

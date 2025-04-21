@@ -2,30 +2,21 @@
 
 @section('content')
 <div class="container mx-auto px-4 py-8">
-    <div class="mb-6 flex flex-col md:flex-row md:justify-between md:items-center">
+    <div class="mb-6">
         <h1 class="text-3xl font-bold text-gray-800">Songs</h1>
-        <a href="{{ route('home.index') }}" class="btn btn-primary mt-2 md:mt-0">Add Tracks</a>
     </div>
 
     <!-- Search and Filter Section -->
     <div class="card bg-base-100 shadow-xl mb-6">
-        <div class="card-body">
-            <form action="{{ route('tracks.index') }}" method="GET" class="space-y-4">
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <!-- Search box -->
-                    <div class="form-control">
-                        <label class="label" for="search">
-                            <span class="label-text">Search by title</span>
-                        </label>
-                        <input type="text" name="search" id="search" placeholder="Search..." value="{{ request('search') }}" class="input input-bordered w-full">
+        <div class="card-body py-4">
+            <form action="{{ route('tracks.index') }}" method="GET">
+                <div class="flex flex-wrap items-end gap-2">
+                    <div class="form-control flex-1 min-w-[200px]">
+                        <input type="text" name="search" placeholder="Search by title..." value="{{ request('search') }}" class="input input-bordered input-sm w-full">
                     </div>
                     
-                    <!-- Status filter -->
                     <div class="form-control">
-                        <label class="label" for="status">
-                            <span class="label-text">Status</span>
-                        </label>
-                        <select name="status" id="status" class="select select-bordered w-full">
+                        <select name="status" class="select select-bordered select-sm">
                             <option value="">All Statuses</option>
                             <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pending</option>
                             <option value="processing" {{ request('status') === 'processing' ? 'selected' : '' }}>Processing</option>
@@ -34,12 +25,8 @@
                         </select>
                     </div>
                     
-                    <!-- Genre filter -->
                     <div class="form-control">
-                        <label class="label" for="genre">
-                            <span class="label-text">Genre</span>
-                        </label>
-                        <select name="genre" id="genre" class="select select-bordered w-full">
+                        <select name="genre" class="select select-bordered select-sm">
                             <option value="">All Genres</option>
                             @php
                                 $genres = \App\Models\Genre::orderBy('name')->get();
@@ -52,11 +39,10 @@
                         </select>
                     </div>
                     
-                    <!-- Filter button -->
-                    <div class="form-control self-end">
-                        <div class="flex space-x-2">
-                            <button type="submit" class="btn btn-primary">Apply Filters</button>
-                            <a href="{{ route('tracks.index') }}" class="btn btn-outline">Reset</a>
+                    <div class="form-control flex-none">
+                        <div class="flex gap-1">
+                            <button type="submit" class="btn btn-sm btn-primary">Filter</button>
+                            <a href="{{ route('tracks.index') }}" class="btn btn-sm btn-outline">Reset</a>
                         </div>
                     </div>
                 </div>
