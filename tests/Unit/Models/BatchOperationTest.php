@@ -11,14 +11,14 @@ class BatchOperationTest extends TestCase
 {
     
     #[Test]
-    public function testUser(): void
+    public function test_User(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testFactory(): void
+    public function test_Factory(): void
     {
 
         $this->assertTrue(true);

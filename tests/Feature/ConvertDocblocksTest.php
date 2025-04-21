@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature;
 
 use Illuminate\Support\Facades\File;
@@ -22,6 +24,8 @@ class ConvertDocblocksTest extends TestCase
         
         $content = <<<'PHP'
 <?php
+
+declare(strict_types=1);
 
 namespace Tests\Feature;
 

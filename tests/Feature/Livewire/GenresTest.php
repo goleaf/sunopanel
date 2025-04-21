@@ -28,15 +28,13 @@ class GenresTest extends TestCase
     }
 
     /** @test */
-    public function the_component_can_render()
-    {
+    public function the_component_can_render(): void {
         $component = Livewire::test(Genres::class);
         $component->assertStatus(200);
     }
 
     /** @test */
-    public function it_can_load_genres()
-    {
+    public function it_can_load_genres(): void {
         $genre1 = Genre::factory()->create(['name' => 'Rock']);
         $genre2 = Genre::factory()->create(['name' => 'Pop']);
 
@@ -46,8 +44,7 @@ class GenresTest extends TestCase
     }
 
     /** @test */
-    public function it_can_search_for_genres()
-    {
+    public function it_can_search_for_genres(): void {
         $genre1 = Genre::factory()->create(['name' => 'Rock']);
         $genre2 = Genre::factory()->create(['name' => 'Pop']);
         $genre3 = Genre::factory()->create(['name' => 'Rock & Roll']);
@@ -60,8 +57,7 @@ class GenresTest extends TestCase
     }
 
     /** @test */
-    public function it_can_sort_genres()
-    {
+    public function it_can_sort_genres(): void {
         $genreA = Genre::factory()->create([
             'name' => 'A Genre',
             'created_at' => now()->subDays(2)
@@ -106,8 +102,7 @@ class GenresTest extends TestCase
     }
 
     /** @test */
-    public function it_can_paginate_genres()
-    {
+    public function it_can_paginate_genres(): void {
         // Create 15 genres (assuming per_page is 10)
         Genre::factory()->count(15)->create();
 
@@ -127,8 +122,7 @@ class GenresTest extends TestCase
     }
 
     /** @test */
-    public function it_can_create_a_new_genre()
-    {
+    public function it_can_create_a_new_genre(): void {
         Livewire::test(Genres::class)
             ->set('name', 'New Test Genre')
             ->set('description', 'This is a test genre')
@@ -142,8 +136,7 @@ class GenresTest extends TestCase
     }
 
     /** @test */
-    public function it_validates_genre_name_uniqueness()
-    {
+    public function it_validates_genre_name_uniqueness(): void {
         Genre::factory()->create(['name' => 'Existing Genre']);
 
         Livewire::test(Genres::class)
@@ -154,8 +147,7 @@ class GenresTest extends TestCase
     }
 
     /** @test */
-    public function it_can_update_a_genre()
-    {
+    public function it_can_update_a_genre(): void {
         $genre = Genre::factory()->create([
             'name' => 'Original Name',
             'description' => 'Original description'
@@ -179,8 +171,7 @@ class GenresTest extends TestCase
     }
 
     /** @test */
-    public function it_can_delete_a_genre()
-    {
+    public function it_can_delete_a_genre(): void {
         $genre = Genre::factory()->create(['name' => 'Genre to Delete']);
 
         Livewire::test(Genres::class)
@@ -196,8 +187,7 @@ class GenresTest extends TestCase
     }
 
     /** @test */
-    public function it_can_cancel_genre_deletion()
-    {
+    public function it_can_cancel_genre_deletion(): void {
         $genre = Genre::factory()->create(['name' => 'Genre Not To Delete']);
 
         Livewire::test(Genres::class)
@@ -214,8 +204,7 @@ class GenresTest extends TestCase
     }
 
     /** @test */
-    public function it_cannot_delete_genre_with_tracks()
-    {
+    public function it_cannot_delete_genre_with_tracks(): void {
         $genre = Genre::factory()->create(['name' => 'Genre With Tracks']);
         $track = Track::factory()->create(['genre_id' => $genre->id]);
 

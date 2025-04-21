@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature;
 
 use App\Models\Genre;
@@ -12,6 +14,7 @@ class DashboardControllerTest extends TestCase
 {
     use RefreshDatabase;
 
+    #[\PHPUnit\Framework\Attributes\Test]
     public function test_dashboard_page_loads(): void
     {
         $response = $this->get('/dashboard');
@@ -21,8 +24,8 @@ class DashboardControllerTest extends TestCase
         $response->assertSee('Welcome to SunoPanel');
     }
 
-    public function test_dashboard_displays_system_stats()
-    {
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function test_dashboard_displays_system_stats(): void {
         Track::factory()->count(3)->create();
         Genre::factory()->count(2)->create();
         Playlist::factory()->count(1)->create();
@@ -37,8 +40,8 @@ class DashboardControllerTest extends TestCase
         $response->assertSee('Total Duration');
     }
 
-    public function test_system_stats_api_endpoint()
-    {
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function test_system_stats_api_endpoint(): void {
         Track::factory()->count(3)->create();
         Genre::factory()->count(2)->create();
         Playlist::factory()->count(1)->create();

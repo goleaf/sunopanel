@@ -11,77 +11,77 @@ class PlaylistControllerTest extends TestCase
 {
     
     #[Test]
-    public function testIndex(): void
+    public function test_Index(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testCreate(): void
+    public function test_Create(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testStore(): void
+    public function test_Store(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testShow(): void
+    public function test_Show(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testEdit(): void
+    public function test_Edit(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testUpdate(): void
+    public function test_Update(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testDestroy(): void
+    public function test_Destroy(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testAddTracks(): void
+    public function test_AddTracks(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testStoreTracks(): void
+    public function test_StoreTracks(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testRemoveTrack(): void
+    public function test_RemoveTrack(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testCreateFromGenre(): void
+    public function test_CreateFromGenre(): void
     {
 
         $this->assertTrue(true);

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature;
 
 use App\Models\Genre;
@@ -13,8 +15,8 @@ class BladeViewTest extends TestCase
 {
     use RefreshDatabase, WithFaker;
     
-    public function test_tracks_index_view_renders()
-    {
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function test_tracks_index_view_renders(): void {
         $tracks = Track::factory(3)->create();
         $response = $this->get(route('tracks.index'));
         $response->assertStatus(200);
@@ -27,8 +29,8 @@ class BladeViewTest extends TestCase
         }
     }
 
-    public function test_tracks_show_view_renders()
-    {
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function test_tracks_show_view_renders(): void {
         $track = Track::factory()->create(['title' => 'Test Track']);
         $genre = Genre::factory()->create(['name' => 'Rock']);
         $track->genres()->attach($genre);
@@ -39,8 +41,8 @@ class BladeViewTest extends TestCase
         $response->assertSee('Rock');
     }
 
-    public function test_genres_index_view_renders()
-    {
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function test_genres_index_view_renders(): void {
         $genres = Genre::factory(3)->create();
         $response = $this->get(route('genres.index'));
         $response->assertStatus(200);
@@ -50,8 +52,8 @@ class BladeViewTest extends TestCase
         }
     }
 
-    public function test_playlists_index_view_renders()
-    {
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function test_playlists_index_view_renders(): void {
         $playlists = Playlist::factory(3)->create();
         $response = $this->get(route('playlists.index'));
         $response->assertStatus(200);
@@ -61,8 +63,8 @@ class BladeViewTest extends TestCase
         }
     }
 
-    public function test_playlist_show_view_renders_correctly()
-    {
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function test_playlist_show_view_renders_correctly(): void {
         $playlist = Playlist::factory()->create([
             'title' => 'Test Playlist',
             'description' => 'This is a test playlist',
@@ -82,8 +84,8 @@ class BladeViewTest extends TestCase
         }
     }
 
-    public function test_create_forms_render()
-    {
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function test_create_forms_render(): void {
         $response = $this->get(route('tracks.create'));
         $response->assertStatus(200);
         $response->assertSee('Add New Track');
@@ -95,8 +97,8 @@ class BladeViewTest extends TestCase
         $response->assertSee('Create New Playlist');
     }
 
-    public function test_edit_forms_render()
-    {
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function test_edit_forms_render(): void {
         $track = Track::factory()->create();
         $genre = Genre::factory()->create();
         $playlist = Playlist::factory()->create();

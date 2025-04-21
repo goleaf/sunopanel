@@ -172,6 +172,7 @@ return [
         App\Providers\AppServiceProvider::class,
         App\Providers\ServerRenderingServiceProvider::class,
         App\Providers\LivewireOptimizationServiceProvider::class,
+        App\Providers\TestUtilsServiceProvider::class,
     ],
 
 ];

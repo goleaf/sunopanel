@@ -11,70 +11,70 @@ class BatchControllerTest extends TestCase
 {
     
     #[Test]
-    public function testIndex(): void
+    public function test_Index(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testImport(): void
+    public function test_Import(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testProcessImport(): void
+    public function test_ProcessImport(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testImportTracks(): void
+    public function test_ImportTracks(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testImportPlaylists(): void
+    public function test_ImportPlaylists(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testImportGenres(): void
+    public function test_ImportGenres(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testActions(): void
+    public function test_Actions(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testProcessActions(): void
+    public function test_ProcessActions(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testAssignGenres(): void
+    public function test_AssignGenres(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testAddToPlaylist(): void
+    public function test_AddToPlaylist(): void
     {
 
         $this->assertTrue(true);

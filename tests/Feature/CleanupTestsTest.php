@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature;
 
 use Illuminate\Support\Facades\File;
@@ -25,6 +27,8 @@ class CleanupTestsTest extends TestCase
         $content = <<<'PHP'
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature;
 
 use Tests\TestCase;
@@ -38,7 +42,7 @@ class SampleTest extends TestCase
     use RefreshDatabase;
     
     // This is a comment that should be removed
-    public function testSomething(): void
+    public function test_Something(): void
     {
         $this->assertTrue(true);
         
@@ -89,7 +93,7 @@ PHP;
         $this->assertStringContainsString('use Tests\TestCase;', $content);
         $this->assertStringContainsString('use App\Models\User;', $content);
         $this->assertStringContainsString('use RefreshDatabase;', $content);
-        $this->assertStringContainsString('public function testSomething(): void', $content);
+        $this->assertStringContainsString('public function test_Something(): void', $content);
         $this->assertStringContainsString('$this->assertTrue(true);', $content);
         $this->assertStringContainsString('$user = User::factory()->create();', $content);
         $this->assertStringContainsString('$this->actingAs($user);', $content);

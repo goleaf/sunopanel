@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature;
 
 use App\Models\Genre;
@@ -13,6 +15,7 @@ class AppRouteTest extends TestCase
 {
     use RefreshDatabase;
 
+    #[\PHPUnit\Framework\Attributes\Test]
     public function test_all_routes_are_accessible_without_auth(): void
     {
         $this->seed();
@@ -40,6 +43,7 @@ class AppRouteTest extends TestCase
         $this->get('/system-stats')->assertStatus(200);
     }
 
+    #[\PHPUnit\Framework\Attributes\Test]
     public function test_post_routes_work_with_auth(): void
     {
         $user = User::factory()->create();

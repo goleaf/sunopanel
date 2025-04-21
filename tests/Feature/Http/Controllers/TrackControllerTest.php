@@ -15,7 +15,7 @@ class TrackControllerTest extends TestCase
     use RefreshDatabase;
     
     #[Test]
-    public function testIndex(): void
+    public function test_Index(): void
     {
         Track::factory()->count(3)->create();
         $response = $this->get(route('tracks.index'));
@@ -25,7 +25,7 @@ class TrackControllerTest extends TestCase
     }
     
     #[Test]
-    public function testIndexWithSearch(): void
+    public function test_IndexWithSearch(): void
     {
         Track::factory()->create(['title' => 'Test Track', 'audio_url' => 'https://example.com/search_audio1.mp3', 'image_url' => 'https://example.com/search_image1.jpg']);
         Track::factory()->create(['title' => 'Another Track', 'audio_url' => 'https://example.com/search_audio2.mp3', 'image_url' => 'https://example.com/search_image2.jpg']);
@@ -39,7 +39,7 @@ class TrackControllerTest extends TestCase
     }
 
     #[Test]
-    public function testCreate(): void
+    public function test_Create(): void
     {
         Genre::factory()->count(3)->create();
         $response = $this->get(route('tracks.create'));
@@ -49,7 +49,7 @@ class TrackControllerTest extends TestCase
     }
 
     #[Test]
-    public function testStore(): void
+    public function test_Store(): void
     {
         $genre = Genre::factory()->create();
         $trackData = [
@@ -72,7 +72,7 @@ class TrackControllerTest extends TestCase
     }
 
     #[Test]
-    public function testProcessBulkUpload(): void
+    public function test_ProcessBulkUpload(): void
     {
         $bulkData = [
             'bulk_tracks' => <<<EOD
@@ -97,7 +97,7 @@ EOD
     }
 
     #[Test]
-    public function testShow(): void
+    public function test_Show(): void
     {
         $track = Track::factory()->create(['audio_url' => 'https://example.com/show_audio.mp3', 'image_url' => 'https://example.com/show_image.jpg']);
         $response = $this->get(route('tracks.show', $track->id));
@@ -108,7 +108,7 @@ EOD
     }
 
     #[Test]
-    public function testEdit(): void
+    public function test_Edit(): void
     {
         $track = Track::factory()->create(['audio_url' => 'https://example.com/edit_audio.mp3', 'image_url' => 'https://example.com/edit_image.jpg']);
         $response = $this->get(route('tracks.edit', $track->id));
@@ -119,7 +119,7 @@ EOD
     }
 
     #[Test]
-    public function testUpdate(): void
+    public function test_Update(): void
     {
         $track = Track::factory()->create(['title' => 'Original Title', 'audio_url' => 'https://example.com/orig_audio.mp3', 'image_url' => 'https://example.com/orig_image.jpg']);
         $genre = Genre::factory()->create();
@@ -145,7 +145,7 @@ EOD
     }
 
     #[Test]
-    public function testDestroy(): void
+    public function test_Destroy(): void
     {
         $track = Track::factory()->create(['audio_url' => 'https://example.com/del_audio.mp3', 'image_url' => 'https://example.com/del_image.jpg']);
         $response = $this->delete(route('tracks.destroy', $track->id));
@@ -155,7 +155,7 @@ EOD
     }
 
     #[Test]
-    public function testPlay(): void
+    public function test_Play(): void
     {
         $track = Track::factory()->create(['audio_url' => 'https://example.com/play_audio.mp3']);
 

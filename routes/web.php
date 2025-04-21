@@ -15,6 +15,7 @@ use App\Http\Livewire\TrackPlay;
 use App\Http\Livewire\TrackShow;
 use App\Http\Livewire\TrackUpload;
 use App\Http\Livewire\SystemStats;
+use App\Http\Livewire\ApiDocumentation;
 
 /*
 |--------------------------------------------------------------------------
@@ -33,6 +34,9 @@ Route::get('/dashboard', Dashboard::class)->name('dashboard');
 
 // System Stats API
 Route::get('/system-stats', SystemStats::class)->name('system.stats');
+
+// API Documentation
+Route::get('/api-docs', ApiDocumentation::class)->name('api.documentation');
 
 // Track routes
 Route::get('/tracks', Tracks::class)->name('tracks.index');

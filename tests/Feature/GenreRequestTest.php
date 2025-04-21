@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature;
 
 use App\Models\Genre;
@@ -11,8 +13,8 @@ class GenreRequestTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_genre_store_validation()
-    {
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function test_genre_store_validation(): void {
         $response = $this->post(route('genres.store'), []);
         $response->assertSessionHasErrors(['name']);
         $validData = [
@@ -30,8 +32,8 @@ class GenreRequestTest extends TestCase
         ]);
     }
 
-    public function test_genre_update_validation()
-    {
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function test_genre_update_validation(): void {
         $genre = Genre::create([
             'name' => 'Original Genre',
             'description' => 'Original Description',
@@ -52,8 +54,8 @@ class GenreRequestTest extends TestCase
         ]);
     }
 
-    public function test_genre_delete_validation()
-    {
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function test_genre_delete_validation(): void {
         $genre = Genre::create([
             'name' => 'Test Genre',
             'description' => 'Test Description',
@@ -83,8 +85,8 @@ class GenreRequestTest extends TestCase
         ]);
     }
 
-    public function test_genre_name_uniqueness()
-    {
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function test_genre_name_uniqueness(): void {
         Genre::create([
             'name' => 'Unique Genre',
             'description' => 'Description',

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature;
 
 use App\Models\Genre;
@@ -12,8 +14,8 @@ class PlaylistRequestTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_playlist_store_validation()
-    {
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function test_playlist_store_validation(): void {
         $response = $this->post(route('playlists.store'), []);
         $response->assertSessionHasErrors(['title']);
         $validData = [
@@ -32,8 +34,8 @@ class PlaylistRequestTest extends TestCase
         ]);
     }
 
-    public function test_playlist_update_validation()
-    {
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function test_playlist_update_validation(): void {
         $playlist = Playlist::create([
             'title' => 'Original Playlist',
             'description' => 'Original Description',
@@ -54,8 +56,8 @@ class PlaylistRequestTest extends TestCase
         ]);
     }
 
-    public function test_playlist_store_tracks_validation()
-    {
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function test_playlist_store_tracks_validation(): void {
         $playlist = Playlist::create([
             'title' => 'Test Playlist',
             'description' => 'Test Description',
@@ -96,8 +98,8 @@ class PlaylistRequestTest extends TestCase
         ]);
     }
 
-    public function test_playlist_remove_track_validation()
-    {
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function test_playlist_remove_track_validation(): void {
         $playlist = Playlist::create([
             'title' => 'Test Playlist',
             'description' => 'Test Description',
@@ -120,8 +122,8 @@ class PlaylistRequestTest extends TestCase
         ]);
     }
 
-    public function test_playlist_delete_validation()
-    {
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function test_playlist_delete_validation(): void {
         $playlist = Playlist::create([
             'title' => 'Test Playlist',
             'description' => 'Test Description',
@@ -134,8 +136,8 @@ class PlaylistRequestTest extends TestCase
         ]);
     }
 
-    public function test_playlist_create_from_genre_validation()
-    {
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function test_playlist_create_from_genre_validation(): void {
         $genre = Genre::create([
             'name' => 'Test Genre',
             'description' => 'Test Description',

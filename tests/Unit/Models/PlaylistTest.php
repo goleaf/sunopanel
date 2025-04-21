@@ -11,63 +11,63 @@ class PlaylistTest extends TestCase
 {
     
     #[Test]
-    public function testTracks(): void
+    public function test_Tracks(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testGenre(): void
+    public function test_Genre(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testGenres(): void
+    public function test_Genres(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testGetNameAttribute(): void
+    public function test_GetNameAttribute(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testSetNameAttribute(): void
+    public function test_SetNameAttribute(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testAddTrack(): void
+    public function test_AddTrack(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testRemoveTrack(): void
+    public function test_RemoveTrack(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testGetTracksCountAttribute(): void
+    public function test_GetTracksCountAttribute(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testFactory(): void
+    public function test_Factory(): void
     {
 
         $this->assertTrue(true);

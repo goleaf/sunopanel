@@ -19,13 +19,13 @@ class TrackListRequestTest extends TestCase
     }
     
     #[Test]
-    public function testAuthorize(): void
+    public function test_Authorize(): void
     {
         $this->assertTrue($this->request->authorize());
     }
 
     #[Test]
-    public function testRules(): void
+    public function test_Rules(): void
     {
         $rules = $this->request->rules();
         
@@ -59,7 +59,7 @@ class TrackListRequestTest extends TestCase
     }
 
     #[Test]
-    public function testMessages(): void
+    public function test_Messages(): void
     {
         $messages = $this->request->messages();
         

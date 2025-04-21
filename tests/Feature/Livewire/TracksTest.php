@@ -34,15 +34,13 @@ class TracksTest extends TestCase
     }
 
     /** @test */
-    public function the_component_can_render()
-    {
+    public function the_component_can_render(): void {
         $component = Livewire::test(Tracks::class);
         $component->assertStatus(200);
     }
 
     /** @test */
-    public function it_can_load_tracks()
-    {
+    public function it_can_load_tracks(): void {
         $track1 = Track::factory()->create([
             'title' => 'First Track',
             'genre_id' => $this->genre->id
@@ -59,8 +57,7 @@ class TracksTest extends TestCase
     }
 
     /** @test */
-    public function it_can_search_for_tracks()
-    {
+    public function it_can_search_for_tracks(): void {
         $track1 = Track::factory()->create([
             'title' => 'Rock Track',
             'genre_id' => $this->genre->id
@@ -78,8 +75,7 @@ class TracksTest extends TestCase
     }
 
     /** @test */
-    public function it_can_filter_tracks_by_genre()
-    {
+    public function it_can_filter_tracks_by_genre(): void {
         $rockGenre = Genre::factory()->create(['name' => 'Rock']);
         $popGenre = Genre::factory()->create(['name' => 'Pop']);
         
@@ -100,8 +96,7 @@ class TracksTest extends TestCase
     }
 
     /** @test */
-    public function it_can_sort_tracks()
-    {
+    public function it_can_sort_tracks(): void {
         $trackA = Track::factory()->create([
             'title' => 'A Track',
             'genre_id' => $this->genre->id,
@@ -149,8 +144,7 @@ class TracksTest extends TestCase
     }
 
     /** @test */
-    public function it_can_delete_a_track()
-    {
+    public function it_can_delete_a_track(): void {
         $track = Track::factory()->create([
             'title' => 'Track to Delete',
             'genre_id' => $this->genre->id
@@ -169,8 +163,7 @@ class TracksTest extends TestCase
     }
 
     /** @test */
-    public function it_can_cancel_track_deletion()
-    {
+    public function it_can_cancel_track_deletion(): void {
         $track = Track::factory()->create([
             'title' => 'Track Not To Delete',
             'genre_id' => $this->genre->id
@@ -190,8 +183,7 @@ class TracksTest extends TestCase
     }
 
     /** @test */
-    public function it_can_process_bulk_import()
-    {
+    public function it_can_process_bulk_import(): void {
         Storage::fake('local');
         
         $csv = "title,artist,album,genre,year,duration,filename\n" .
@@ -228,8 +220,7 @@ class TracksTest extends TestCase
     }
 
     /** @test */
-    public function it_validates_bulk_import_file()
-    {
+    public function it_validates_bulk_import_file(): void {
         // Test with invalid file type
         $file = UploadedFile::fake()->create('tracks.txt', 100);
         
@@ -246,8 +237,7 @@ class TracksTest extends TestCase
     }
 
     /** @test */
-    public function it_can_paginate_tracks()
-    {
+    public function it_can_paginate_tracks(): void {
         // Create 15 tracks (assuming per_page is 10)
         Track::factory()->count(15)->create([
             'genre_id' => $this->genre->id

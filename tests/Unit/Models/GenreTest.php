@@ -11,42 +11,42 @@ class GenreTest extends TestCase
 {
     
     #[Test]
-    public function testTracks(): void
+    public function test_Tracks(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testPlaylists(): void
+    public function test_Playlists(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testFindOrCreateByName(): void
+    public function test_FindOrCreateByName(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testSetNameAttribute(): void
+    public function test_SetNameAttribute(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testFormatGenreName(): void
+    public function test_FormatGenreName(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testFactory(): void
+    public function test_Factory(): void
     {
 
         $this->assertTrue(true);

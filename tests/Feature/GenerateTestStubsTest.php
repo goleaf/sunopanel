@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature;
 
 use Illuminate\Support\Facades\File;
@@ -20,6 +22,8 @@ class GenerateTestStubsTest extends TestCase
         $sourceFile = $sourceDir . '/TestService.php';
         $content = <<<'PHP'
 <?php
+
+declare(strict_types=1);
 
 namespace App\Services;
 

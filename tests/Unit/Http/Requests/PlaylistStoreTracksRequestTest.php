@@ -11,14 +11,14 @@ class PlaylistStoreTracksRequestTest extends TestCase
 {
     
     #[Test]
-    public function testAuthorize(): void
+    public function test_Authorize(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testRules(): void
+    public function test_Rules(): void
     {
 
         $this->assertTrue(true);

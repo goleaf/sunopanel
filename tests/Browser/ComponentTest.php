@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Browser;
 
 use Laravel\Dusk\Browser;
@@ -10,8 +12,7 @@ class ComponentTest extends DuskTestCase
 {
     use DatabaseMigrations;
 
-    public function testDashboardWidget()
-    {
+    public function test_DashboardWidget(): void {
         $this->browse(function (Browser $browser) {
             $browser->visit('/')
                     ->assertPresent('.dashboard-widget')
@@ -21,8 +22,7 @@ class ComponentTest extends DuskTestCase
         });
     }
 
-    public function testAdvancedSearchComponent()
-    {
+    public function test_AdvancedSearchComponent(): void {
         $this->browse(function (Browser $browser) {
             $browser->visit('/tracks')
                     ->assertPresent('.advanced-search')
@@ -33,8 +33,7 @@ class ComponentTest extends DuskTestCase
         });
     }
 
-    public function testNotificationsComponent()
-    {
+    public function test_NotificationsComponent(): void {
         $this->browse(function (Browser $browser) {
             $browser->visit('/')
                     ->script("window.dispatchEvent(new CustomEvent('notify', {
@@ -87,8 +86,7 @@ class ComponentTest extends DuskTestCase
         });
     }
 
-    public function testButtonComponent()
-    {
+    public function test_ButtonComponent(): void {
         $this->browse(function (Browser $browser) {
             $browser->visit('/tracks/create')
                     ->assertPresent('.btn')
@@ -105,8 +103,7 @@ class ComponentTest extends DuskTestCase
         });
     }
 
-    public function testTableComponent()
-    {
+    public function test_TableComponent(): void {
         $this->browse(function (Browser $browser) {
             $browser->visit('/tracks')
                     ->assertPresent('table')
@@ -116,8 +113,7 @@ class ComponentTest extends DuskTestCase
         });
     }
 
-    public function testAudioPlayerComponent()
-    {
+    public function test_AudioPlayerComponent(): void {
         $this->browse(function (Browser $browser) {
             $browser->visit('/tracks')
                     ->whenAvailable('.play-button', function ($button) {
@@ -132,8 +128,7 @@ class ComponentTest extends DuskTestCase
         });
     }
 
-    public function testBulkActionsComponent()
-    {
+    public function test_BulkActionsComponent(): void {
         $this->browse(function (Browser $browser) {
             $browser->visit('/tracks')
                     ->check('input[type="checkbox"]:first-child')
@@ -146,8 +141,7 @@ class ComponentTest extends DuskTestCase
         });
     }
 
-    public function testConfirmationDialogComponent()
-    {
+    public function test_ConfirmationDialogComponent(): void {
         $this->browse(function (Browser $browser) {
             $browser->visit('/tracks')
                     ->whenAvailable('.delete-button', function ($button) {
@@ -162,8 +156,7 @@ class ComponentTest extends DuskTestCase
         });
     }
 
-    public function testFormComponents()
-    {
+    public function test_FormComponents(): void {
         $this->browse(function (Browser $browser) {
             $browser->visit('/tracks/create')
                     ->assertPresent('form')

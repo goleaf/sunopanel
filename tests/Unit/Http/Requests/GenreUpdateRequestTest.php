@@ -25,13 +25,13 @@ class GenreUpdateRequestTest extends TestCase
     }
 
     #[Test]
-    public function testAuthorize(): void
+    public function test_Authorize(): void
     {
         $this->assertTrue($this->request->authorize());
     }
 
     #[Test]
-    public function testRules(): void
+    public function test_Rules(): void
     {
         $rules = $this->request->rules();
         

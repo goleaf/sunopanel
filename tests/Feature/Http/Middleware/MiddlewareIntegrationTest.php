@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Middleware;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -9,7 +11,7 @@ class MiddlewareIntegrationTest extends TestCase
 {
     use RefreshDatabase;
     
-    public function testCsrfProtectionCanBeBypassedInTests(): void
+    public function test_CsrfProtectionCanBeBypassedInTests(): void
     {
         // Test we can bypass CSRF in tests
         $response = $this->withoutMiddleware()
@@ -21,7 +23,7 @@ class MiddlewareIntegrationTest extends TestCase
         $this->assertNotEquals(419, $response->getStatusCode());
     }
     
-    public function testOfflineRouteWorks(): void
+    public function test_OfflineRouteWorks(): void
     {
         // Test the offline route used by service worker
         $response = $this->get('/offline');

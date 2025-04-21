@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Livewire;
 
 use App\Http\Livewire\PlaylistAddTracks;
@@ -17,8 +19,7 @@ class PlaylistAddTracksTest extends TestCase
     use WithFaker;
 
     #[\PHPUnit\Framework\Attributes\Test]
-    public function the_component_can_render()
-    {
+    public function the_component_can_render(): void {
         $genre = Genre::factory()->create();
         $playlist = Playlist::factory()->create([
             'genre_id' => $genre->id,
@@ -30,8 +31,7 @@ class PlaylistAddTracksTest extends TestCase
     }
 
     #[\PHPUnit\Framework\Attributes\Test]
-    public function it_can_select_all_tracks()
-    {
+    public function it_can_select_all_tracks(): void {
         $genre = Genre::factory()->create();
         $playlist = Playlist::factory()->create([
             'genre_id' => $genre->id,
@@ -54,8 +54,7 @@ class PlaylistAddTracksTest extends TestCase
     }
 
     #[\PHPUnit\Framework\Attributes\Test]
-    public function it_can_deselect_all_tracks()
-    {
+    public function it_can_deselect_all_tracks(): void {
         $genre = Genre::factory()->create();
         $playlist = Playlist::factory()->create([
             'genre_id' => $genre->id,
@@ -70,8 +69,7 @@ class PlaylistAddTracksTest extends TestCase
     }
 
     #[\PHPUnit\Framework\Attributes\Test]
-    public function it_can_add_tracks_to_playlist()
-    {
+    public function it_can_add_tracks_to_playlist(): void {
         $genre = Genre::factory()->create();
         $playlist = Playlist::factory()->create([
             'genre_id' => $genre->id,
@@ -99,8 +97,7 @@ class PlaylistAddTracksTest extends TestCase
     }
 
     #[\PHPUnit\Framework\Attributes\Test]
-    public function it_displays_error_when_no_tracks_selected_for_adding()
-    {
+    public function it_displays_error_when_no_tracks_selected_for_adding(): void {
         $genre = Genre::factory()->create();
         $playlist = Playlist::factory()->create([
             'genre_id' => $genre->id,
@@ -116,8 +113,7 @@ class PlaylistAddTracksTest extends TestCase
     }
 
     #[\PHPUnit\Framework\Attributes\Test]
-    public function it_loads_playlist_track_ids_on_mount()
-    {
+    public function it_loads_playlist_track_ids_on_mount(): void {
         $genre = Genre::factory()->create();
         $playlist = Playlist::factory()->create([
             'genre_id' => $genre->id,
@@ -132,8 +128,7 @@ class PlaylistAddTracksTest extends TestCase
     }
 
     #[\PHPUnit\Framework\Attributes\Test]
-    public function it_resets_pagination_when_updating_search()
-    {
+    public function it_resets_pagination_when_updating_search(): void {
         $genre = Genre::factory()->create();
         $playlist = Playlist::factory()->create([
             'genre_id' => $genre->id,
@@ -147,8 +142,7 @@ class PlaylistAddTracksTest extends TestCase
     }
 
     #[\PHPUnit\Framework\Attributes\Test]
-    public function it_resets_pagination_when_updating_genre_filter()
-    {
+    public function it_resets_pagination_when_updating_genre_filter(): void {
         $genre = Genre::factory()->create();
         $playlist = Playlist::factory()->create([
             'genre_id' => $genre->id,

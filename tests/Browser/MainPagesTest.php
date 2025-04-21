@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Browser;
 
 use Laravel\Dusk\Browser;
@@ -10,8 +12,7 @@ class MainPagesTest extends DuskTestCase
 {
     use DatabaseMigrations;
 
-    public function testDashboardPage()
-    {
+    public function test_DashboardPage(): void {
         $this->browse(function (Browser $browser) {
             $browser->visit('/')
                     ->assertSee('Dashboard')
@@ -21,8 +22,7 @@ class MainPagesTest extends DuskTestCase
         });
     }
 
-    public function testTracksPage()
-    {
+    public function test_TracksPage(): void {
         $this->browse(function (Browser $browser) {
             $browser->visit('/tracks')
                     ->assertSee('Tracks')
@@ -35,8 +35,7 @@ class MainPagesTest extends DuskTestCase
         });
     }
 
-    public function testGenresPage()
-    {
+    public function test_GenresPage(): void {
         $this->browse(function (Browser $browser) {
             $browser->visit('/genres')
                     ->assertSee('Genres')
@@ -48,8 +47,7 @@ class MainPagesTest extends DuskTestCase
         });
     }
 
-    public function testPlaylistsPage()
-    {
+    public function test_PlaylistsPage(): void {
         $this->browse(function (Browser $browser) {
             $browser->visit('/playlists')
                     ->assertSee('Playlists')
@@ -61,8 +59,7 @@ class MainPagesTest extends DuskTestCase
         });
     }
 
-    public function testFormSubmission()
-    {
+    public function test_FormSubmission(): void {
         $this->browse(function (Browser $browser) {
             $browser->visit('/tracks/create')
                     ->type('title', 'Test Track')
@@ -86,8 +83,7 @@ class MainPagesTest extends DuskTestCase
         });
     }
 
-    public function testAudioPlayer()
-    {
+    public function test_AudioPlayer(): void {
         $this->browse(function (Browser $browser) {
             $browser->visit('/tracks')
                     ->whenAvailable('.play-button', function ($button) {
@@ -99,8 +95,7 @@ class MainPagesTest extends DuskTestCase
         });
     }
 
-    public function testAdvancedSearch()
-    {
+    public function test_AdvancedSearch(): void {
         $this->browse(function (Browser $browser) {
             $browser->visit('/tracks')
                     ->click('@toggle-advanced-search')
@@ -114,8 +109,7 @@ class MainPagesTest extends DuskTestCase
         });
     }
 
-    public function testDarkModeToggle()
-    {
+    public function test_DarkModeToggle(): void {
         $this->browse(function (Browser $browser) {
             $browser->visit('/')
                     ->click('@theme-toggle')
@@ -129,8 +123,7 @@ class MainPagesTest extends DuskTestCase
         });
     }
 
-    public function testResponsiveDesign()
-    {
+    public function test_ResponsiveDesign(): void {
         $this->browse(function (Browser $browser) {
             $browser->resize(375, 667)
                     ->visit('/')
@@ -149,8 +142,7 @@ class MainPagesTest extends DuskTestCase
         });
     }
 
-    public function testNotification()
-    {
+    public function test_Notification(): void {
         $this->browse(function (Browser $browser) {
             $browser->visit('/')
                     ->script("window.dispatchEvent(new CustomEvent('notify', {

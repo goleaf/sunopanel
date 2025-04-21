@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Unit\Http\Middleware;
 
 use App\Http\Middleware\CacheSSRContent;
@@ -20,7 +22,7 @@ class CacheSSRContentTest extends TestCase
         Cache::flush();
     }
     
-    public function testNonGetRequestsAreNotCached(): void
+    public function test_NonGetRequestsAreNotCached(): void
     {
         $request = $this->createRequest('POST', 'dashboard');
         $response = $this->runMiddleware($request);
@@ -29,7 +31,7 @@ class CacheSSRContentTest extends TestCase
         $this->assertFalse($response->headers->has('X-SSR-Cache'));
     }
     
-    public function testAuthenticatedRequestsAreNotCached(): void
+    public function test_AuthenticatedRequestsAreNotCached(): void
     {
         $request = $this->createRequest('GET', 'dashboard');
         $request->setUserResolver(fn() => (object)['id' => 1]);
@@ -39,7 +41,7 @@ class CacheSSRContentTest extends TestCase
         $this->assertFalse($response->headers->has('X-SSR-Cache'));
     }
     
-    public function testNonCachableRoutesAreNotCached(): void
+    public function test_NonCachableRoutesAreNotCached(): void
     {
         $request = $this->createRequest('GET', 'some-other-route');
         $response = $this->runMiddleware($request);
@@ -48,7 +50,7 @@ class CacheSSRContentTest extends TestCase
         $this->assertFalse($response->headers->has('X-SSR-Cache'));
     }
     
-    public function testCachableRoutesAreCached(): void
+    public function test_CachableRoutesAreCached(): void
     {
         $request = $this->createRequest('GET', 'dashboard');
         $response = $this->runMiddleware($request);

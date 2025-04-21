@@ -79,6 +79,16 @@
         "test:convert-comments": [
             "@php artisan test:convert-comments"
         ],
+        "test:add-types": [
+            "@php artisan tests:add-types"
+        ],
+        "test:refactor-all": [
+            "@php artisan tests:convert-docblocks",
+            "@php artisan tests:add-types",
+            "@php artisan tests:standardize",
+            "@php artisan tests:cleanup-skipped --fix",
+            "@php artisan tests:fix-remaining"
+        ],
         "test:generate-stub": [
             "@php artisan test:generate-stub"
         ],

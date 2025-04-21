@@ -11,42 +11,42 @@ class ControllerTest extends TestCase
 {
     
     #[Test]
-    public function testAuthorize(): void
+    public function test_Authorize(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testAuthorizeForUser(): void
+    public function test_AuthorizeForUser(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testAuthorizeResource(): void
+    public function test_AuthorizeResource(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testValidateWith(): void
+    public function test_ValidateWith(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testValidate(): void
+    public function test_Validate(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testValidateWithBag(): void
+    public function test_ValidateWithBag(): void
     {
 
         $this->assertTrue(true);

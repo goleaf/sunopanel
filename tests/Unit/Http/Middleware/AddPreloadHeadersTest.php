@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Unit\Http\Middleware;
 
 use App\Http\Middleware\AddPreloadHeaders;
@@ -18,7 +20,7 @@ class AddPreloadHeadersTest extends TestCase
         $this->middleware = new AddPreloadHeaders();
     }
     
-    public function testAddsLinkHeadersToHtmlResponses(): void
+    public function test_AddsLinkHeadersToHtmlResponses(): void
     {
         $request = Request::create('/test', 'GET');
         $response = new Response('<html><body>Test</body></html>', 200, [
@@ -40,7 +42,7 @@ class AddPreloadHeadersTest extends TestCase
         $this->assertStringContainsString('rel=preload', $allHeaders);
     }
     
-    public function testDoesNotAddHeadersToNonHtmlResponses(): void
+    public function test_DoesNotAddHeadersToNonHtmlResponses(): void
     {
         $request = Request::create('/test', 'GET');
         $response = new Response('{"data": "test"}', 200, [
@@ -55,7 +57,7 @@ class AddPreloadHeadersTest extends TestCase
         $this->assertEmpty($result->headers->all('link'));
     }
     
-    public function testContainsAssetTypes(): void
+    public function test_ContainsAssetTypes(): void
     {
         $request = Request::create('/test', 'GET');
         $response = new Response('<html><body>Test</body></html>', 200, [

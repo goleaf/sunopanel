@@ -11,6 +11,7 @@ use App\Models\Genre;
 use App\Models\Track;
 use App\Traits\WithNotifications;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -135,6 +136,9 @@ class Tracks extends BaseComponent
                 $track->delete();
             });
             
+            // Clear cache after deleting track
+            $this->clearTracksCache();
+            
             Log::info("Track deleted successfully", [
                 'track_id' => $this->trackIdToDelete,
                 'track_title' => $trackTitle,
@@ -231,6 +235,11 @@ class Tracks extends BaseComponent
             }
         }
 
+        // Clear cache if any tracks were added
+        if ($processedCount > 0) {
+            $this->clearTracksCache();
+        }
+
         return [$processedCount, $errors];
     }
 
@@ -292,6 +301,9 @@ class Tracks extends BaseComponent
             $track->playlists()->attach(Arr::wrap($validated['playlists']));
         }
 
+        // Clear cache after adding new track
+        $this->clearTracksCache();
+
         return $track;
     }
     
@@ -319,6 +331,9 @@ class Tracks extends BaseComponent
         if (array_key_exists('playlists', $validated)) {
             $track->playlists()->sync(Arr::wrap($validated['playlists'] ?? []));
         }
+
+        // Clear cache after updating track
+        $this->clearTracksCache();
 
         return $track->fresh(['genres', 'playlists']);
     }
@@ -351,11 +366,101 @@ class Tracks extends BaseComponent
     }
     
     /**
-     * Get genres for filter
+     * Get genres for filter, with caching
      */
     public function getGenresForFilter()
     {
-        return Genre::orderBy('name')->get();
+        return Cache::remember('genres_for_filter', 60, function () {
+            return Genre::orderBy('name')->get();
+        });
+    }
+    
+    /**
+     * Cache key for tracks query
+     */
+    private function getCacheKey(): string
+    {
+        return 'tracks_' . 
+               md5($this->search . 
+                  '_' . $this->genreFilter . 
+                  '_' . $this->perPage . 
+                  '_' . $this->sortField . 
+                  '_' . $this->direction . 
+                  '_' . $this->page);
+    }
+    
+    /**
+     * Build tracks query with filters
+     */
+    private function buildTracksQuery()
+    {
+        $query = Track::with('genres');
+            
+        // Apply search filter
+        if (!empty($this->search)) {
+            $query->where(function ($q) {
+                $q->where('title', 'like', '%' . $this->search . '%')
+                    ->orWhere('artist', 'like', '%' . $this->search . '%')
+                    ->orWhere('album', 'like', '%' . $this->search . '%');
+            });
+        }
+        
+        // Apply genre filter
+        if (!empty($this->genreFilter)) {
+            $query->whereHas('genres', function ($q) {
+                $q->where('id', $this->genreFilter);
+            });
+        }
+        
+        // Apply sorting
+        $query->orderBy($this->sortField, $this->direction);
+        
+        return $query;
+    }
+    
+    /**
+     * Get cached tracks with pagination
+     */
+    private function getCachedTracks()
+    {
+        $cacheKey = $this->getCacheKey();
+        $cacheTtl = 5; // Cache for 5 minutes
+        
+        return Cache::remember($cacheKey, $cacheTtl, function () {
+            return $this->buildTracksQuery()->paginate($this->perPage);
+        });
+    }
+    
+    /**
+     * Clear tracks cache when manipulating track data
+     */
+    private function clearTracksCache(): void
+    {
+        // Clear all tracks cache, as changes to one track might affect multiple pages
+        $cacheKeys = Cache::get('tracks_cache_keys', []);
+        foreach ($cacheKeys as $key) {
+            Cache::forget($key);
+        }
+        
+        // Clear the cache keys list itself
+        Cache::forget('tracks_cache_keys');
+        
+        // Also clear genres cache
+        Cache::forget('genres_for_filter');
+    }
+    
+    /**
+     * Store track cache key for later clearing
+     */
+    private function storeCacheKey(): void
+    {
+        $cacheKey = $this->getCacheKey();
+        $cacheKeys = Cache::get('tracks_cache_keys', []);
+        
+        if (!in_array($cacheKey, $cacheKeys)) {
+            $cacheKeys[] = $cacheKey;
+            Cache::put('tracks_cache_keys', $cacheKeys, 60 * 24); // Store for 24 hours
+        }
     }
     
     /**
@@ -382,33 +487,17 @@ class Tracks extends BaseComponent
     #[Layout('layouts.app')]
     public function render()
     {
-        // Get genres for the filter dropdown
+        $this->validate();
+        
+        // Store the current cache key for potential future clearing
+        $this->storeCacheKey();
+        
+        $tracks = $this->getCachedTracks();
         $genres = $this->getGenresForFilter();
         
-        // Build the query
-        $query = Track::query();
-        
-        // Add search filter
-        if (!empty($this->search)) {
-            $query->where('title', 'like', '%' . $this->search . '%');
-        }
-        
-        // Add genre filter
-        if (!empty($this->genreFilter)) {
-            $query->whereHas('genres', function ($q) {
-                $q->where('genres.id', $this->genreFilter);
-            });
-        }
-        
-        // Add sorting
-        $query->orderBy($this->sortField, $this->direction);
-        
-        // Get paginated results
-        $tracks = $query->paginate($this->perPage);
-        
-        return $this->renderWithServerRendering(view('livewire.tracks', [
+        return view('livewire.tracks', [
             'tracks' => $tracks,
             'genres' => $genres,
-        ]));
+        ]);
     }
 } 

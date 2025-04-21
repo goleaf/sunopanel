@@ -16,7 +16,7 @@ class TrackTest extends TestCase
     use RefreshDatabase;
     
     #[Test]
-    public function testGetNameAttribute(): void
+    public function test_GetNameAttribute(): void
     {
         $track = Track::factory()->create(['title' => 'Test Track']);
         $name = $track->name;
@@ -24,7 +24,7 @@ class TrackTest extends TestCase
     }
 
     #[Test]
-    public function testSetNameAttribute(): void
+    public function test_SetNameAttribute(): void
     {
         $track = new Track();
         $track->name = 'Test Name';
@@ -32,7 +32,7 @@ class TrackTest extends TestCase
     }
 
     #[Test]
-    public function testGenres(): void
+    public function test_Genres(): void
     {
         $track = Track::factory()->create();
         $genre = Genre::factory()->create();
@@ -42,7 +42,7 @@ class TrackTest extends TestCase
     }
 
     #[Test]
-    public function testPlaylists(): void
+    public function test_Playlists(): void
     {
         $track = Track::factory()->create();
         $playlist = Playlist::factory()->create();
@@ -53,7 +53,7 @@ class TrackTest extends TestCase
     }
 
     #[Test]
-    public function testSyncGenres(): void
+    public function test_SyncGenres(): void
     {
         $track = Track::factory()->create();
         $genreString = 'Rock, Pop, Jazz';
@@ -66,7 +66,7 @@ class TrackTest extends TestCase
     }
 
     #[Test]
-    public function testAssignGenres(): void
+    public function test_AssignGenres(): void
     {
         $track = Track::factory()->create();
         $genreString = 'Electronic, Ambient';
@@ -78,7 +78,7 @@ class TrackTest extends TestCase
     }
 
     #[Test]
-    public function testGetGenresListAttribute(): void
+    public function test_GetGenresListAttribute(): void
     {
         $track = Track::factory()->create();
         Genre::factory()->create(['name' => 'Metal']);
@@ -91,7 +91,7 @@ class TrackTest extends TestCase
     }
 
     #[Test]
-    public function testGetGenresArray(): void
+    public function test_GetGenresArray(): void
     {
         $track = Track::factory()->create();
         Genre::factory()->create(['name' => 'Blues']);
@@ -104,7 +104,7 @@ class TrackTest extends TestCase
     }
 
     #[Test]
-    public function testGetGenresString(): void
+    public function test_GetGenresString(): void
     {
         $track = Track::factory()->create();
         Genre::factory()->create(['name' => 'Classical']);
@@ -116,7 +116,7 @@ class TrackTest extends TestCase
     }
 
     #[Test]
-    public function testFormatGenres(): void
+    public function test_FormatGenres(): void
     {
         $genresString = 'rap, rock, pop';
         $formatted = Track::formatGenres($genresString);
@@ -124,7 +124,7 @@ class TrackTest extends TestCase
     }
 
     #[Test]
-    public function testGenerateUniqueId(): void
+    public function test_GenerateUniqueId(): void
     {
         $title = 'Test Track Title';
         $uniqueId = Track::generateUniqueId($title);
@@ -135,7 +135,7 @@ class TrackTest extends TestCase
     }
 
     #[Test]
-    public function testGetDurationSecondsAttribute(): void
+    public function test_GetDurationSecondsAttribute(): void
     {
         $track = Track::factory()->create(['duration' => '3:45']);
         $seconds = $track->duration_seconds;
@@ -143,7 +143,7 @@ class TrackTest extends TestCase
     }
 
     #[Test]
-    public function testGetStoreFields(): void
+    public function test_GetStoreFields(): void
     {
         $fields = (new Track())->getStoreFields();
         $this->assertIsArray($fields);
@@ -154,7 +154,7 @@ class TrackTest extends TestCase
     }
 
     #[Test]
-    public function testGetUpdateFields(): void
+    public function test_GetUpdateFields(): void
     {
         $fields = (new Track())->getUpdateFields();
         $this->assertIsArray($fields);
@@ -164,7 +164,7 @@ class TrackTest extends TestCase
     }
 
     #[Test]
-    public function testGetDeleteFields(): void
+    public function test_GetDeleteFields(): void
     {
         $fields = (new Track())->getDeleteFields();
         $this->assertIsArray($fields);
@@ -172,7 +172,7 @@ class TrackTest extends TestCase
     }
 
     #[Test]
-    public function testFactory(): void
+    public function test_Factory(): void
     {
         $track = Track::factory()->create();
         $this->assertInstanceOf(Track::class, $track);

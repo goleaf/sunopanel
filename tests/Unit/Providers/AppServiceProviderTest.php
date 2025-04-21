@@ -11,14 +11,14 @@ class AppServiceProviderTest extends TestCase
 {
     
     #[Test]
-    public function testRegister(): void
+    public function test_Register(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testBoot(): void
+    public function test_Boot(): void
     {
 
         $this->assertTrue(true);

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature;
 
 use App\Models\Genre;
@@ -13,8 +15,8 @@ class BubblegumBassSeederTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_seeder_creates_tracks_and_genres()
-    {
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function test_seeder_creates_tracks_and_genres(): void {
         $this->seed(TrackSeeder::class);
         $this->assertDatabaseCount('tracks', 20);
         $bubblegumGenre = Genre::where('name', 'Bubblegum bass')->first();
@@ -29,15 +31,15 @@ class BubblegumBassSeederTest extends TestCase
         ]);
     }
 
-    public function test_seed_command_works()
-    {
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function test_seed_command_works(): void {
         $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\TrackSeeder'])
             ->assertSuccessful();
         $this->assertDatabaseCount('tracks', 20);
     }
 
-    public function test_bubblegum_bass_is_one_genre()
-    {
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function test_bubblegum_bass_is_one_genre(): void {
         Log::info('Running test_bubblegum_bass_is_one_genre');
         $genreVariations = [
             'bubblegum bass',
@@ -72,8 +74,8 @@ class BubblegumBassSeederTest extends TestCase
         Log::info('Completed test_bubblegum_bass_is_one_genre');
     }
 
-    public function test_genre_capitalization()
-    {
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function test_genre_capitalization(): void {
         Log::info('Running test_genre_capitalization');
         $testCases = [
             'techno' => 'Techno',

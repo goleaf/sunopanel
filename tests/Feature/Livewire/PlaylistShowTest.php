@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Livewire;
 
 use App\Http\Livewire\PlaylistShow;
@@ -17,8 +19,7 @@ class PlaylistShowTest extends TestCase
     use WithFaker;
 
     #[\PHPUnit\Framework\Attributes\Test]
-    public function the_component_can_render()
-    {
+    public function the_component_can_render(): void {
         $genre = Genre::factory()->create();
         $playlist = Playlist::factory()->create([
             'genre_id' => $genre->id,
@@ -35,8 +36,7 @@ class PlaylistShowTest extends TestCase
     }
 
     #[\PHPUnit\Framework\Attributes\Test]
-    public function it_can_select_all_tracks()
-    {
+    public function it_can_select_all_tracks(): void {
         $genre = Genre::factory()->create();
         $playlist = Playlist::factory()->create([
             'genre_id' => $genre->id,
@@ -53,8 +53,7 @@ class PlaylistShowTest extends TestCase
     }
 
     #[\PHPUnit\Framework\Attributes\Test]
-    public function it_can_deselect_all_tracks()
-    {
+    public function it_can_deselect_all_tracks(): void {
         $genre = Genre::factory()->create();
         $playlist = Playlist::factory()->create([
             'genre_id' => $genre->id,
@@ -72,8 +71,7 @@ class PlaylistShowTest extends TestCase
     }
 
     #[\PHPUnit\Framework\Attributes\Test]
-    public function it_can_remove_a_track()
-    {
+    public function it_can_remove_a_track(): void {
         $genre = Genre::factory()->create();
         $playlist = Playlist::factory()->create([
             'genre_id' => $genre->id,
@@ -96,8 +94,7 @@ class PlaylistShowTest extends TestCase
     }
 
     #[\PHPUnit\Framework\Attributes\Test]
-    public function it_can_remove_selected_tracks()
-    {
+    public function it_can_remove_selected_tracks(): void {
         $genre = Genre::factory()->create();
         $playlist = Playlist::factory()->create([
             'genre_id' => $genre->id,
@@ -128,8 +125,7 @@ class PlaylistShowTest extends TestCase
     }
 
     #[\PHPUnit\Framework\Attributes\Test]
-    public function it_displays_error_when_no_tracks_selected_for_removal()
-    {
+    public function it_displays_error_when_no_tracks_selected_for_removal(): void {
         $genre = Genre::factory()->create();
         $playlist = Playlist::factory()->create([
             'genre_id' => $genre->id,

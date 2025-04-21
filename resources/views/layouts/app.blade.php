@@ -75,6 +75,12 @@
                             </svg>
                             System Stats
                         </a>
+                        <a href="{{ route('api.documentation') }}" wire:navigate.prefetch class="px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('api.documentation') ? 'bg-indigo-100 text-indigo-700' : 'text-gray-700 hover:bg-gray-100' }} flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            API Docs
+                        </a>
                     </nav>
                     
                     <!-- Mobile menu button -->
@@ -102,6 +108,7 @@
                                 <a href="{{ route('genres.index') }}" wire:navigate.prefetch class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 {{ request()->routeIs('genres.*') ? 'bg-gray-100 font-medium' : '' }}">Genres</a>
                                 <a href="{{ route('playlists.index') }}" wire:navigate.prefetch class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 {{ request()->routeIs('playlists.*') ? 'bg-gray-100 font-medium' : '' }}">Playlists</a>
                                 <a href="{{ route('system.stats') }}" wire:navigate.prefetch class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 {{ request()->routeIs('system.*') ? 'bg-gray-100 font-medium' : '' }}">System Stats</a>
+                                <a href="{{ route('api.documentation') }}" wire:navigate.prefetch class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 {{ request()->routeIs('api.documentation') ? 'bg-gray-100 font-medium' : '' }}">API Docs</a>
                             </div>
                         </div>
                     </div>

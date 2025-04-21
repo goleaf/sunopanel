@@ -1,4 +1,4 @@
-<x-app-layout>
+<div>
     {{-- Page Header --}}
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <h1 class="text-2xl font-semibold text-base-content">Playlists</h1>
@@ -183,4 +183,4 @@
             });
         });
     </script>
-</x-app-layout> 
+</div> 

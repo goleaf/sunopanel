@@ -11,14 +11,14 @@ class DashboardControllerTest extends TestCase
 {
     
     #[Test]
-    public function testIndex(): void
+    public function test_Index(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testSystemStats(): void
+    public function test_SystemStats(): void
     {
 
         $this->assertTrue(true);

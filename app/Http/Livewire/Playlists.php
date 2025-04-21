@@ -12,6 +12,7 @@ use App\Traits\WithNotifications;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -50,6 +51,106 @@ class Playlists extends Component
         'genreFilter' => ['except' => ''],
         'perPage' => ['except' => 10],
     ];
+    
+    /**
+     * Get cache key for playlists query
+     */
+    private function getCacheKey(): string
+    {
+        return 'playlists_' . 
+               md5($this->search . 
+                  '_' . $this->genreFilter . 
+                  '_' . $this->perPage . 
+                  '_' . $this->sortField . 
+                  '_' . $this->direction . 
+                  '_' . $this->page);
+    }
+    
+    /**
+     * Build playlists query with filters
+     */
+    private function buildPlaylistsQuery()
+    {
+        $query = Playlist::with(['tracks', 'genre']);
+            
+        // Apply search filter
+        if (!empty($this->search)) {
+            $query->where(function ($q) {
+                $q->where('title', 'like', '%' . $this->search . '%')
+                  ->orWhere('description', 'like', '%' . $this->search . '%');
+            });
+        }
+        
+        // Apply genre filter
+        if (!empty($this->genreFilter)) {
+            $query->where('genre_id', $this->genreFilter);
+        }
+        
+        // Apply sorting
+        $query->orderBy($this->sortField, $this->direction);
+        
+        return $query;
+    }
+    
+    /**
+     * Get cached playlists with pagination
+     */
+    private function getCachedPlaylists()
+    {
+        $cacheKey = $this->getCacheKey();
+        $cacheTtl = 5; // Cache for 5 minutes
+        
+        return Cache::remember($cacheKey, $cacheTtl, function () {
+            return $this->buildPlaylistsQuery()->paginate($this->perPage);
+        });
+    }
+    
+    /**
+     * Get genres for filter, with caching
+     */
+    private function getGenresForFilter()
+    {
+        return Cache::remember('playlist_genres_for_filter', 60, function () {
+            return Genre::orderBy('name')->get();
+        });
+    }
+    
+    /**
+     * Clear playlists cache when manipulating playlist data
+     */
+    private function clearPlaylistsCache(): void
+    {
+        // Clear all playlists cache, as changes to one playlist might affect multiple pages
+        $cacheKeys = Cache::get('playlists_cache_keys', []);
+        foreach ($cacheKeys as $key) {
+            Cache::forget($key);
+        }
+        
+        // Clear the cache keys list itself
+        Cache::forget('playlists_cache_keys');
+        
+        // Also clear genres cache
+        Cache::forget('playlist_genres_for_filter');
+        
+        // Clear individual playlist cache if it exists
+        if ($this->playlistIdToDelete) {
+            Cache::forget('playlist_' . $this->playlistIdToDelete);
+        }
+    }
+    
+    /**
+     * Store playlist cache key for later clearing
+     */
+    private function storeCacheKey(): void
+    {
+        $cacheKey = $this->getCacheKey();
+        $cacheKeys = Cache::get('playlists_cache_keys', []);
+        
+        if (!in_array($cacheKey, $cacheKeys)) {
+            $cacheKeys[] = $cacheKey;
+            Cache::put('playlists_cache_keys', $cacheKeys, 60 * 24); // Store for 24 hours
+        }
+    }
     
     protected function rules()
     {
@@ -111,6 +212,9 @@ class Playlists extends Component
             $deleted = $this->deletePlaylistAndDetachTracks($playlist);
             
             if ($deleted) {
+                // Clear cache after successful deletion
+                $this->clearPlaylistsCache();
+                
                 $this->notifySuccess("Playlist '{$playlistTitle}' deleted successfully.");
             } else {
                 $this->notifyError("Failed to delete playlist '{$playlistTitle}'.");
@@ -190,6 +294,9 @@ class Playlists extends Component
             'is_public' => $validatedData['is_public'] ?? true,
         ]);
 
+        // Clear cache after creating a new playlist
+        $this->clearPlaylistsCache();
+
         Log::info('Playlist created from array data', [
             'playlist_id' => $playlist->id,
             'title' => $playlist->title,
@@ -228,6 +335,10 @@ class Playlists extends Component
 
         $playlist->update($updateData);
 
+        // Clear cache after updating a playlist
+        Cache::forget('playlist_' . $playlist->id);
+        $this->clearPlaylistsCache();
+
         Log::info('Playlist updated from array data', [
             'playlist_id' => $playlist->id,
             'title' => $playlist->title,
@@ -241,21 +352,17 @@ class Playlists extends Component
      */
     public function getPlaylistWithTrackDetails(Playlist $playlist): Playlist
     {
-        $playlist->load([
-            'tracks' => function ($query) {
-                $query->with('genres')->orderBy('playlist_track.position', 'asc');
-            },
-            'genre',
-        ]);
-
-        // Calculate total duration
-        $totalDurationSeconds = $playlist->tracks->sum('duration_seconds');
-        // Assuming formatDuration helper exists globally or is imported
-        $playlist->total_duration_formatted = function_exists('formatDuration')
-            ? formatDuration($totalDurationSeconds)
-            : gmdate('H:i:s', $totalDurationSeconds); // Basic fallback
-
-        return $playlist;
+        // Use cache for individual playlist details
+        return Cache::remember('playlist_' . $playlist->id, 5, function () use ($playlist) {
+            $playlist->load([
+                'tracks' => function ($query) {
+                    $query->with('genres')->orderBy('playlist_track.position', 'asc');
+                },
+                'genre',
+            ]);
+            
+            return $playlist;
+        });
     }
 
     /**
@@ -283,6 +390,10 @@ class Playlists extends Component
             ]);
         }
         
+        // Clear cache after adding tracks
+        Cache::forget('playlist_' . $playlist->id);
+        $this->clearPlaylistsCache();
+        
         return $playlist->fresh(['tracks']);
     }
     
@@ -302,6 +413,10 @@ class Playlists extends Component
                 'tracks_removed' => $count
             ]);
         }
+        
+        // Clear cache after removing tracks
+        Cache::forget('playlist_' . $playlist->id);
+        $this->clearPlaylistsCache();
         
         return $playlist->fresh(['tracks']);
     }
@@ -340,6 +455,10 @@ class Playlists extends Component
                     'track_id' => $track->id
                 ]);
             }
+            
+            // Clear cache after removing track
+            Cache::forget('playlist_' . $playlist->id);
+            $this->clearPlaylistsCache();
             
             return $removed;
         } catch (Throwable $e) {
@@ -481,21 +600,17 @@ class Playlists extends Component
     #[Title('Playlists Management')]
     public function render()
     {
-        $playlists = Playlist::query()
-            ->with(['genre', 'tracks'])
-            ->withCount('tracks')
-            ->when($this->search, function($query) {
-                $query->where('title', 'like', '%' . $this->search . '%');
-            })
-            ->when($this->genreFilter, function($query) {
-                $query->where('genre_id', $this->genreFilter);
-            })
-            ->orderBy($this->sortField, $this->direction)
-            ->paginate($this->perPage);
+        $this->validate();
+        
+        // Store current cache key for potential future clearing
+        $this->storeCacheKey();
+        
+        $playlists = $this->getCachedPlaylists();
+        $genres = $this->getGenresForFilter();
         
         return view('livewire.playlists', [
             'playlists' => $playlists,
-            'genres' => Genre::orderBy('name')->get(),
+            'genres' => $genres,
         ]);
     }
 } 

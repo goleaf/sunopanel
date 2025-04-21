@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Livewire;
 
 use App\Http\Livewire\PlaylistForm;
@@ -16,16 +18,14 @@ class PlaylistFormTest extends TestCase
     use WithFaker;
 
     #[\PHPUnit\Framework\Attributes\Test]
-    public function the_create_component_can_render()
-    {
+    public function the_create_component_can_render(): void {
         $response = $this->get(route('playlists.create'));
 
         $response->assertStatus(200);
     }
 
     #[\PHPUnit\Framework\Attributes\Test]
-    public function the_edit_component_can_render()
-    {
+    public function the_edit_component_can_render(): void {
         $genre = Genre::factory()->create();
         $playlist = Playlist::factory()->create([
             'genre_id' => $genre->id,
@@ -37,8 +37,7 @@ class PlaylistFormTest extends TestCase
     }
 
     #[\PHPUnit\Framework\Attributes\Test]
-    public function it_loads_playlist_data_when_editing()
-    {
+    public function it_loads_playlist_data_when_editing(): void {
         $genre = Genre::factory()->create();
         $playlist = Playlist::factory()->create([
             'genre_id' => $genre->id,
@@ -59,8 +58,7 @@ class PlaylistFormTest extends TestCase
     }
 
     #[\PHPUnit\Framework\Attributes\Test]
-    public function it_loads_genres_on_mount()
-    {
+    public function it_loads_genres_on_mount(): void {
         $genre1 = Genre::factory()->create(['name' => 'Rock']);
         $genre2 = Genre::factory()->create(['name' => 'Pop']);
         
@@ -73,8 +71,7 @@ class PlaylistFormTest extends TestCase
     }
 
     #[\PHPUnit\Framework\Attributes\Test]
-    public function it_can_store_a_new_playlist()
-    {
+    public function it_can_store_a_new_playlist(): void {
         $genre = Genre::factory()->create();
         
         Livewire::test(PlaylistForm::class)
@@ -96,8 +93,7 @@ class PlaylistFormTest extends TestCase
     }
 
     #[\PHPUnit\Framework\Attributes\Test]
-    public function it_can_update_an_existing_playlist()
-    {
+    public function it_can_update_an_existing_playlist(): void {
         $genre = Genre::factory()->create();
         $newGenre = Genre::factory()->create();
         
@@ -125,8 +121,7 @@ class PlaylistFormTest extends TestCase
     }
 
     #[\PHPUnit\Framework\Attributes\Test]
-    public function title_is_required()
-    {
+    public function title_is_required(): void {
         $genre = Genre::factory()->create();
         
         Livewire::test(PlaylistForm::class)
@@ -138,8 +133,7 @@ class PlaylistFormTest extends TestCase
     }
 
     #[\PHPUnit\Framework\Attributes\Test]
-    public function genre_id_must_exist_in_genres_table()
-    {
+    public function genre_id_must_exist_in_genres_table(): void {
         Livewire::test(PlaylistForm::class)
             ->set('title', 'Test Playlist')
             ->set('description', 'A description')

@@ -32,15 +32,13 @@ class PlaylistsTest extends TestCase
     }
 
     /** @test */
-    public function the_component_can_render()
-    {
+    public function the_component_can_render(): void {
         $component = Livewire::test(Playlists::class);
         $component->assertStatus(200);
     }
 
     /** @test */
-    public function it_can_load_playlists()
-    {
+    public function it_can_load_playlists(): void {
         $playlist1 = Playlist::factory()->create([
             'name' => 'Test Playlist 1',
             'user_id' => $this->user->id
@@ -57,8 +55,7 @@ class PlaylistsTest extends TestCase
     }
 
     /** @test */
-    public function it_can_search_playlists()
-    {
+    public function it_can_search_playlists(): void {
         $playlist1 = Playlist::factory()->create([
             'name' => 'Rock Playlist',
             'user_id' => $this->user->id
@@ -76,8 +73,7 @@ class PlaylistsTest extends TestCase
     }
 
     /** @test */
-    public function it_can_filter_playlists_by_user()
-    {
+    public function it_can_filter_playlists_by_user(): void {
         $anotherUser = User::factory()->create();
         
         $playlist1 = Playlist::factory()->create([
@@ -97,8 +93,7 @@ class PlaylistsTest extends TestCase
     }
 
     /** @test */
-    public function it_can_sort_playlists()
-    {
+    public function it_can_sort_playlists(): void {
         $playlistA = Playlist::factory()->create([
             'name' => 'A Playlist',
             'user_id' => $this->user->id,
@@ -146,8 +141,7 @@ class PlaylistsTest extends TestCase
     }
 
     /** @test */
-    public function it_can_paginate_playlists()
-    {
+    public function it_can_paginate_playlists(): void {
         // Create 15 playlists (assuming per_page is 10)
         Playlist::factory()->count(15)->create(['user_id' => $this->user->id]);
 
@@ -167,8 +161,7 @@ class PlaylistsTest extends TestCase
     }
 
     /** @test */
-    public function it_can_create_a_new_playlist()
-    {
+    public function it_can_create_a_new_playlist(): void {
         $playlistName = 'New Test Playlist';
         $playlistDescription = 'This is a test playlist description';
 
@@ -186,8 +179,7 @@ class PlaylistsTest extends TestCase
     }
 
     /** @test */
-    public function it_validates_playlist_name_uniqueness_for_user()
-    {
+    public function it_validates_playlist_name_uniqueness_for_user(): void {
         Playlist::factory()->create([
             'name' => 'Existing Playlist',
             'user_id' => $this->user->id
@@ -201,8 +193,7 @@ class PlaylistsTest extends TestCase
     }
 
     /** @test */
-    public function it_can_update_a_playlist()
-    {
+    public function it_can_update_a_playlist(): void {
         $playlist = Playlist::factory()->create([
             'name' => 'Original Playlist',
             'description' => 'Original description',
@@ -230,8 +221,7 @@ class PlaylistsTest extends TestCase
     }
 
     /** @test */
-    public function it_can_delete_a_playlist()
-    {
+    public function it_can_delete_a_playlist(): void {
         $playlist = Playlist::factory()->create([
             'name' => 'Playlist to Delete',
             'user_id' => $this->user->id
@@ -250,8 +240,7 @@ class PlaylistsTest extends TestCase
     }
 
     /** @test */
-    public function it_can_cancel_playlist_deletion()
-    {
+    public function it_can_cancel_playlist_deletion(): void {
         $playlist = Playlist::factory()->create([
             'name' => 'Playlist Not To Delete',
             'user_id' => $this->user->id
@@ -271,8 +260,7 @@ class PlaylistsTest extends TestCase
     }
 
     /** @test */
-    public function it_can_add_tracks_to_a_playlist()
-    {
+    public function it_can_add_tracks_to_a_playlist(): void {
         $playlist = Playlist::factory()->create([
             'user_id' => $this->user->id
         ]);
@@ -303,8 +291,7 @@ class PlaylistsTest extends TestCase
     }
 
     /** @test */
-    public function it_can_remove_tracks_from_a_playlist()
-    {
+    public function it_can_remove_tracks_from_a_playlist(): void {
         $playlist = Playlist::factory()->create([
             'user_id' => $this->user->id
         ]);
@@ -327,8 +314,7 @@ class PlaylistsTest extends TestCase
     }
 
     /** @test */
-    public function it_can_update_track_positions_in_a_playlist()
-    {
+    public function it_can_update_track_positions_in_a_playlist(): void {
         $playlist = Playlist::factory()->create([
             'user_id' => $this->user->id
         ]);

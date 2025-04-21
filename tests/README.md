@@ -96,4 +96,93 @@ When adding new tests:
 1. Create a new test class in the appropriate directory
 2. Extend the base `TestCase` class
 3. Use the `RefreshDatabase` trait if database access is needed
-4. Follow the naming convention: `test_[method_name]_[expected_behavior]` 
+4. Follow the naming convention: `test_[method_name]_[expected_behavior]`
+
+## Test Refactoring Commands
+
+This project includes several custom Artisan commands for refactoring tests:
+
+```bash
+# Convert PHPUnit docblocks to attributes
+php artisan tests:convert-docblocks
+
+# Add type hints and return types to test methods
+php artisan tests:add-types
+
+# Standardize test method naming conventions
+php artisan tests:standardize
+
+# Fix skipped and incomplete tests
+php artisan tests:cleanup-skipped --fix
+
+# Fix remaining format issues in Livewire tests
+php artisan tests:fix-remaining
+```
+
+These commands can also be run using Composer shortcuts:
+
+```bash
+# Convert PHPUnit docblocks to attributes
+composer test:convert-comments
+
+# Add type hints and return types to test methods
+composer test:add-types
+
+# Run all test refactoring commands
+composer test:refactor-all
+```
+
+## Best Practices for Writing Tests
+
+When writing new tests, follow these guidelines:
+
+1. Use PHP 8.2+ attributes instead of docblock annotations:
+   ```php
+   #[\PHPUnit\Framework\Attributes\Test]
+   public function test_your_feature(): void
+   {
+       // Your test code here
+   }
+   ```
+
+2. Always add strict typing and return types:
+   ```php
+   <?php
+   
+   declare(strict_types=1);
+   
+   namespace Tests\Feature;
+   
+   use Tests\TestCase;
+   
+   class YourTest extends TestCase
+   {
+       #[\PHPUnit\Framework\Attributes\Test]
+       public function test_your_feature(): void
+       {
+           // Your test code here
+       }
+   }
+   ```
+
+3. Use snake_case for test method names starting with `test_`.
+
+4. Use data providers for testing similar functionality with different inputs:
+   ```php
+   #[\PHPUnit\Framework\Attributes\Test]
+   #[\PHPUnit\Framework\Attributes\DataProvider('provideTestCases')]
+   public function test_with_various_inputs(string $input, string $expected): void
+   {
+       $this->assertEquals($expected, process($input));
+   }
+   
+   public static function provideTestCases(): array
+   {
+       return [
+           ['input1', 'expected1'],
+           ['input2', 'expected2'],
+       ];
+   }
+   ```
+
+5. Group related tests into their own test classes following the Laravel directory structure. 

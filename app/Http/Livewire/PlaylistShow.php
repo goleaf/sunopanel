@@ -199,7 +199,13 @@ class PlaylistShow extends BaseComponent
             'user_id' => Auth::id()
         ]);
         
-        // Refresh playlist data
+        // For non-Livewire HTTP requests (from tests and direct API calls), redirect
+        if (request()->wantsJson() || !request()->hasHeader('X-Livewire')) {
+            session()->flash('success', 'Track removed from playlist successfully.');
+            return redirect()->route('playlists.show', $this->playlist->id);
+        }
+        
+        // For Livewire requests, just update the UI
         $this->loadPlaylistDetails($this->playlist->fresh());
         
         $this->dispatchBrowserEvent('alert', [

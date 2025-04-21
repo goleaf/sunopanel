@@ -11,98 +11,98 @@ class UserTest extends TestCase
 {
     
     #[Test]
-    public function testTokens(): void
+    public function test_Tokens(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testTokenCan(): void
+    public function test_TokenCan(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testTokenCant(): void
+    public function test_TokenCant(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testCreateToken(): void
+    public function test_CreateToken(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testGenerateTokenString(): void
+    public function test_GenerateTokenString(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testCurrentAccessToken(): void
+    public function test_CurrentAccessToken(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testWithAccessToken(): void
+    public function test_WithAccessToken(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testFactory(): void
+    public function test_Factory(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testNotifications(): void
+    public function test_Notifications(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testReadNotifications(): void
+    public function test_ReadNotifications(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testUnreadNotifications(): void
+    public function test_UnreadNotifications(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testNotify(): void
+    public function test_Notify(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testNotifyNow(): void
+    public function test_NotifyNow(): void
     {
 
         $this->assertTrue(true);
     }
 
     #[Test]
-    public function testRouteNotificationFor(): void
+    public function test_RouteNotificationFor(): void
     {
 
         $this->assertTrue(true);

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Unit\Http\Middleware;
 
 use App\Http\Middleware\VerifyCsrfToken;
@@ -34,7 +36,7 @@ class VerifyCsrfTokenTest extends TestCase
         parent::tearDown();
     }
     
-    public function testTokenRotationConfiguration(): void
+    public function test_TokenRotationConfiguration(): void
     {
         // Read the VerifyCsrfToken class file to verify it has token rotation code
         $middlewareContent = file_get_contents(app_path('Http/Middleware/VerifyCsrfToken.php'));
@@ -45,7 +47,7 @@ class VerifyCsrfTokenTest extends TestCase
         $this->assertStringContainsString('$request->is(\'password/reset\')', $middlewareContent);
     }
     
-    public function testTokenNotRotatedForNormalRequests(): void
+    public function test_TokenNotRotatedForNormalRequests(): void
     {
         // Verify the middleware has an addCookieToResponse method
         $this->assertTrue(method_exists($this->middleware, 'addCookieToResponse'), 
@@ -55,7 +57,7 @@ class VerifyCsrfTokenTest extends TestCase
         $this->assertInstanceOf(VerifyCsrfToken::class, $this->middleware);
     }
     
-    public function testSameSiteAttributeIsSetToLax(): void
+    public function test_SameSiteAttributeIsSetToLax(): void
     {
         // Read the VerifyCsrfToken class file to verify it has SameSite configuration
         $middlewareContent = file_get_contents(app_path('Http/Middleware/VerifyCsrfToken.php'));

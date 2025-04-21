@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Unit;
 
 use App\Http\Requests\GenreDeleteRequest;
@@ -16,8 +18,8 @@ class RequestValidationTest extends TestCase
 {
     use RefreshDatabase, WithFaker;
     
-    public function test_playlist_store_tracks_request_validation()
-    {
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function test_playlist_store_tracks_request_validation(): void {
         $rules = (new PlaylistStoreTracksRequest)->rules();
         $validator = Validator::make([], $rules);
         $this->assertFalse($validator->passes());
@@ -30,8 +32,8 @@ class RequestValidationTest extends TestCase
         $this->assertTrue($validator->errors()->has('track_ids.0') || $validator->errors()->has('track_ids.*'));
     }
 
-    public function test_playlist_remove_track_request_validation()
-    {
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function test_playlist_remove_track_request_validation(): void {
         $rules = (new PlaylistRemoveTrackRequest)->rules();
         $validator = Validator::make(['track_id' => 999], $rules);
         $this->assertTrue($validator->errors()->has('track_id') || $validator->passes());
@@ -39,8 +41,8 @@ class RequestValidationTest extends TestCase
         $this->assertTrue($validator->passes());
     }
 
-    public function test_playlist_delete_request_validation()
-    {
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function test_playlist_delete_request_validation(): void {
         $rules = (new PlaylistDeleteRequest)->rules();
         $validator = Validator::make(['id' => 999], $rules);
         $this->assertTrue($validator->errors()->has('id') || $validator->passes());
@@ -48,8 +50,8 @@ class RequestValidationTest extends TestCase
         $this->assertTrue($validator->passes());
     }
 
-    public function test_playlist_create_from_genre_request_validation()
-    {
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function test_playlist_create_from_genre_request_validation(): void {
         $rules = (new PlaylistCreateFromGenreRequest)->rules();
         $validator = Validator::make(['genre_id' => 999], $rules);
         $this->assertTrue($validator->errors()->has('genre_id') || $validator->passes());
@@ -63,8 +65,8 @@ class RequestValidationTest extends TestCase
         $this->assertTrue($validator->errors()->has('title_suffix'));
     }
 
-    public function test_genre_delete_request_validation()
-    {
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function test_genre_delete_request_validation(): void {
         $rules = (new GenreDeleteRequest)->rules();
         $validator = Validator::make(['id' => 999], $rules);
         $this->assertTrue($validator->errors()->has('id') || $validator->passes());
@@ -72,8 +74,8 @@ class RequestValidationTest extends TestCase
         $this->assertTrue($validator->passes());
     }
 
-    public function test_all_request_authorization()
-    {
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function test_all_request_authorization(): void {
         $this->assertTrue((new PlaylistStoreTracksRequest)->authorize());
         $this->assertTrue((new PlaylistRemoveTrackRequest)->authorize());
         $this->assertTrue((new PlaylistDeleteRequest)->authorize());
