@@ -208,6 +208,8 @@ export default class TrackStatusAPI {
                 statusHTML = `<span class="badge badge-warning">Processing</span>`;
             } else if (data.status === 'failed') {
                 statusHTML = `<span class="badge badge-error">Failed</span>`;
+            } else if (data.status === 'stopped') {
+                statusHTML = `<span class="badge badge-warning">Stopped</span>`;
             } else {
                 statusHTML = `<span class="badge badge-info">Pending</span>`;
             }
@@ -241,6 +243,12 @@ export default class TrackStatusAPI {
                         <progress class="progress progress-xs progress-error w-full" value="100" max="100"></progress>
                     </div>
                 `;
+            } else if (data.status === 'stopped') {
+                progressHTML = `
+                    <div class="tooltip w-full" data-tip="Processing was manually stopped">
+                        <progress class="progress progress-xs progress-warning w-full" value="${data.progress}" max="100"></progress>
+                    </div>
+                `;
             } else {
                 progressHTML = `
                     <div class="flex items-center">
@@ -258,6 +266,116 @@ export default class TrackStatusAPI {
             setTimeout(() => {
                 window.location.reload();
             }, 1000);
+        }
+    }
+    
+    /**
+     * Start processing a track
+     * 
+     * @param {Number} trackId - The track ID
+     * @returns {Promise} - Promise resolving to API response
+     */
+    static async startTrack(trackId) {
+        try {
+            const response = await fetch(`/api/tracks/${trackId}/start`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                }
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to start track processing');
+            }
+            
+            return await response.json();
+        } catch (error) {
+            console.error('Error starting track processing:', error);
+            throw error;
+        }
+    }
+    
+    /**
+     * Stop processing a track
+     * 
+     * @param {Number} trackId - The track ID
+     * @returns {Promise} - Promise resolving to API response
+     */
+    static async stopTrack(trackId) {
+        try {
+            const response = await fetch(`/api/tracks/${trackId}/stop`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                }
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to stop track processing');
+            }
+            
+            return await response.json();
+        } catch (error) {
+            console.error('Error stopping track processing:', error);
+            throw error;
+        }
+    }
+    
+    /**
+     * Start processing all tracks
+     * 
+     * @returns {Promise} - Promise resolving to API response
+     */
+    static async startAllTracks() {
+        try {
+            const response = await fetch('/api/tracks/start-all', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                }
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to start all tracks');
+            }
+            
+            return await response.json();
+        } catch (error) {
+            console.error('Error starting all tracks:', error);
+            throw error;
+        }
+    }
+    
+    /**
+     * Stop processing all tracks
+     * 
+     * @returns {Promise} - Promise resolving to API response
+     */
+    static async stopAllTracks() {
+        try {
+            const response = await fetch('/api/tracks/stop-all', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                }
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to stop all tracks');
+            }
+            
+            return await response.json();
+        } catch (error) {
+            console.error('Error stopping all tracks:', error);
+            throw error;
         }
     }
     

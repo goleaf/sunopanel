@@ -41,6 +41,19 @@ class Track extends Model
     ];
 
     /**
+     * Valid status values for tracks
+     *
+     * @var array<int, string>
+     */
+    public static $statuses = [
+        'pending',     // Waiting to be processed
+        'processing',  // Currently being processed
+        'completed',   // Successfully processed
+        'failed',      // Processing failed
+        'stopped',     // Processing manually stopped
+    ];
+
+    /**
      * The "booted" method of the model.
      */
     protected static function booted(): void

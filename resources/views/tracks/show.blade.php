@@ -74,6 +74,13 @@
                                     </svg>
                                     Failed
                                 </div>
+                                @elseif($track->status === 'stopped')
+                                <div class="badge badge-lg badge-warning gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18h12a1 1 0 001-1V7a1 1 0 00-1-1H6a1 1 0 00-1 1v10a1 1 0 001 1z" />
+                                    </svg>
+                                    Stopped
+                                </div>
                                 @else
                                 <div class="badge badge-lg badge-info gap-2">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -103,6 +110,11 @@
                                     <div class="bg-error h-4 rounded-full" style="width: 100%"></div>
                                 </div>
                                 <span class="text-sm mt-1 inline-block">Processing failed</span>
+                                @elseif($track->status === 'stopped')
+                                <div class="w-full bg-gray-200 rounded-full h-4 dark:bg-gray-700">
+                                    <div class="bg-warning h-4 rounded-full" style="width: {{ $track->progress }}%"></div>
+                                </div>
+                                <span class="text-sm mt-1 inline-block">Processing stopped at {{ $track->progress }}%</span>
                                 @else
                                 <div class="w-full bg-gray-200 rounded-full h-4 dark:bg-gray-700">
                                     <div class="bg-info h-4 rounded-full" style="width: 0%"></div>
@@ -154,8 +166,27 @@
                             </a>
                             @endif
                             
+                            <!-- Start/Stop/Retry buttons -->
+                            @if(in_array($track->status, ['failed', 'stopped']))
+                            <button type="button" id="start-processing" class="btn btn-success btn-sm gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                </svg>
+                                Start Processing
+                            </button>
+                            @endif
+                            
+                            @if(in_array($track->status, ['processing', 'pending']))
+                            <button type="button" id="stop-processing" class="btn btn-error btn-sm gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18h12a1 1 0 001-1V7a1 1 0 00-1-1H6a1 1 0 00-1 1v10a1 1 0 001 1z" />
+                                </svg>
+                                Stop Processing
+                            </button>
+                            @endif
+                            
                             @if($track->status === 'failed')
-                            <button type="button" id="retry-track" class="btn btn-warning btn-sm gap-2">
+                            <button type="button" id="retry-processing" class="btn btn-warning btn-sm gap-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                 </svg>
@@ -271,7 +302,16 @@
     </div>
 </div>
 
-@if($track->status === 'processing' || $track->status === 'pending')
+<!-- Toast notification -->
+<div id="toast" class="fixed bottom-4 right-4 p-4 rounded shadow-lg transform transition-transform duration-300 ease-in-out translate-y-full hidden">
+    <div class="alert">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-info shrink-0 w-6 h-6">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <span id="toast-message"></span>
+    </div>
+</div>
+
 <!-- CSRF Token for API requests -->
 <meta name="csrf-token" content="{{ csrf_token() }}">
 
@@ -281,50 +321,106 @@ document.addEventListener('DOMContentLoaded', function() {
     const trackId = {{ $track->id }};
     const statusEl = document.getElementById('track-status');
     const progressEl = document.getElementById('track-progress');
+    let currentStatus = "{{ $track->status }}";
     
-    // Initialize track status updater
-    const statusUpdater = new TrackStatusAPI({
-        interval: 3000
-    });
+    // Function to show a toast notification
+    window.showToast = function(message, type = 'info') {
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toast-message');
+        
+        // Set the message and type
+        toastMessage.textContent = message;
+        toast.querySelector('.alert').className = `alert alert-${type}`;
+        
+        // Show the toast
+        toast.classList.remove('hidden', 'translate-y-full');
+        toast.classList.add('translate-y-0');
+        
+        // Hide the toast after 3 seconds
+        setTimeout(() => {
+            toast.classList.add('translate-y-full');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 300);
+        }, 3000);
+    };
     
-    // Register track for monitoring and enable page reload when complete
-    statusUpdater.watchTrack(trackId, {
-        status: statusEl,
-        progress: progressEl,
-        reload: true
-    });
+    // Initialize track status updater if track is processing or pending
+    if (['processing', 'pending'].includes(currentStatus)) {
+        const statusUpdater = new TrackStatusAPI({
+            interval: 3000
+        });
+        
+        // Register track for monitoring and enable page reload when complete
+        statusUpdater.watchTrack(trackId, {
+            status: statusEl,
+            progress: progressEl,
+            reload: true
+        });
+        
+        // Start the status updater
+        statusUpdater.start();
+    }
     
-    // Start the status updater
-    statusUpdater.start();
-});
-</script>
-@endif
-
-@if($track->status === 'failed')
-<!-- CSRF Token for API requests -->
-<meta name="csrf-token" content="{{ csrf_token() }}">
-
-@vite('resources/js/app.js')
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Handle retry button
-    const retryButton = document.getElementById('retry-track');
+    // Setup action buttons
+    
+    // Start processing button
+    const startButton = document.getElementById('start-processing');
+    if (startButton) {
+        startButton.addEventListener('click', async function() {
+            try {
+                this.classList.add('loading');
+                const result = await TrackStatusAPI.startTrack(trackId);
+                
+                if (result.success) {
+                    window.showToast('Track processing started', 'success');
+                    setTimeout(() => window.location.reload(), 1000);
+                }
+            } catch (error) {
+                console.error('Failed to start processing:', error);
+                window.showToast('Failed to start processing: ' + error.message, 'error');
+            } finally {
+                this.classList.remove('loading');
+            }
+        });
+    }
+    
+    // Stop processing button
+    const stopButton = document.getElementById('stop-processing');
+    if (stopButton) {
+        stopButton.addEventListener('click', async function() {
+            try {
+                this.classList.add('loading');
+                const result = await TrackStatusAPI.stopTrack(trackId);
+                
+                if (result.success) {
+                    window.showToast('Track processing stopped', 'warning');
+                    setTimeout(() => window.location.reload(), 1000);
+                }
+            } catch (error) {
+                console.error('Failed to stop processing:', error);
+                window.showToast('Failed to stop processing: ' + error.message, 'error');
+            } finally {
+                this.classList.remove('loading');
+            }
+        });
+    }
+    
+    // Retry processing button
+    const retryButton = document.getElementById('retry-processing');
     if (retryButton) {
         retryButton.addEventListener('click', async function() {
             try {
-                // Show loading state
                 this.classList.add('loading');
-                
-                // Call retry API
-                const result = await TrackStatusAPI.retryTrack({{ $track->id }});
+                const result = await TrackStatusAPI.retryTrack(trackId);
                 
                 if (result.success) {
-                    // Reload the page to show pending state
-                    window.location.reload();
+                    window.showToast('Track processing retried', 'success');
+                    setTimeout(() => window.location.reload(), 1000);
                 }
             } catch (error) {
-                console.error('Failed to retry track:', error);
-                alert('Failed to retry track: ' + error.message);
+                console.error('Failed to retry processing:', error);
+                window.showToast('Failed to retry processing: ' + error.message, 'error');
             } finally {
                 this.classList.remove('loading');
             }
@@ -332,5 +428,4 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
-@endif
 @endsection 

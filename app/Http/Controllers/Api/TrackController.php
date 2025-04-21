@@ -7,6 +7,8 @@ use App\Jobs\ProcessTrack;
 use App\Models\Track;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Queue;
 
 class TrackController extends Controller
 {
@@ -66,6 +68,172 @@ class TrackController extends Controller
         return response()->json([
             'tracks' => $result,
             'timestamp' => now()->toIso8601String(),
+        ]);
+    }
+    
+    /**
+     * Start processing a track
+     * 
+     * @param Track $track
+     * @return JsonResponse
+     */
+    public function start(Track $track): JsonResponse
+    {
+        // Only start if the track is in a state that can be started
+        if ($track->status === 'processing') {
+            return response()->json([
+                'success' => false,
+                'message' => 'This track is already processing',
+                'status' => $track->status,
+            ], 422);
+        }
+        
+        // Reset track status to start processing
+        $track->update([
+            'status' => 'pending',
+            'progress' => 0,
+            'error_message' => null,
+        ]);
+        
+        // Dispatch the job with high priority
+        ProcessTrack::dispatch($track)->onQueue('high');
+        
+        return response()->json([
+            'success' => true,
+            'message' => "Track '{$track->title}' has been queued for processing",
+            'track' => [
+                'id' => $track->id,
+                'title' => $track->title,
+                'status' => $track->status,
+            ]
+        ]);
+    }
+    
+    /**
+     * Stop processing a track
+     * 
+     * @param Track $track
+     * @return JsonResponse
+     */
+    public function stop(Track $track): JsonResponse
+    {
+        // Only stop if the track is in processing or pending state
+        if (!in_array($track->status, ['processing', 'pending'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This track is not currently processing',
+                'status' => $track->status,
+            ], 422);
+        }
+        
+        // Attempt to remove from queue if pending
+        if ($track->status === 'pending') {
+            // This is a best effort - queue jobs can't be reliably removed in Laravel
+            // without a custom implementation using Redis, etc.
+            Queue::connection('redis')->delete('ProcessTrack', ['trackId' => $track->id]);
+        }
+        
+        // Mark as stopped
+        $track->update([
+            'status' => 'stopped',
+            'error_message' => 'Processing was manually stopped',
+        ]);
+        
+        return response()->json([
+            'success' => true,
+            'message' => "Track '{$track->title}' processing has been stopped",
+            'track' => [
+                'id' => $track->id,
+                'title' => $track->title,
+                'status' => $track->status,
+            ]
+        ]);
+    }
+    
+    /**
+     * Start processing all tracks
+     * 
+     * @return JsonResponse
+     */
+    public function startAll(): JsonResponse
+    {
+        // Get all tracks that could be processed (not already processing)
+        $tracks = Track::whereNotIn('status', ['processing', 'completed'])->get();
+        $count = $tracks->count();
+        
+        if ($count === 0) {
+            return response()->json([
+                'success' => true,
+                'message' => 'No tracks to process',
+                'count' => 0
+            ]);
+        }
+        
+        $processed = [];
+        
+        // Reset status and dispatch jobs for all tracks
+        foreach ($tracks as $track) {
+            $track->update([
+                'status' => 'pending',
+                'progress' => 0,
+                'error_message' => null,
+            ]);
+            
+            ProcessTrack::dispatch($track);
+            
+            $processed[] = [
+                'id' => $track->id,
+                'title' => $track->title
+            ];
+        }
+        
+        return response()->json([
+            'success' => true,
+            'message' => "{$count} tracks have been queued for processing",
+            'count' => $count,
+            'tracks' => $processed
+        ]);
+    }
+    
+    /**
+     * Stop all currently processing tracks
+     * 
+     * @return JsonResponse
+     */
+    public function stopAll(): JsonResponse
+    {
+        // Get all tracks that are currently processing
+        $tracks = Track::whereIn('status', ['processing', 'pending'])->get();
+        $count = $tracks->count();
+        
+        if ($count === 0) {
+            return response()->json([
+                'success' => true,
+                'message' => 'No tracks are currently processing',
+                'count' => 0
+            ]);
+        }
+        
+        $stopped = [];
+        
+        // Mark all as stopped
+        foreach ($tracks as $track) {
+            $track->update([
+                'status' => 'stopped',
+                'error_message' => 'Processing was manually stopped',
+            ]);
+            
+            $stopped[] = [
+                'id' => $track->id,
+                'title' => $track->title
+            ];
+        }
+        
+        return response()->json([
+            'success' => true,
+            'message' => "{$count} tracks have been stopped",
+            'count' => $count,
+            'tracks' => $stopped
         ]);
     }
     

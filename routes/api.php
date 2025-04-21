@@ -24,12 +24,18 @@ Route::prefix('tracks')->group(function() {
     // Get track status
     Route::get('/{track}/status', [TrackController::class, 'status']);
     
+    // Start processing a track
+    Route::post('/{track}/start', [TrackController::class, 'start']);
+    
+    // Stop processing a track
+    Route::post('/{track}/stop', [TrackController::class, 'stop']);
+    
     // Retry processing a track
     Route::post('/{track}/retry', [TrackController::class, 'retry']);
     
-    // Retry all failed tracks
+    // Bulk operations
+    Route::post('/start-all', [TrackController::class, 'startAll']);
+    Route::post('/stop-all', [TrackController::class, 'stopAll']);
     Route::post('/retry-all', [TrackController::class, 'retryAll']);
-    
-    // Bulk status check (for optimizing multiple status checks)
     Route::post('/status-bulk', [TrackController::class, 'statusBulk']);
 }); 
