@@ -30,3 +30,11 @@
 - [x] Background job processing
 - [x] Progress bar for long-running tasks
 - [x] Immediate processing with error feedback
+
+## Refactoring Tasks
+- [x] Improve tracks index page layout with better stats display
+- [x] Enhance search interface for better usability
+- [x] Make track avatars smaller in tables for better use of space
+- [x] Maintain consistent avatar sizing across different views
+- [ ] Improve mobile responsiveness of track displays
+- [ ] Enhance error feedback in track processing
