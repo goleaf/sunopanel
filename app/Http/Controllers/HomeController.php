@@ -28,15 +28,44 @@ class HomeController extends Controller
         ]);
 
         $tracksText = $request->input('tracks_input');
-        $parsedTracks = Track::parseFromText($tracksText);
+        $lines = explode("\n", $tracksText);
         $createdTracks = [];
 
-        foreach ($parsedTracks as $trackData) {
+        foreach ($lines as $line) {
+            $line = trim($line);
+            
+            // Skip empty lines
+            if (empty($line)) {
+                continue;
+            }
+            
             try {
+                // Parse the line
+                $parts = explode('|', $line);
+                
+                if (count($parts) < 3) {
+                    Log::warning("Invalid track format: {$line}");
+                    continue;
+                }
+                
+                $fileName = trim($parts[0]);
+                $mp3Url = trim($parts[1]);
+                $imageUrl = trim($parts[2]);
+                $genresString = isset($parts[3]) ? trim($parts[3]) : '';
+                
+                // Clean up title (remove .mp3 extension)
+                $title = str_replace('.mp3', '', $fileName);
+                
                 // Create/update the track
                 $track = Track::updateOrCreate(
-                    ['title' => $trackData['title']],
-                    $trackData
+                    ['title' => $title],
+                    [
+                        'mp3_url' => $mp3Url,
+                        'image_url' => $imageUrl,
+                        'genres_string' => $genresString,
+                        'status' => 'pending',
+                        'progress' => 0,
+                    ]
                 );
                 
                 // Dispatch the processing job
@@ -47,7 +76,7 @@ class HomeController extends Controller
                 Log::info("Track queued for processing: {$track->title}");
             } catch (\Exception $e) {
                 Log::error("Failed to process track: {$e->getMessage()}", [
-                    'trackData' => $trackData,
+                    'line' => $line,
                     'error' => $e->getMessage(),
                 ]);
             }

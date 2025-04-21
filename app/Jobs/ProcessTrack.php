@@ -5,6 +5,9 @@ namespace App\Jobs;
 use App\Models\Genre;
 use App\Models\Track;
 use Exception;
+use FFMpeg\Coordinate\TimeCode;
+use FFMpeg\FFMpeg;
+use FFMpeg\Format\Video\X264;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -69,7 +72,7 @@ class ProcessTrack implements ShouldQueue
 
             // Step 3: Create MP4 file (75%)
             $this->updateProgress(55, 'Creating MP4 file...');
-            $mp4Path = $this->createMP4($mp3Path, $imagePath);
+            $mp4Path = $this->createMP4WithFFmpeg($mp3Path, $imagePath);
             $this->track->update([
                 'mp4_path' => $mp4Path,
                 'progress' => 75,
@@ -134,7 +137,7 @@ class ProcessTrack implements ShouldQueue
     protected function downloadFile(string $url, string $directory): string
     {
         try {
-            $response = Http::timeout(30)->get($url);
+            $response = Http::timeout(60)->get($url);
             
             if (!$response->successful()) {
                 throw new Exception("Failed to download file from {$url}. Status: {$response->status()}");
@@ -143,6 +146,9 @@ class ProcessTrack implements ShouldQueue
             $extension = $this->getExtensionFromUrl($url);
             $filename = Str::random(40) . '.' . $extension;
             $path = "{$directory}/" . $filename;
+            
+            // Ensure the directory exists
+            Storage::disk('public')->makeDirectory($directory, 0755, true, true);
             
             Storage::disk('public')->put($path, $response->body());
             
@@ -180,41 +186,54 @@ class ProcessTrack implements ShouldQueue
     }
 
     /**
-     * Create an MP4 file from audio and image.
+     * Create an MP4 file from audio and image using PHP-FFmpeg.
      *
      * @param string $mp3Path
      * @param string $imagePath
      * @return string The path to the created MP4 file
      * @throws Exception If creation fails
      */
-    public function createMP4(string $mp3Path, string $imagePath): string
+    protected function createMP4WithFFmpeg(string $mp3Path, string $imagePath): string
     {
         try {
             $mp3FullPath = Storage::disk('public')->path($mp3Path);
             $imageFullPath = Storage::disk('public')->path($imagePath);
             
             $outputFilename = Str::random(40) . '.mp4';
-            $outputPath = 'videos/' . $outputFilename;
+            $outputDirectory = 'videos';
+            $outputPath = $outputDirectory . '/' . $outputFilename;
             $outputFullPath = Storage::disk('public')->path($outputPath);
             
-            // Create videos directory if it doesn't exist
-            if (!Storage::disk('public')->exists('videos')) {
-                Storage::disk('public')->makeDirectory('videos');
-            }
+            // Ensure videos directory exists
+            Storage::disk('public')->makeDirectory($outputDirectory, 0755, true, true);
             
-            // Ensure FFmpeg is available
-            $ffmpegPath = 'ffmpeg'; // Adjust if necessary
+            // Set up FFMpeg
+            $ffmpeg = FFMpeg::create([
+                'ffmpeg.binaries' => 'ffmpeg',
+                'ffprobe.binaries' => 'ffprobe',
+                'timeout' => 3600, // 1 hour
+                'ffmpeg.threads' => 12,
+            ]);
             
-            // Build FFmpeg command
-            $command = "{$ffmpegPath} -y -loop 1 -i '{$imageFullPath}' -i '{$mp3FullPath}' -c:v libx264 -tune stillimage -c:a aac -b:a 192k -pix_fmt yuv420p -shortest '{$outputFullPath}' 2>&1";
+            // Create video
+            $video = $ffmpeg->open($imageFullPath);
+            $audio = $ffmpeg->open($mp3FullPath);
             
-            // Execute command
-            $output = [];
-            $returnCode = 0;
+            // Create MP4 with H.264 codec
+            $format = new X264();
+            $format->setAudioCodec('aac');
+            
+            // Create command to combine image and audio
+            $command = "ffmpeg -y -loop 1 -i {$imageFullPath} -i {$mp3FullPath} -c:v libx264 -tune stillimage -c:a aac -b:a 192k -pix_fmt yuv420p -shortest {$outputFullPath}";
+            
             exec($command, $output, $returnCode);
             
             if ($returnCode !== 0) {
-                throw new Exception("FFmpeg failed: " . implode("\n", $output));
+                throw new Exception("FFmpeg command failed: " . implode("\n", $output));
+            }
+            
+            if (!file_exists($outputFullPath)) {
+                throw new Exception("Output file was not created");
             }
             
             return $outputPath;
@@ -223,6 +242,7 @@ class ProcessTrack implements ShouldQueue
                 'track_id' => $this->track->id,
                 'mp3_path' => $mp3Path,
                 'image_path' => $imagePath,
+                'error' => $e->getMessage()
             ]);
             throw new Exception("Failed to create MP4: {$e->getMessage()}");
         }

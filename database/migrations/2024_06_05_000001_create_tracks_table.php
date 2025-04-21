@@ -16,8 +16,8 @@ return new class extends Migration
             $table->string('title');
             $table->string('slug')->unique();
             $table->string('mp3_url');
-            $table->string('mp3_path')->nullable();
             $table->string('image_url');
+            $table->string('mp3_path')->nullable();
             $table->string('image_path')->nullable();
             $table->string('mp4_path')->nullable();
             $table->text('genres_string')->nullable();

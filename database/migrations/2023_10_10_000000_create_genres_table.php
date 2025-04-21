@@ -17,6 +17,15 @@ return new class extends Migration
             $table->string('slug')->unique();
             $table->timestamps();
         });
+
+        Schema::create('genre_track', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('genre_id')->constrained()->onDelete('cascade');
+            $table->foreignId('track_id')->constrained()->onDelete('cascade');
+            $table->timestamps();
+            
+            $table->unique(['genre_id', 'track_id']);
+        });
     }
 
     /**
@@ -24,6 +33,7 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::dropIfExists('genre_track');
         Schema::dropIfExists('genres');
     }
-};
+}; 
