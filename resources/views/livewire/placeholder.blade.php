@@ -1,8 +1,6 @@
-<div class="flex items-center justify-center p-6 h-full w-full bg-gray-50 rounded-md shadow-sm animate-pulse">
-    <div class="flex flex-col items-center">
-        <svg class="w-10 h-10 text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-        </svg>
-        <p class="mt-2 text-sm text-gray-500">{{ $message ?? 'Loading...' }}</p>
-    </div>
+<div class="w-full h-48 flex flex-col items-center justify-center rounded-lg bg-gray-50 border border-gray-200 animate-pulse">
+    <div class="w-16 h-16 bg-gray-200 rounded-full mb-4"></div>
+    <div class="h-4 bg-gray-200 rounded w-1/4 mb-2.5"></div>
+    <div class="h-2 bg-gray-200 rounded w-1/2"></div>
+    <p class="text-sm text-gray-500 mt-4">{{ $placeholder ?? 'Loading...' }}</p>
 </div> 
