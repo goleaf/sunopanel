@@ -617,3 +617,13 @@ composer test:convert-comments
 - [x] BatchService - Not needed as functionality integrated in Tracks component
 - [x] UserService - Users components were created but later removed
   
+# TODO List for Test Fixes
+
+- [ ] Fix Hash Configuration Issue: Resolve 'Could not verify the hashed value's configuration' error in tests.
+- [ ] Update Redirect Assertions: Fix failing redirect assertions in tests (e.g., expected 302 but received 200).
+- [ ] Fix View Assertions: Address 'The response is not a view' errors in track search and filter tests.
+- [ ] Resolve Playlist Form Error: Fix 'Attempt to read property "id" on string' in PlaylistForm.php.
+- [x] Fix Database Column Issue: Add missing 'position' column to playlist_track pivot table.
+- [ ] Update Session Error Assertions: Fix failing session error checks in validation tests.
+- [ ] Fix Route Method Tests: Correct the expected status codes for method not allowed tests.
+  
