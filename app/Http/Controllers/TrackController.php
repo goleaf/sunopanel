@@ -12,9 +12,32 @@ class TrackController extends Controller
     /**
      * Display a listing of the tracks.
      */
-    public function index(): View
+    public function index(Request $request): View
     {
-        $tracks = Track::with('genres')->orderBy('created_at', 'desc')->paginate(15);
+        $query = Track::with('genres');
+        
+        // Apply search filter
+        if ($request->filled('search')) {
+            $searchTerm = $request->input('search');
+            $query->where('title', 'like', "%{$searchTerm}%");
+        }
+        
+        // Filter by status
+        if ($request->filled('status') && in_array($request->input('status'), ['pending', 'processing', 'completed', 'failed'])) {
+            $query->where('status', $request->input('status'));
+        }
+        
+        // Filter by genre
+        if ($request->filled('genre')) {
+            $genre = $request->input('genre');
+            $query->whereHas('genres', function($q) use ($genre) {
+                $q->where('slug', $genre);
+            });
+        }
+        
+        $tracks = $query->orderBy('created_at', 'desc')->paginate(15)
+                        ->withQueryString(); // Keep the query string for pagination
+                        
         return view('tracks.index', compact('tracks'));
     }
 
@@ -66,5 +89,24 @@ class TrackController extends Controller
             'error_message' => $track->error_message,
             'genres' => $track->genres->pluck('name'),
         ]);
+    }
+    
+    /**
+     * Retry processing a failed track.
+     */
+    public function retry(Track $track)
+    {
+        // Reset track status
+        $track->update([
+            'status' => 'pending',
+            'progress' => 0,
+            'error_message' => null,
+        ]);
+        
+        // Dispatch the job
+        \App\Jobs\ProcessTrack::dispatch($track);
+        
+        return redirect()->route('tracks.index')
+            ->with('success', "Track '{$track->title}' has been requeued for processing.");
     }
 }

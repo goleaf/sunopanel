@@ -94,6 +94,26 @@
                 </div>
             </div>
             @endif
+            
+            @if($track->status === 'processing' && $track->mp4_path)
+            <div class="card bg-base-100 shadow-xl mb-6">
+                <div class="card-body">
+                    <h2 class="card-title">MP4 Video Preview (Processing)</h2>
+                    <div class="mt-4">
+                        <video id="track-video-preview" controls class="w-full rounded-lg">
+                            <source src="{{ $track->mp4_storage_url }}" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                        <div class="mt-2">
+                            <div class="alert alert-info">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span>This video is still being processed. Preview may be incomplete.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
         </div>
         
         <div>
@@ -146,6 +166,12 @@
                 <div class="card-body">
                     <h2 class="card-title">Actions</h2>
                     <div class="mt-4 space-y-4">
+                        @if($track->status === 'failed')
+                        <form action="{{ route('tracks.retry', $track) }}" method="POST">
+                            @csrf
+                            <button type="submit" class="btn btn-warning w-full mb-3">Retry Processing</button>
+                        </form>
+                        @endif
                         <form action="{{ route('tracks.destroy', $track) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this track?')">
                             @csrf
                             @method('DELETE')

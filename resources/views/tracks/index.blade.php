@@ -2,8 +2,66 @@
 
 @section('content')
 <div class="container mx-auto px-4 py-8">
-    <div class="mb-6">
+    <div class="mb-6 flex flex-col md:flex-row md:justify-between md:items-center">
         <h1 class="text-3xl font-bold text-gray-800">Songs</h1>
+        <a href="{{ route('home.index') }}" class="btn btn-primary mt-2 md:mt-0">Add Tracks</a>
+    </div>
+
+    <!-- Search and Filter Section -->
+    <div class="card bg-base-100 shadow-xl mb-6">
+        <div class="card-body">
+            <form action="{{ route('tracks.index') }}" method="GET" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <!-- Search box -->
+                    <div class="form-control">
+                        <label class="label" for="search">
+                            <span class="label-text">Search by title</span>
+                        </label>
+                        <input type="text" name="search" id="search" placeholder="Search..." value="{{ request('search') }}" class="input input-bordered w-full">
+                    </div>
+                    
+                    <!-- Status filter -->
+                    <div class="form-control">
+                        <label class="label" for="status">
+                            <span class="label-text">Status</span>
+                        </label>
+                        <select name="status" id="status" class="select select-bordered w-full">
+                            <option value="">All Statuses</option>
+                            <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pending</option>
+                            <option value="processing" {{ request('status') === 'processing' ? 'selected' : '' }}>Processing</option>
+                            <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>Completed</option>
+                            <option value="failed" {{ request('status') === 'failed' ? 'selected' : '' }}>Failed</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Genre filter -->
+                    <div class="form-control">
+                        <label class="label" for="genre">
+                            <span class="label-text">Genre</span>
+                        </label>
+                        <select name="genre" id="genre" class="select select-bordered w-full">
+                            <option value="">All Genres</option>
+                            @php
+                                $genres = \App\Models\Genre::orderBy('name')->get();
+                            @endphp
+                            @foreach($genres as $genre)
+                                <option value="{{ $genre->slug }}" {{ request('genre') === $genre->slug ? 'selected' : '' }}>
+                                    {{ $genre->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    
+                    <!-- Filter button -->
+                    <div class="form-control self-end">
+                        <div class="flex space-x-2">
+                            <button type="submit" class="btn btn-primary">Apply Filters</button>
+                            <a href="{{ route('tracks.index') }}" class="btn btn-outline">Reset</a>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
     </div>
 
     @if(session('success'))
@@ -106,6 +164,14 @@
                                     <a href="{{ route('tracks.show', $track) }}" class="btn btn-sm btn-outline">
                                         View
                                     </a>
+                                    @if($track->status === 'failed')
+                                    <form action="{{ route('tracks.retry', $track) }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="btn btn-sm btn-warning">
+                                            Retry
+                                        </button>
+                                    </form>
+                                    @endif
                                     <form action="{{ route('tracks.destroy', $track) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this track?')">
                                         @csrf
                                         @method('DELETE')

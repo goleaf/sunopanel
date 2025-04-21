@@ -151,6 +151,20 @@ class ProcessTrack implements ShouldQueue
     protected function downloadFile(string $url, string $directory): string
     {
         try {
+            // Check if we already have a file with this base name (without extension)
+            $baseFileName = pathinfo(parse_url($url, PHP_URL_PATH), PATHINFO_FILENAME);
+            if (!empty($baseFileName)) {
+                // List files in directory to check for existing files with same base name
+                $existingFiles = Storage::disk('public')->files($directory);
+                foreach ($existingFiles as $existingFile) {
+                    $existingBaseName = pathinfo($existingFile, PATHINFO_FILENAME);
+                    if (Str::contains($existingBaseName, $baseFileName)) {
+                        Log::info("File with basename {$baseFileName} already exists at {$existingFile}, skipping download");
+                        return $existingFile;
+                    }
+                }
+            }
+            
             $response = Http::timeout(60)->get($url);
             
             if (!$response->successful()) {
