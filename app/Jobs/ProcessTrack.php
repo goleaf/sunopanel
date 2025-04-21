@@ -207,29 +207,16 @@ class ProcessTrack implements ShouldQueue
             // Ensure videos directory exists
             Storage::disk('public')->makeDirectory($outputDirectory, 0755, true, true);
             
-            // Set up FFMpeg
-            $ffmpeg = FFMpeg::create([
-                'ffmpeg.binaries' => 'ffmpeg',
-                'ffprobe.binaries' => 'ffprobe',
-                'timeout' => 3600, // 1 hour
-                'ffmpeg.threads' => 12,
-            ]);
+            // Alternative approach that creates a slideshow with audio
+            // This doesn't use libx264 directly, but uses FFmpeg's default available video codec
+            $command = "ffmpeg -y -loop 1 -i {$imageFullPath} -i {$mp3FullPath} -c:v mjpeg -q:v 2 -c:a copy -shortest {$outputFullPath}";
             
-            // Create video
-            $video = $ffmpeg->open($imageFullPath);
-            $audio = $ffmpeg->open($mp3FullPath);
-            
-            // Create MP4 with H.264 codec
-            $format = new X264();
-            $format->setAudioCodec('aac');
-            
-            // Create command to combine image and audio
-            $command = "ffmpeg -y -loop 1 -i {$imageFullPath} -i {$mp3FullPath} -c:v libx264 -tune stillimage -c:a aac -b:a 192k -pix_fmt yuv420p -shortest {$outputFullPath}";
+            Log::info("Running FFmpeg command: {$command}");
             
             exec($command, $output, $returnCode);
             
             if ($returnCode !== 0) {
-                throw new Exception("FFmpeg command failed: " . implode("\n", $output));
+                throw new Exception("FFmpeg command failed with return code {$returnCode}: " . implode("\n", $output));
             }
             
             if (!file_exists($outputFullPath)) {
@@ -242,7 +229,8 @@ class ProcessTrack implements ShouldQueue
                 'track_id' => $this->track->id,
                 'mp3_path' => $mp3Path,
                 'image_path' => $imagePath,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'output' => $output ?? []
             ]);
             throw new Exception("Failed to create MP4: {$e->getMessage()}");
         }

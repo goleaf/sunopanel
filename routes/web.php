@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Route;
 // Home routes (Add tracks)
 Route::get('/', [HomeController::class, 'index'])->name('home.index');
 Route::post('/process', [HomeController::class, 'process'])->name('home.process');
+Route::post('/process-immediate', [HomeController::class, 'processImmediate'])->name('home.process.immediate');
 
 // Tracks routes
 Route::get('/tracks', [TrackController::class, 'index'])->name('tracks.index');

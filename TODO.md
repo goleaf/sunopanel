@@ -7,6 +7,7 @@
 - [x] Process genres (create if not exists)
 - [x] Run processing in background with progress bar
 - [x] Simple UI with 3 menu items: Add / Songs / Genres
+- [x] Add option to process tracks immediately and check for failures
 
 ## Implementation Tasks
 - [x] Create database migrations for tracks and genres
@@ -20,9 +21,11 @@
 - [x] Create Genre model with relationships
 - [x] Create Genre controller with CRUD operations
 - [x] Create Genre views (index, create, edit, show)
+- [x] Implement immediate job processing with error checking
 
 ## Technical Requirements
 - [x] MP3 and image download from external URLs
 - [x] Convert MP3 + image to MP4
 - [x] Background job processing
 - [x] Progress bar for long-running tasks
+- [x] Immediate processing with error feedback

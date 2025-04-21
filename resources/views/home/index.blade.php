@@ -21,9 +21,15 @@
     </div>
     @endif
 
+    @if(session('warning'))
+    <div class="alert alert-warning mb-6">
+        {{ session('warning') }}
+    </div>
+    @endif
+
     <div class="card bg-base-100 shadow-xl">
         <div class="card-body">
-            <form action="{{ route('home.process') }}" method="POST">
+            <form id="tracks-form" action="{{ route('home.process') }}" method="POST">
                 @csrf
 
                 <div class="form-control w-full mb-4">
@@ -44,10 +50,18 @@
                     @enderror
                 </div>
 
-                <div class="form-control mt-6">
+                <div class="form-control mt-6 flex flex-row gap-4">
                     <button type="submit" class="btn btn-primary">
-                        Process Tracks
+                        Queue Tracks (Background Processing)
                     </button>
+                    <button type="button" id="process-immediate-btn" class="btn btn-secondary">
+                        Process Immediately (Check Failures)
+                    </button>
+                </div>
+                
+                <div class="mt-4 text-sm text-gray-600">
+                    <p><strong>Queue Tracks:</strong> Faster response, processes tracks in the background. Check status on the Songs page.</p>
+                    <p><strong>Process Immediately:</strong> Slower response, but provides immediate feedback on errors. Page will not respond until processing completes.</p>
                 </div>
             </form>
         </div>
@@ -75,4 +89,19 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('tracks-form');
+        const immediateBtn = document.getElementById('process-immediate-btn');
+        
+        immediateBtn.addEventListener('click', function() {
+            // Change form action to immediate processing route
+            form.action = "{{ route('home.process.immediate') }}";
+            form.submit();
+        });
+    });
+</script>
+@endpush
 @endsection 

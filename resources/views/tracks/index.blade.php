@@ -12,6 +12,38 @@
     </div>
     @endif
 
+    @if(session('warning'))
+    <div class="alert alert-warning mb-6">
+        {{ session('warning') }}
+    </div>
+    @endif
+
+    @if(session('failed_tracks'))
+    <div class="card bg-base-100 shadow-xl mb-6">
+        <div class="card-body">
+            <h2 class="card-title text-error">Failed Tracks</h2>
+            <div class="overflow-x-auto">
+                <table class="table w-full">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Error</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach(session('failed_tracks') as $failed)
+                        <tr>
+                            <td>{{ $failed['track']->title }}</td>
+                            <td class="text-error">{{ $failed['error'] }}</td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    @endif
+
     <div class="card bg-base-100 shadow-xl">
         <div class="card-body">
             @if($tracks->isEmpty())
