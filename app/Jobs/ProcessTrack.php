@@ -2,7 +2,9 @@
 
 namespace App\Jobs;
 
+use App\Models\Genre;
 use App\Models\Track;
+use Exception;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -11,28 +13,24 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use Symfony\Component\Process\Process;
+use Illuminate\Support\Str;
 
 class ProcessTrack implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     /**
-     * The number of times the job may be attempted.
+     * The track to process.
      *
-     * @var int
-     */
-    public $tries = 3;
-
-    /**
-     * The track instance.
-     *
-     * @var \App\Models\Track
+     * @var Track
      */
     protected $track;
 
     /**
      * Create a new job instance.
+     *
+     * @param Track $track
+     * @return void
      */
     public function __construct(Track $track)
     {
@@ -41,39 +39,87 @@ class ProcessTrack implements ShouldQueue
 
     /**
      * Execute the job.
+     *
+     * @return void
      */
-    public function handle(): void
+    public function handle()
     {
         try {
-            $this->updateProgress(10, 'processing');
-            
-            // Download MP3
-            $mp3Path = $this->downloadFile($this->track->mp3_url, 'mp3');
-            $this->track->mp3_path = $mp3Path;
-            $this->track->save();
-            $this->updateProgress(40);
-            
-            // Download Image
-            $imagePath = $this->downloadFile($this->track->image_url, 'jpg');
-            $this->track->image_path = $imagePath;
-            $this->track->save();
-            $this->updateProgress(70);
-            
-            // Create MP4
-            $mp4Path = $this->createMP4($mp3Path, $imagePath);
-            $this->track->mp4_path = $mp4Path;
-            $this->track->save();
-            
-            $this->updateProgress(100, 'completed');
-        } catch (\Exception $e) {
-            Log::error('Track processing error: ' . $e->getMessage(), [
-                'track_id' => $this->track->id,
-                'exception' => $e
+            // Update track status to processing
+            $this->track->update([
+                'status' => 'processing',
+                'progress' => 0,
             ]);
-            
-            $this->updateProgress(0, 'failed', $e->getMessage());
-            
+
+            // Step 1: Download MP3 file (25%)
+            $this->updateProgress(5, 'Downloading MP3 file...');
+            $mp3Path = $this->downloadFile($this->track->mp3_url, 'mp3');
+            $this->track->update([
+                'mp3_path' => $mp3Path,
+                'progress' => 25,
+            ]);
+
+            // Step 2: Download image file (50%)
+            $this->updateProgress(30, 'Downloading image file...');
+            $imagePath = $this->downloadFile($this->track->image_url, 'images');
+            $this->track->update([
+                'image_path' => $imagePath,
+                'progress' => 50,
+            ]);
+
+            // Step 3: Create MP4 file (75%)
+            $this->updateProgress(55, 'Creating MP4 file...');
+            $mp4Path = $this->createMP4($mp3Path, $imagePath);
+            $this->track->update([
+                'mp4_path' => $mp4Path,
+                'progress' => 75,
+            ]);
+
+            // Step 4: Process genres if available (100%)
+            $this->updateProgress(80, 'Processing genres...');
+            if (!empty($this->track->genres_string)) {
+                $this->processGenres($this->track->genres_string);
+            }
+
+            // Update track status to completed
+            $this->track->update([
+                'status' => 'completed',
+                'progress' => 100,
+                'error_message' => null,
+            ]);
+
+            $this->updateProgress(100, 'Processing completed!');
+        } catch (Exception $e) {
+            Log::error('Track processing failed: ' . $e->getMessage(), [
+                'track_id' => $this->track->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            // Update track with error
+            $this->track->update([
+                'status' => 'failed',
+                'error_message' => $e->getMessage(),
+            ]);
+
             throw $e;
+        }
+    }
+
+    /**
+     * Update the track's progress.
+     *
+     * @param int $progress
+     * @param string|null $message
+     * @return void
+     */
+    protected function updateProgress(int $progress, ?string $message = null): void
+    {
+        $this->track->update([
+            'progress' => $progress,
+        ]);
+
+        if ($message) {
+            Log::info("Track {$this->track->id} - {$this->track->title}: {$message}");
         }
     }
 
@@ -81,98 +127,136 @@ class ProcessTrack implements ShouldQueue
      * Download a file from URL.
      *
      * @param string $url
-     * @param string $extension
-     * @return string
+     * @param string $directory
+     * @return string The path to the downloaded file
+     * @throws Exception If download fails
      */
-    protected function downloadFile(string $url, string $extension): string
+    protected function downloadFile(string $url, string $directory): string
     {
-        $filename = basename(parse_url($url, PHP_URL_PATH));
-        $filename = pathinfo($filename, PATHINFO_FILENAME) . '.' . $extension;
-        $path = 'tracks/' . uniqid() . '_' . $filename;
-        
-        $response = Http::timeout(120)->get($url);
-        
-        if ($response->successful()) {
+        try {
+            $response = Http::timeout(30)->get($url);
+            
+            if (!$response->successful()) {
+                throw new Exception("Failed to download file from {$url}. Status: {$response->status()}");
+            }
+            
+            $extension = $this->getExtensionFromUrl($url);
+            $filename = Str::random(40) . '.' . $extension;
+            $path = "{$directory}/" . $filename;
+            
             Storage::disk('public')->put($path, $response->body());
+            
             return $path;
+        } catch (Exception $e) {
+            Log::error("Failed to download file: {$e->getMessage()}", [
+                'url' => $url,
+                'track_id' => $this->track->id,
+            ]);
+            throw new Exception("Failed to download file: {$e->getMessage()}");
         }
-        
-        throw new \Exception("Failed to download file from {$url}. Status: {$response->status()}");
     }
 
     /**
-     * Create MP4 from MP3 and image using direct FFmpeg command.
+     * Get file extension from URL.
+     *
+     * @param string $url
+     * @return string
+     */
+    protected function getExtensionFromUrl(string $url): string
+    {
+        $extension = pathinfo(parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION);
+        
+        if (empty($extension)) {
+            // Default extensions based on the directory
+            if (Str::contains($url, ['mp3', 'audio'])) {
+                return 'mp3';
+            } elseif (Str::contains($url, ['jpg', 'jpeg', 'png', 'image'])) {
+                return 'jpg';
+            }
+            return 'dat'; // Default if no extension can be determined
+        }
+        
+        return $extension;
+    }
+
+    /**
+     * Create an MP4 file from audio and image.
      *
      * @param string $mp3Path
      * @param string $imagePath
-     * @return string
+     * @return string The path to the created MP4 file
+     * @throws Exception If creation fails
      */
-    protected function createMP4(string $mp3Path, string $imagePath): string
+    public function createMP4(string $mp3Path, string $imagePath): string
     {
-        // Define paths for input and output files
-        $outputFilename = 'tracks/' . uniqid() . '_' . pathinfo($mp3Path, PATHINFO_FILENAME) . '.mp4';
-        
-        $mp3FullPath = Storage::disk('public')->path($mp3Path);
-        $imageFullPath = Storage::disk('public')->path($imagePath);
-        $outputFullPath = Storage::disk('public')->path($outputFilename);
-        
-        // Ensure output directory exists
-        $outputDir = dirname($outputFullPath);
-        if (!file_exists($outputDir)) {
-            mkdir($outputDir, 0755, true);
+        try {
+            $mp3FullPath = Storage::disk('public')->path($mp3Path);
+            $imageFullPath = Storage::disk('public')->path($imagePath);
+            
+            $outputFilename = Str::random(40) . '.mp4';
+            $outputPath = 'videos/' . $outputFilename;
+            $outputFullPath = Storage::disk('public')->path($outputPath);
+            
+            // Create videos directory if it doesn't exist
+            if (!Storage::disk('public')->exists('videos')) {
+                Storage::disk('public')->makeDirectory('videos');
+            }
+            
+            // Ensure FFmpeg is available
+            $ffmpegPath = 'ffmpeg'; // Adjust if necessary
+            
+            // Build FFmpeg command
+            $command = "{$ffmpegPath} -y -loop 1 -i '{$imageFullPath}' -i '{$mp3FullPath}' -c:v libx264 -tune stillimage -c:a aac -b:a 192k -pix_fmt yuv420p -shortest '{$outputFullPath}' 2>&1";
+            
+            // Execute command
+            $output = [];
+            $returnCode = 0;
+            exec($command, $output, $returnCode);
+            
+            if ($returnCode !== 0) {
+                throw new Exception("FFmpeg failed: " . implode("\n", $output));
+            }
+            
+            return $outputPath;
+        } catch (Exception $e) {
+            Log::error("Failed to create MP4: {$e->getMessage()}", [
+                'track_id' => $this->track->id,
+                'mp3_path' => $mp3Path,
+                'image_path' => $imagePath,
+            ]);
+            throw new Exception("Failed to create MP4: {$e->getMessage()}");
         }
-        
-        // Build FFmpeg command
-        $ffmpegCommand = [
-            'ffmpeg',
-            '-loop', '1',                   // Loop the image
-            '-i', $imageFullPath,           // Input image file
-            '-i', $mp3FullPath,             // Input audio file
-            '-c:v', 'libx264',              // Video codec
-            '-tune', 'stillimage',          // Optimize for still image
-            '-c:a', 'aac',                  // Audio codec
-            '-b:a', '192k',                 // Audio bitrate
-            '-pix_fmt', 'yuv420p',          // Pixel format
-            '-shortest',                    // Duration based on audio length
-            '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2', // Ensure even dimensions
-            '-y',                           // Overwrite output file if exists
-            $outputFullPath                 // Output file
-        ];
-
-        // Run FFmpeg command as a process
-        $process = new Process($ffmpegCommand);
-        $process->setTimeout(300); // 5 minutes timeout
-        
-        $process->run();
-        
-        // Check if the process was successful
-        if (!$process->isSuccessful()) {
-            throw new \Exception('FFmpeg error: ' . $process->getErrorOutput());
-        }
-        
-        return $outputFilename;
     }
 
     /**
-     * Update the track processing progress.
+     * Process genres string and attach them to the track.
      *
-     * @param int $progress
-     * @param string|null $status
-     * @param string|null $errorMessage
+     * @param string $genresString
      * @return void
      */
-    protected function updateProgress(int $progress, ?string $status = null, ?string $errorMessage = null): void
+    protected function processGenres(string $genresString): void
     {
-        $this->track->progress = $progress;
-        
-        if ($status) {
-            $this->track->status = $status;
+        if (empty($genresString)) {
+            return;
         }
         
-        if ($errorMessage) {
-            $this->track->error_message = $errorMessage;
+        $genreNames = array_map('trim', explode(',', $genresString));
+        $genreIds = [];
+        
+        foreach ($genreNames as $genreName) {
+            if (empty($genreName)) {
+                continue;
+            }
+            
+            $genre = Genre::firstOrCreate(
+                ['name' => $genreName],
+                ['slug' => Str::slug($genreName)]
+            );
+            
+            $genreIds[] = $genre->id;
         }
         
-        $this->track->save();
+        // Sync genres with the track
+        $this->track->genres()->sync($genreIds);
     }
 }

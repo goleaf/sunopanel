@@ -1,47 +1,75 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="max-w-4xl mx-auto">
-    <h1 class="text-3xl font-bold mb-6">Add Tracks</h1>
-    
-    <div class="card bg-base-200 shadow-xl">
+<div class="container mx-auto px-4 py-8">
+    <div class="mb-6">
+        <h1 class="text-3xl font-bold text-gray-800">Add New Tracks</h1>
+        <p class="text-gray-600 mt-2">
+            Enter tracks in the format: title.mp3|mp3_url|image_url|genres (comma-separated)
+        </p>
+    </div>
+
+    @if(session('success'))
+    <div class="alert alert-success mb-6">
+        {{ session('success') }}
+    </div>
+    @endif
+
+    @if(session('error'))
+    <div class="alert alert-error mb-6">
+        {{ session('error') }}
+    </div>
+    @endif
+
+    <div class="card bg-base-100 shadow-xl">
         <div class="card-body">
-            <h2 class="card-title">Paste tracks information below</h2>
-            <p class="text-sm mb-4">Format: title.mp3|mp3_url|image_url|genres</p>
-            
             <form action="{{ route('home.process') }}" method="POST">
                 @csrf
-                
-                <div class="form-control">
-                    <textarea
-                        name="tracks_data"
-                        class="textarea textarea-bordered h-64 font-mono"
+
+                <div class="form-control w-full mb-4">
+                    <label for="tracks_input" class="label">
+                        <span class="label-text">Enter Tracks (One per line)</span>
+                    </label>
+                    <textarea 
+                        id="tracks_input" 
+                        name="tracks_input" 
+                        rows="10" 
+                        class="textarea textarea-bordered w-full @error('tracks_input') textarea-error @enderror"
                         placeholder="Fleeting Love (儚い愛).mp3|https://cdn1.suno.ai/69c0d3c4-a06f-471e-a396-4cb09c9ec2b6.mp3|https://cdn2.suno.ai/image_a07fbe33-8ee5-4f91-bb8d-180cbb49e5fe.jpeg|City pop,80s"
-                    >{{ old('tracks_data') }}</textarea>
-                    @error('tracks_data')
-                        <label class="label">
-                            <span class="label-text-alt text-error">{{ $message }}</span>
-                        </label>
+                    >{{ old('tracks_input') }}</textarea>
+                    @error('tracks_input')
+                    <label class="label">
+                        <span class="label-text-alt text-error">{{ $message }}</span>
+                    </label>
                     @enderror
                 </div>
-                
-                <div class="card-actions justify-end mt-4">
-                    <button type="submit" class="btn btn-primary">Process Tracks</button>
+
+                <div class="form-control mt-6">
+                    <button type="submit" class="btn btn-primary">
+                        Process Tracks
+                    </button>
                 </div>
             </form>
         </div>
     </div>
-    
+
     <div class="mt-8">
-        <h2 class="text-2xl font-bold mb-4">Instructions</h2>
-        <div class="card bg-base-200 shadow-xl">
+        <h2 class="text-xl font-semibold mb-4">Instructions</h2>
+        <div class="card bg-base-100 shadow-xl">
             <div class="card-body">
-                <ol class="list-decimal list-inside space-y-2">
-                    <li>Paste track information in the text area above, one track per line</li>
-                    <li>Each line should follow the format: <code class="bg-base-300 px-2 py-1 rounded">title.mp3|mp3_url|image_url|genres</code></li>
-                    <li>Multiple genres should be separated by commas</li>
-                    <li>Click "Process Tracks" to start the import</li>
-                    <li>Tracks will be processed in the background, you can view progress on the Songs page</li>
+                <h3 class="font-bold mb-2">Format</h3>
+                <p class="mb-4">Each track should be on its own line with the following format:</p>
+                <pre class="bg-base-200 p-4 rounded-lg overflow-x-auto mb-4">title.mp3|mp3_url|image_url|genre1,genre2,genre3</pre>
+                
+                <h3 class="font-bold mb-2">Example</h3>
+                <pre class="bg-base-200 p-4 rounded-lg overflow-x-auto mb-4">Fleeting Love (儚い愛).mp3|https://cdn1.suno.ai/69c0d3c4-a06f-471e-a396-4cb09c9ec2b6.mp3|https://cdn2.suno.ai/image_a07fbe33-8ee5-4f91-bb8d-180cbb49e5fe.jpeg|City pop,80s</pre>
+                
+                <h3 class="font-bold mb-2">Process</h3>
+                <ol class="list-decimal list-inside space-y-2 mb-4">
+                    <li>The system will download the MP3 and image files</li>
+                    <li>The MP3 and image will be combined to create an MP4 video</li>
+                    <li>The genres will be processed (created if they don't exist)</li>
+                    <li>You can monitor the progress on the Songs page</li>
                 </ol>
             </div>
         </div>

@@ -26,6 +26,5 @@ Route::get('/tracks/{track}', [TrackController::class, 'show'])->name('tracks.sh
 Route::delete('/tracks/{track}', [TrackController::class, 'destroy'])->name('tracks.destroy');
 Route::get('/tracks/{track}/status', [TrackController::class, 'status'])->name('tracks.status');
 
-// Genres routes
-Route::get('/genres', [GenreController::class, 'index'])->name('genres.index');
-Route::get('/genres/{genre:slug}', [GenreController::class, 'show'])->name('genres.show');
+// Genre routes
+Route::resource('genres', GenreController::class);
