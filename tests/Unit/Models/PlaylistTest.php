@@ -101,27 +101,56 @@ class PlaylistTest extends TestCase
     }
 
     #[Test]
-    
     public function test_RemoveTrack(): void
     {
-
-        $this->assertTrue(true);
+        $playlist = Playlist::factory()->create();
+        $track = Track::factory()->create();
+        
+        // Add the track to the playlist
+        $playlist->addTrack($track);
+        
+        $this->assertDatabaseHas('playlist_track', [
+            'playlist_id' => $playlist->id,
+            'track_id' => $track->id,
+        ]);
+        
+        // Now remove the track - pass the Track object, not just the ID
+        $playlist->removeTrack($track);
+        
+        $this->assertDatabaseMissing('playlist_track', [
+            'playlist_id' => $playlist->id,
+            'track_id' => $track->id,
+        ]);
     }
 
     #[Test]
-    
     public function test_GetTracksCountAttribute(): void
     {
-
-        $this->assertTrue(true);
+        $playlist = Playlist::factory()->create();
+        
+        // Initially should have 0 tracks
+        $this->assertEquals(0, $playlist->tracks_count);
+        
+        // Add 3 tracks
+        $tracks = Track::factory()->count(3)->create();
+        foreach ($tracks as $track) {
+            $playlist->addTrack($track);
+        }
+        
+        // Refresh to get the updated count
+        $playlist->refresh();
+        $this->assertEquals(3, $playlist->tracks_count);
     }
 
     #[Test]
-    
     public function test_Factory(): void
     {
-
-        $this->assertTrue(true);
+        $playlist = Playlist::factory()->create();
+        
+        $this->assertNotNull($playlist);
+        $this->assertInstanceOf(Playlist::class, $playlist);
+        $this->assertNotNull($playlist->id);
+        $this->assertNotEmpty($playlist->title);
     }
 
 }
