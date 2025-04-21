@@ -40,16 +40,19 @@
 @endphp
 
 <div 
+    x-cloak
     x-data="{ 
         show: false,
         message: '{{ $message }}',
         init() {
-            if (this.message) {
-                this.show = true;
-                if ({{ $duration }}) {
-                    setTimeout(() => { this.show = false }, {{ $duration }});
+            window.addEventListener('load', () => {
+                if (this.message) {
+                    this.show = true;
+                    if ({{ $duration }}) {
+                        setTimeout(() => { this.show = false }, {{ $duration }});
+                    }
                 }
-            }
+            });
             
             this.$el.addEventListener('notify', event => {
                 this.message = event.detail.message || '';
@@ -69,7 +72,6 @@
     x-transition:leave-start="opacity-100"
     x-transition:leave-end="opacity-0"
     class="fixed {{ $positionClasses }} z-50 max-w-sm notification notification-{{ $type }}"
-    style="display: none;"
     id="{{ $id }}"
     {{ $attributes }}
 >
@@ -101,8 +103,29 @@
     </div>
 </div>
 
-@push('scripts')
+@once
+<style>
+    [x-cloak] { display: none !important; }
+</style>
 <script>
+    document.addEventListener('alpine:init', () => {
+        // Create a notification store to handle notifications across components
+        Alpine.store('notifications', {
+            notifications: [],
+            
+            add(message, type = 'info', duration = 5000) {
+                const id = `notification-${Date.now()}`;
+                window.dispatchEvent(new CustomEvent('notify', {
+                    detail: { id: 'main-notification', message, type, duration }
+                }));
+            },
+            
+            remove(id) {
+                this.notifications = this.notifications.filter(n => n.id !== id);
+            }
+        });
+    });
+    
     function notify(id, message, options = {}) {
         const el = document.getElementById(id);
         if (el) {
@@ -112,8 +135,8 @@
         }
     }
 
-    // Setup global notification listener
-    document.addEventListener('DOMContentLoaded', function() {
+    // Setup global notification listener - with a small delay for SSR 
+    window.addEventListener('DOMContentLoaded', function() {
         window.addEventListener('notify', function(event) {
             const id = event.detail.id || 'main-notification';
             notify(id, event.detail.message, {
@@ -122,4 +145,4 @@
         });
     });
 </script>
-@endpush 
+@endonce 

@@ -2,8 +2,31 @@ import './bootstrap';
 import Alpine from 'alpinejs';
 import Sortable from 'sortablejs';
 
-window.Alpine = Alpine;
-window.Sortable = Sortable; // Make Sortable.js globally available
+// Initialize Livewire navigation progress
+document.addEventListener('livewire:navigating', () => {
+    // Add server-side navigation indicator
+    document.body.classList.add('navigating');
+});
+
+document.addEventListener('livewire:navigated', () => {
+    // Remove navigation indicator once server navigation completes
+    document.body.classList.remove('navigating');
+});
+
+// Use defer to ensure DOM is fully loaded before initializing
+window.deferLoadingAlpine = function (callback) {
+    window.Alpine = Alpine;
+    window.Sortable = Sortable;
+
+    if (window.Livewire) {
+        // Wait for Livewire to finish server-side rendering
+        document.addEventListener('livewire:init', () => {
+            callback();
+        });
+    } else {
+        callback();
+    }
+};
 
 // Alpine.js directives and data
 document.addEventListener('alpine:init', () => {
@@ -60,11 +83,13 @@ document.addEventListener('alpine:init', () => {
     }));
 });
 
-// Initialize Alpine.js
-Alpine.start();
+// Initialize Alpine.js with deferred loading
+deferLoadingAlpine(() => {
+    Alpine.start();
+});
 
-// DOM ready event handlers
-document.addEventListener('DOMContentLoaded', function() {
+// Global event handlers - Only initialize after server render
+document.addEventListener('livewire:loaded', function() {
     // Genre filter functionality
     const genreFilter = document.getElementById('genre-filter');
     if (genreFilter) {

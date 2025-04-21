@@ -2,24 +2,34 @@
 
 namespace App\Http\Livewire;
 
-use Livewire\Component;
+use App\Livewire\BaseComponent;
 use Livewire\Attributes\Title;
+use Livewire\Attributes\Layout;
+use Livewire\Attributes\On;
 
-class Dashboard extends Component
+class Dashboard extends BaseComponent
 {
     /**
-     * Indicates if the component should be rendered on the server.
+     * The component's initial data.
+     * This is used for SSR to hydrate the component on the server.
      *
-     * @var bool
+     * @return array
      */
-    protected bool $shouldRenderOnServer = true;
+    public function boot(): array
+    {
+        // Return any data needed for initial server-side rendering
+        return [
+            'placeholder' => 'Dashboard data is loading...'
+        ];
+    }
 
     /**
-     * Set the page title
+     * Set the page title and specify the layout
      */
     #[Title('Dashboard')]
+    #[Layout('layouts.app')]
     public function render()
     {
-        return view('livewire.dashboard');
+        return $this->renderWithServerRendering(view('livewire.dashboard'));
     }
 } 

@@ -50,7 +50,7 @@ return [
     |
     */
 
-    'lazy_placeholder' => null,
+    'lazy_placeholder' => 'livewire.placeholder',
 
     /*
     |---------------------------------------------------------------------------
@@ -172,6 +172,13 @@ return [
     'ssr' => [
         'enabled' => true,
         'cache' => true,
-        'cache_timeout' => 60 * 60 * 24, // 24 hours
+        'cache_timeout' => 60 * 60 * 24, // Increase to 24 hours for better performance
+        'input_encoding' => 'UTF-8',
+        'encoding' => 'UTF-8',
+        'ttl' => 60 * 60, // Add 1 hour TTL
+        'static_placeholder' => 'Loading...',
+        'ssr_assets' => true,
+        'browser' => null,
+        'ssr_data_callback' => true, // Enable data callback for improved SSR hydration
     ],
 ];

@@ -69,3 +69,11 @@ Route::post('/genres/{genre}/playlists', Genres::class)->name('playlists.create-
 Route::get('/test-notification', function() {
     return view('test-notification');
 })->name('test.notification');
+
+// Livewire script route for SSR optimization
+Route::get('/livewire/livewire.js', function () {
+    return response(file_get_contents(public_path('vendor/livewire/livewire.js')), 200, [
+        'Content-Type' => 'application/javascript',
+        'Cache-Control' => 'public, max-age=31536000', // Cache for 1 year
+    ]);
+})->name('livewire.js');

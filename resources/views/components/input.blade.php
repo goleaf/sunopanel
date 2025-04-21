@@ -18,10 +18,10 @@
     $disabledClasses = $disabled ? 'bg-gray-100 cursor-not-allowed' : '';
 @endphp
 
-<input 
+        <input 
     @if($inputId) id="{{ $inputId }}" @endif
     @if($name) name="{{ $name }}" @endif
-    type="{{ $type }}"
+            type="{{ $type }}" 
     @if($placeholder) placeholder="{{ $placeholder }}" @endif
     @if($value !== null) value="{{ $value }}" @endif
     @if($required) required @endif
@@ -31,4 +31,4 @@
 
 @if($error && is_string($error))
     <p class="mt-1 text-sm text-red-600">{{ $error }}</p>
-@endif 
+    @endif

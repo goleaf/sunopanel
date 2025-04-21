@@ -19,7 +19,15 @@ export default defineConfig({
                 entryFileNames: `assets/[name].[hash].js`,
                 chunkFileNames: `assets/[name].[hash].js`,
                 assetFileNames: `assets/[name].[hash].[ext]`,
+                manualChunks: {
+                    // Split vendor code into separate chunks for better caching
+                    'vendor': ['alpinejs', 'axios', 'sortablejs'],
+                },
             },
+        },
+        // Enable SSR builds for Livewire
+        ssr: {
+            noExternal: ['laravel-vite-plugin'],
         },
     },
     plugins: [
@@ -29,6 +37,8 @@ export default defineConfig({
                 'resources/js/app.js',
             ],
             refresh: true,
+            // Enable SSR
+            ssr: true,
         }),
         tailwindcss(),
     ],
@@ -37,5 +47,9 @@ export default defineConfig({
         hmr: {
             host: 'localhost',
         },
+    },
+    // Optimize chunks for better code-splitting
+    optimizeDeps: {
+        include: ['alpinejs', 'axios', 'sortablejs'],
     },
 });

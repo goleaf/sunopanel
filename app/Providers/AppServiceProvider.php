@@ -16,6 +16,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->register(LivewireOptimizationServiceProvider::class);
+
         // Create a mock user that implements Authenticatable
         $this->app->singleton('mock-user', function () {
             return new class implements Authenticatable {

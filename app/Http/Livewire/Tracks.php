@@ -17,6 +17,7 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use Throwable;
 use Livewire\Attributes\Title;
+use Livewire\Attributes\Layout;
 
 class Tracks extends Component
 {
@@ -29,6 +30,22 @@ class Tracks extends Component
      * @var bool
      */
     protected bool $shouldRenderOnServer = true;
+    
+    /**
+     * Persist the component's state to server-side storage.
+     *
+     * @var bool
+     */
+    protected bool $persistState = true;
+    
+    /**
+     * Properties that should not be included in the server-side render.
+     * This optimizes the payload size by excluding large/complex data not needed initially.
+     */
+    protected array $serverMemoShouldBeExcluded = [
+        'trackIdToDelete',
+        'showDeleteModal',
+    ];
     
     public $search = '';
     public $genreFilter = '';
@@ -342,27 +359,56 @@ class Tracks extends Component
     }
     
     /**
-     * Render the component
+     * The component's initial data for SSR.
+     *
+     * @return array
+     */
+    public function boot(): array
+    {
+        return [
+            'placeholder' => 'Loading tracks...',
+            'search' => $this->search,
+            'genreFilter' => $this->genreFilter,
+            'perPage' => $this->perPage,
+            'sortField' => $this->sortField,
+            'direction' => $this->direction
+        ];
+    }
+
+    /**
+     * Set the page title
      */
     #[Title('Tracks Management')]
+    #[Layout('layouts.app')]
     public function render()
     {
-        $tracks = Track::query()
-            ->when($this->search, function ($query) {
-                return $query->where('title', 'like', '%' . $this->search . '%')
-                    ->orWhere('artist', 'like', '%' . $this->search . '%');
-            })
-            ->when($this->genreFilter, function ($query) {
-                return $query->whereHas('genres', function ($q) {
-                    $q->where('genres.id', $this->genreFilter);
-                });
-            })
-            ->orderBy($this->sortField, $this->direction)
-            ->paginate($this->perPage);
-
+        // Get genres for the filter dropdown
+        $genres = $this->getGenresForFilter();
+        
+        // Build the query
+        $query = Track::query();
+        
+        // Add search filter
+        if (!empty($this->search)) {
+            $query->where('title', 'like', '%' . $this->search . '%');
+        }
+        
+        // Add genre filter
+        if (!empty($this->genreFilter)) {
+            $query->whereHas('genres', function ($q) {
+                $q->where('genres.id', $this->genreFilter);
+            });
+        }
+        
+        // Add sorting
+        $query->orderBy($this->sortField, $this->direction);
+        
+        // Get paginated results
+        $tracks = $query->paginate($this->perPage);
+        
         return view('livewire.tracks', [
             'tracks' => $tracks,
-            'genres' => $this->getGenresForFilter(),
-        ]);
+            'genres' => $genres,
+        ])->renderOnServer();
     }
 } 
