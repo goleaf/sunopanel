@@ -281,7 +281,10 @@ class ProcessTrack implements ShouldQueue
             return;
         }
         
-        $genreNames = array_map('trim', explode(',', $genresString));
+        Log::info("Processing genres for track {$this->track->id} - {$this->track->title}: '{$genresString}'");
+        
+        // Split by comma and remove duplicates
+        $genreNames = array_unique(array_map('trim', explode(',', $genresString)));
         $genreIds = [];
         
         foreach ($genreNames as $genreName) {
@@ -289,15 +292,39 @@ class ProcessTrack implements ShouldQueue
                 continue;
             }
             
-            $genre = Genre::firstOrCreate(
-                ['name' => $genreName],
-                ['slug' => Str::slug($genreName)]
-            );
-            
-            $genreIds[] = $genre->id;
+            try {
+                // Normalize genre name for consistency
+                $normalizedName = ucwords(strtolower($genreName));
+                $slug = Str::slug($normalizedName);
+                
+                // First try to find by exact name match
+                $genre = Genre::firstOrCreate(
+                    ['slug' => $slug],
+                    [
+                        'name' => $normalizedName,
+                        'slug' => $slug
+                    ]
+                );
+                
+                Log::info("Genre found/created: {$normalizedName} with ID {$genre->id}");
+                $genreIds[] = $genre->id;
+            } catch (\Exception $e) {
+                // Log the error but continue processing other genres
+                Log::warning("Failed to process genre '{$genreName}': {$e->getMessage()}");
+            }
         }
         
-        // Sync genres with the track
-        $this->track->genres()->sync($genreIds);
+        if (!empty($genreIds)) {
+            // Sync genres with the track
+            Log::info("Syncing genres for track {$this->track->id}: " . implode(', ', $genreIds));
+            $this->track->genres()->sync($genreIds);
+            
+            // Verify genres were attached
+            $this->track->refresh();
+            $attachedGenres = $this->track->genres->pluck('name')->toArray();
+            Log::info("Attached genres for track {$this->track->id}: " . implode(', ', $attachedGenres));
+        } else {
+            Log::warning("No valid genres to attach for track {$this->track->id}");
+        }
     }
 }

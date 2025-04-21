@@ -14,7 +14,7 @@ class TrackController extends Controller
      */
     public function index(): View
     {
-        $tracks = Track::orderBy('created_at', 'desc')->paginate(15);
+        $tracks = Track::with('genres')->orderBy('created_at', 'desc')->paginate(15);
         return view('tracks.index', compact('tracks'));
     }
 
@@ -23,6 +23,7 @@ class TrackController extends Controller
      */
     public function show(Track $track): View
     {
+        $track->load('genres');
         return view('tracks.show', compact('track'));
     }
 
@@ -57,11 +58,13 @@ class TrackController extends Controller
      */
     public function status(Track $track): JsonResponse
     {
+        $track->load('genres');
         return response()->json([
             'id' => $track->id,
             'status' => $track->status,
             'progress' => $track->progress,
             'error_message' => $track->error_message,
+            'genres' => $track->genres->pluck('name'),
         ]);
     }
 }
