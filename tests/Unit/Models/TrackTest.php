@@ -88,12 +88,16 @@ class TrackTest extends TestCase
     public function test_GetGenresListAttribute(): void
     {
         $track = Track::factory()->create();
-        Genre::factory()->create(['name' => 'Metal']);
-        Genre::factory()->create(['name' => 'Rock']);
-        $track->genres()->attach(Genre::all());
+        
+        // Create genres with unique names to avoid slug conflicts
+        $genre1 = Genre::factory()->create(['name' => 'Heavy Metal']);
+        $genre2 = Genre::factory()->create(['name' => 'Alternative Rock']);
+        
+        $track->genres()->attach([$genre1->id, $genre2->id]);
+        
         $genresList = $track->genres_list;
-        $this->assertStringContainsString('Metal', $genresList);
-        $this->assertStringContainsString('Rock', $genresList);
+        $this->assertStringContainsString('Heavy Metal', $genresList);
+        $this->assertStringContainsString('Alternative Rock', $genresList);
         $this->assertStringContainsString(', ', $genresList);
     }
 
@@ -102,13 +106,17 @@ class TrackTest extends TestCase
     public function test_GetGenresArray(): void
     {
         $track = Track::factory()->create();
-        Genre::factory()->create(['name' => 'Blues']);
-        Genre::factory()->create(['name' => 'Jazz']);
-        $track->genres()->attach(Genre::all());
+        
+        // Create genres with unique names
+        $genre1 = Genre::factory()->create(['name' => 'Chicago Blues']);
+        $genre2 = Genre::factory()->create(['name' => 'Smooth Jazz']);
+        
+        $track->genres()->attach([$genre1->id, $genre2->id]);
+        
         $genres = $track->getGenresArray();
         $this->assertIsArray($genres);
-        $this->assertContains('Blues', $genres);
-        $this->assertContains('Jazz', $genres);
+        $this->assertContains('Chicago Blues', $genres);
+        $this->assertContains('Smooth Jazz', $genres);
     }
 
     #[Test]
@@ -116,12 +124,16 @@ class TrackTest extends TestCase
     public function test_GetGenresString(): void
     {
         $track = Track::factory()->create();
-        Genre::factory()->create(['name' => 'Classical']);
-        Genre::factory()->create(['name' => 'Opera']);
-        $track->genres()->attach(Genre::all());
+        
+        // Create genres with unique names
+        $genre1 = Genre::factory()->create(['name' => 'Neo Classical']);
+        $genre2 = Genre::factory()->create(['name' => 'Modern Opera']);
+        
+        $track->genres()->attach([$genre1->id, $genre2->id]);
+        
         $genresString = $track->getGenresString();
-        $this->assertStringContainsString('Classical', $genresString);
-        $this->assertStringContainsString('Opera', $genresString);
+        $this->assertStringContainsString('Neo Classical', $genresString);
+        $this->assertStringContainsString('Modern Opera', $genresString);
     }
 
     #[Test]
