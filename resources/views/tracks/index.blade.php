@@ -179,10 +179,8 @@
 <!-- CSRF Token for API requests -->
 <meta name="csrf-token" content="{{ csrf_token() }}">
 
-@vite(['resources/js/track-status.js'])
-<script type="module">
-import TrackStatusAPI from "{{ Vite::asset('resources/js/track-status.js') }}";
-
+@vite('resources/js/app.js')
+<script>
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize track status updater
     const statusUpdater = new TrackStatusAPI({

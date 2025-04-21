@@ -275,10 +275,8 @@
 <!-- CSRF Token for API requests -->
 <meta name="csrf-token" content="{{ csrf_token() }}">
 
-@vite(['resources/js/track-status.js'])
-<script type="module">
-import TrackStatusAPI from "{{ Vite::asset('resources/js/track-status.js') }}";
-
+@vite('resources/js/app.js')
+<script>
 document.addEventListener('DOMContentLoaded', function() {
     const trackId = {{ $track->id }};
     const statusEl = document.getElementById('track-status');
@@ -306,10 +304,8 @@ document.addEventListener('DOMContentLoaded', function() {
 <!-- CSRF Token for API requests -->
 <meta name="csrf-token" content="{{ csrf_token() }}">
 
-@vite(['resources/js/track-status.js'])
-<script type="module">
-import TrackStatusAPI from "{{ Vite::asset('resources/js/track-status.js') }}";
-
+@vite('resources/js/app.js')
+<script>
 document.addEventListener('DOMContentLoaded', function() {
     // Handle retry button
     const retryButton = document.getElementById('retry-track');
