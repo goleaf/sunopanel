@@ -3,18 +3,20 @@
 namespace App\Http\Livewire;
 
 use App\Http\Requests\BulkTrackRequest;
+use App\Livewire\BaseComponent;
 use App\Models\Genre;
 use App\Models\Track;
+use App\Traits\WithNotifications;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\Attributes\Title;
 
-class TrackUpload extends Component
+class TrackUpload extends BaseComponent
 {
     use WithFileUploads;
+    use WithNotifications;
     
     /**
      * Indicates if the component should be rendered on the server.
@@ -29,6 +31,19 @@ class TrackUpload extends Component
     public $failedCount = 0;
     public $uploadComplete = false;
     public $genres;
+    
+    /**
+     * The component's initial data for SSR.
+     *
+     * @return array
+     */
+    public function boot(): array
+    {
+        return [
+            'placeholder' => 'Loading bulk upload form...',
+            'genres' => []
+        ];
+    }
     
     protected function rules()
     {
@@ -100,7 +115,7 @@ class TrackUpload extends Component
         $this->uploadComplete = true;
         $this->files = [];
         
-        session()->flash('success', "$this->processedCount tracks uploaded successfully. $this->failedCount failed.");
+        $this->notifySuccess("$this->processedCount tracks uploaded successfully. $this->failedCount failed.");
     }
     
     /**
@@ -109,8 +124,8 @@ class TrackUpload extends Component
     #[Title('Upload Tracks')]
     public function render()
     {
-        return view('livewire.track-upload', [
+        return $this->renderWithServerRendering(view('livewire.track-upload', [
             'genres' => $this->genres,
-        ]);
+        ]));
     }
 } 

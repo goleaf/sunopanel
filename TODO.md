@@ -28,7 +28,7 @@
 
 ### Code Quality & Performance
 - [x] Implement proper caching for frequently accessed data
-- [ ] Optimize database queries (especially for track listings)
+- [x] Optimize database queries (especially for track listings)
 - [ ] Refactor service classes to follow SOLID principles
 - [ ] Add proper PHPDoc annotations throughout the codebase
 - [ ] Implement rate limiting for API endpoints
@@ -66,6 +66,8 @@
     - Created OptimizeDatabaseCommand to add missing indexes
   - [x] Review and optimize database queries
     - Added transaction support for bulk operations
+    - Created OptimizeQueriesCommand to analyze and fix slow queries
+    - Improved query efficiency with proper joins and eager loading
   - [x] Implement database transactions for data integrity
 - [x] Implement server-side rendering (SSR) for Livewire components
   - [x] Configure Livewire for SSR in configuration file
@@ -259,6 +261,8 @@ Based on priority and dependencies, we'll tackle these tasks in the following or
      - Created OptimizeDatabaseCommand to add missing indexes
    - [x] Review and optimize database queries
      - Added transaction support for bulk operations
+     - Created OptimizeQueriesCommand to analyze and fix slow queries
+     - Improved query efficiency with proper joins and eager loading
    - [x] Implement database transactions for data integrity
 2. [x] UI/UX improvements:
    - [x] Enhance form validation feedback
@@ -297,6 +301,9 @@ Several high-priority issues have been addressed:
    - Created database optimization command (`php artisan db:optimize`)
    - Added missing indexes to improve query performance
    - Made the command compatible with both MySQL and SQLite
+   - Created query optimization command (`php artisan db:optimize-queries`)
+   - Added query analysis to identify slow or problematic queries
+   - Improved query performance with proper joins and eager loading
 
 4. **Added Code Quality Tools**
    - Created PSR-12 linting command (`php artisan lint:psr12 --fix`)
@@ -305,6 +312,7 @@ Several high-priority issues have been addressed:
 5. **Enhanced Documentation**
    - Added documentation for custom commands in `docs/commands.md`
    - Provided guidelines for bulk track uploads
+   - Created comprehensive API documentation
 
 6. **Improved Test Tools**
    - Created command to convert PHPUnit doc-comments to attributes
@@ -330,6 +338,7 @@ Several high-priority issues have been addressed:
    - Added caching for Tracks and Playlists Livewire components
    - Created cache-clearing strategies for data modifications
    - Optimized database queries with proper joins and eager loading
+   - Implemented query analysis tools to identify and fix slow queries
 
 All high-priority issues have now been resolved! The codebase meets PSR-12 standards, has proper validation, and includes tools for maintaining code quality moving forward.
 
@@ -359,6 +368,7 @@ All high-priority issues have now been resolved! The codebase meets PSR-12 stand
 5. **Performance Optimization**
    - ~~Implement caching for frequently accessed data~~ ✅ Completed
    - ~~Add database indexes for frequently queried columns~~ ✅ Completed
+   - ~~Optimize database queries with proper joins and eager loading~~ ✅ Completed
 
 6. **Documentation**
    - ~~Add comprehensive API documentation~~ ✅ Completed
@@ -374,6 +384,12 @@ composer lint
 
 # Optimize database performance
 composer db:optimize
+
+# Optimize database queries
+php artisan db:optimize-queries
+
+# Analyze queries without making changes
+php artisan db:optimize-queries --analyze
 
 # Test and style check
 composer test:all
@@ -600,9 +616,16 @@ composer test:convert-comments
 - [ ] Add validation for more edge cases
 
 ### Performance Optimization
-- [ ] Optimize query performance in list components
-- [ ] Implement caching for frequently used data
-- [ ] Reduce unnecessary database queries
+- [x] Optimize query performance in list components
+  - [x] Added proper joins instead of whereHas for better performance
+  - [x] Improved eager loading with specific column selection
+  - [x] Created OptimizeQueriesCommand to analyze and fix slow queries
+- [x] Implement caching for frequently used data
+  - [x] Added caching for tracks and playlists listings
+  - [x] Implemented cache invalidation on data changes
+- [x] Reduce unnecessary database queries
+  - [x] Optimized N+1a problem with eager loading
+  - [x] Used withCount instead of additional queries for counts
 
 ### Testing
 - [x] Add unit tests for Form Request validation
@@ -661,15 +684,15 @@ composer test:convert-comments
 - [x] Implemented advanced caching strategies for SSR content via CacheSSRContent middleware
 - [x] Added service worker for offline capabilities
 - [x] Created offline page for better user experience
+- [x] Converted remaining Livewire components to extend BaseComponent
 
 ## Pending Tasks
-- [ ] Convert remaining Livewire components to extend BaseComponent
 - [ ] Enable HTTP/2 server push for critical assets
 - [ ] Set up Edge Side Includes (ESI) for dynamic content caching
 - [ ] Implement lazy loading for non-critical components
 - [ ] Implement critical CSS extraction
 - [ ] Add real user monitoring (RUM) for performance metrics
-  
+
 ## Test Refactoring Plan
 
 - [ ] Update tests to use PHP 8.2+ features like attributes instead of annotations

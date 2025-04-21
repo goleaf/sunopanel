@@ -3,17 +3,20 @@
 namespace App\Http\Livewire;
 
 use App\Http\Requests\PlaylistRequest;
-use Livewire\Component;
+use App\Livewire\BaseComponent;
 use App\Models\Playlist;
 use App\Models\Genre;
+use App\Traits\WithNotifications;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Title;
 
-class PlaylistForm extends Component
+class PlaylistForm extends BaseComponent
 {
+    use WithNotifications;
+    
     /**
      * Indicates if the component should be rendered on the server.
      *
@@ -31,6 +34,19 @@ class PlaylistForm extends Component
     public $isEditing = false;
     public $genres = [];
     public $playlist;
+    
+    /**
+     * The component's initial data for SSR.
+     *
+     * @return array
+     */
+    public function boot(): array
+    {
+        return [
+            'placeholder' => $this->isEditing ? 'Loading playlist...' : 'Loading playlist form...',
+            'genres' => []
+        ];
+    }
 
     protected function rules()
     {
@@ -83,10 +99,7 @@ class PlaylistForm extends Component
             return $playlist;
         });
         
-        $this->dispatchBrowserEvent('alert', [
-            'type' => 'success',
-            'message' => "Playlist '{$playlist->title}' created successfully."
-        ]);
+        $this->notifySuccess("Playlist '{$playlist->title}' created successfully.");
         
         return redirect()->route('playlists.add-tracks', $playlist);
     }
@@ -112,10 +125,7 @@ class PlaylistForm extends Component
             ]);
         });
         
-        $this->dispatchBrowserEvent('alert', [
-            'type' => 'success',
-            'message' => "Playlist '{$this->playlist->title}' updated successfully."
-        ]);
+        $this->notifySuccess("Playlist '{$this->playlist->title}' updated successfully.");
         
         return redirect()->route('playlists.show', $this->playlist);
     }
@@ -126,8 +136,8 @@ class PlaylistForm extends Component
     #[Title('Create/Edit Playlist')]
     public function render()
     {
-        return view('livewire.playlist-form', [
+        return $this->renderWithServerRendering(view('livewire.playlist-form', [
             'genres' => $this->genres
-        ]);
+        ]));
     }
 } 

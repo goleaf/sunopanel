@@ -3,21 +3,23 @@
 namespace App\Http\Livewire;
 
 use App\Http\Requests\TrackUpdateRequest;
+use App\Livewire\BaseComponent;
 use App\Models\Track;
 use App\Models\Genre;
+use App\Traits\WithNotifications;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Livewire\Component;
 use Livewire\WithFileUploads;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Title;
 
-class TrackEdit extends Component
+class TrackEdit extends BaseComponent
 {
     use WithFileUploads;
+    use WithNotifications;
     
     /**
      * Indicates if the component should be rendered on the server.
@@ -38,6 +40,19 @@ class TrackEdit extends Component
     public $currentImageUrl;
     public $allGenres = [];
     public $originalTitle = '';
+    
+    /**
+     * The component's initial data for SSR.
+     *
+     * @return array
+     */
+    public function boot(): array
+    {
+        return [
+            'placeholder' => 'Loading track editor...',
+            'allGenres' => []
+        ];
+    }
     
     protected function rules()
     {
@@ -151,7 +166,7 @@ class TrackEdit extends Component
             }
         });
         
-        session()->flash('success', 'Track updated successfully!');
+        $this->notifySuccess('Track updated successfully!');
         return redirect()->route('tracks.index');
     }
     
@@ -189,9 +204,9 @@ class TrackEdit extends Component
     #[Title('Edit Track')]
     public function render()
     {
-        return view('livewire.track-edit', [
+        return $this->renderWithServerRendering(view('livewire.track-edit', [
             'track' => $this->track,
             'genres' => $this->allGenres,
-        ]);
+        ]));
     }
 } 

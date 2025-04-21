@@ -5,6 +5,7 @@ namespace App\Http\Livewire;
 use App\Http\Requests\PlaylistListRequest;
 use App\Http\Requests\PlaylistRequest;
 use App\Http\Requests\PlaylistStoreTracksRequest;
+use App\Livewire\BaseComponent;
 use App\Models\Genre;
 use App\Models\Playlist;
 use App\Models\Track;
@@ -17,13 +18,12 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 use Throwable;
 use Livewire\Attributes\Title;
 
-class Playlists extends Component
+class Playlists extends BaseComponent
 {
     use WithPagination;
     use WithNotifications;
@@ -43,6 +43,23 @@ class Playlists extends Component
     public $genreFilter = '';
     public $showDeleteModal = false;
     public $playlistIdToDelete = null;
+    
+    /**
+     * The component's initial data for SSR.
+     *
+     * @return array
+     */
+    public function boot(): array
+    {
+        return [
+            'placeholder' => 'Loading playlists...',
+            'search' => $this->search,
+            'genreFilter' => $this->genreFilter,
+            'sortField' => $this->sortField,
+            'direction' => $this->direction,
+            'perPage' => $this->perPage
+        ];
+    }
 
     protected $queryString = [
         'search' => ['except' => ''],
@@ -624,9 +641,9 @@ class Playlists extends Component
         $playlists = $this->getCachedPlaylists();
         $genres = $this->getGenresForFilter();
         
-        return view('livewire.playlists', [
+        return $this->renderWithServerRendering(view('livewire.playlists', [
             'playlists' => $playlists,
             'genres' => $genres,
-        ]);
+        ]));
     }
 } 
