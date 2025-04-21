@@ -126,13 +126,17 @@
                         <tr data-track-id="{{ $track->id }}" class="hover">
                             <td>
                                 <div class="flex items-center space-x-3">
-                                    @if($track->image_path)
                                     <div class="avatar">
-                                        <div class="mask mask-squircle w-12 h-12">
-                                            <img src="{{ $track->image_storage_url }}" alt="{{ $track->title }}" />
+                                        <div class="mask mask-squircle w-12 h-12 bg-base-200 flex items-center justify-center overflow-hidden">
+                                            @if($track->image_path)
+                                                <img src="{{ $track->image_storage_url }}" alt="{{ $track->title }}" class="w-full h-full object-cover" />
+                                            @else
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                                                </svg>
+                                            @endif
                                         </div>
                                     </div>
-                                    @endif
                                     <div>
                                         <a href="{{ route('tracks.show', $track) }}" class="font-medium hover:underline">
                                             {{ $track->title }}
