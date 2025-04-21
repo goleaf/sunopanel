@@ -2,8 +2,7 @@
 
 @section('content')
     <div class="container mx-auto px-4 py-8">
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-3xl font-bold text-gray-800">Genres</h1>
+        <div class="flex justify-end mb-6">
             <a href="{{ route('genres.create') }}" class="btn btn-primary">Create New Genre</a>
         </div>
 

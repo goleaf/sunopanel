@@ -241,7 +241,7 @@ class ProcessTrack implements ShouldQueue
             $escapedOutputPath = escapeshellarg($outputFullPath);
             
             // Command with proper escaping
-            $command = "ffmpeg -y -loop 1 -i {$escapedImagePath} -i {$escapedMp3Path} -c:v mjpeg -q:v 2 -c:a copy -shortest {$escapedOutputPath} 2>&1";
+            $command = "ffmpeg -y -loop 1 -i {$escapedImagePath} -i {$escapedMp3Path} -c:v libx264 -pix_fmt yuv420p -preset medium -crf 23 -c:a copy -shortest {$escapedOutputPath} 2>&1";
             
             Log::info("Running FFmpeg command: {$command}");
             

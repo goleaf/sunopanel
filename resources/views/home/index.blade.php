@@ -2,13 +2,6 @@
 
 @section('content')
 <div class="container mx-auto px-4 py-8">
-    <div class="mb-6">
-        <h1 class="text-3xl font-bold text-gray-800">Add New Tracks</h1>
-        <p class="text-gray-600 mt-2">
-            Enter tracks in the format: title.mp3|mp3_url|image_url|genres (comma-separated)
-        </p>
-    </div>
-
     @if(session('success'))
     <div class="alert alert-success mb-6">
         {{ session('success') }}
@@ -29,6 +22,10 @@
 
     <div class="card bg-base-100 shadow-xl">
         <div class="card-body">
+            <h2 class="card-title mb-4">Add New Tracks</h2>
+            <p class="text-gray-600 mb-4">
+                Enter tracks in the format: title.mp3|mp3_url|image_url|genres (comma-separated)
+            </p>
             <form id="tracks-form" action="{{ route('home.process') }}" method="POST">
                 @csrf
 
