@@ -2,69 +2,69 @@
 
 @section('content')
 <div class="container mx-auto px-4 py-8">
-    <!-- Title and Statistics Summary -->
-    <div class="mb-6">
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
-            <h1 class="text-2xl font-bold">Tracks Manager</h1>
-            <a href="{{ route('home.index') }}" class="btn btn-primary btn-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                </svg>
-                Add New Tracks
-            </a>
-        </div>
-
-        <!-- Status Cards -->
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
-            @php
-                $totalTracks = $tracks->total();
-                $completedCount = \App\Models\Track::where('status', 'completed')->count();
-                $pendingCount = \App\Models\Track::where('status', 'pending')->count();
-                $processingCount = \App\Models\Track::where('status', 'processing')->count();
-                $failedCount = \App\Models\Track::where('status', 'failed')->count();
-            @endphp
-            
-            <div class="stat bg-base-100 shadow rounded-lg p-3">
-                <div class="stat-title">Total</div>
-                <div class="stat-value text-xl">{{ $totalTracks }}</div>
-                <div class="stat-desc">Tracks</div>
-            </div>
-            
-            <div class="stat bg-base-100 shadow rounded-lg p-3">
-                <div class="stat-title">Completed</div>
-                <div class="stat-value text-xl text-success">{{ $completedCount }}</div>
-                <div class="stat-desc">Ready to use</div>
-            </div>
-            
-            <div class="stat bg-base-100 shadow rounded-lg p-3">
-                <div class="stat-title">Processing</div>
-                <div class="stat-value text-xl text-warning">{{ $processingCount }}</div>
-                <div class="stat-desc">In progress</div>
-            </div>
-            
-            <div class="stat bg-base-100 shadow rounded-lg p-3">
-                <div class="stat-title">Pending</div>
-                <div class="stat-value text-xl text-info">{{ $pendingCount }}</div>
-                <div class="stat-desc">Waiting to process</div>
-            </div>
-            
-            <div class="stat bg-base-100 shadow rounded-lg p-3">
-                <div class="stat-title">Failed</div>
-                <div class="stat-value text-xl text-error">{{ $failedCount }}</div>
-                <div class="stat-desc">Need attention</div>
-                @if($failedCount > 0)
-                <div class="mt-2">
-                    <form action="{{ route('tracks.retry-all') }}" method="POST" id="retryAllForm">
+    <!-- Status Summary -->
+    @php
+        $totalTracks = $tracks->total();
+        $completedCount = \App\Models\Track::where('status', 'completed')->count();
+        $pendingCount = \App\Models\Track::where('status', 'pending')->count();
+        $processingCount = \App\Models\Track::where('status', 'processing')->count();
+        $failedCount = \App\Models\Track::where('status', 'failed')->count();
+    @endphp
+    
+    <div class="card bg-base-100 shadow mb-6">
+        <div class="card-body p-4">
+            <div class="flex flex-wrap justify-between items-center">
+                <div class="stats shadow stats-horizontal flex-wrap">
+                    <div class="stat">
+                        <div class="stat-title">Total</div>
+                        <div class="stat-value text-lg">{{ $totalTracks }}</div>
+                        <div class="stat-desc">Tracks</div>
+                    </div>
+                    
+                    <div class="stat">
+                        <div class="stat-title">Completed</div>
+                        <div class="stat-value text-lg text-success">{{ $completedCount }}</div>
+                        <div class="stat-desc">Ready to use</div>
+                    </div>
+                    
+                    <div class="stat">
+                        <div class="stat-title">Processing</div>
+                        <div class="stat-value text-lg text-warning">{{ $processingCount }}</div>
+                        <div class="stat-desc">In progress</div>
+                    </div>
+                    
+                    <div class="stat">
+                        <div class="stat-title">Pending</div>
+                        <div class="stat-value text-lg text-info">{{ $pendingCount }}</div>
+                        <div class="stat-desc">Waiting to process</div>
+                    </div>
+                    
+                    <div class="stat">
+                        <div class="stat-title">Failed</div>
+                        <div class="stat-value text-lg text-error">{{ $failedCount }}</div>
+                        <div class="stat-desc">Need attention</div>
+                    </div>
+                </div>
+                
+                <div class="mt-2 md:mt-0">
+                    <a href="{{ route('home.index') }}" class="btn btn-primary btn-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        Add New Tracks
+                    </a>
+                    @if($failedCount > 0)
+                    <form action="{{ route('tracks.retry-all') }}" method="POST" id="retryAllForm" class="inline-block">
                         @csrf
-                        <button type="button" onclick="confirmRetryAll()" class="btn btn-error btn-xs w-full">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <button type="button" onclick="confirmRetryAll()" class="btn btn-error btn-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                             </svg>
                             Retry All
                         </button>
                     </form>
+                    @endif
                 </div>
-                @endif
             </div>
         </div>
     </div>
@@ -73,9 +73,9 @@
     <div class="card bg-base-100 shadow mb-6">
         <div class="card-body p-4">
             <form action="{{ route('tracks.index') }}" method="GET" class="w-full">
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <div class="flex flex-wrap items-center gap-3">
                     <!-- Search -->
-                    <div class="relative col-span-1 md:col-span-2">
+                    <div class="relative flex-1">
                         <div class="flex w-full">
                             <span class="inline-flex items-center px-3 bg-base-200 border border-r-0 border-base-300 rounded-l-md">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -88,7 +88,7 @@
                     </div>
                     
                     <!-- Status Dropdown -->
-                    <div>
+                    <div class="min-w-[180px]">
                         <select name="status" class="select select-bordered w-full">
                             <option value="">All Statuses</option>
                             <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pending</option>
@@ -99,7 +99,7 @@
                     </div>
                     
                     <!-- Genre Dropdown -->
-                    <div>
+                    <div class="min-w-[180px]">
                         <select name="genre" class="select select-bordered w-full">
                             <option value="">All Genres</option>
                             @php
@@ -112,9 +112,7 @@
                             @endforeach
                         </select>
                     </div>
-                </div>
                 
-                <div class="flex gap-2 mt-3">
                     <button type="submit" class="btn btn-primary">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
