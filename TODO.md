@@ -8,6 +8,7 @@
 - [x] Run processing in background with progress bar
 - [x] Simple UI with 3 menu items: Add / Songs / Genres
 - [x] Add option to process tracks immediately and check for failures
+- [x] Upload videos to YouTube with username/password authentication
 
 ## Implementation Tasks
 - [x] Create database migrations for tracks and genres
@@ -24,6 +25,8 @@
 - [x] Implement immediate job processing with error checking
 - [x] Implement grid view for tracks with toggle between table and grid view
 - [x] Implement parallel processing for 10 tracks simultaneously
+- [x] Create direct video upload controller and views
+- [x] Implement YouTube upload with username/password authentication
 
 ## Technical Requirements
 - [x] MP3 and image download from external URLs
@@ -32,6 +35,7 @@
 - [x] Progress bar for long-running tasks
 - [x] Immediate processing with error feedback
 - [x] Parallel processing of track jobs for increased throughput
+- [x] YouTube video upload using username/password from .env
 
 ## Refactoring Tasks
 - [x] Improve tracks index page layout with better stats display
