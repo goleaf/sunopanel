@@ -211,10 +211,12 @@
             </h2>
             
             <div class="mt-4">
-                <video controls class="w-full rounded-lg max-h-[80vh]">
-                    <source src="{{ $track->mp4_storage_url }}" type="video/mp4">
-                    Your browser does not support the video tag.
-                </video>
+                <div class="max-w-[700px] mx-auto">
+                    <video controls class="w-full rounded-lg max-h-[700px] object-contain">
+                        <source src="{{ $track->mp4_storage_url }}" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
                 
                 @if($track->status === 'processing')
                 <div class="alert alert-info mt-4">

@@ -308,13 +308,16 @@ class ProcessTrack implements ShouldQueue
             $success = false;
             $errors = [];
             
+            // Common scale filter to limit max dimension to 700px while maintaining aspect ratio
+            $scaleFilter = "scale=w='min(700,iw)':h='min(700,ih)':force_original_aspect_ratio=decrease";
+            
             // First attempt: Simple approach with mjpeg (most compatible)
             try {
                 $escapedImagePath = escapeshellarg($imageFullPath);
                 $escapedMp3Path = escapeshellarg($mp3FullPath);
                 $escapedOutputPath = escapeshellarg($outputFullPath);
                 
-                $command = "ffmpeg -y -loop 1 -framerate 1 -i {$escapedImagePath} -i {$escapedMp3Path} -c:v mjpeg -q:v 3 -c:a copy -shortest {$escapedOutputPath} 2>&1";
+                $command = "ffmpeg -y -loop 1 -framerate 1 -i {$escapedImagePath} -i {$escapedMp3Path} -c:v mjpeg -q:v 3 -c:a copy -vf \"{$scaleFilter}\" -shortest {$escapedOutputPath} 2>&1";
                 
                 Log::info("Running FFmpeg command (Attempt 1): {$command}");
                 
@@ -333,7 +336,10 @@ class ProcessTrack implements ShouldQueue
             // Second attempt: Try with libx264 if available
             if (!$success) {
                 try {
-                    $command = "ffmpeg -y -loop 1 -framerate 1 -i {$escapedImagePath} -i {$escapedMp3Path} -c:v libx264 -tune stillimage -pix_fmt yuv420p -c:a aac -b:a 192k -shortest -vf \"scale=trunc(iw/2)*2:trunc(ih/2)*2\" {$escapedOutputPath} 2>&1";
+                    // Combined scale filter that handles both the aspect ratio and the even dimensions requirement for libx264
+                    $complexScaleFilter = "{$scaleFilter},scale=trunc(iw/2)*2:trunc(ih/2)*2";
+                    
+                    $command = "ffmpeg -y -loop 1 -framerate 1 -i {$escapedImagePath} -i {$escapedMp3Path} -c:v libx264 -tune stillimage -pix_fmt yuv420p -c:a aac -b:a 192k -shortest -vf \"{$complexScaleFilter}\" {$escapedOutputPath} 2>&1";
                     
                     Log::info("Running FFmpeg command (Attempt 2): {$command}");
                     
@@ -357,7 +363,7 @@ class ProcessTrack implements ShouldQueue
                     $tempImage = "{$tempDir}/temp_image_" . Str::random(10) . ".jpg";
                     copy($imageFullPath, $tempImage); // Make a temp copy to avoid permission issues
                     
-                    $command = "ffmpeg -y -loop 1 -framerate 1 -t 3600 -i {$tempImage} -i {$escapedMp3Path} -c:v png -c:a copy -shortest {$escapedOutputPath} 2>&1";
+                    $command = "ffmpeg -y -loop 1 -framerate 1 -t 3600 -i {$tempImage} -i {$escapedMp3Path} -c:v png -c:a copy -vf \"{$scaleFilter}\" -shortest {$escapedOutputPath} 2>&1";
                     
                     Log::info("Running FFmpeg command (Final attempt): {$command}");
                     
