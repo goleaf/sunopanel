@@ -207,16 +207,50 @@ class ProcessTrack implements ShouldQueue
             // Ensure videos directory exists
             Storage::disk('public')->makeDirectory($outputDirectory, 0755, true, true);
             
-            // Alternative approach that creates a slideshow with audio
-            // This doesn't use libx264 directly, but uses FFmpeg's default available video codec
-            $command = "ffmpeg -y -loop 1 -i {$imageFullPath} -i {$mp3FullPath} -c:v mjpeg -q:v 2 -c:a copy -shortest {$outputFullPath}";
+            // Use simpler FFmpeg parameters and escape paths properly
+            $escapedImagePath = escapeshellarg($imageFullPath);
+            $escapedMp3Path = escapeshellarg($mp3FullPath);
+            $escapedOutputPath = escapeshellarg($outputFullPath);
+            
+            // Command with proper escaping
+            $command = "ffmpeg -y -loop 1 -i {$escapedImagePath} -i {$escapedMp3Path} -c:v mjpeg -q:v 2 -c:a copy -shortest {$escapedOutputPath} 2>&1";
             
             Log::info("Running FFmpeg command: {$command}");
             
-            exec($command, $output, $returnCode);
+            // Use proc_open for better control and output capture
+            $descriptorspec = [
+                0 => ["pipe", "r"],  // stdin
+                1 => ["pipe", "w"],  // stdout
+                2 => ["pipe", "w"]   // stderr
+            ];
             
-            if ($returnCode !== 0) {
-                throw new Exception("FFmpeg command failed with return code {$returnCode}: " . implode("\n", $output));
+            $process = proc_open($command, $descriptorspec, $pipes);
+            
+            if (is_resource($process)) {
+                // Close unused stdin
+                fclose($pipes[0]);
+                
+                // Read stdout and stderr
+                $stdout = stream_get_contents($pipes[1]);
+                $stderr = stream_get_contents($pipes[2]);
+                fclose($pipes[1]);
+                fclose($pipes[2]);
+                
+                // Get the exit code
+                $returnCode = proc_close($process);
+                
+                // Log the complete output for debugging
+                Log::info("FFmpeg stdout: " . $stdout);
+                
+                if (!empty($stderr)) {
+                    Log::warning("FFmpeg stderr: " . $stderr);
+                }
+                
+                if ($returnCode !== 0) {
+                    throw new Exception("FFmpeg command failed with return code {$returnCode}: " . $stderr);
+                }
+            } else {
+                throw new Exception("Failed to execute FFmpeg command");
             }
             
             if (!file_exists($outputFullPath)) {
@@ -230,7 +264,6 @@ class ProcessTrack implements ShouldQueue
                 'mp3_path' => $mp3Path,
                 'image_path' => $imagePath,
                 'error' => $e->getMessage(),
-                'output' => $output ?? []
             ]);
             throw new Exception("Failed to create MP4: {$e->getMessage()}");
         }
