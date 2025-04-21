@@ -8,6 +8,12 @@ use Livewire\Component;
 
 class TrackPlay extends Component
 {
+    /**
+     * Since this component returns JSON, we don't need server-side rendering
+     * @var bool
+     */
+    protected bool $shouldRenderOnServer = false;
+    
     public $trackId;
     public $track;
     
@@ -15,6 +21,9 @@ class TrackPlay extends Component
     {
         $this->trackId = $id;
         $this->track = Track::findOrFail($id);
+        
+        // Increment play count
+        $this->track->increment('play_count');
         
         Log::info("Track played: {$this->track->title}", [
             'track_id' => $this->track->id,

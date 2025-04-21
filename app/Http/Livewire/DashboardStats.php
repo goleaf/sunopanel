@@ -9,9 +9,17 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
+use Livewire\Attributes\Title;
 
 final class DashboardStats extends Component
 {
+    /**
+     * Indicates if the component should be rendered on the server.
+     *
+     * @var bool
+     */
+    protected bool $shouldRenderOnServer = true;
+    
     public int $trackCount = 0;
     public int $genreCount = 0;
     public int $playlistCount = 0;
@@ -109,8 +117,21 @@ final class DashboardStats extends Component
         $this->tracksByDay = array_reverse($this->tracksByDay);
     }
     
+    /**
+     * Render the component
+     */
+    #[Title('Dashboard Statistics')]
     public function render()
     {
-        return view('livewire.dashboard-stats');
+        return view('livewire.dashboard-stats', [
+            'trackCount' => $this->trackCount,
+            'genreCount' => $this->genreCount,
+            'playlistCount' => $this->playlistCount,
+            'totalDuration' => $this->totalDuration,
+            'storageUsageMB' => $this->storageUsageMB,
+            'recentTracks' => $this->recentTracks,
+            'popularGenres' => $this->popularGenres,
+            'tracksByDay' => $this->tracksByDay,
+        ]);
     }
 } 

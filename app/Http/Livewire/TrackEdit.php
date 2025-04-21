@@ -13,10 +13,18 @@ use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Illuminate\Validation\Rule;
+use Livewire\Attributes\Title;
 
 class TrackEdit extends Component
 {
     use WithFileUploads;
+    
+    /**
+     * Indicates if the component should be rendered on the server.
+     *
+     * @var bool
+     */
+    protected bool $shouldRenderOnServer = true;
     
     public Track $track;
     public $title = '';
@@ -175,8 +183,15 @@ class TrackEdit extends Component
         return $track->fresh(['genres', 'playlists']);
     }
     
+    /**
+     * Render the component
+     */
+    #[Title('Edit Track')]
     public function render()
     {
-        return view('livewire.track-edit');
+        return view('livewire.track-edit', [
+            'track' => $this->track,
+            'genres' => $this->allGenres,
+        ]);
     }
 } 

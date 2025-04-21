@@ -11,10 +11,18 @@ use App\Models\Genre;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Livewire\Attributes\Title;
 
 class PlaylistAddTracks extends Component
 {
     use WithPagination;
+
+    /**
+     * Indicates if the component should be rendered on the server.
+     *
+     * @var bool
+     */
+    protected bool $shouldRenderOnServer = true;
 
     public $playlist;
     public $search = '';
@@ -230,14 +238,15 @@ class PlaylistAddTracks extends Component
         }
     }
 
+    /**
+     * Render the component
+     */
+    #[Title('Add Tracks to Playlist')]
     public function render()
     {
-        $tracks = $this->getFilteredTracks();
-        $genres = Genre::orderBy('name')->get();
-        
         return view('livewire.playlist-add-tracks', [
-            'tracks' => $tracks,
-            'genres' => $genres,
+            'availableTracks' => $this->getFilteredTracks(),
+            'genres' => Genre::orderBy('name')->get(),
         ]);
     }
 } 

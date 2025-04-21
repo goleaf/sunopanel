@@ -10,10 +10,18 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\WithFileUploads;
+use Livewire\Attributes\Title;
 
 class TrackUpload extends Component
 {
     use WithFileUploads;
+    
+    /**
+     * Indicates if the component should be rendered on the server.
+     *
+     * @var bool
+     */
+    protected bool $shouldRenderOnServer = true;
     
     public $files = [];
     public $defaultGenreId;
@@ -95,6 +103,10 @@ class TrackUpload extends Component
         session()->flash('success', "$this->processedCount tracks uploaded successfully. $this->failedCount failed.");
     }
     
+    /**
+     * Render the component
+     */
+    #[Title('Upload Tracks')]
     public function render()
     {
         return view('livewire.track-upload', [

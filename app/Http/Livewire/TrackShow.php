@@ -8,9 +8,17 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Livewire\Component;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\Title;
 
 class TrackShow extends Component
 {
+    /**
+     * Indicates if the component should be rendered on the server.
+     *
+     * @var bool
+     */
+    protected bool $shouldRenderOnServer = true;
+    
     public Track $track;
     public bool $showDeleteModal = false;
 
@@ -67,8 +75,14 @@ class TrackShow extends Component
         }
     }
 
+    /**
+     * Render the component
+     */
+    #[Title('Track Details')]
     public function render()
     {
-        return view('livewire.track-show');
+        return view('livewire.track-show', [
+            'track' => $this->track,
+        ]);
     }
 } 

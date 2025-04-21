@@ -8,9 +8,17 @@ use App\Models\Track;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
+use Livewire\Attributes\Title;
 
 class SystemStats extends Component
 {
+    /**
+     * Indicates if the component should be rendered on the server.
+     *
+     * @var bool
+     */
+    protected bool $shouldRenderOnServer = true;
+    
     public int $trackCount = 0;
     public int $genreCount = 0;
     public int $playlistCount = 0;
@@ -65,8 +73,18 @@ class SystemStats extends Component
         }
     }
     
+    /**
+     * Render the component
+     */
+    #[Title('System Statistics')]
     public function render()
     {
-        return view('livewire.system.stats');
+        return view('livewire.system.stats', [
+            'trackCount' => $this->trackCount,
+            'genreCount' => $this->genreCount,
+            'playlistCount' => $this->playlistCount,
+            'totalDuration' => $this->totalDuration,
+            'storageUsageMB' => $this->storageUsageMB,
+        ]);
     }
 } 

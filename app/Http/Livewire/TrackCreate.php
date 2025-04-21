@@ -12,10 +12,18 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\WithFileUploads;
+use Livewire\Attributes\Title;
 
 class TrackCreate extends Component
 {
     use WithFileUploads;
+    
+    /**
+     * Indicates if the component should be rendered on the server.
+     *
+     * @var bool
+     */
+    protected bool $shouldRenderOnServer = true;
     
     public $title = '';
     public $artist = '';
@@ -146,6 +154,10 @@ class TrackCreate extends Component
         return $this->saveTrack();
     }
     
+    /**
+     * Render the component
+     */
+    #[Title('Create New Track')]
     public function render()
     {
         $genres = Genre::orderBy('name')->get();

@@ -9,9 +9,17 @@ use App\Models\Track;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Livewire\Attributes\Title;
 
 class PlaylistShow extends Component
 {
+    /**
+     * Indicates if the component should be rendered on the server.
+     *
+     * @var bool
+     */
+    protected bool $shouldRenderOnServer = true;
+    
     public $playlist;
     public $tracks = [];
     public $totalDurationFormatted = '';
@@ -246,8 +254,15 @@ class PlaylistShow extends Component
         ]);
     }
 
+    /**
+     * Render the component
+     */
+    #[Title('Playlist Details')]
     public function render()
     {
-        return view('livewire.playlist-show');
+        return view('livewire.playlist-show', [
+            'playlist' => $this->playlist,
+            'tracks' => $this->tracks,
+        ]);
     }
 } 
