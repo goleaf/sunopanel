@@ -16,7 +16,7 @@ echo "Starting $NUM_WORKERS queue workers..."
 for ((i=1; i<=$NUM_WORKERS; i++))
 do
     echo "Starting worker $i..."
-    nohup $PHP_PATH $ARTISAN_PATH queue:work redis --sleep=3 --tries=3 --backoff=0 --max-time=3600 > /www/wwwroot/sunopanel.prus.dev/storage/logs/worker-$i.log 2>&1 &
+    nohup $PHP_PATH $ARTISAN_PATH queue:work database --sleep=3 --tries=3 --backoff=0 --max-time=3600 > /www/wwwroot/sunopanel.prus.dev/storage/logs/worker-$i.log 2>&1 &
 done
 
 echo "All workers started. Use 'ps aux | grep queue:work' to verify." 

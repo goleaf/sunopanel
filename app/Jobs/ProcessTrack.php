@@ -52,6 +52,8 @@ class ProcessTrack implements ShouldQueue
     public function __construct(Track $track)
     {
         $this->track = $track;
+        $this->connection = 'database';
+        $this->queue = 'default';
     }
 
     /**
@@ -62,6 +64,13 @@ class ProcessTrack implements ShouldQueue
     public function handle()
     {
         try {
+            // Check if track has been stopped
+            $this->track->refresh();
+            if ($this->track->status === 'stopped') {
+                Log::info("Track {$this->track->id} - {$this->track->title} processing was stopped manually");
+                return;
+            }
+            
             // Update track status to processing
             $this->track->update([
                 'status' => 'processing',
@@ -95,6 +104,12 @@ class ProcessTrack implements ShouldQueue
                 'mp3_path' => $mp3Path,
                 'progress' => 25,
             ]);
+            
+            // Check if track has been stopped after downloading MP3
+            if ($this->isTrackStopped()) {
+                Log::info("Track {$this->track->id} - {$this->track->title} processing was stopped after MP3 download");
+                return;
+            }
 
             // Step 2: Download image file (50%)
             $this->updateProgress(30, 'Downloading image file...');
@@ -103,6 +118,12 @@ class ProcessTrack implements ShouldQueue
                 'image_path' => $imagePath,
                 'progress' => 50,
             ]);
+            
+            // Check if track has been stopped after downloading image
+            if ($this->isTrackStopped()) {
+                Log::info("Track {$this->track->id} - {$this->track->title} processing was stopped after image download");
+                return;
+            }
 
             // Step 3: Create MP4 file (75%)
             $this->updateProgress(55, 'Creating MP4 file...');
@@ -111,6 +132,12 @@ class ProcessTrack implements ShouldQueue
                 'mp4_path' => $mp4Path,
                 'progress' => 75,
             ]);
+            
+            // Check if track has been stopped after creating MP4
+            if ($this->isTrackStopped()) {
+                Log::info("Track {$this->track->id} - {$this->track->title} processing was stopped after MP4 creation");
+                return;
+            }
 
             // Step 4: Process genres if available (100%)
             $this->updateProgress(80, 'Processing genres...');
@@ -158,6 +185,17 @@ class ProcessTrack implements ShouldQueue
         if ($message) {
             Log::info("Track {$this->track->id} - {$this->track->title}: {$message}");
         }
+    }
+
+    /**
+     * Check if the track has been stopped.
+     *
+     * @return bool
+     */
+    protected function isTrackStopped(): bool
+    {
+        $this->track->refresh();
+        return $this->track->status === 'stopped';
     }
 
     /**

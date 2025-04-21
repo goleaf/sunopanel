@@ -28,7 +28,7 @@ Route::prefix('tracks')->group(function() {
     Route::post('/{track}/start', [TrackController::class, 'start']);
     
     // Stop processing a track
-    Route::post('/{track}/stop', [TrackController::class, 'stop']);
+    Route::post('/{trackId}/stop', [TrackController::class, 'stop']);
     
     // Retry processing a track
     Route::post('/{track}/retry', [TrackController::class, 'retry']);
@@ -38,4 +38,5 @@ Route::prefix('tracks')->group(function() {
     Route::post('/stop-all', [TrackController::class, 'stopAll']);
     Route::post('/retry-all', [TrackController::class, 'retryAll']);
     Route::post('/status-bulk', [TrackController::class, 'statusBulk']);
+    Route::post('/bulk-action', [TrackController::class, 'bulkAction']);
 }); 

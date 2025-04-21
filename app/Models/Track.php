@@ -29,6 +29,9 @@ class Track extends Model
         'status',
         'progress',
         'error_message',
+        'youtube_video_id',
+        'youtube_playlist_id',
+        'youtube_uploaded_at',
     ];
 
     /**
@@ -38,6 +41,7 @@ class Track extends Model
      */
     protected $casts = [
         'progress' => 'integer',
+        'youtube_uploaded_at' => 'datetime',
     ];
 
     /**
@@ -103,5 +107,43 @@ class Track extends Model
     public function getMp4StorageUrlAttribute(): ?string
     {
         return $this->mp4_path ? Storage::disk('public')->url($this->mp4_path) : null;
+    }
+    
+    /**
+     * Get the YouTube video URL.
+     */
+    public function getYoutubeUrlAttribute(): ?string
+    {
+        return $this->youtube_video_id 
+            ? "https://www.youtube.com/watch?v={$this->youtube_video_id}" 
+            : null;
+    }
+    
+    /**
+     * Get the YouTube embed URL.
+     */
+    public function getYoutubeEmbedUrlAttribute(): ?string
+    {
+        return $this->youtube_video_id 
+            ? "https://www.youtube.com/embed/{$this->youtube_video_id}" 
+            : null;
+    }
+    
+    /**
+     * Get the YouTube playlist URL.
+     */
+    public function getYoutubePlaylistUrlAttribute(): ?string
+    {
+        return $this->youtube_playlist_id 
+            ? "https://www.youtube.com/playlist?list={$this->youtube_playlist_id}" 
+            : null;
+    }
+    
+    /**
+     * Determine if the track has been uploaded to YouTube.
+     */
+    public function getIsUploadedToYoutubeAttribute(): bool
+    {
+        return $this->youtube_video_id !== null;
     }
 }

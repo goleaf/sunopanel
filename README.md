@@ -150,3 +150,42 @@ npm run dev
 - Track processing status with progress bars
 - Organize tracks by genres
 - Dark/light theme toggle
+
+# YouTube Upload with Username/Password
+
+To use the YouTube upload feature with username/password authentication (instead of OAuth), you need to install the following prerequisites:
+
+1. Install the youtube-upload tool:
+```bash
+# Install pip if not already installed
+sudo apt-get install python3-pip   # For Debian/Ubuntu
+# OR
+sudo yum install python3-pip       # For CentOS/RHEL
+
+# Install youtube-upload
+pip3 install git+https://github.com/tokland/youtube-upload.git
+
+# Make sure it's in your PATH
+which youtube-upload
+```
+
+2. Configure your Google credentials:
+   - Add the following to your `.env` file:
+   ```
+   YOUTUBE_EMAIL=your_google_email@gmail.com
+   YOUTUBE_PASSWORD=your_app_password
+   YOUTUBE_USE_SIMPLE_UPLOADER=true
+   ```
+   
+   Note: If you have 2-factor authentication enabled (recommended), you'll need to generate an app password:
+   1. Go to your Google Account
+   2. Select Security
+   3. Under "Signing in to Google", select App Passwords
+   4. Generate a new app password for "Other (Custom name)" and name it "SunoPanel"
+   5. Use this generated password in the YOUTUBE_PASSWORD setting
+
+3. Upload videos:
+   - Navigate to YouTube → Status in the app
+   - If not already logged in, click "Login with YouTube Account"
+   - Enter your Google email and app password
+   - You can now upload videos directly from the tracks page

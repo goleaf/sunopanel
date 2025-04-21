@@ -19,12 +19,17 @@ class TrackController extends Controller
         // Apply search filter
         if ($request->filled('search')) {
             $searchTerm = $request->input('search');
-            $query->where('title', 'like', "%{$searchTerm}%");
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('title', 'like', "%{$searchTerm}%")
+                  ->orWhere('genres_string', 'like', "%{$searchTerm}%");
+            });
         }
         
         // Filter by status
-        if ($request->filled('status') && in_array($request->input('status'), ['pending', 'processing', 'completed', 'failed'])) {
-            $query->where('status', $request->input('status'));
+        $validStatuses = ['pending', 'processing', 'completed', 'failed', 'stopped'];
+        if ($request->filled('status') && in_array($request->input('status'), $validStatuses)) {
+            $status = $request->input('status');
+            $query->where('status', $status);
         }
         
         // Filter by genre
@@ -40,13 +45,34 @@ class TrackController extends Controller
                 WHEN status = 'processing' THEN 1 
                 WHEN status = 'pending' THEN 2
                 WHEN status = 'failed' THEN 3
-                WHEN status = 'completed' THEN 4
-                ELSE 5 END")
+                WHEN status = 'stopped' THEN 4
+                WHEN status = 'completed' THEN 5
+                ELSE 6 END")
             ->orderBy('created_at', 'desc')
             ->paginate(15)
             ->withQueryString(); // Keep the query string for pagination
+        
+        // Get track counts for stats display
+        $totalTracks = Track::count();
+        $processingTracks = Track::where('status', 'processing')->count();
+        $pendingTracks = Track::where('status', 'pending')->count();
+        $completedTracks = Track::where('status', 'completed')->count();
+        $failedTracks = Track::where('status', 'failed')->count();
+        $stoppedTracks = Track::where('status', 'stopped')->count();
+        
+        // Add processing + pending count for the UI
+        $activeTracksCount = $processingTracks + $pendingTracks;
                         
-        return view('tracks.index', compact('tracks'));
+        return view('tracks.index', compact(
+            'tracks', 
+            'totalTracks', 
+            'processingTracks', 
+            'pendingTracks',
+            'activeTracksCount',
+            'completedTracks', 
+            'failedTracks',
+            'stoppedTracks'
+        ));
     }
 
     /**
