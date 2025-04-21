@@ -13,7 +13,8 @@ class TrackSeederTest extends TestCase
 {
     use RefreshDatabase;
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_track_seeder_creates_tracks(): void
     {
         \DB::statement('PRAGMA foreign_keys = OFF');
@@ -30,7 +31,8 @@ class TrackSeederTest extends TestCase
         $this->assertNotEmpty($firstTrack->genres);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_track_seeder_creates_properly_formatted_genres(): void
     {
         \DB::statement('PRAGMA foreign_keys = OFF');

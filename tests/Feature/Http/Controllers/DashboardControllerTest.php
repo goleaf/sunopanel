@@ -11,6 +11,7 @@ class DashboardControllerTest extends TestCase
 {
     
     #[Test]
+    
     public function test_Index(): void
     {
 
@@ -18,6 +19,7 @@ class DashboardControllerTest extends TestCase
     }
 
     #[Test]
+    
     public function test_SystemStats(): void
     {
 

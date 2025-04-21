@@ -25,7 +25,7 @@ class TrackEditTest extends TestCase
         Storage::fake('public');
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
     public function the_component_can_render(): void {
         $track = Track::factory()->create();
         $response = $this->get(route('tracks.edit', $track));
@@ -33,7 +33,7 @@ class TrackEditTest extends TestCase
         $response->assertStatus(200);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
     public function it_loads_track_data_on_mount(): void {
         $genre = Genre::factory()->create();
         $track = Track::factory()->create([
@@ -55,7 +55,7 @@ class TrackEditTest extends TestCase
             ->assertSet('selectedGenres', [$genre->id]);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
     public function it_validates_required_fields(): void {
         $track = Track::factory()->create([
             'title' => 'Original Title',
@@ -67,7 +67,7 @@ class TrackEditTest extends TestCase
             ->assertHasErrors(['title']);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
     public function it_validates_title_max_length(): void {
         $track = Track::factory()->create();
         $longTitle = str_repeat('a', 256); // 256 characters (over the 255 max)
@@ -78,7 +78,7 @@ class TrackEditTest extends TestCase
             ->assertHasErrors(['title' => 'max']);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
     public function it_validates_uploaded_files_when_provided(): void {
         $track = Track::factory()->create();
         $invalidAudioFile = UploadedFile::fake()->create('audio.zip', 100);
@@ -97,7 +97,7 @@ class TrackEditTest extends TestCase
             ->assertHasErrors(['imageFile' => 'image']);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
     public function it_validates_field_values(): void {
         $track = Track::factory()->create();
         
@@ -109,7 +109,7 @@ class TrackEditTest extends TestCase
             ->assertHasErrors(['title' => 'required']);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
     public function it_loads_all_genres_on_mount(): void {
         $genre1 = Genre::factory()->create(['name' => 'Rock']);
         $genre2 = Genre::factory()->create(['name' => 'Pop']);

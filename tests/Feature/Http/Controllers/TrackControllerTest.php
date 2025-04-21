@@ -15,6 +15,7 @@ class TrackControllerTest extends TestCase
     use RefreshDatabase;
     
     #[Test]
+    
     public function test_Index(): void
     {
         Track::factory()->count(3)->create();
@@ -25,6 +26,7 @@ class TrackControllerTest extends TestCase
     }
     
     #[Test]
+    
     public function test_IndexWithSearch(): void
     {
         Track::factory()->create(['title' => 'Test Track', 'audio_url' => 'https://example.com/search_audio1.mp3', 'image_url' => 'https://example.com/search_image1.jpg']);
@@ -39,6 +41,7 @@ class TrackControllerTest extends TestCase
     }
 
     #[Test]
+    
     public function test_Create(): void
     {
         Genre::factory()->count(3)->create();
@@ -49,6 +52,7 @@ class TrackControllerTest extends TestCase
     }
 
     #[Test]
+    
     public function test_Store(): void
     {
         $genre = Genre::factory()->create();
@@ -72,6 +76,7 @@ class TrackControllerTest extends TestCase
     }
 
     #[Test]
+    
     public function test_ProcessBulkUpload(): void
     {
         $bulkData = [
@@ -97,6 +102,7 @@ EOD
     }
 
     #[Test]
+    
     public function test_Show(): void
     {
         $track = Track::factory()->create(['audio_url' => 'https://example.com/show_audio.mp3', 'image_url' => 'https://example.com/show_image.jpg']);
@@ -108,6 +114,7 @@ EOD
     }
 
     #[Test]
+    
     public function test_Edit(): void
     {
         $track = Track::factory()->create(['audio_url' => 'https://example.com/edit_audio.mp3', 'image_url' => 'https://example.com/edit_image.jpg']);
@@ -119,6 +126,7 @@ EOD
     }
 
     #[Test]
+    
     public function test_Update(): void
     {
         $track = Track::factory()->create(['title' => 'Original Title', 'audio_url' => 'https://example.com/orig_audio.mp3', 'image_url' => 'https://example.com/orig_image.jpg']);
@@ -145,6 +153,7 @@ EOD
     }
 
     #[Test]
+    
     public function test_Destroy(): void
     {
         $track = Track::factory()->create(['audio_url' => 'https://example.com/del_audio.mp3', 'image_url' => 'https://example.com/del_image.jpg']);
@@ -155,6 +164,7 @@ EOD
     }
 
     #[Test]
+    
     public function test_Play(): void
     {
         $track = Track::factory()->create(['audio_url' => 'https://example.com/play_audio.mp3']);

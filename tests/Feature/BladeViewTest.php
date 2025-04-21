@@ -15,7 +15,8 @@ class BladeViewTest extends TestCase
 {
     use RefreshDatabase, WithFaker;
     
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_tracks_index_view_renders(): void {
         $tracks = Track::factory(3)->create();
         $response = $this->get(route('tracks.index'));
@@ -29,7 +30,8 @@ class BladeViewTest extends TestCase
         }
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_tracks_show_view_renders(): void {
         $track = Track::factory()->create(['title' => 'Test Track']);
         $genre = Genre::factory()->create(['name' => 'Rock']);
@@ -41,7 +43,8 @@ class BladeViewTest extends TestCase
         $response->assertSee('Rock');
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_genres_index_view_renders(): void {
         $genres = Genre::factory(3)->create();
         $response = $this->get(route('genres.index'));
@@ -52,7 +55,8 @@ class BladeViewTest extends TestCase
         }
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_playlists_index_view_renders(): void {
         $playlists = Playlist::factory(3)->create();
         $response = $this->get(route('playlists.index'));
@@ -63,7 +67,8 @@ class BladeViewTest extends TestCase
         }
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_playlist_show_view_renders_correctly(): void {
         $playlist = Playlist::factory()->create([
             'title' => 'Test Playlist',
@@ -84,7 +89,8 @@ class BladeViewTest extends TestCase
         }
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_create_forms_render(): void {
         $response = $this->get(route('tracks.create'));
         $response->assertStatus(200);
@@ -97,7 +103,8 @@ class BladeViewTest extends TestCase
         $response->assertSee('Create New Playlist');
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_edit_forms_render(): void {
         $track = Track::factory()->create();
         $genre = Genre::factory()->create();

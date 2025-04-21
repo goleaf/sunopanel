@@ -21,7 +21,8 @@ class GenreControllerTest extends TestCase
         $this->actingAs(User::factory()->create());
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_index_page_displays_genres(): void
     {
         $genres = Genre::factory()->count(3)->create();
@@ -36,7 +37,8 @@ class GenreControllerTest extends TestCase
         }
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_create_page_loads(): void
     {
         $response = $this->get('/genres/create');
@@ -45,7 +47,8 @@ class GenreControllerTest extends TestCase
         $response->assertViewIs('genres.form');
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_store_genre(): void
     {
         $genreData = [
@@ -62,7 +65,8 @@ class GenreControllerTest extends TestCase
         ]);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_show_genre(): void
     {
         $genre = Genre::factory()->create();
@@ -82,7 +86,8 @@ class GenreControllerTest extends TestCase
         }
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_edit_genre(): void
     {
         $genre = Genre::factory()->create();
@@ -95,7 +100,8 @@ class GenreControllerTest extends TestCase
         $response->assertSee($genre->name);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_update_genre(): void
     {
         $genre = Genre::factory()->create();
@@ -115,7 +121,8 @@ class GenreControllerTest extends TestCase
         ]);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_delete_genre(): void
     {
         $genre = Genre::factory()->create();
@@ -128,7 +135,8 @@ class GenreControllerTest extends TestCase
         ]);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_find_or_create_by_name(): void
     {
         $existingGenre = Genre::factory()->create(['name' => 'Existing Genre']);
@@ -140,7 +148,8 @@ class GenreControllerTest extends TestCase
         ]);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_genres_index_page(): void {
         Genre::factory()->count(5)->create();
 
@@ -151,7 +160,8 @@ class GenreControllerTest extends TestCase
         $response->assertViewHas('genres');
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_genre_create_form(): void {
         $response = $this->get(route('genres.create'));
 
@@ -159,7 +169,8 @@ class GenreControllerTest extends TestCase
         $response->assertViewIs('genres.form');
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_genre_store(): void {
         $genreData = [
             'name' => 'Test Genre',
@@ -176,7 +187,8 @@ class GenreControllerTest extends TestCase
         ]);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_genre_store_validation(): void {
         Genre::factory()->create(['name' => 'Existing Genre']);
         $response = $this->post(route('genres.store'), [
@@ -193,7 +205,8 @@ class GenreControllerTest extends TestCase
         $response->assertSessionHasErrors('name');
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_genre_edit_form(): void {
         $genre = Genre::factory()->create();
 
@@ -204,7 +217,8 @@ class GenreControllerTest extends TestCase
         $response->assertViewHas('genre', $genre);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_genre_update(): void {
         $genre = Genre::factory()->create();
 
@@ -224,7 +238,8 @@ class GenreControllerTest extends TestCase
         ]);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_genre_update_validation(): void {
         $genre1 = Genre::factory()->create(['name' => 'First Genre']);
         $genre2 = Genre::factory()->create(['name' => 'Second Genre']);
@@ -242,7 +257,8 @@ class GenreControllerTest extends TestCase
         $response->assertSessionHasErrors('name');
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_genre_delete(): void {
         $genre = Genre::factory()->create();
 
@@ -255,7 +271,8 @@ class GenreControllerTest extends TestCase
         ]);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_genre_delete_with_tracks(): void {
         $genre = Genre::factory()->create();
         $track = Track::factory()->create();
@@ -276,7 +293,8 @@ class GenreControllerTest extends TestCase
         ]);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_genre_show(): void {
         $genre = Genre::factory()->create();
         $tracks = Track::factory()->count(3)->create();

@@ -14,7 +14,8 @@ class ModelRelationsTest extends TestCase
 {
     use RefreshDatabase;
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_track_genre_relationship(): void
     {
         $track = Track::factory()->create();
@@ -28,7 +29,8 @@ class ModelRelationsTest extends TestCase
         $this->assertTrue($genre->tracks->contains($track->id));
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_playlist_track_relationship(): void
     {
         $playlist = Playlist::factory()->create();
@@ -44,7 +46,8 @@ class ModelRelationsTest extends TestCase
         ]);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_playlist_genre_relationship(): void
     {
         $genre = Genre::factory()->create();
@@ -54,7 +57,8 @@ class ModelRelationsTest extends TestCase
         $this->assertTrue($genre->playlists->contains($playlist));
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_track_methods(): void
     {
         $track = Track::factory()->create([

@@ -36,6 +36,7 @@ class VerifyCsrfTokenTest extends TestCase
         parent::tearDown();
     }
     
+    
     public function test_TokenRotationConfiguration(): void
     {
         // Read the VerifyCsrfToken class file to verify it has token rotation code
@@ -47,6 +48,7 @@ class VerifyCsrfTokenTest extends TestCase
         $this->assertStringContainsString('$request->is(\'password/reset\')', $middlewareContent);
     }
     
+    
     public function test_TokenNotRotatedForNormalRequests(): void
     {
         // Verify the middleware has an addCookieToResponse method
@@ -56,6 +58,7 @@ class VerifyCsrfTokenTest extends TestCase
         // This is a simple validation that the middleware class exists and is properly loaded
         $this->assertInstanceOf(VerifyCsrfToken::class, $this->middleware);
     }
+    
     
     public function test_SameSiteAttributeIsSetToLax(): void
     {

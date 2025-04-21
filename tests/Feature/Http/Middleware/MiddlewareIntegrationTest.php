@@ -11,6 +11,7 @@ class MiddlewareIntegrationTest extends TestCase
 {
     use RefreshDatabase;
     
+    
     public function test_CsrfProtectionCanBeBypassedInTests(): void
     {
         // Test we can bypass CSRF in tests
@@ -22,6 +23,7 @@ class MiddlewareIntegrationTest extends TestCase
         // Should not get a 419 (CSRF token mismatch) when middleware is disabled
         $this->assertNotEquals(419, $response->getStatusCode());
     }
+    
     
     public function test_OfflineRouteWorks(): void
     {

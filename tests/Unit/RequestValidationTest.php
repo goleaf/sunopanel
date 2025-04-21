@@ -18,7 +18,8 @@ class RequestValidationTest extends TestCase
 {
     use RefreshDatabase, WithFaker;
     
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_playlist_store_tracks_request_validation(): void {
         $rules = (new PlaylistStoreTracksRequest)->rules();
         $validator = Validator::make([], $rules);
@@ -32,7 +33,8 @@ class RequestValidationTest extends TestCase
         $this->assertTrue($validator->errors()->has('track_ids.0') || $validator->errors()->has('track_ids.*'));
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_playlist_remove_track_request_validation(): void {
         $rules = (new PlaylistRemoveTrackRequest)->rules();
         $validator = Validator::make(['track_id' => 999], $rules);
@@ -41,7 +43,8 @@ class RequestValidationTest extends TestCase
         $this->assertTrue($validator->passes());
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_playlist_delete_request_validation(): void {
         $rules = (new PlaylistDeleteRequest)->rules();
         $validator = Validator::make(['id' => 999], $rules);
@@ -50,7 +53,8 @@ class RequestValidationTest extends TestCase
         $this->assertTrue($validator->passes());
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_playlist_create_from_genre_request_validation(): void {
         $rules = (new PlaylistCreateFromGenreRequest)->rules();
         $validator = Validator::make(['genre_id' => 999], $rules);
@@ -65,7 +69,8 @@ class RequestValidationTest extends TestCase
         $this->assertTrue($validator->errors()->has('title_suffix'));
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_genre_delete_request_validation(): void {
         $rules = (new GenreDeleteRequest)->rules();
         $validator = Validator::make(['id' => 999], $rules);
@@ -74,7 +79,8 @@ class RequestValidationTest extends TestCase
         $this->assertTrue($validator->passes());
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_all_request_authorization(): void {
         $this->assertTrue((new PlaylistStoreTracksRequest)->authorize());
         $this->assertTrue((new PlaylistRemoveTrackRequest)->authorize());

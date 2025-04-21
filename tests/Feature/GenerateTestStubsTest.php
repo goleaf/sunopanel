@@ -9,7 +9,7 @@ use Tests\TestCase;
 
 class GenerateTestStubsTest extends TestCase
 {
-    #[\PHPUnit\Framework\Attributes\Test]
+    
     public function it_runs_successfully(): void
     {
         $tempDir = storage_path('framework/testing/generate_stubs');

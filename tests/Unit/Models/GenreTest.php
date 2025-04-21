@@ -11,6 +11,7 @@ class GenreTest extends TestCase
 {
     
     #[Test]
+    
     public function test_Tracks(): void
     {
 
@@ -18,6 +19,7 @@ class GenreTest extends TestCase
     }
 
     #[Test]
+    
     public function test_Playlists(): void
     {
 
@@ -25,6 +27,7 @@ class GenreTest extends TestCase
     }
 
     #[Test]
+    
     public function test_FindOrCreateByName(): void
     {
 
@@ -32,6 +35,7 @@ class GenreTest extends TestCase
     }
 
     #[Test]
+    
     public function test_SetNameAttribute(): void
     {
 
@@ -39,6 +43,7 @@ class GenreTest extends TestCase
     }
 
     #[Test]
+    
     public function test_FormatGenreName(): void
     {
 
@@ -46,6 +51,7 @@ class GenreTest extends TestCase
     }
 
     #[Test]
+    
     public function test_Factory(): void
     {
 

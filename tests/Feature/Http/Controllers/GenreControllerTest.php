@@ -11,6 +11,7 @@ class GenreControllerTest extends TestCase
 {
     
     #[Test]
+    
     public function test_Index(): void
     {
 
@@ -18,6 +19,7 @@ class GenreControllerTest extends TestCase
     }
 
     #[Test]
+    
     public function test_Create(): void
     {
 
@@ -25,6 +27,7 @@ class GenreControllerTest extends TestCase
     }
 
     #[Test]
+    
     public function test_Store(): void
     {
 
@@ -32,6 +35,7 @@ class GenreControllerTest extends TestCase
     }
 
     #[Test]
+    
     public function test_Show(): void
     {
 
@@ -39,6 +43,7 @@ class GenreControllerTest extends TestCase
     }
 
     #[Test]
+    
     public function test_Edit(): void
     {
 
@@ -46,6 +51,7 @@ class GenreControllerTest extends TestCase
     }
 
     #[Test]
+    
     public function test_Update(): void
     {
 
@@ -53,6 +59,7 @@ class GenreControllerTest extends TestCase
     }
 
     #[Test]
+    
     public function test_Destroy(): void
     {
 

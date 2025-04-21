@@ -24,14 +24,14 @@ class TrackCreateTest extends TestCase
         Storage::fake('public');
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
     public function the_component_can_render(): void {
         $response = $this->get(route('tracks.create'));
 
         $response->assertStatus(200);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
     public function it_validates_required_fields(): void {
         Livewire::test(TrackCreate::class)
             ->set('title', '')
@@ -39,7 +39,7 @@ class TrackCreateTest extends TestCase
             ->assertHasErrors(['title', 'audioFile']);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
     public function it_validates_title_max_length(): void {
         $longTitle = str_repeat('a', 256); // 256 characters (over the 255 max)
         
@@ -49,7 +49,7 @@ class TrackCreateTest extends TestCase
             ->assertHasErrors(['title' => 'max']);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
     public function it_validates_image_file_format(): void
     {
         // Since testing with actual files is problematic due to preview functionality,
@@ -62,7 +62,7 @@ class TrackCreateTest extends TestCase
         $this->assertTrue(true); // Placeholder assertion
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
     public function it_validates_audio_file_format(): void {
         $invalidAudioFile = UploadedFile::fake()->create('audio.pdf', 100);
         
@@ -73,7 +73,7 @@ class TrackCreateTest extends TestCase
             ->assertHasErrors(['audioFile' => 'mimes']);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
     public function it_loads_genres_on_mount(): void {
         // Create some test genres
         $genre1 = Genre::factory()->create(['name' => 'Rock']);
@@ -85,7 +85,7 @@ class TrackCreateTest extends TestCase
             });
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
     public function save_method_works_as_alias_for_saveTrack(): void {
         $audioFile = UploadedFile::fake()->create('audio.mp3', 100);
         

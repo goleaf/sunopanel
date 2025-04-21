@@ -11,7 +11,8 @@ class RouteTest extends TestCase
 {
     use RefreshDatabase;
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_main_routes_are_accessible(): void {
         $response = $this->get('/');
         $response->assertStatus(200);
@@ -30,7 +31,8 @@ class RouteTest extends TestCase
         }
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_nonexistent_routes_return_404(): void {
         $nonExistentRoutes = [
             '/nonexistent-route',
@@ -46,7 +48,8 @@ class RouteTest extends TestCase
         $this->assertTrue(true);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_method_not_allowed_on_wrong_methods(): void {
         $response = $this->post('/tracks');
         $response->assertStatus(302);
@@ -63,7 +66,8 @@ class RouteTest extends TestCase
         $response->assertStatus(405);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_route_parameters_are_validated(): void {
         // TODO: Implement test that was previously skipped with message: 'Route parameter validation is handled differently in the current implementation'
         $this->assertTrue(true); // Placeholder assertion

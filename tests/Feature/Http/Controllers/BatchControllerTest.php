@@ -11,6 +11,7 @@ class BatchControllerTest extends TestCase
 {
     
     #[Test]
+    
     public function test_Index(): void
     {
 
@@ -18,6 +19,7 @@ class BatchControllerTest extends TestCase
     }
 
     #[Test]
+    
     public function test_Import(): void
     {
 
@@ -25,6 +27,7 @@ class BatchControllerTest extends TestCase
     }
 
     #[Test]
+    
     public function test_ProcessImport(): void
     {
 
@@ -32,6 +35,7 @@ class BatchControllerTest extends TestCase
     }
 
     #[Test]
+    
     public function test_ImportTracks(): void
     {
 
@@ -39,6 +43,7 @@ class BatchControllerTest extends TestCase
     }
 
     #[Test]
+    
     public function test_ImportPlaylists(): void
     {
 
@@ -46,6 +51,7 @@ class BatchControllerTest extends TestCase
     }
 
     #[Test]
+    
     public function test_ImportGenres(): void
     {
 
@@ -53,6 +59,7 @@ class BatchControllerTest extends TestCase
     }
 
     #[Test]
+    
     public function test_Actions(): void
     {
 
@@ -60,6 +67,7 @@ class BatchControllerTest extends TestCase
     }
 
     #[Test]
+    
     public function test_ProcessActions(): void
     {
 
@@ -67,6 +75,7 @@ class BatchControllerTest extends TestCase
     }
 
     #[Test]
+    
     public function test_AssignGenres(): void
     {
 
@@ -74,6 +83,7 @@ class BatchControllerTest extends TestCase
     }
 
     #[Test]
+    
     public function test_AddToPlaylist(): void
     {
 

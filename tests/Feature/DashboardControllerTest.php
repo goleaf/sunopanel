@@ -14,7 +14,8 @@ class DashboardControllerTest extends TestCase
 {
     use RefreshDatabase;
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_dashboard_page_loads(): void
     {
         $response = $this->get('/dashboard');
@@ -24,7 +25,8 @@ class DashboardControllerTest extends TestCase
         $response->assertSee('Welcome to SunoPanel');
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_dashboard_displays_system_stats(): void {
         Track::factory()->count(3)->create();
         Genre::factory()->count(2)->create();
@@ -40,7 +42,8 @@ class DashboardControllerTest extends TestCase
         $response->assertSee('Total Duration');
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_system_stats_api_endpoint(): void {
         Track::factory()->count(3)->create();
         Genre::factory()->count(2)->create();

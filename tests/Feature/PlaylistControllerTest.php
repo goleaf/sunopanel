@@ -16,7 +16,8 @@ class PlaylistControllerTest extends TestCase
     use RefreshDatabase;
 
     /** @test */
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_index_displays_playlists(): void
     {
         $user = User::factory()->create();
@@ -32,7 +33,8 @@ class PlaylistControllerTest extends TestCase
     }
 
     /** @test */
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_create_page_loads(): void
     {
         $user = User::factory()->create();
@@ -46,7 +48,8 @@ class PlaylistControllerTest extends TestCase
     }
 
     /** @test */
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_store_playlist(): void
     {
         $user = User::factory()->create();
@@ -70,7 +73,8 @@ class PlaylistControllerTest extends TestCase
     }
 
     /** @test */
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_show_playlist(): void
     {
         $user = User::factory()->create();
@@ -88,7 +92,8 @@ class PlaylistControllerTest extends TestCase
     }
 
     /** @test */
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_edit_page_loads(): void
     {
         $user = User::factory()->create();
@@ -104,7 +109,8 @@ class PlaylistControllerTest extends TestCase
     }
 
     /** @test */
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_update_playlist(): void
     {
         $user = User::factory()->create();
@@ -131,7 +137,8 @@ class PlaylistControllerTest extends TestCase
     }
 
     /** @test */
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_destroy_playlist(): void
     {
         $user = User::factory()->create();
@@ -146,7 +153,8 @@ class PlaylistControllerTest extends TestCase
     }
 
     /** @test */
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_create_playlist_from_genre(): void
     {
         $user = User::factory()->create();

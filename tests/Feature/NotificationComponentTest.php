@@ -9,7 +9,8 @@ use Tests\TestCase;
 class NotificationComponentTest extends TestCase
 {
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_notification_component_renders(): void
     {
         $view = $this->view('components.notification', [
@@ -23,7 +24,8 @@ class NotificationComponentTest extends TestCase
         $view->assertSee('notification notification-success');
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_notification_types(): void
     {
         $view = $this->view('components.notification', [
@@ -52,7 +54,8 @@ class NotificationComponentTest extends TestCase
         $view->assertSee('Info message');
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_notification_without_message(): void
     {
         $view = $this->view('components.notification', [
@@ -62,7 +65,8 @@ class NotificationComponentTest extends TestCase
         $view->assertSee('notification notification-info');
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_notification_non_dismissable(): void
     {
         $view = $this->view('components.notification', [

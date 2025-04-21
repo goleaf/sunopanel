@@ -20,6 +20,7 @@ class AddPreloadHeadersTest extends TestCase
         $this->middleware = new AddPreloadHeaders();
     }
     
+    
     public function test_AddsLinkHeadersToHtmlResponses(): void
     {
         $request = Request::create('/test', 'GET');
@@ -42,6 +43,7 @@ class AddPreloadHeadersTest extends TestCase
         $this->assertStringContainsString('rel=preload', $allHeaders);
     }
     
+    
     public function test_DoesNotAddHeadersToNonHtmlResponses(): void
     {
         $request = Request::create('/test', 'GET');
@@ -56,6 +58,7 @@ class AddPreloadHeadersTest extends TestCase
         // Verify no Link headers were added
         $this->assertEmpty($result->headers->all('link'));
     }
+    
     
     public function test_ContainsAssetTypes(): void
     {

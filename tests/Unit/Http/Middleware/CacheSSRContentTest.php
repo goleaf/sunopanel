@@ -22,6 +22,7 @@ class CacheSSRContentTest extends TestCase
         Cache::flush();
     }
     
+    
     public function test_NonGetRequestsAreNotCached(): void
     {
         $request = $this->createRequest('POST', 'dashboard');
@@ -30,6 +31,7 @@ class CacheSSRContentTest extends TestCase
         $this->assertEquals(200, $response->getStatusCode());
         $this->assertFalse($response->headers->has('X-SSR-Cache'));
     }
+    
     
     public function test_AuthenticatedRequestsAreNotCached(): void
     {
@@ -41,6 +43,7 @@ class CacheSSRContentTest extends TestCase
         $this->assertFalse($response->headers->has('X-SSR-Cache'));
     }
     
+    
     public function test_NonCachableRoutesAreNotCached(): void
     {
         $request = $this->createRequest('GET', 'some-other-route');
@@ -49,6 +52,7 @@ class CacheSSRContentTest extends TestCase
         $this->assertEquals(200, $response->getStatusCode());
         $this->assertFalse($response->headers->has('X-SSR-Cache'));
     }
+    
     
     public function test_CachableRoutesAreCached(): void
     {

@@ -12,6 +12,7 @@ class MainPagesTest extends DuskTestCase
 {
     use DatabaseMigrations;
 
+    
     public function test_DashboardPage(): void {
         $this->browse(function (Browser $browser) {
             $browser->visit('/')
@@ -22,6 +23,7 @@ class MainPagesTest extends DuskTestCase
         });
     }
 
+    
     public function test_TracksPage(): void {
         $this->browse(function (Browser $browser) {
             $browser->visit('/tracks')
@@ -35,6 +37,7 @@ class MainPagesTest extends DuskTestCase
         });
     }
 
+    
     public function test_GenresPage(): void {
         $this->browse(function (Browser $browser) {
             $browser->visit('/genres')
@@ -47,6 +50,7 @@ class MainPagesTest extends DuskTestCase
         });
     }
 
+    
     public function test_PlaylistsPage(): void {
         $this->browse(function (Browser $browser) {
             $browser->visit('/playlists')
@@ -59,6 +63,7 @@ class MainPagesTest extends DuskTestCase
         });
     }
 
+    
     public function test_FormSubmission(): void {
         $this->browse(function (Browser $browser) {
             $browser->visit('/tracks/create')
@@ -83,6 +88,7 @@ class MainPagesTest extends DuskTestCase
         });
     }
 
+    
     public function test_AudioPlayer(): void {
         $this->browse(function (Browser $browser) {
             $browser->visit('/tracks')
@@ -95,6 +101,7 @@ class MainPagesTest extends DuskTestCase
         });
     }
 
+    
     public function test_AdvancedSearch(): void {
         $this->browse(function (Browser $browser) {
             $browser->visit('/tracks')
@@ -109,6 +116,7 @@ class MainPagesTest extends DuskTestCase
         });
     }
 
+    
     public function test_DarkModeToggle(): void {
         $this->browse(function (Browser $browser) {
             $browser->visit('/')
@@ -123,6 +131,7 @@ class MainPagesTest extends DuskTestCase
         });
     }
 
+    
     public function test_ResponsiveDesign(): void {
         $this->browse(function (Browser $browser) {
             $browser->resize(375, 667)
@@ -142,6 +151,7 @@ class MainPagesTest extends DuskTestCase
         });
     }
 
+    
     public function test_Notification(): void {
         $this->browse(function (Browser $browser) {
             $browser->visit('/')

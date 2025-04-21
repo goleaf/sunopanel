@@ -19,7 +19,8 @@ class TrackRequestTest extends TestCase
 {
     use RefreshDatabase;
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_track_store_validation(): void {
         $genre = Genre::findOrCreateByName('Electronic');
         
@@ -36,7 +37,8 @@ class TrackRequestTest extends TestCase
         $this->assertTrue(true); // Placeholder assertion
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_track_update_validation(): void {
         $track = Track::create([
             'title' => 'Original Track',
@@ -62,7 +64,8 @@ class TrackRequestTest extends TestCase
         $this->assertTrue(true); // Placeholder assertion
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_bulk_track_upload(): void {
         // This test is challenging because TrackUpload uses file uploads
         // TODO: Complete test that was previously marked as incomplete:
@@ -71,7 +74,8 @@ class TrackRequestTest extends TestCase
         $this->assertTrue(true); // Placeholder assertion
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_track_store_request_validation(): void {
         $request = new TrackStoreRequest;
         $rules = $request->rules();
@@ -86,7 +90,8 @@ class TrackRequestTest extends TestCase
         $this->assertStringContainsString('array', $rules['genre_ids']);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_track_update_request_validation(): void {
         $request = new TrackUpdateRequest;
         $rules = $request->rules();

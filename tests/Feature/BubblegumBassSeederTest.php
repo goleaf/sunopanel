@@ -15,7 +15,8 @@ class BubblegumBassSeederTest extends TestCase
 {
     use RefreshDatabase;
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_seeder_creates_tracks_and_genres(): void {
         $this->seed(TrackSeeder::class);
         $this->assertDatabaseCount('tracks', 20);
@@ -31,14 +32,16 @@ class BubblegumBassSeederTest extends TestCase
         ]);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_seed_command_works(): void {
         $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\TrackSeeder'])
             ->assertSuccessful();
         $this->assertDatabaseCount('tracks', 20);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_bubblegum_bass_is_one_genre(): void {
         Log::info('Running test_bubblegum_bass_is_one_genre');
         $genreVariations = [
@@ -74,7 +77,8 @@ class BubblegumBassSeederTest extends TestCase
         Log::info('Completed test_bubblegum_bass_is_one_genre');
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_genre_capitalization(): void {
         Log::info('Running test_genre_capitalization');
         $testCases = [

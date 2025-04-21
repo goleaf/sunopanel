@@ -11,6 +11,7 @@ class PlaylistTest extends TestCase
 {
     
     #[Test]
+    
     public function test_Tracks(): void
     {
 
@@ -18,6 +19,7 @@ class PlaylistTest extends TestCase
     }
 
     #[Test]
+    
     public function test_Genre(): void
     {
 
@@ -25,6 +27,7 @@ class PlaylistTest extends TestCase
     }
 
     #[Test]
+    
     public function test_Genres(): void
     {
 
@@ -32,6 +35,7 @@ class PlaylistTest extends TestCase
     }
 
     #[Test]
+    
     public function test_GetNameAttribute(): void
     {
 
@@ -39,6 +43,7 @@ class PlaylistTest extends TestCase
     }
 
     #[Test]
+    
     public function test_SetNameAttribute(): void
     {
 
@@ -46,6 +51,7 @@ class PlaylistTest extends TestCase
     }
 
     #[Test]
+    
     public function test_AddTrack(): void
     {
 
@@ -53,6 +59,7 @@ class PlaylistTest extends TestCase
     }
 
     #[Test]
+    
     public function test_RemoveTrack(): void
     {
 
@@ -60,6 +67,7 @@ class PlaylistTest extends TestCase
     }
 
     #[Test]
+    
     public function test_GetTracksCountAttribute(): void
     {
 
@@ -67,6 +75,7 @@ class PlaylistTest extends TestCase
     }
 
     #[Test]
+    
     public function test_Factory(): void
     {
 

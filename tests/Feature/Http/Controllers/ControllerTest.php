@@ -11,6 +11,7 @@ class ControllerTest extends TestCase
 {
     
     #[Test]
+    
     public function test_Authorize(): void
     {
 
@@ -18,6 +19,7 @@ class ControllerTest extends TestCase
     }
 
     #[Test]
+    
     public function test_AuthorizeForUser(): void
     {
 
@@ -25,6 +27,7 @@ class ControllerTest extends TestCase
     }
 
     #[Test]
+    
     public function test_AuthorizeResource(): void
     {
 
@@ -32,6 +35,7 @@ class ControllerTest extends TestCase
     }
 
     #[Test]
+    
     public function test_ValidateWith(): void
     {
 
@@ -39,6 +43,7 @@ class ControllerTest extends TestCase
     }
 
     #[Test]
+    
     public function test_Validate(): void
     {
 
@@ -46,6 +51,7 @@ class ControllerTest extends TestCase
     }
 
     #[Test]
+    
     public function test_ValidateWithBag(): void
     {
 

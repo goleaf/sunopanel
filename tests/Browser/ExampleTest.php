@@ -10,6 +10,7 @@ use Tests\DuskTestCase;
 class ExampleTest extends DuskTestCase
 {
 
+    
     public function test_BasicExample(): void
     {
         $this->browse(function (Browser $browser) {

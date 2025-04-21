@@ -13,7 +13,8 @@ class GenreRequestTest extends TestCase
 {
     use RefreshDatabase;
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_genre_store_validation(): void {
         $response = $this->post(route('genres.store'), []);
         $response->assertSessionHasErrors(['name']);
@@ -32,7 +33,8 @@ class GenreRequestTest extends TestCase
         ]);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_genre_update_validation(): void {
         $genre = Genre::create([
             'name' => 'Original Genre',
@@ -54,7 +56,8 @@ class GenreRequestTest extends TestCase
         ]);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_genre_delete_validation(): void {
         $genre = Genre::create([
             'name' => 'Test Genre',
@@ -85,7 +88,8 @@ class GenreRequestTest extends TestCase
         ]);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_genre_name_uniqueness(): void {
         Genre::create([
             'name' => 'Unique Genre',

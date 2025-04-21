@@ -9,7 +9,8 @@ use Tests\TestCase;
 class NotificationJsTest extends TestCase
 {
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_notification_scripts_are_loaded(): void
     {
         $response = $this->get('/test-notification');
@@ -20,7 +21,8 @@ class NotificationJsTest extends TestCase
         $response->assertSee('showNotification');
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_session_flash_messages(): void
     {
         $response = $this->withSession(['success' => 'Operation completed successfully'])
@@ -41,7 +43,8 @@ class NotificationJsTest extends TestCase
         $response->assertStatus(200);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_notification_test_page_loads(): void
     {
         $response = $this->get('/test-notification');

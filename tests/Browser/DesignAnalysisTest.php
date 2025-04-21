@@ -14,6 +14,7 @@ class DesignAnalysisTest extends DuskTestCase
     /**
      * Test to capture a screenshot of the dashboard for AI analysis.
      */
+    
     public function test_CaptureDashboardForAnalysis(): void
     {
         $this->browse(function (Browser $browser) {

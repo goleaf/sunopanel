@@ -11,6 +11,7 @@ class UserTest extends TestCase
 {
     
     #[Test]
+    
     public function test_Tokens(): void
     {
 
@@ -18,6 +19,7 @@ class UserTest extends TestCase
     }
 
     #[Test]
+    
     public function test_TokenCan(): void
     {
 
@@ -25,6 +27,7 @@ class UserTest extends TestCase
     }
 
     #[Test]
+    
     public function test_TokenCant(): void
     {
 
@@ -32,6 +35,7 @@ class UserTest extends TestCase
     }
 
     #[Test]
+    
     public function test_CreateToken(): void
     {
 
@@ -39,6 +43,7 @@ class UserTest extends TestCase
     }
 
     #[Test]
+    
     public function test_GenerateTokenString(): void
     {
 
@@ -46,6 +51,7 @@ class UserTest extends TestCase
     }
 
     #[Test]
+    
     public function test_CurrentAccessToken(): void
     {
 
@@ -53,6 +59,7 @@ class UserTest extends TestCase
     }
 
     #[Test]
+    
     public function test_WithAccessToken(): void
     {
 
@@ -60,6 +67,7 @@ class UserTest extends TestCase
     }
 
     #[Test]
+    
     public function test_Factory(): void
     {
 
@@ -67,6 +75,7 @@ class UserTest extends TestCase
     }
 
     #[Test]
+    
     public function test_Notifications(): void
     {
 
@@ -74,6 +83,7 @@ class UserTest extends TestCase
     }
 
     #[Test]
+    
     public function test_ReadNotifications(): void
     {
 
@@ -81,6 +91,7 @@ class UserTest extends TestCase
     }
 
     #[Test]
+    
     public function test_UnreadNotifications(): void
     {
 
@@ -88,6 +99,7 @@ class UserTest extends TestCase
     }
 
     #[Test]
+    
     public function test_Notify(): void
     {
 
@@ -95,6 +107,7 @@ class UserTest extends TestCase
     }
 
     #[Test]
+    
     public function test_NotifyNow(): void
     {
 
@@ -102,6 +115,7 @@ class UserTest extends TestCase
     }
 
     #[Test]
+    
     public function test_RouteNotificationFor(): void
     {
 

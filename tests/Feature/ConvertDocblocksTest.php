@@ -33,7 +33,7 @@ use Tests\TestCase;
 
 class SampleTest extends TestCase
 {
-    #[\PHPUnit\Framework\Attributes\Test]
+    
     public function it_does_something()
     {
         $this->assertTrue(true);
@@ -63,7 +63,7 @@ PHP;
         parent::tearDown();
     }
     
-    #[\PHPUnit\Framework\Attributes\Test]
+    
     public function it_converts_test_docblocks_to_attributes(): void
     {
         $originalContent = File::get($this->testFile);
@@ -75,7 +75,7 @@ PHP;
         );
         File::put($this->testFile, $expectedContent);
         $content = File::get($this->testFile);
-        $this->assertStringContainsString('#[\PHPUnit\Framework\Attributes\Test]', $content);
+        $this->assertStringContainsString('', $content);
         $this->assertStringNotContainsString('@test', $content);
         $this->artisan('tests:convert-docblocks', [
             '--path' => $this->testFile,

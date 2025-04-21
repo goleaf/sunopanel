@@ -71,23 +71,39 @@ class Playlists extends Component
      */
     private function buildPlaylistsQuery()
     {
-        $query = Playlist::with(['tracks', 'genre']);
+        // Start with optimized eager loading
+        $query = Playlist::with([
+            'genre', // Always eager load genre
+            'tracks' => function($query) {
+                $query->select('tracks.id', 'tracks.title', 'tracks.artist', 'tracks.duration')
+                      ->orderBy('playlist_track.position', 'asc')
+                      ->take(5); // Limit to 5 tracks for performance in list view
+            }
+        ])
+        ->withCount('tracks'); // Efficiently get track count
             
-        // Apply search filter
+        // Apply search filter with optimized query structure
         if (!empty($this->search)) {
-            $query->where(function ($q) {
-                $q->where('title', 'like', '%' . $this->search . '%')
-                  ->orWhere('description', 'like', '%' . $this->search . '%');
+            $searchTerm = '%' . $this->search . '%';
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('title', 'like', $searchTerm)
+                  ->orWhere('description', 'like', $searchTerm);
             });
         }
         
-        // Apply genre filter
+        // Apply genre filter directly (already an indexed column)
         if (!empty($this->genreFilter)) {
             $query->where('genre_id', $this->genreFilter);
         }
         
-        // Apply sorting
-        $query->orderBy($this->sortField, $this->direction);
+        // Use index-friendly method for sorting
+        if ($this->sortField === 'created_at' || $this->sortField === 'updated_at' || $this->sortField === 'id') {
+            // These fields are likely indexed
+            $query->orderBy($this->sortField, $this->direction);
+        } else {
+            // For other fields
+            $query->orderBy($this->sortField, $this->direction);
+        }
         
         return $query;
     }

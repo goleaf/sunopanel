@@ -12,6 +12,7 @@ class ComponentTest extends DuskTestCase
 {
     use DatabaseMigrations;
 
+    
     public function test_DashboardWidget(): void {
         $this->browse(function (Browser $browser) {
             $browser->visit('/')
@@ -22,6 +23,7 @@ class ComponentTest extends DuskTestCase
         });
     }
 
+    
     public function test_AdvancedSearchComponent(): void {
         $this->browse(function (Browser $browser) {
             $browser->visit('/tracks')
@@ -33,6 +35,7 @@ class ComponentTest extends DuskTestCase
         });
     }
 
+    
     public function test_NotificationsComponent(): void {
         $this->browse(function (Browser $browser) {
             $browser->visit('/')
@@ -86,6 +89,7 @@ class ComponentTest extends DuskTestCase
         });
     }
 
+    
     public function test_ButtonComponent(): void {
         $this->browse(function (Browser $browser) {
             $browser->visit('/tracks/create')
@@ -103,6 +107,7 @@ class ComponentTest extends DuskTestCase
         });
     }
 
+    
     public function test_TableComponent(): void {
         $this->browse(function (Browser $browser) {
             $browser->visit('/tracks')
@@ -113,6 +118,7 @@ class ComponentTest extends DuskTestCase
         });
     }
 
+    
     public function test_AudioPlayerComponent(): void {
         $this->browse(function (Browser $browser) {
             $browser->visit('/tracks')
@@ -128,6 +134,7 @@ class ComponentTest extends DuskTestCase
         });
     }
 
+    
     public function test_BulkActionsComponent(): void {
         $this->browse(function (Browser $browser) {
             $browser->visit('/tracks')
@@ -141,6 +148,7 @@ class ComponentTest extends DuskTestCase
         });
     }
 
+    
     public function test_ConfirmationDialogComponent(): void {
         $this->browse(function (Browser $browser) {
             $browser->visit('/tracks')
@@ -156,6 +164,7 @@ class ComponentTest extends DuskTestCase
         });
     }
 
+    
     public function test_FormComponents(): void {
         $this->browse(function (Browser $browser) {
             $browser->visit('/tracks/create')

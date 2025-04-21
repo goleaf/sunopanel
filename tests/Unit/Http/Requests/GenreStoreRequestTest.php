@@ -19,12 +19,14 @@ class GenreStoreRequestTest extends TestCase
     }
 
     #[Test]
+    
     public function test_Authorize(): void
     {
         $this->assertTrue($this->request->authorize());
     }
 
     #[Test]
+    
     public function test_Rules(): void
     {
         $rules = $this->request->rules();

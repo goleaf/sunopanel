@@ -394,26 +394,35 @@ class Tracks extends BaseComponent
      */
     private function buildTracksQuery()
     {
-        $query = Track::with('genres');
+        // Start with the base query with eager loading for necessary relationships
+        $query = Track::with(['genres', 'playlists']);
             
-        // Apply search filter
+        // Apply search filter with optimized query structure
         if (!empty($this->search)) {
-            $query->where(function ($q) {
-                $q->where('title', 'like', '%' . $this->search . '%')
-                    ->orWhere('artist', 'like', '%' . $this->search . '%')
-                    ->orWhere('album', 'like', '%' . $this->search . '%');
+            $searchTerm = '%' . $this->search . '%';
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('title', 'like', $searchTerm)
+                  ->orWhere('artist', 'like', $searchTerm)
+                  ->orWhere('album', 'like', $searchTerm);
             });
         }
         
-        // Apply genre filter
+        // Apply genre filter with join instead of whereHas for better performance
         if (!empty($this->genreFilter)) {
-            $query->whereHas('genres', function ($q) {
-                $q->where('id', $this->genreFilter);
-            });
+            $query->join('genre_track', 'tracks.id', '=', 'genre_track.track_id')
+                  ->where('genre_track.genre_id', $this->genreFilter)
+                  ->select('tracks.*') // Select only from tracks table to avoid duplicate columns
+                  ->distinct(); // Avoid duplicate tracks
         }
         
-        // Apply sorting
-        $query->orderBy($this->sortField, $this->direction);
+        // Use index-friendly method for sorting
+        if ($this->sortField === 'created_at' || $this->sortField === 'updated_at' || $this->sortField === 'id') {
+            // These fields are likely indexed
+            $query->orderBy('tracks.' . $this->sortField, $this->direction);
+        } else {
+            // For other fields, ensure we're sorting on the tracks table
+            $query->orderBy('tracks.' . $this->sortField, $this->direction);
+        }
         
         return $query;
     }

@@ -15,21 +15,24 @@ class MusicAppTest extends TestCase
 {
     use RefreshDatabase;
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_dashboard_loads_successfully(): void
     {
         $response = $this->get('/dashboard');
         $response->assertStatus(200);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_genres_page_loads_successfully(): void
     {
         $response = $this->get('/genres');
         $response->assertStatus(200);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_can_create_genre(): void
     {
         $genreData = [
@@ -43,14 +46,16 @@ class MusicAppTest extends TestCase
         $this->assertDatabaseHas('genres', ['name' => 'Test Genre']);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_tracks_page_loads_successfully(): void
     {
         $response = $this->get('/tracks');
         $response->assertStatus(200);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_can_create_track_with_genres(): void
     {
         $user = User::factory()->create();
@@ -76,14 +81,16 @@ class MusicAppTest extends TestCase
         $this->assertTrue($track->genres->contains($genre2));
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_playlists_page_loads_successfully(): void
     {
         $response = $this->get('/playlists');
         $response->assertStatus(200);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_can_create_playlist(): void
     {
         $user = User::factory()->create();
@@ -108,7 +115,8 @@ class MusicAppTest extends TestCase
         $this->assertCount(2, $playlist->tracks);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_can_add_tracks_to_playlist(): void
     {
         $genre = Genre::factory()->create();
@@ -129,7 +137,8 @@ class MusicAppTest extends TestCase
         }
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_can_search_tracks(): void
     {
         $rockTrack = Track::factory()->create(['title' => 'Rock Song']);
@@ -143,7 +152,8 @@ class MusicAppTest extends TestCase
         });
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
+    
     public function test_can_filter_tracks_by_genre(): void
     {
         $rock = Genre::factory()->create(['name' => 'Rock']);

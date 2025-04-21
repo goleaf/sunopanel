@@ -11,6 +11,7 @@ class PlaylistRemoveTrackRequestTest extends TestCase
 {
     
     #[Test]
+    
     public function test_Authorize(): void
     {
 
@@ -18,6 +19,7 @@ class PlaylistRemoveTrackRequestTest extends TestCase
     }
 
     #[Test]
+    
     public function test_Rules(): void
     {
 

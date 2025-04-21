@@ -18,7 +18,7 @@ class PlaylistShowTest extends TestCase
     use RefreshDatabase;
     use WithFaker;
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
     public function the_component_can_render(): void {
         $genre = Genre::factory()->create();
         $playlist = Playlist::factory()->create([
@@ -35,7 +35,7 @@ class PlaylistShowTest extends TestCase
         $response->assertStatus(200);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
     public function it_can_select_all_tracks(): void {
         $genre = Genre::factory()->create();
         $playlist = Playlist::factory()->create([
@@ -52,7 +52,7 @@ class PlaylistShowTest extends TestCase
             ->assertSet('selectedTracks', [$track1->id, $track2->id]);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
     public function it_can_deselect_all_tracks(): void {
         $genre = Genre::factory()->create();
         $playlist = Playlist::factory()->create([
@@ -70,7 +70,7 @@ class PlaylistShowTest extends TestCase
             ->assertSet('selectedTracks', []);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
     public function it_can_remove_a_track(): void {
         $genre = Genre::factory()->create();
         $playlist = Playlist::factory()->create([
@@ -93,7 +93,7 @@ class PlaylistShowTest extends TestCase
         ]);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
     public function it_can_remove_selected_tracks(): void {
         $genre = Genre::factory()->create();
         $playlist = Playlist::factory()->create([
@@ -124,7 +124,7 @@ class PlaylistShowTest extends TestCase
         ]);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
     public function it_displays_error_when_no_tracks_selected_for_removal(): void {
         $genre = Genre::factory()->create();
         $playlist = Playlist::factory()->create([

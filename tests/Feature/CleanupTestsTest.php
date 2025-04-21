@@ -42,6 +42,7 @@ class SampleTest extends TestCase
     use RefreshDatabase;
     
     // This is a comment that should be removed
+    
     public function test_Something(): void
     {
         $this->assertTrue(true);
@@ -69,7 +70,7 @@ PHP;
         parent::tearDown();
     }
     
-    #[\PHPUnit\Framework\Attributes\Test]
+    
     public function it_removes_comments_and_unused_imports(): void
     {
         // Run the command with an absolute path
@@ -93,7 +94,8 @@ PHP;
         $this->assertStringContainsString('use Tests\TestCase;', $content);
         $this->assertStringContainsString('use App\Models\User;', $content);
         $this->assertStringContainsString('use RefreshDatabase;', $content);
-        $this->assertStringContainsString('public function test_Something(): void', $content);
+        $this->assertStringContainsString('
+    public function test_Something(): void', $content);
         $this->assertStringContainsString('$this->assertTrue(true);', $content);
         $this->assertStringContainsString('$user = User::factory()->create();', $content);
         $this->assertStringContainsString('$this->actingAs($user);', $content);

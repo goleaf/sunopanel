@@ -16,6 +16,7 @@ class TrackTest extends TestCase
     use RefreshDatabase;
     
     #[Test]
+    
     public function test_GetNameAttribute(): void
     {
         $track = Track::factory()->create(['title' => 'Test Track']);
@@ -24,6 +25,7 @@ class TrackTest extends TestCase
     }
 
     #[Test]
+    
     public function test_SetNameAttribute(): void
     {
         $track = new Track();
@@ -32,6 +34,7 @@ class TrackTest extends TestCase
     }
 
     #[Test]
+    
     public function test_Genres(): void
     {
         $track = Track::factory()->create();
@@ -42,6 +45,7 @@ class TrackTest extends TestCase
     }
 
     #[Test]
+    
     public function test_Playlists(): void
     {
         $track = Track::factory()->create();
@@ -53,6 +57,7 @@ class TrackTest extends TestCase
     }
 
     #[Test]
+    
     public function test_SyncGenres(): void
     {
         $track = Track::factory()->create();
@@ -66,6 +71,7 @@ class TrackTest extends TestCase
     }
 
     #[Test]
+    
     public function test_AssignGenres(): void
     {
         $track = Track::factory()->create();
@@ -78,6 +84,7 @@ class TrackTest extends TestCase
     }
 
     #[Test]
+    
     public function test_GetGenresListAttribute(): void
     {
         $track = Track::factory()->create();
@@ -91,6 +98,7 @@ class TrackTest extends TestCase
     }
 
     #[Test]
+    
     public function test_GetGenresArray(): void
     {
         $track = Track::factory()->create();
@@ -104,6 +112,7 @@ class TrackTest extends TestCase
     }
 
     #[Test]
+    
     public function test_GetGenresString(): void
     {
         $track = Track::factory()->create();
@@ -116,6 +125,7 @@ class TrackTest extends TestCase
     }
 
     #[Test]
+    
     public function test_FormatGenres(): void
     {
         $genresString = 'rap, rock, pop';
@@ -124,6 +134,7 @@ class TrackTest extends TestCase
     }
 
     #[Test]
+    
     public function test_GenerateUniqueId(): void
     {
         $title = 'Test Track Title';
@@ -135,6 +146,7 @@ class TrackTest extends TestCase
     }
 
     #[Test]
+    
     public function test_GetDurationSecondsAttribute(): void
     {
         $track = Track::factory()->create(['duration' => '3:45']);
@@ -143,6 +155,7 @@ class TrackTest extends TestCase
     }
 
     #[Test]
+    
     public function test_GetStoreFields(): void
     {
         $fields = (new Track())->getStoreFields();
@@ -154,6 +167,7 @@ class TrackTest extends TestCase
     }
 
     #[Test]
+    
     public function test_GetUpdateFields(): void
     {
         $fields = (new Track())->getUpdateFields();
@@ -164,6 +178,7 @@ class TrackTest extends TestCase
     }
 
     #[Test]
+    
     public function test_GetDeleteFields(): void
     {
         $fields = (new Track())->getDeleteFields();
@@ -172,6 +187,7 @@ class TrackTest extends TestCase
     }
 
     #[Test]
+    
     public function test_Factory(): void
     {
         $track = Track::factory()->create();

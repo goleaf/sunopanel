@@ -29,7 +29,7 @@ use App\Http\Livewire\ApiDocumentation;
 */
 
 // Dashboard route
-Route::get('/', Dashboard::class)->name('dashboard');
+Route::get('/', Dashboard::class)->name('dashboard.home');
 Route::get('/dashboard', Dashboard::class)->name('dashboard');
 
 // System Stats API

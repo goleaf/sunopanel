@@ -18,7 +18,7 @@ class PlaylistAddTracksTest extends TestCase
     use RefreshDatabase;
     use WithFaker;
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
     public function the_component_can_render(): void {
         $genre = Genre::factory()->create();
         $playlist = Playlist::factory()->create([
@@ -30,7 +30,7 @@ class PlaylistAddTracksTest extends TestCase
         $response->assertStatus(200);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
     public function it_can_select_all_tracks(): void {
         $genre = Genre::factory()->create();
         $playlist = Playlist::factory()->create([
@@ -53,7 +53,7 @@ class PlaylistAddTracksTest extends TestCase
         // Instead we'll verify the method is callable without errors
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
     public function it_can_deselect_all_tracks(): void {
         $genre = Genre::factory()->create();
         $playlist = Playlist::factory()->create([
@@ -68,7 +68,7 @@ class PlaylistAddTracksTest extends TestCase
             ->assertSet('selectedTracks', []);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
     public function it_can_add_tracks_to_playlist(): void {
         $genre = Genre::factory()->create();
         $playlist = Playlist::factory()->create([
@@ -96,7 +96,7 @@ class PlaylistAddTracksTest extends TestCase
         ]);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
     public function it_displays_error_when_no_tracks_selected_for_adding(): void {
         $genre = Genre::factory()->create();
         $playlist = Playlist::factory()->create([
@@ -112,7 +112,7 @@ class PlaylistAddTracksTest extends TestCase
             ]);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
     public function it_loads_playlist_track_ids_on_mount(): void {
         $genre = Genre::factory()->create();
         $playlist = Playlist::factory()->create([
@@ -127,7 +127,7 @@ class PlaylistAddTracksTest extends TestCase
             ->assertSet('playlistTrackIds', [$track1->id, $track2->id]);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
     public function it_resets_pagination_when_updating_search(): void {
         $genre = Genre::factory()->create();
         $playlist = Playlist::factory()->create([
@@ -141,7 +141,7 @@ class PlaylistAddTracksTest extends TestCase
         // we're just verifying it doesn't throw an error after LoggingService removal
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
     public function it_resets_pagination_when_updating_genre_filter(): void {
         $genre = Genre::factory()->create();
         $playlist = Playlist::factory()->create([

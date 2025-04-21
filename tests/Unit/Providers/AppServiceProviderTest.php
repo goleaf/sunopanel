@@ -11,6 +11,7 @@ class AppServiceProviderTest extends TestCase
 {
     
     #[Test]
+    
     public function test_Register(): void
     {
 
@@ -18,6 +19,7 @@ class AppServiceProviderTest extends TestCase
     }
 
     #[Test]
+    
     public function test_Boot(): void
     {
 

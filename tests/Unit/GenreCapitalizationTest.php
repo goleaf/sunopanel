@@ -13,7 +13,7 @@ class GenreCapitalizationTest extends TestCase
 {
     use RefreshDatabase;
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
     public function test_genre_format_name_method(): void
     {
         $this->assertEquals('Bubblegum bass', Genre::formatGenreName('bubblegum bass'));
@@ -33,7 +33,7 @@ class GenreCapitalizationTest extends TestCase
         $this->assertEquals('Back in Time', Genre::formatGenreName('back in time'));
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
     public function test_find_or_create_by_name(): void
     {
         $genre1 = Genre::findOrCreateByName('electronic dance music');
@@ -48,7 +48,7 @@ class GenreCapitalizationTest extends TestCase
         $this->assertEquals('Bubblegum bass', $genre4->name);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
     public function test_track_sync_genres(): void
     {
         $track = Track::factory()->create();
@@ -74,7 +74,7 @@ class GenreCapitalizationTest extends TestCase
         $this->assertEquals(1, Genre::where('name', 'Hip Hop')->count());
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    
     public function test_track_assign_genres(): void
     {
         $track = Track::factory()->create();
