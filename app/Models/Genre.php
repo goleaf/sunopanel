@@ -11,7 +11,15 @@ class Genre extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'slug'];
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
+    protected $fillable = [
+        'name',
+        'slug',
+    ];
 
     /**
      * The "booted" method of the model.
@@ -26,7 +34,7 @@ class Genre extends Model
     }
 
     /**
-     * Get the tracks associated with this genre.
+     * Get the tracks that belong to this genre.
      */
     public function tracks(): BelongsToMany
     {
