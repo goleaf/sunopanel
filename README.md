@@ -59,3 +59,94 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+# SunoPanel
+
+A Laravel application to manage and process tracks, converting MP3 files and images into MP4 videos.
+
+## Requirements
+
+- PHP 8.2 or higher
+- Composer
+- Node.js and NPM
+- Redis server for queue processing
+- FFmpeg (required for MP3 to MP4 conversion)
+
+## FFmpeg Installation
+
+### Ubuntu/Debian
+```bash
+sudo apt update
+sudo apt install ffmpeg
+```
+
+### CentOS/RHEL
+```bash
+sudo yum install epel-release
+sudo yum install ffmpeg ffmpeg-devel
+```
+
+### MacOS
+```bash
+brew install ffmpeg
+```
+
+### Windows
+Download from [FFmpeg's official website](https://ffmpeg.org/download.html) or install via Chocolatey:
+```bash
+choco install ffmpeg
+```
+
+## Installation
+
+1. Clone the repository
+2. Install PHP dependencies:
+```bash
+composer install
+```
+
+3. Install JavaScript dependencies:
+```bash
+npm install
+```
+
+4. Create a symbolic link for storage:
+```bash
+php artisan storage:link
+```
+
+5. Create the SQLite database:
+```bash
+touch database/database.sqlite
+```
+
+6. Run migrations:
+```bash
+php artisan migrate
+```
+
+7. Start the queue worker:
+```bash
+php artisan queue:work
+```
+
+8. Build assets:
+```bash
+npm run dev
+```
+
+## Usage
+
+1. Visit the "Add" page to input track information
+2. Format should be: `title.mp3|mp3_url|image_url|genres`
+3. Queue will process tracks in the background
+4. View processing status on the "Songs" page
+
+## Features
+
+- Process multiple tracks from text input
+- Download MP3 files and images
+- Convert MP3 and images to MP4 using FFmpeg
+- Track processing status with progress bars
+- Organize tracks by genres
+- Dark/light theme toggle

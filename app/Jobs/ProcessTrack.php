@@ -3,8 +3,6 @@
 namespace App\Jobs;
 
 use App\Models\Track;
-use FFMpeg\Coordinate\TimeCode;
-use FFMpeg\Format\Video\X264;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -13,7 +11,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use ProtoneMedia\LaravelFFMpeg\Support\FFMpeg;
+use Symfony\Component\Process\Process;
 
 class ProcessTrack implements ShouldQueue
 {
@@ -103,7 +101,7 @@ class ProcessTrack implements ShouldQueue
     }
 
     /**
-     * Create MP4 from MP3 and image.
+     * Create MP4 from MP3 and image using direct FFmpeg command.
      *
      * @param string $mp3Path
      * @param string $imagePath
@@ -111,22 +109,46 @@ class ProcessTrack implements ShouldQueue
      */
     protected function createMP4(string $mp3Path, string $imagePath): string
     {
+        // Define paths for input and output files
         $outputFilename = 'tracks/' . uniqid() . '_' . pathinfo($mp3Path, PATHINFO_FILENAME) . '.mp4';
-        $outputPath = Storage::disk('public')->path($outputFilename);
         
         $mp3FullPath = Storage::disk('public')->path($mp3Path);
         $imageFullPath = Storage::disk('public')->path($imagePath);
+        $outputFullPath = Storage::disk('public')->path($outputFilename);
         
-        FFMpeg::fromDisk('public')
-            ->open([$imagePath, $mp3Path])
-            ->export()
-            ->addFormatOutputMapping(new X264('aac', 'libx264'), function ($media, $format) use ($outputFilename) {
-                $format->setVideoCodec('libx264')
-                      ->setAudioCodec('aac')
-                      ->setKiloBitrate(1000);
-                return $outputFilename;
-            })
-            ->save();
+        // Ensure output directory exists
+        $outputDir = dirname($outputFullPath);
+        if (!file_exists($outputDir)) {
+            mkdir($outputDir, 0755, true);
+        }
+        
+        // Build FFmpeg command
+        $ffmpegCommand = [
+            'ffmpeg',
+            '-loop', '1',                   // Loop the image
+            '-i', $imageFullPath,           // Input image file
+            '-i', $mp3FullPath,             // Input audio file
+            '-c:v', 'libx264',              // Video codec
+            '-tune', 'stillimage',          // Optimize for still image
+            '-c:a', 'aac',                  // Audio codec
+            '-b:a', '192k',                 // Audio bitrate
+            '-pix_fmt', 'yuv420p',          // Pixel format
+            '-shortest',                    // Duration based on audio length
+            '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2', // Ensure even dimensions
+            '-y',                           // Overwrite output file if exists
+            $outputFullPath                 // Output file
+        ];
+
+        // Run FFmpeg command as a process
+        $process = new Process($ffmpegCommand);
+        $process->setTimeout(300); // 5 minutes timeout
+        
+        $process->run();
+        
+        // Check if the process was successful
+        if (!$process->isSuccessful()) {
+            throw new \Exception('FFmpeg error: ' . $process->getErrorOutput());
+        }
         
         return $outputFilename;
     }
