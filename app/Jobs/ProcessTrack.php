@@ -297,14 +297,16 @@ class ProcessTrack implements ShouldQueue
                 $normalizedName = ucwords(strtolower($genreName));
                 $slug = Str::slug($normalizedName);
                 
-                // First try to find by exact name match
-                $genre = Genre::firstOrCreate(
-                    ['slug' => $slug],
-                    [
+                // First try to find existing genre by slug
+                $genre = Genre::firstWhere('slug', $slug);
+                
+                // If not found, create a new one
+                if (!$genre) {
+                    $genre = Genre::create([
                         'name' => $normalizedName,
                         'slug' => $slug
-                    ]
-                );
+                    ]);
+                }
                 
                 Log::info("Genre found/created: {$normalizedName} with ID {$genre->id}");
                 $genreIds[] = $genre->id;
