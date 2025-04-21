@@ -7,17 +7,11 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
-        "desole/laravel-generate-request": "^1.0",
-        "doctrine/dbal": "^4.2",
         "laravel/framework": "^12.0",
-        "laravel/sanctum": "^4.0",
-        "laravel/tinker": "^2.10.1",
-        "livewire/livewire": "^3.6"
+        "laravel/tinker": "^2.10.1"
     },
     "require-dev": {
-        "barryvdh/laravel-debugbar": "^3.15",
         "fakerphp/faker": "^1.23",
-        "laravel/dusk": "^8.3",
         "laravel/pail": "^1.2.2",
         "laravel/pint": "^1.13",
         "laravel/sail": "^1.41",
@@ -30,10 +24,7 @@
             "App\\": "app/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/"
-        },
-        "files": [
-            "app/helpers.php"
-        ]
+        }
     },
     "autoload-dev": {
         "psr-4": {
@@ -63,39 +54,6 @@
         "test": [
             "@php artisan config:clear --ansi",
             "@php artisan test"
-        ],
-        "lint": [
-            "@php artisan lint:psr12 --fix"
-        ],
-        "db:optimize": [
-            "@php artisan db:optimize"
-        ],
-        "test:style": [
-            "@php artisan test:style"
-        ],
-        "test:style:check": [
-            "@php artisan test:style --check"
-        ],
-        "test:convert-comments": [
-            "@php artisan test:convert-comments"
-        ],
-        "test:add-types": [
-            "@php artisan tests:add-types"
-        ],
-        "test:refactor-all": [
-            "@php artisan tests:convert-docblocks",
-            "@php artisan tests:add-types",
-            "@php artisan tests:standardize",
-            "@php artisan tests:cleanup-skipped --fix",
-            "@php artisan tests:fix-remaining"
-        ],
-        "test:generate-stub": [
-            "@php artisan test:generate-stub"
-        ],
-        "test:all": [
-            "@lint",
-            "@test:style",
-            "@test"
         ]
     },
     "extra": {

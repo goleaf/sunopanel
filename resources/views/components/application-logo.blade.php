@@ -1,1 +1,0 @@
-<span {{ $attributes }} class="text-xl font-bold text-indigo-600">Suno Panel</span> 
