@@ -17,6 +17,9 @@
 - [x] Create views for Add, Songs, and Genres pages
 - [x] Install and configure required dependencies for MP4 creation
 - [x] Implement UI with TailwindCSS and DaisyUI
+- [x] Create Genre model with relationships
+- [x] Create Genre controller with CRUD operations
+- [x] Create Genre views (index, create, edit, show)
 
 ## Technical Requirements
 - MP3 and image download from external URLs
