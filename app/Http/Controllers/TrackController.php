@@ -35,11 +35,16 @@ class TrackController extends Controller
             });
         }
         
-        // Optional view type (grid or table)
-        $viewType = $request->input('view', 'table');
-        
-        $tracks = $query->orderBy('created_at', 'desc')->paginate(15)
-                        ->withQueryString(); // Keep the query string for pagination
+        // Sort by status (processing first) then by created_at
+        $tracks = $query->orderByRaw("CASE 
+                WHEN status = 'processing' THEN 1 
+                WHEN status = 'pending' THEN 2
+                WHEN status = 'failed' THEN 3
+                WHEN status = 'completed' THEN 4
+                ELSE 5 END")
+            ->orderBy('created_at', 'desc')
+            ->paginate(15)
+            ->withQueryString(); // Keep the query string for pagination
                         
         return view('tracks.index', compact('tracks'));
     }
