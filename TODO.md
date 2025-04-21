@@ -664,3 +664,16 @@ composer test:convert-comments
 - [ ] Implement critical CSS extraction
 - [ ] Add real user monitoring (RUM) for performance metrics
   
+## Test Refactoring Plan
+
+- [ ] Update tests to use PHP 8.2+ features like attributes instead of annotations
+- [ ] Use modern PHPUnit assertions and test practices
+- [ ] Fix skipped/incomplete tests where possible
+- [ ] Improve test code organization and reduce duplication
+- [ ] Ensure consistent use of data providers for similar test cases
+- [ ] Standardize test method naming conventions
+- [ ] Add proper type hints and return types to all test methods
+- [ ] Ensure tests follow PSR-12 coding standards
+- [ ] Update browser tests to use newer Dusk features
+- [ ] Run all tests to verify they pass after refactoring
+  
