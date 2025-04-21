@@ -3,14 +3,14 @@
 namespace App\Http\Livewire;
 
 use App\Http\Requests\TrackDeleteRequest;
+use App\Livewire\BaseComponent;
 use App\Models\Track;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Livewire\Component;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Title;
 
-class TrackShow extends Component
+class TrackShow extends BaseComponent
 {
     /**
      * Indicates if the component should be rendered on the server.
@@ -25,6 +25,18 @@ class TrackShow extends Component
     protected function rules()
     {
         return (new TrackDeleteRequest())->rules();
+    }
+
+    /**
+     * The component's initial data for SSR.
+     *
+     * @return array
+     */
+    public function boot(): array
+    {
+        return [
+            'placeholder' => 'Loading track details...'
+        ];
     }
 
     public function mount(Track $track): void
@@ -81,8 +93,8 @@ class TrackShow extends Component
     #[Title('Track Details')]
     public function render()
     {
-        return view('livewire.track-show', [
-            'track' => $this->track,
-        ]);
+        return $this->renderWithServerRendering(view('livewire.track-show', [
+            'track' => $this->track
+        ]));
     }
 } 

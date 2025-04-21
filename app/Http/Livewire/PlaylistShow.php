@@ -2,16 +2,18 @@
 
 namespace App\Http\Livewire;
 
-use App\Http\Requests\PlaylistRemoveTrackRequest;
-use Livewire\Component;
+use App\Http\Requests\PlaylistTrackRemoveRequest;
 use App\Models\Playlist;
 use App\Models\Track;
+use App\Traits\WithNotifications;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Title;
+use Throwable;
+use App\Livewire\BaseComponent;
 
-class PlaylistShow extends Component
+class PlaylistShow extends BaseComponent
 {
     /**
      * Indicates if the component should be rendered on the server.
@@ -27,14 +29,26 @@ class PlaylistShow extends Component
     public $selectedTracks = [];
     public $dragEnabled = false;
     
+    /**
+     * The component's initial data for SSR.
+     *
+     * @return array
+     */
+    public function boot(): array
+    {
+        return [
+            'placeholder' => 'Loading playlist details...'
+        ];
+    }
+    
     protected function rules()
     {
-        return (new PlaylistRemoveTrackRequest())->rules();
+        return (new PlaylistTrackRemoveRequest())->rules();
     }
     
     protected function messages()
     {
-        return (new PlaylistRemoveTrackRequest())->messages();
+        return (new PlaylistTrackRemoveRequest())->messages();
     }
 
     public function mount(Playlist $playlist)
@@ -260,9 +274,9 @@ class PlaylistShow extends Component
     #[Title('Playlist Details')]
     public function render()
     {
-        return view('livewire.playlist-show', [
+        return $this->renderWithServerRendering(view('livewire.playlist-show', [
             'playlist' => $this->playlist,
             'tracks' => $this->tracks,
-        ]);
+        ]));
     }
 } 

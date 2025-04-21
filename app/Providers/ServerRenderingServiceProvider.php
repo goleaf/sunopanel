@@ -4,9 +4,22 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 
 class ServerRenderingServiceProvider extends ServiceProvider
 {
+    /**
+     * Critical assets that should be preloaded for better performance.
+     */
+    protected array $preloadAssets = [
+        '/vendor/livewire/livewire.js' => 'script',
+        '/build/assets/app.css' => 'style',
+        '/fonts/figtree-latin-400-normal.woff2' => 'font',
+        '/fonts/figtree-latin-600-normal.woff2' => 'font',
+    ];
+
     /**
      * Register services.
      */
@@ -20,6 +33,12 @@ class ServerRenderingServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Disable SSR for testing environment
+        if ($this->app->environment('testing')) {
+            config(['livewire.ssr.enabled' => false]);
+            return;
+        }
+        
         // Configure SSR for Livewire 3
         config(['livewire.ssr.enabled' => true]);
         
@@ -55,5 +74,16 @@ class ServerRenderingServiceProvider extends ServiceProvider
                 break;
             }
         }
+        
+        // Add middleware to handle preloading critical assets
+        $this->app->booted(function () {
+            // Add middleware to the web group to add preload headers
+            $kernel = $this->app->make(\Illuminate\Contracts\Http\Kernel::class);
+            $kernel->prependToMiddlewarePriority(\App\Http\Middleware\AddPreloadHeaders::class);
+            
+            // Register the middleware in the web group
+            $router = $this->app['router'];
+            $router->pushMiddlewareToGroup('web', \App\Http\Middleware\AddPreloadHeaders::class);
+        });
     }
 } 

@@ -5,16 +5,18 @@ namespace App\Http\Livewire;
 use App\Http\Requests\TrackStoreRequest;
 use App\Models\Genre;
 use App\Models\Track;
+use App\Traits\WithNotifications;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\Attributes\Title;
+use Throwable;
+use App\Livewire\BaseComponent;
 
-class TrackCreate extends Component
+class TrackCreate extends BaseComponent
 {
     use WithFileUploads;
     
@@ -32,6 +34,18 @@ class TrackCreate extends Component
     public $selectedGenres = [];
     public $audioFile;
     public $imageFile;
+    
+    /**
+     * The component's initial data for SSR.
+     *
+     * @return array
+     */
+    public function boot(): array
+    {
+        return [
+            'placeholder' => 'Loading track creation form...'
+        ];
+    }
     
     protected function rules()
     {
@@ -162,8 +176,8 @@ class TrackCreate extends Component
     {
         $genres = Genre::orderBy('name')->get();
         
-        return view('livewire.track-create', [
+        return $this->renderWithServerRendering(view('livewire.track-create', [
             'genres' => $genres,
-        ]);
+        ]));
     }
 } 

@@ -77,3 +77,8 @@ Route::get('/livewire/livewire.js', function () {
         'Cache-Control' => 'public, max-age=31536000', // Cache for 1 year
     ]);
 })->name('livewire.js');
+
+// Offline page for service worker
+Route::get('/offline', function () {
+    return view('errors.offline');
+})->name('offline');

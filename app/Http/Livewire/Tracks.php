@@ -6,6 +6,7 @@ use App\Http\Requests\BulkTrackRequest;
 use App\Http\Requests\TrackListRequest;
 use App\Http\Requests\TrackStoreRequest;
 use App\Http\Requests\TrackUpdateRequest;
+use App\Livewire\BaseComponent;
 use App\Models\Genre;
 use App\Models\Track;
 use App\Traits\WithNotifications;
@@ -13,13 +14,12 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use Livewire\Component;
 use Livewire\WithPagination;
 use Throwable;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Layout;
 
-class Tracks extends Component
+class Tracks extends BaseComponent
 {
     use WithPagination;
     use WithNotifications;
@@ -406,9 +406,9 @@ class Tracks extends Component
         // Get paginated results
         $tracks = $query->paginate($this->perPage);
         
-        return view('livewire.tracks', [
+        return $this->renderWithServerRendering(view('livewire.tracks', [
             'tracks' => $tracks,
             'genres' => $genres,
-        ])->renderOnServer();
+        ]));
     }
 } 

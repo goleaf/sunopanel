@@ -3,7 +3,6 @@
 namespace App\Http\Livewire;
 
 use App\Http\Requests\PlaylistStoreTracksRequest;
-use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\Playlist;
 use App\Models\Track;
@@ -12,8 +11,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Title;
+use App\Livewire\BaseComponent;
 
-class PlaylistAddTracks extends Component
+class PlaylistAddTracks extends BaseComponent
 {
     use WithPagination;
 
@@ -30,6 +30,20 @@ class PlaylistAddTracks extends Component
     public $selectedTracks = [];
     public $playlistTrackIds = [];
     
+    /**
+     * The component's initial data for SSR.
+     *
+     * @return array
+     */
+    public function boot(): array
+    {
+        return [
+            'placeholder' => 'Loading playlist tracks...',
+            'search' => $this->search,
+            'genreFilter' => $this->genreFilter
+        ];
+    }
+
     protected $queryString = [
         'search' => ['except' => ''],
         'genreFilter' => ['except' => ''],
@@ -244,9 +258,15 @@ class PlaylistAddTracks extends Component
     #[Title('Add Tracks to Playlist')]
     public function render()
     {
-        return view('livewire.playlist-add-tracks', [
-            'availableTracks' => $this->getFilteredTracks(),
-            'genres' => Genre::orderBy('name')->get(),
-        ]);
+        $tracks = $this->getFilteredTracks()
+            ->whereNotIn('id', $this->playlistTrackIds)
+            ->paginate(10);
+            
+        $genres = Genre::orderBy('name')->get();
+        
+        return $this->renderWithServerRendering(view('livewire.playlist-add-tracks', [
+            'tracks' => $tracks,
+            'genres' => $genres,
+        ]));
     }
 } 

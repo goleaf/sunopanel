@@ -136,7 +136,7 @@
     </div>
 
     <!-- Livewire Scripts -->
-    @livewireScriptConfig(['nonce' => csp_nonce()])
+    @livewireScriptConfig(['nonce' => null])
     
     <!-- CSS for Livewire Navigation indicator -->
     <style>

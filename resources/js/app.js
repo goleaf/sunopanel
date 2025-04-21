@@ -2,6 +2,19 @@ import './bootstrap';
 import Alpine from 'alpinejs';
 import Sortable from 'sortablejs';
 
+// Register service worker for offline capabilities
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+            .then(registration => {
+                console.log('Service Worker registered with scope:', registration.scope);
+            })
+            .catch(error => {
+                console.log('Service Worker registration failed:', error);
+            });
+    });
+}
+
 // Initialize Livewire navigation progress
 document.addEventListener('livewire:navigating', () => {
     // Add server-side navigation indicator
