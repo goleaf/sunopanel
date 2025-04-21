@@ -52,7 +52,7 @@
                     <div>
                         <div class="mb-4">
                             <h3 class="text-lg font-semibold mb-2">Status</h3>
-                            <div id="track-status" class="flex items-center">
+                            <div id="track-status" data-status="{{ $track->status }}" class="flex items-center">
                                 @if($track->status === 'completed')
                                 <div class="badge badge-lg badge-success gap-2">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -87,7 +87,7 @@
                         
                         <div class="mb-4">
                             <h3 class="text-lg font-semibold mb-2">Progress</h3>
-                            <div id="track-progress">
+                            <div id="track-progress" data-progress="{{ $track->progress }}">
                                 @if($track->status === 'processing')
                                 <div class="w-full bg-gray-200 rounded-full h-4 dark:bg-gray-700">
                                     <div class="bg-primary h-4 rounded-full transition-all duration-300" style="width: {{ $track->progress }}%"></div>
@@ -155,16 +155,12 @@
                             @endif
                             
                             @if($track->status === 'failed')
-                            <form action="{{ route('tracks.retry', $track) }}" method="POST">
-                                @csrf
-                                <input type="hidden" name="redirect_back" value="1">
-                                <button type="submit" class="btn btn-warning btn-sm gap-2">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                    </svg>
-                                    Retry Processing
-                                </button>
-                            </form>
+                            <button type="button" id="retry-track" class="btn btn-warning btn-sm gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                                Retry Processing
+                            </button>
                             @endif
                             
                             <form action="{{ route('tracks.destroy', $track) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this track?')">
@@ -276,96 +272,68 @@
 </div>
 
 @if($track->status === 'processing' || $track->status === 'pending')
-<script>
+<!-- CSRF Token for API requests -->
+<meta name="csrf-token" content="{{ csrf_token() }}">
+
+@vite(['resources/js/track-status.js'])
+<script type="module">
+import TrackStatusAPI from "{{ Vite::asset('resources/js/track-status.js') }}";
+
 document.addEventListener('DOMContentLoaded', function() {
     const trackId = {{ $track->id }};
     const statusEl = document.getElementById('track-status');
     const progressEl = document.getElementById('track-progress');
     
-    function updateTrackStatus() {
-        fetch(`/tracks/${trackId}/status`)
-            .then(response => response.json())
-            .then(data => {
-                // Update status
-                let statusHTML;
-                if (data.status === 'completed') {
-                    statusHTML = `
-                        <div class="badge badge-lg badge-success gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                            </svg>
-                            Completed
-                        </div>`;
-                } else if (data.status === 'processing') {
-                    statusHTML = `
-                        <div class="badge badge-lg badge-warning gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                            </svg>
-                            Processing
-                        </div>`;
-                } else if (data.status === 'failed') {
-                    statusHTML = `
-                        <div class="badge badge-lg badge-error gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                            Failed
-                        </div>`;
-                } else {
-                    statusHTML = `
-                        <div class="badge badge-lg badge-info gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            Pending
-                        </div>`;
-                }
-                statusEl.innerHTML = statusHTML;
-                
-                // Update progress
-                let progressHTML;
-                if (data.status === 'processing') {
-                    progressHTML = `
-                        <div class="w-full bg-gray-200 rounded-full h-4 dark:bg-gray-700">
-                            <div class="bg-primary h-4 rounded-full transition-all duration-300" style="width: ${data.progress}%"></div>
-                        </div>
-                        <span class="text-sm mt-1 inline-block">${data.progress}% complete</span>
-                    `;
-                } else if (data.status === 'completed') {
-                    progressHTML = `
-                        <div class="w-full bg-gray-200 rounded-full h-4 dark:bg-gray-700">
-                            <div class="bg-success h-4 rounded-full" style="width: 100%"></div>
-                        </div>
-                        <span class="text-sm mt-1 inline-block">100% complete</span>
-                    `;
-                    // Reload page after a short delay to show completed state
-                    setTimeout(() => window.location.reload(), 1000);
-                } else if (data.status === 'failed') {
-                    progressHTML = `
-                        <div class="w-full bg-gray-200 rounded-full h-4 dark:bg-gray-700">
-                            <div class="bg-error h-4 rounded-full" style="width: 100%"></div>
-                        </div>
-                        <span class="text-sm mt-1 inline-block">Processing failed</span>
-                    `;
-                    // Reload page after a short delay to show error details
-                    setTimeout(() => window.location.reload(), 1000);
-                } else {
-                    progressHTML = `
-                        <div class="w-full bg-gray-200 rounded-full h-4 dark:bg-gray-700">
-                            <div class="bg-info h-4 rounded-full" style="width: 0%"></div>
-                        </div>
-                        <span class="text-sm mt-1 inline-block">Waiting to start...</span>
-                    `;
-                }
-                progressEl.innerHTML = progressHTML;
-            })
-            .catch(error => console.error('Error updating track status:', error));
-    }
+    // Initialize track status updater
+    const statusUpdater = new TrackStatusAPI({
+        interval: 3000
+    });
     
-    // Initially update status, then every 3 seconds
-    updateTrackStatus();
-    setInterval(updateTrackStatus, 3000);
+    // Register track for monitoring and enable page reload when complete
+    statusUpdater.watchTrack(trackId, {
+        status: statusEl,
+        progress: progressEl,
+        reload: true
+    });
+    
+    // Start the status updater
+    statusUpdater.start();
+});
+</script>
+@endif
+
+@if($track->status === 'failed')
+<!-- CSRF Token for API requests -->
+<meta name="csrf-token" content="{{ csrf_token() }}">
+
+@vite(['resources/js/track-status.js'])
+<script type="module">
+import TrackStatusAPI from "{{ Vite::asset('resources/js/track-status.js') }}";
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle retry button
+    const retryButton = document.getElementById('retry-track');
+    if (retryButton) {
+        retryButton.addEventListener('click', async function() {
+            try {
+                // Show loading state
+                this.classList.add('loading');
+                
+                // Call retry API
+                const result = await TrackStatusAPI.retryTrack({{ $track->id }});
+                
+                if (result.success) {
+                    // Reload the page to show pending state
+                    window.location.reload();
+                }
+            } catch (error) {
+                console.error('Failed to retry track:', error);
+                alert('Failed to retry track: ' + error.message);
+            } finally {
+                this.classList.remove('loading');
+            }
+        });
+    }
 });
 </script>
 @endif
