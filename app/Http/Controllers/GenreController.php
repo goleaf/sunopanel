@@ -13,9 +13,9 @@ class GenreController extends Controller
     /**
      * Display a listing of the genres.
      */
-    public function index(): View
+    public function index(Request $request): View
     {
-        $genres = Genre::withCount('tracks')->orderBy('name')->paginate(15);
+        $genres = Genre::withCount('tracks')->orderBy('name')->paginate(15)->withQueryString();
         
         return view('genres.index', compact('genres'));
     }
@@ -48,9 +48,9 @@ class GenreController extends Controller
     /**
      * Display the specified genre.
      */
-    public function show(Genre $genre): View
+    public function show(Request $request, Genre $genre): View
     {
-        $tracks = $genre->tracks()->paginate(15);
+        $tracks = $genre->tracks()->paginate(15)->withQueryString();
         
         return view('genres.show', compact('genre', 'tracks'));
     }

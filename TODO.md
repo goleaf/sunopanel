@@ -22,6 +22,7 @@
 - [x] Create Genre controller with CRUD operations
 - [x] Create Genre views (index, create, edit, show)
 - [x] Implement immediate job processing with error checking
+- [ ] Implement grid view for tracks with toggle between table and grid view
 
 ## Technical Requirements
 - [x] MP3 and image download from external URLs

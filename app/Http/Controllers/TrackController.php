@@ -35,6 +35,9 @@ class TrackController extends Controller
             });
         }
         
+        // Optional view type (grid or table)
+        $viewType = $request->input('view', 'table');
+        
         $tracks = $query->orderBy('created_at', 'desc')->paginate(15)
                         ->withQueryString(); // Keep the query string for pagination
                         
