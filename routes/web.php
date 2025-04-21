@@ -27,6 +27,7 @@ Route::get('/tracks/{track}', [TrackController::class, 'show'])->name('tracks.sh
 Route::delete('/tracks/{track}', [TrackController::class, 'destroy'])->name('tracks.destroy');
 Route::get('/tracks/{track}/status', [TrackController::class, 'status'])->name('tracks.status');
 Route::post('/tracks/{track}/retry', [TrackController::class, 'retry'])->name('tracks.retry');
+Route::post('/tracks/retry-all', [TrackController::class, 'retryAll'])->name('tracks.retry-all');
 
 // Genre routes
 Route::resource('genres', GenreController::class);

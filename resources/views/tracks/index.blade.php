@@ -5,84 +5,65 @@
     <!-- Search and Filter Section -->
     <div class="card bg-base-100 shadow-xl mb-6">
         <div class="card-body p-4">
-            <form action="{{ route('tracks.index') }}" method="GET">
-                <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <form action="{{ route('tracks.index') }}" method="GET" class="w-full">
+                <div class="flex flex-wrap items-center gap-3">
                     <!-- Search -->
-                    <div class="relative col-span-1 md:col-span-3 lg:col-span-2">
-                        <div class="flex items-center bg-base-200 rounded-lg overflow-hidden shadow-sm">
-                            <div class="p-3 text-gray-500">
+                    <div class="flex-1 min-w-[200px]">
+                        <div class="input-group">
+                            <span class="btn btn-square bg-base-200 border-base-200">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                 </svg>
-                            </div>
+                            </span>
                             <input type="text" name="search" placeholder="Search by title..." value="{{ request('search') }}" 
-                                class="input w-full bg-transparent border-none focus:outline-none focus:ring-0" />
+                                class="input input-bordered w-full" />
                         </div>
                     </div>
                     
-                    <div class="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-4">
-                        <!-- Status -->
-                        <div class="relative">
-                            <label class="label text-xs text-gray-500 pb-1">
-                                <span class="label-text">Filter by Status</span>
-                            </label>
-                            <div class="flex items-center bg-base-200 rounded-lg overflow-hidden shadow-sm">
-                                <div class="p-3 text-gray-500">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                </div>
-                                <select name="status" class="select w-full bg-transparent border-none focus:outline-none focus:ring-0">
-                                    <option value="">All Statuses</option>
-                                    <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pending</option>
-                                    <option value="processing" {{ request('status') === 'processing' ? 'selected' : '' }}>Processing</option>
-                                    <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>Completed</option>
-                                    <option value="failed" {{ request('status') === 'failed' ? 'selected' : '' }}>Failed</option>
-                                </select>
-                            </div>
-                        </div>
-                        
-                        <!-- Genre -->
-                        <div class="relative">
-                            <label class="label text-xs text-gray-500 pb-1">
-                                <span class="label-text">Filter by Genre</span>
-                            </label>
-                            <div class="flex items-center bg-base-200 rounded-lg overflow-hidden shadow-sm">
-                                <div class="p-3 text-gray-500">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                                    </svg>
-                                </div>
-                                <select name="genre" class="select w-full bg-transparent border-none focus:outline-none focus:ring-0">
-                                    <option value="">All Genres</option>
-                                    @php
-                                        $genres = \App\Models\Genre::orderBy('name')->get();
-                                    @endphp
-                                    @foreach($genres as $genre)
-                                        <option value="{{ $genre->slug }}" {{ request('genre') === $genre->slug ? 'selected' : '' }}>
-                                            {{ $genre->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
+                    <!-- Status -->
+                    <div class="min-w-[150px]">
+                        <select name="status" class="select select-bordered w-full">
+                            <option value="">All Statuses</option>
+                            <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pending</option>
+                            <option value="processing" {{ request('status') === 'processing' ? 'selected' : '' }}>Processing</option>
+                            <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>Completed</option>
+                            <option value="failed" {{ request('status') === 'failed' ? 'selected' : '' }}>Failed</option>
+                        </select>
                     </div>
-                </div>
-                
-                <!-- Buttons -->
-                <div class="flex justify-end mt-4 gap-2">
-                    <a href="{{ route('tracks.index') }}" class="btn btn-outline">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                        </svg>
-                        Reset
-                    </a>
-                    <button type="submit" class="btn btn-primary">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                        </svg>
-                        Apply Filters
-                    </button>
+                    
+                    <!-- Genre -->
+                    <div class="min-w-[150px]">
+                        <select name="genre" class="select select-bordered w-full">
+                            <option value="">All Genres</option>
+                            @php
+                                $genres = \App\Models\Genre::orderBy('name')->get();
+                            @endphp
+                            @foreach($genres as $genre)
+                                <option value="{{ $genre->slug }}" {{ request('genre') === $genre->slug ? 'selected' : '' }}>
+                                    {{ $genre->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    
+                    <!-- Buttons -->
+                    <div>
+                        <button type="submit" class="btn btn-primary">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                            </svg>
+                            Filter
+                        </button>
+                    </div>
+                    
+                    <div>
+                        <a href="{{ route('tracks.index') }}" class="btn btn-outline">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                            Reset
+                        </a>
+                    </div>
                 </div>
             </form>
         </div>
@@ -98,6 +79,79 @@
     <div class="alert alert-warning mb-6">
         {{ session('warning') }}
     </div>
+    @endif
+
+    <!-- Status Summary Section -->
+    @php
+        $totalTracks = $tracks->total();
+        $completedCount = $tracks->where('status', 'completed')->count();
+        $pendingCount = $tracks->where('status', 'pending')->count();
+        $processingCount = $tracks->where('status', 'processing')->count();
+        $failedCount = $tracks->where('status', 'failed')->count();
+        
+        // If we're filtering, we won't have accurate totals, so we need a separate query
+        if (request()->filled('search') || request()->filled('status') || request()->filled('genre')) {
+            $completedCount = \App\Models\Track::where('status', 'completed')->count();
+            $pendingCount = \App\Models\Track::where('status', 'pending')->count();
+            $processingCount = \App\Models\Track::where('status', 'processing')->count();
+            $failedCount = \App\Models\Track::where('status', 'failed')->count();
+            $totalTracks = $completedCount + $pendingCount + $processingCount + $failedCount;
+        }
+    @endphp
+
+    @if($totalTracks > 0)
+    <div class="stats shadow mb-6 w-full">
+        <div class="stat place-items-center">
+            <div class="stat-title">Total</div>
+            <div class="stat-value">{{ $totalTracks }}</div>
+            <div class="stat-desc">Tracks</div>
+        </div>
+        
+        <div class="stat place-items-center">
+            <div class="stat-title">Completed</div>
+            <div class="stat-value text-success">{{ $completedCount }}</div>
+            <div class="stat-desc">Ready to use</div>
+        </div>
+        
+        <div class="stat place-items-center">
+            <div class="stat-title">Processing</div>
+            <div class="stat-value text-warning">{{ $processingCount }}</div>
+            <div class="stat-desc">In progress</div>
+        </div>
+        
+        <div class="stat place-items-center">
+            <div class="stat-title">Pending</div>
+            <div class="stat-value text-info">{{ $pendingCount }}</div>
+            <div class="stat-desc">Waiting to process</div>
+        </div>
+        
+        <div class="stat place-items-center">
+            <div class="stat-title">Failed</div>
+            <div class="stat-value text-error">{{ $failedCount }}</div>
+            <div class="stat-desc">Need attention</div>
+        </div>
+    </div>
+    @endif
+
+    @if($failedCount > 0)
+    <div class="flex justify-end mb-4">
+        <form action="{{ route('tracks.retry-all') }}" method="POST" id="retryAllForm">
+            @csrf
+            <button type="button" onclick="confirmRetryAll()" class="btn btn-warning">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Retry All Failed Tracks ({{ $failedCount }})
+            </button>
+        </form>
+    </div>
+    <script>
+        function confirmRetryAll() {
+            if (confirm('Are you sure you want to retry all failed tracks?')) {
+                document.getElementById('retryAllForm').submit();
+            }
+        }
+    </script>
     @endif
 
     @if(session('failed_tracks'))
@@ -136,28 +190,28 @@
             @else
             <!-- Table View -->
             <div class="overflow-x-auto">
-                <table class="table table-zebra w-full">
+                <table class="table table-zebra table-compact w-full">
                     <thead>
                         <tr>
-                            <th class="w-1/3">Track</th>
+                            <th>Track</th>
                             <th>Genres</th>
-                            <th class="w-24">Status</th>
-                            <th class="w-32">Progress</th>
-                            <th class="w-36 text-right">Actions</th>
+                            <th class="w-20">Status</th>
+                            <th class="w-24">Progress</th>
+                            <th class="w-28 text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($tracks as $track)
                         <tr data-track-id="{{ $track->id }}" class="hover @if($track->status === 'processing') bg-warning bg-opacity-10 @endif">
                             <td>
-                                <div class="flex items-center space-x-4">
+                                <div class="flex items-center space-x-3">
                                     <a href="{{ route('tracks.show', $track) }}" class="block">
                                         <div class="avatar">
-                                            <div class="mask mask-squircle w-16 h-16 bg-base-200 flex items-center justify-center overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                                            <div class="mask mask-squircle w-10 h-10 bg-base-200 flex items-center justify-center overflow-hidden">
                                                 @if($track->image_path)
                                                     <img src="{{ $track->image_storage_url }}" alt="{{ $track->title }}" class="w-full h-full object-cover" />
                                                 @else
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
                                                     </svg>
                                                 @endif
@@ -165,67 +219,75 @@
                                         </div>
                                     </a>
                                     <div>
-                                        <a href="{{ route('tracks.show', $track) }}" class="font-medium hover:underline text-lg">
-                                            {{ $track->title }}
+                                        <a href="{{ route('tracks.show', $track) }}" class="font-medium hover:underline">
+                                            {{ Str::limit($track->title, 30) }}
                                         </a>
-                                        <div class="text-xs opacity-60 mt-1">
-                                            Added: {{ $track->created_at->format('Y-m-d H:i') }}
+                                        <div class="text-xs opacity-60">
+                                            Added: {{ $track->created_at->format('Y-m-d') }}
+                                            @if($track->mp3_path)
+                                            · <span class="tooltip" data-tip="Play audio">
+                                                <button onclick="toggleAudio('audio-{{ $track->id }}')" class="text-primary hover:underline">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                    </svg>
+                                                </button>
+                                            </span>
+                                            @endif
                                         </div>
-                                        @if($track->mp3_path)
-                                        <div class="mt-2">
-                                            <audio controls class="w-full h-8 max-w-xs">
-                                                <source src="{{ $track->mp3_storage_url }}" type="audio/mpeg">
-                                                Your browser does not support the audio element.
-                                            </audio>
-                                        </div>
-                                        @endif
                                     </div>
                                 </div>
+                                @if($track->mp3_path)
+                                <audio id="audio-{{ $track->id }}" class="hidden w-full h-6 mt-2">
+                                    <source src="{{ $track->mp3_storage_url }}" type="audio/mpeg">
+                                    Your browser does not support the audio element.
+                                </audio>
+                                @endif
                             </td>
                             <td>
                                 <div class="flex flex-wrap gap-1">
                                     @forelse($track->genres as $genre)
-                                    <a href="{{ route('genres.show', $genre) }}" class="badge badge-primary">
+                                    <a href="{{ route('genres.show', $genre) }}" class="badge badge-sm">
                                         {{ $genre->name }}
                                     </a>
                                     @empty
-                                    <span class="text-gray-500">No genres</span>
+                                    <span class="text-xs text-gray-500">None</span>
                                     @endforelse
                                 </div>
                             </td>
                             <td class="track-status">
                                 @if($track->status === 'completed')
-                                <span class="badge badge-success">Completed</span>
+                                <span class="badge badge-sm badge-success">Completed</span>
                                 @elseif($track->status === 'processing')
-                                <span class="badge badge-warning">Processing</span>
+                                <span class="badge badge-sm badge-warning">Processing</span>
                                 @elseif($track->status === 'failed')
-                                <span class="badge badge-error">Failed</span>
+                                <span class="badge badge-sm badge-error">Failed</span>
                                 @else
-                                <span class="badge badge-info">Pending</span>
+                                <span class="badge badge-sm badge-info">Pending</span>
                                 @endif
                             </td>
                             <td>
                                 <div class="track-progress">
                                     @if($track->status === 'processing')
-                                    <progress class="progress progress-primary w-full" value="{{ $track->progress }}" max="100"></progress>
-                                    <span class="text-xs text-right">{{ $track->progress }}%</span>
+                                    <progress class="progress progress-xs progress-primary w-full" value="{{ $track->progress }}" max="100"></progress>
+                                    <span class="text-[10px] block text-right">{{ $track->progress }}%</span>
                                     @elseif($track->status === 'completed')
-                                    <progress class="progress progress-success w-full" value="100" max="100"></progress>
-                                    <span class="text-xs text-right">100%</span>
+                                    <progress class="progress progress-xs progress-success w-full" value="100" max="100"></progress>
+                                    <span class="text-[10px] block text-right">100%</span>
                                     @elseif($track->status === 'failed')
                                     <div class="tooltip" data-tip="{{ $track->error_message }}">
-                                        <progress class="progress progress-error w-full" value="100" max="100"></progress>
+                                        <progress class="progress progress-xs progress-error w-full" value="100" max="100"></progress>
                                     </div>
                                     @else
-                                    <progress class="progress w-full" value="0" max="100"></progress>
-                                    <span class="text-xs text-right">0%</span>
+                                    <progress class="progress progress-xs w-full" value="0" max="100"></progress>
+                                    <span class="text-[10px] block text-right">0%</span>
                                     @endif
                                 </div>
                             </td>
                             <td class="text-right">
                                 <div class="flex space-x-1 justify-end">
-                                    <a href="{{ route('tracks.show', $track) }}" class="btn btn-sm btn-outline">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <a href="{{ route('tracks.show', $track) }}" class="btn btn-xs btn-circle btn-outline">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                         </svg>
@@ -233,8 +295,8 @@
                                     @if($track->status === 'failed')
                                     <form action="{{ route('tracks.retry', $track) }}" method="POST">
                                         @csrf
-                                        <button type="submit" class="btn btn-sm btn-warning">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <button type="submit" class="btn btn-xs btn-circle btn-warning">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                             </svg>
                                         </button>
@@ -243,8 +305,8 @@
                                     <form action="{{ route('tracks.destroy', $track) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this track?')">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-error">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <button type="submit" class="btn btn-xs btn-circle btn-error">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                             </svg>
                                         </button>
@@ -270,6 +332,28 @@
 document.addEventListener('DOMContentLoaded', function() {
     const trackRows = document.querySelectorAll('[data-track-id]');
     
+    // Function to toggle audio playback
+    window.toggleAudio = function(audioId) {
+        const audio = document.getElementById(audioId);
+        
+        // Hide all other audio players
+        document.querySelectorAll('audio').forEach(player => {
+            if (player.id !== audioId) {
+                player.pause();
+                player.classList.add('hidden');
+            }
+        });
+        
+        // Toggle current audio player
+        if (audio.classList.contains('hidden')) {
+            audio.classList.remove('hidden');
+            audio.play();
+        } else {
+            audio.pause();
+            audio.classList.add('hidden');
+        }
+    };
+    
     // Update function for tracks that are in progress
     function updateTrackStatus() {
         trackRows.forEach(row => {
@@ -286,16 +370,16 @@ document.addEventListener('DOMContentLoaded', function() {
                         // Update status
                         let statusHTML;
                         if (data.status === 'completed') {
-                            statusHTML = '<span class="badge badge-success">Completed</span>';
+                            statusHTML = '<span class="badge badge-sm badge-success">Completed</span>';
                             row.classList.remove('bg-warning', 'bg-opacity-10');
                         } else if (data.status === 'processing') {
-                            statusHTML = '<span class="badge badge-warning">Processing</span>';
+                            statusHTML = '<span class="badge badge-sm badge-warning">Processing</span>';
                             row.classList.add('bg-warning', 'bg-opacity-10');
                         } else if (data.status === 'failed') {
-                            statusHTML = '<span class="badge badge-error">Failed</span>';
+                            statusHTML = '<span class="badge badge-sm badge-error">Failed</span>';
                             row.classList.remove('bg-warning', 'bg-opacity-10');
                         } else {
-                            statusHTML = '<span class="badge badge-info">Pending</span>';
+                            statusHTML = '<span class="badge badge-sm badge-info">Pending</span>';
                             row.classList.remove('bg-warning', 'bg-opacity-10');
                         }
                         statusCell.innerHTML = statusHTML;
@@ -304,27 +388,34 @@ document.addEventListener('DOMContentLoaded', function() {
                         let progressHTML;
                         if (data.status === 'processing') {
                             progressHTML = `
-                                <progress class="progress progress-primary w-full" value="${data.progress}" max="100"></progress>
-                                <span class="text-xs text-right">${data.progress}%</span>
+                                <progress class="progress progress-xs progress-primary w-full" value="${data.progress}" max="100"></progress>
+                                <span class="text-[10px] block text-right">${data.progress}%</span>
                             `;
                         } else if (data.status === 'completed') {
                             progressHTML = `
-                                <progress class="progress progress-success w-full" value="100" max="100"></progress>
-                                <span class="text-xs text-right">100%</span>
+                                <progress class="progress progress-xs progress-success w-full" value="100" max="100"></progress>
+                                <span class="text-[10px] block text-right">100%</span>
                             `;
                         } else if (data.status === 'failed') {
                             progressHTML = `
                                 <div class="tooltip" data-tip="${data.error_message}">
-                                    <progress class="progress progress-error w-full" value="100" max="100"></progress>
+                                    <progress class="progress progress-xs progress-error w-full" value="100" max="100"></progress>
                                 </div>
                             `;
                         } else {
                             progressHTML = `
-                                <progress class="progress w-full" value="0" max="100"></progress>
-                                <span class="text-xs text-right">0%</span>
+                                <progress class="progress progress-xs w-full" value="0" max="100"></progress>
+                                <span class="text-[10px] block text-right">0%</span>
                             `;
                         }
                         progressCell.innerHTML = progressHTML;
+                        
+                        // Refresh status counts if status changed
+                        if (data.status !== statusCell.textContent.trim()) {
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 2000);
+                        }
                     })
                     .catch(error => console.error('Error updating track status:', error));
             }

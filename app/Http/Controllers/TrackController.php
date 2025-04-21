@@ -102,7 +102,7 @@ class TrackController extends Controller
     /**
      * Retry processing a failed track.
      */
-    public function retry(Track $track)
+    public function retry(Request $request, Track $track)
     {
         // Reset track status
         $track->update([
@@ -114,7 +114,42 @@ class TrackController extends Controller
         // Dispatch the job
         \App\Jobs\ProcessTrack::dispatch($track);
         
+        // Check if we should redirect back
+        if ($request->has('redirect_back')) {
+            return back()->with('success', "Track '{$track->title}' has been requeued for processing.");
+        }
+        
+        // Default behavior is to redirect to the tracks index
         return redirect()->route('tracks.index')
             ->with('success', "Track '{$track->title}' has been requeued for processing.");
+    }
+
+    /**
+     * Retry processing all failed tracks.
+     */
+    public function retryAll(Request $request)
+    {
+        // Get all failed tracks
+        $failedTracks = Track::where('status', 'failed')->get();
+        $count = $failedTracks->count();
+        
+        if ($count === 0) {
+            return redirect()->route('tracks.index')
+                ->with('info', 'No failed tracks to retry.');
+        }
+        
+        // Reset status and dispatch jobs for all failed tracks
+        foreach ($failedTracks as $track) {
+            $track->update([
+                'status' => 'pending',
+                'progress' => 0,
+                'error_message' => null,
+            ]);
+            
+            \App\Jobs\ProcessTrack::dispatch($track);
+        }
+        
+        return redirect()->route('tracks.index')
+            ->with('success', "{$count} failed tracks have been requeued for processing.");
     }
 }
