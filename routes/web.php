@@ -4,6 +4,7 @@ use App\Http\Controllers\GenreController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\TrackController;
 use App\Http\Controllers\VideoUploadController;
+use App\Http\Controllers\YouTubeController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -78,33 +79,22 @@ Route::get('/test-track-stop/{id}', function($id) {
 
 // YouTube Integration
 Route::prefix('youtube')->name('youtube.')->group(function () {
+    // Main routes
+    Route::get('/', [YouTubeController::class, 'index'])->name('index');
+    Route::get('/status', [YouTubeController::class, 'status'])->name('status');
+    
     // Authentication
-    Route::get('/auth', [App\Http\Controllers\Api\YouTubeAuthController::class, 'index'])->name('auth');
-    Route::get('/connect', [App\Http\Controllers\Api\YouTubeAuthController::class, 'redirectToProvider'])->name('auth.redirect');
-    Route::get('/callback', [App\Http\Controllers\Api\YouTubeAuthController::class, 'handleProviderCallback'])->name('auth.callback');
-    Route::post('/toggle-oauth', [App\Http\Controllers\Api\YouTubeAuthController::class, 'toggleOAuth'])->name('toggle.oauth');
-    Route::post('/toggle-simple', [App\Http\Controllers\Api\YouTubeAuthController::class, 'toggleSimple'])->name('toggle.simple');
-    
-    // Add missing status route
-    Route::get('/status', [App\Http\Controllers\Api\YouTubeAuthController::class, 'status'])->name('status');
-    
-    // Simple YouTube Uploader Login
-    Route::get('/login', [App\Http\Controllers\Api\YouTubeAuthController::class, 'showLoginForm'])->name('auth.login_form');
-    Route::post('/login', [App\Http\Controllers\Api\YouTubeAuthController::class, 'saveCredentials'])->name('auth.save_credentials');
-    
-    // Configuration Instructions
-    Route::get('/config', [App\Http\Controllers\YouTubeDiagnosticsController::class, 'showConfigInstructions'])->name('config');
+    Route::get('/auth', [YouTubeController::class, 'redirectToProvider'])->name('auth');
+    Route::post('/credentials', [YouTubeController::class, 'saveCredentials'])->name('save.credentials');
     
     // Upload
-    Route::get('/upload', [App\Http\Controllers\YouTubeUploadController::class, 'showUploadForm'])->name('upload.form');
-    Route::post('/upload', [App\Http\Controllers\YouTubeUploadController::class, 'uploadTrack'])->name('upload.process');
-    Route::get('/uploads', [App\Http\Controllers\YouTubeUploadController::class, 'viewUploads'])->name('uploads');
-    Route::post('/tracks/{id}/upload', [App\Http\Controllers\YouTubeUploadController::class, 'uploadTrackDirect'])->name('upload.direct');
+    Route::get('/upload', [YouTubeController::class, 'showUploadForm'])->name('upload.form');
+    Route::post('/upload', [YouTubeController::class, 'uploadTrack'])->name('upload.process');
+    Route::get('/uploads', [YouTubeController::class, 'uploads'])->name('uploads');
     
-    // Diagnostics
-    Route::get('/diagnostics', [App\Http\Controllers\YouTubeDiagnosticsController::class, 'index'])->name('diagnostics');
-    Route::post('/diagnostics/test-upload', [App\Http\Controllers\YouTubeDiagnosticsController::class, 'testUpload'])->name('diagnostics.test-upload');
+    // Test
+    Route::post('/test', [YouTubeController::class, 'testUpload'])->name('test');
 });
 
-// Special route for YouTube OAuth callback to match the redirect URI in Google Console
-Route::get('/youtube-auth', [App\Http\Controllers\Api\YouTubeAuthController::class, 'handleProviderCallback'])->name('youtube.auth.external_callback');
+// Special route for YouTube OAuth callback
+Route::get('/youtube-auth', [YouTubeController::class, 'handleCallback'])->name('youtube.auth.callback');

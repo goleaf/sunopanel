@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\View\View;
 use App\Services\YoutubeThumbnailGenerator;
 use App\Services\TrackProcessor;
+use Illuminate\Support\Facades\Artisan;
 
 class TrackController extends Controller
 {
@@ -193,17 +194,6 @@ class TrackController extends Controller
             return back()->with('error', 'This track must be completed with an MP4 file before uploading to YouTube.');
         }
         
-        // Check if already uploaded to YouTube
-        if ($track->is_uploaded_to_youtube) {
-            return back()->with('error', 'This track has already been uploaded to YouTube.');
-        }
-        
-        // Check if YouTube credentials are set
-        if (empty(config('youtube.email')) || empty(config('youtube.password'))) {
-            return redirect()->route('youtube.auth.login_form')
-                ->with('warning', 'YouTube credentials are not set. Please set them first.');
-        }
-        
         // Validate the request
         $validated = $request->validate([
             'title' => 'required|string|max:100',
@@ -224,16 +214,24 @@ class TrackController extends Controller
             }
         }
         
-        // Dispatch the upload job
-        UploadTrackToYouTube::dispatch(
-            $track,
-            $validated['title'],
-            $validated['description'],
-            true, // Add to playlist based on genre
-            $validated['privacy_status']
-        );
+        // Use Artisan command to upload to YouTube
+        $exitCode = Artisan::call('youtube:upload', [
+            '--track_id' => $track->id,
+            '--title' => $validated['title'],
+            '--description' => $validated['description'],
+            '--privacy' => $validated['privacy_status'],
+        ]);
         
-        return back()->with('success', 'The track has been queued for upload to YouTube. This may take a few minutes.');
+        if ($exitCode === 0) {
+            return back()->with('success', 'The track has been uploaded to YouTube successfully.');
+        } else {
+            $output = Artisan::output();
+            \Log::error('YouTube upload failed from controller', [
+                'track_id' => $track->id,
+                'output' => $output
+            ]);
+            return back()->with('error', 'YouTube upload failed. Please check the logs for details.');
+        }
     }
 
     /**
@@ -241,12 +239,6 @@ class TrackController extends Controller
      */
     public function uploadAllToYoutube(Request $request)
     {
-        // Check if YouTube credentials are set
-        if (empty(config('youtube.email')) || empty(config('youtube.password'))) {
-            return redirect()->route('tracks.index')
-                ->with('error', 'YouTube credentials are not set. Please set them first.');
-        }
-        
         // Get all completed tracks that have an MP4 file and haven't been uploaded to YouTube yet
         $tracks = Track::where('status', 'completed')
             ->whereNotNull('mp4_file')
@@ -263,7 +255,13 @@ class TrackController extends Controller
                 ->with('info', 'No eligible tracks found for YouTube upload.');
         }
         
-        // Queue upload jobs for all eligible tracks
+        // Use the privacy status from the form or default to 'unlisted'
+        $privacyStatus = $request->input('privacy_status', 'unlisted');
+        
+        // Track how many uploads were successful
+        $successCount = 0;
+        
+        // Process each track
         foreach ($tracks as $track) {
             // Set default title and description
             $title = $track->title;
@@ -273,20 +271,28 @@ class TrackController extends Controller
                 $description .= "\nGenres: {$track->genres_string}";
             }
             
-            // Use the privacy status from the form or default to 'unlisted'
-            $privacyStatus = $request->input('privacy_status', 'unlisted');
+            // Use Artisan command to upload to YouTube
+            $exitCode = Artisan::call('youtube:upload', [
+                '--track_id' => $track->id,
+                '--title' => $title,
+                '--description' => $description,
+                '--privacy' => $privacyStatus,
+            ]);
             
-            // Dispatch the upload job with a delay to prevent API rate limiting
-            UploadTrackToYouTube::dispatch(
-                $track,
-                $title,
-                $description,
-                true, // Add to playlist based on genre
-                $privacyStatus
-            )->delay(now()->addSeconds($track->id % 30)); // Stagger uploads to avoid overloading
+            if ($exitCode === 0) {
+                $successCount++;
+            } else {
+                \Log::error('YouTube bulk upload failed for track', [
+                    'track_id' => $track->id,
+                    'output' => Artisan::output()
+                ]);
+            }
+            
+            // Pause between uploads to avoid API rate limits
+            sleep(2);
         }
         
         return redirect()->route('tracks.index')
-            ->with('success', "{$count} tracks have been queued for upload to YouTube. This may take some time to complete.");
+            ->with('success', "{$successCount} of {$count} tracks have been uploaded to YouTube successfully.");
     }
 }
