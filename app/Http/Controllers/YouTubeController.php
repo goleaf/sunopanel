@@ -129,11 +129,11 @@ class YouTubeController extends Controller
      */
     public function uploads()
     {
-        $uploads = \App\Models\Track::whereNotNull('youtube_video_id')
+        $tracks = \App\Models\Track::whereNotNull('youtube_video_id')
             ->orderBy('youtube_uploaded_at', 'desc')
             ->paginate(15);
             
-        return view('youtube.uploads', compact('uploads'));
+        return view('youtube.uploads', compact('tracks'));
     }
     
     /**
@@ -163,6 +163,7 @@ class YouTubeController extends Controller
             'description' => 'nullable|string',
             'privacy' => 'required|in:public,unlisted,private',
             'playlist' => 'nullable|string',
+            'is_short' => 'nullable|boolean',
         ]);
         
         try {
@@ -178,20 +179,24 @@ class YouTubeController extends Controller
             // Add to playlist if specified
             $addToPlaylist = !empty($validated['playlist']);
             
+            // Determine if it should be uploaded as a Short
+            $isShort = (bool)$validated['is_short'] ?? false;
+            
             // Upload the track
             $videoId = $uploader->uploadTrack(
                 $track,
                 $validated['title'],
                 $validated['description'] ?? $track->title,
                 $validated['privacy'],
-                $addToPlaylist
+                $addToPlaylist,
+                $isShort
             );
             
             // Add to custom playlist if specified
-            if ($addToPlaylist) {
+            if ($addToPlaylist && !$isShort) {
                 $playlistId = $this->youtubeService->findOrCreatePlaylist(
                     $validated['playlist'],
-                    "SunoPanel playlist - {$validated['playlist']}",
+                    "AI Music - {$validated['playlist']}",
                     'public'
                 );
                 
@@ -202,8 +207,10 @@ class YouTubeController extends Controller
                 }
             }
             
+            $videoType = $isShort ? 'YouTube Shorts' : 'YouTube';
+            
             return redirect()->route('youtube.uploads')
-                ->with('success', 'Track uploaded successfully to YouTube!');
+                ->with('success', "Track uploaded successfully to {$videoType}!");
         } catch (\Exception $e) {
             Log::error('YouTube upload failed', [
                 'track_id' => $validated['track_id'],
@@ -242,17 +249,23 @@ class YouTubeController extends Controller
             // Create a test title with timestamp
             $title = '[TEST] ' . $track->title . ' - ' . now()->format('Y-m-d H:i:s');
             
+            // Determine if it should be uploaded as a Short (50% chance for testing)
+            $isShort = (bool)rand(0, 1);
+            
             // Upload the track
             $videoId = $uploader->uploadTrack(
                 $track,
                 $title,
-                'This is a test upload from SunoPanel',
+                'Test upload - AI generated music',
                 'unlisted',
-                false // Don't add to playlists for test uploads
+                false, // Don't add to playlists for test uploads
+                $isShort
             );
             
+            $videoType = $isShort ? 'YouTube Shorts' : 'YouTube';
+            
             return redirect()->route('youtube.status')
-                ->with('success', 'Test upload successful! Video ID: ' . $videoId);
+                ->with('success', "Test upload successful to {$videoType}! Video ID: {$videoId}");
         } catch (\Exception $e) {
             Log::error('YouTube test upload failed', [
                 'track_id' => $track->id,
