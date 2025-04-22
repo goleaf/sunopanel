@@ -64,6 +64,6 @@
 - [x] Test the YouTube upload functionality
 - [x] Implement proper error handling for failed uploads
 - [x] Add support for OAuth-based authentication
-- [ ] Add playlist management UI
-- [ ] Complete playlist integration
+- [x] Add playlist management UI
+- [x] Complete playlist integration
 - [x] Implement proper token refresh mechanism
