@@ -28,32 +28,48 @@ class SunoService
             // Normalize the style by encoding it for URL
             $encodedStyle = urlencode($style);
             
-            // Make request to Suno's style page
+            // Make request to Suno's style page (directly to the style page, not the API)
             $response = Http::withHeaders([
                 'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                'Accept' => 'application/json',
-            ])->get("{$this->baseUrl}/api/style/{$encodedStyle}");
+                'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            ])->get("{$this->baseUrl}/style/{$encodedStyle}");
             
             // Check if request was successful
             if ($response->failed()) {
-                Log::error('Suno API request failed', [
+                Log::error('Suno web request failed', [
                     'style' => $style,
                     'status' => $response->status(),
-                    'body' => $response->body(),
+                    'body' => substr($response->body(), 0, 500), // Log only part of the body to avoid huge logs
                 ]);
                 
                 $response->throw();
             }
             
-            // Parse the response JSON
-            $tracks = $response->json();
+            // The response is HTML, we need to extract the data
+            $html = $response->body();
             
-            // If no tracks were returned, return an empty array
-            if (!$tracks) {
-                return [];
+            // Extract the JSON data from the __NEXT_DATA__ script
+            $matches = [];
+            if (preg_match('/<script id="__NEXT_DATA__" type="application\/json">(.*?)<\/script>/s', $html, $matches)) {
+                $data = json_decode($matches[1], true);
+                
+                // Extract the track data from the JSON
+                // The structure might be different, adjust as needed
+                if (isset($data['props']['pageProps']['songs'])) {
+                    return $data['props']['pageProps']['songs'];
+                } elseif (isset($data['props']['pageProps']['tracks'])) {
+                    return $data['props']['pageProps']['tracks'];
+                } elseif (isset($data['props']['pageProps']['initialData']['songs'])) {
+                    return $data['props']['pageProps']['initialData']['songs'];
+                }
             }
             
-            return $tracks;
+            // If we couldn't extract the data or no tracks were found, return an empty array
+            Log::warning('Could not extract track data from Suno HTML response', [
+                'style' => $style,
+            ]);
+            
+            return [];
         } catch (\Exception $e) {
             Log::error('Error fetching tracks from Suno', [
                 'style' => $style,
