@@ -127,6 +127,28 @@ class YouTubeAuthController extends Controller
     }
 
     /**
+     * Show YouTube authentication status
+     */
+    public function status()
+    {
+        $isAuthenticated = false;
+        
+        if (config('youtube.use_simple')) {
+            // Check if credentials are set for simple uploader
+            $isAuthenticated = !empty(config('youtube.email')) && !empty(config('youtube.password'));
+        } elseif (config('youtube.use_oauth')) {
+            // Check if authenticated with OAuth
+            $isAuthenticated = $this->youtubeApiService->isAuthenticated();
+        }
+        
+        return view('youtube.status', [
+            'isAuthenticated' => $isAuthenticated,
+            'useOAuth' => config('youtube.use_oauth', false),
+            'useSimple' => config('youtube.use_simple', true),
+        ]);
+    }
+
+    /**
      * Update .env variable.
      */
     protected function updateEnvVariable($key, $value)

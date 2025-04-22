@@ -188,25 +188,25 @@ class SimpleYouTubeUploader
             // Add the video file path as the last argument
             $command[] = $videoPath;
             
-            // Execute the command
-            $process = Process::timeout(
-                config('youtube.process_timeout', 3600)
-            )->run($command);
+            // Execute the command - fix Process instantiation
+            $process = new \Symfony\Component\Process\Process($command);
+            $process->setTimeout(config('youtube.process_timeout', 3600)); // 1 hour timeout
+            $process->run();
             
             // Get output and error output
-            $output = $process->output();
-            $errorOutput = $process->errorOutput();
+            $output = $process->getOutput();
+            $errorOutput = $process->getErrorOutput();
             
             Log::info('YouTube upload output', [
-                'exit_code' => $process->exitCode(),
+                'exit_code' => $process->getExitCode(),
                 'output' => $output,
                 'error' => $errorOutput
             ]);
             
             // If the process failed, log the error and throw an exception
-            if (!$process->successful()) {
+            if (!$process->isSuccessful()) {
                 Log::error('YouTube upload failed', [
-                    'exit_code' => $process->exitCode(),
+                    'exit_code' => $process->getExitCode(),
                     'error' => $errorOutput
                 ]);
                 
@@ -229,7 +229,7 @@ class SimpleYouTubeUploader
             throw $e;
         }
     }
-
+    
     /**
      * Add a video to a YouTube playlist.
      *
@@ -285,7 +285,7 @@ class SimpleYouTubeUploader
         Log::warning('Creating playlists requires YouTube API OAuth authentication');
         return null;
     }
-
+    
     /**
      * Get YouTube category ID by name.
      *
@@ -359,11 +359,12 @@ class SimpleYouTubeUploader
             throw new Exception("YouTube client secrets generator not found: {$clientSecrets}");
         }
         
-        $process = Process::run([$clientSecrets]);
+        $process = new \Symfony\Component\Process\Process([$clientSecrets]);
+        $process->run();
         
-        if (!$process->successful()) {
-            Log::error('Failed to generate client secrets: ' . $process->errorOutput());
-            throw new Exception('Failed to generate client secrets: ' . $process->errorOutput());
+        if (!$process->isSuccessful()) {
+            Log::error('Failed to generate client secrets: ' . $process->getErrorOutput());
+            throw new Exception('Failed to generate client secrets: ' . $process->getErrorOutput());
         }
         
         return '/tmp/client_secrets.json';

@@ -51,28 +51,28 @@ class UploadTrackToYouTube implements ShouldQueue
      * @var string|null
      */
     protected $privacyStatus;
-
+    
     /**
      * The number of times the job may be attempted.
      *
      * @var int
      */
     public $tries = 2;
-
+    
     /**
      * The number of seconds to wait before retrying the job.
      *
      * @var int
      */
     public $backoff = 300; // 5 minutes
-
+    
     /**
      * The number of seconds the job can run before timing out.
      *
      * @var int
      */
     public $timeout = 1800; // 30 minutes
-
+    
     /**
      * Create a new job instance.
      *
@@ -108,56 +108,56 @@ class UploadTrackToYouTube implements ShouldQueue
             'track_id' => $this->track->id,
             'title' => $this->track->title,
         ]);
-
+        
         try {
             // Check if the track already has a YouTube video ID
-            if ($this->track->youtube_video_id) {
+        if ($this->track->youtube_video_id) {
                 Log::warning("Track #{$this->track->id} already has a YouTube video ID", [
                     'track_id' => $this->track->id,
                     'youtube_id' => $this->track->youtube_video_id,
                 ]);
-                return;
-            }
-
+            return;
+        }
+        
             // Find the video file
-            $videoPath = storage_path('app/public/videos/' . $this->track->mp4_file);
+        $videoPath = storage_path('app/public/videos/' . $this->track->mp4_file);
             if (!file_exists($videoPath) || !is_readable($videoPath)) {
                 throw new \Exception("Video file not found or not readable: {$videoPath}");
-            }
-
+        }
+        
             // Prepare title
             $title = $this->title ?? $this->track->title;
-
+        
             // Prepare description
             $description = $this->description ?? "Generated with SunoPanel\nTrack: {$this->track->title}";
-            if (!empty($this->track->genres_string)) {
+        if (!empty($this->track->genres_string)) {
                 $description .= "\nGenres: {$this->track->genres_string}";
-            }
-
+        }
+        
             // Prepare tags from genres
             $genres = $this->track->genres()->pluck('name')->toArray();
             $tags = array_merge($genres, ['sunopanel', 'ai music', 'ai generated']);
 
             // Get configured privacy status or use default
             $privacyStatus = $this->privacyStatus ?? config('youtube.default_privacy_status', 'unlisted');
-
-            // Upload the video
-            $videoId = $uploader->upload(
-                $videoPath,
-                $title,
-                $description,
-                $tags,
+        
+        // Upload the video
+        $videoId = $uploader->upload(
+            $videoPath,
+            $title,
+            $description,
+            $tags,
                 $privacyStatus,
                 'Music'
-            );
-
-            if (!$videoId) {
+        );
+        
+        if (!$videoId) {
                 throw new \Exception("Failed to upload video to YouTube");
-            }
-
+        }
+        
             // Update the track with the YouTube ID
-            $this->track->youtube_video_id = $videoId;
-            $this->track->youtube_uploaded_at = now();
+        $this->track->youtube_video_id = $videoId;
+        $this->track->youtube_uploaded_at = now();
             $this->track->save();
 
             Log::info("Track #{$this->track->id} successfully uploaded to YouTube", [
@@ -168,18 +168,18 @@ class UploadTrackToYouTube implements ShouldQueue
             // Add to playlist if requested and the track has genres
             if ($this->addToPlaylist && $this->track->genres->isNotEmpty()) {
                 $this->addToGenrePlaylists($uploader, $videoId);
-            }
+                }
 
-        } catch (\Exception $e) {
+            } catch (\Exception $e) {
             Log::error("Failed to upload track #{$this->track->id} to YouTube: {$e->getMessage()}", [
                 'track_id' => $this->track->id,
                 'exception' => $e,
             ]);
             
             throw $e;
+            }
         }
-    }
-
+        
     /**
      * Add the video to genre-based playlists.
      *
@@ -204,8 +204,8 @@ class UploadTrackToYouTube implements ShouldQueue
                     $playlistName,
                     "SunoPanel AI generated music - {$genre->name} genre",
                     'public'
-                );
-                
+            );
+            
                 if (!$playlistId) {
                     Log::warning("Could not find or create playlist for genre: {$genre->name}");
                     continue;
@@ -224,7 +224,7 @@ class UploadTrackToYouTube implements ShouldQueue
                     // Update track with playlist ID (store just the last one, or we could store multiple in JSON)
                     $this->track->youtube_playlist_id = $playlistId;
                     $this->track->save();
-                } else {
+            } else {
                     Log::warning("Failed to add track #{$this->track->id} to {$genre->name} playlist", [
                         'track_id' => $this->track->id,
                         'youtube_id' => $videoId,

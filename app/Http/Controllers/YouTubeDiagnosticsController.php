@@ -222,4 +222,30 @@ class YouTubeDiagnosticsController extends Controller
             return false;
         }
     }
+    
+    /**
+     * Show detailed configuration instructions.
+     */
+    public function showConfigInstructions()
+    {
+        $callbackUrl = route('youtube.auth.callback');
+        $envPath = base_path('.env');
+        $envContent = file_exists($envPath) ? file_get_contents($envPath) : '';
+        
+        $configItems = [
+            'YOUTUBE_USE_OAUTH' => config('youtube.use_oauth') ? 'true' : 'false',
+            'YOUTUBE_USE_SIMPLE' => config('youtube.use_simple') ? 'true' : 'false',
+            'YOUTUBE_CLIENT_ID' => config('youtube.client_id') ?: 'Not set',
+            'YOUTUBE_CLIENT_SECRET' => config('youtube.client_secret') ? 'Set' : 'Not set',
+            'YOUTUBE_EMAIL' => config('youtube.email') ?: 'Not set',
+            'YOUTUBE_PASSWORD' => config('youtube.password') ? 'Set' : 'Not set',
+        ];
+        
+        return view('youtube.config_instructions', [
+            'callbackUrl' => $callbackUrl,
+            'configItems' => $configItems,
+            'hasOAuth' => !empty(config('youtube.client_id')) && !empty(config('youtube.client_secret')),
+            'hasSimple' => !empty(config('youtube.email')) && !empty(config('youtube.password')),
+        ]);
+    }
 } 

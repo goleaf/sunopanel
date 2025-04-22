@@ -385,8 +385,8 @@ def upload_video(driver, video_path, title, description, tags, privacy, category
                 next_button.click()
                 time.sleep(1)
             except:
-                break
-        
+            break
+    
         # Click the "Publish" or "Done" button
         try:
             # Look for "Publish" button (for Public) or "Done" button (for Private/Unlisted)
@@ -475,11 +475,11 @@ def main():
         # Upload the video
         video_id = upload_video(
             driver, 
-            args.video_file, 
+            args.video_file,
             args.title, 
-            args.description, 
-            args.tags, 
-            args.privacy, 
+            args.description,
+            args.tags,
+            args.privacy,
             args.category
         )
         
@@ -499,10 +499,10 @@ def main():
     finally:
         # Clean up
         if driver:
-            try:
+        try:
                 driver.quit()
-            except:
-                pass
+        except:
+            pass
 
 if __name__ == "__main__":
-    sys.exit(main()) 
+    sys.exit(main())

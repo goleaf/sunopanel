@@ -5,6 +5,11 @@
     <div class="text-center mb-8">
         <h1 class="text-3xl font-bold">YouTube Integration</h1>
         <p class="mt-2 text-gray-600">Connect SunoPanel to your YouTube account to upload videos</p>
+        <div class="mt-2">
+            <a href="{{ route('youtube.config') }}" class="btn btn-sm">
+                Detailed Configuration Instructions
+            </a>
+        </div>
     </div>
 
     @if(session('success'))

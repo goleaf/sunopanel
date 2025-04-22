@@ -39,7 +39,7 @@ Route::prefix('tracks')->group(function() {
     Route::post('/retry-all', [TrackController::class, 'retryAll']);
     Route::post('/status-bulk', [TrackController::class, 'statusBulk']);
     Route::post('/bulk-action', [TrackController::class, 'bulkAction']);
-});
+}); 
 
 // YouTube routes
 Route::prefix('youtube')->group(function () {

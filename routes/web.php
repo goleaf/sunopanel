@@ -85,9 +85,15 @@ Route::prefix('youtube')->name('youtube.')->group(function () {
     Route::post('/toggle-oauth', [App\Http\Controllers\Api\YouTubeAuthController::class, 'toggleOAuth'])->name('toggle.oauth');
     Route::post('/toggle-simple', [App\Http\Controllers\Api\YouTubeAuthController::class, 'toggleSimple'])->name('toggle.simple');
     
+    // Add missing status route
+    Route::get('/status', [App\Http\Controllers\Api\YouTubeAuthController::class, 'status'])->name('status');
+    
     // Simple YouTube Uploader Login
     Route::get('/login', [App\Http\Controllers\Api\YouTubeAuthController::class, 'showLoginForm'])->name('auth.login_form');
     Route::post('/login', [App\Http\Controllers\Api\YouTubeAuthController::class, 'saveCredentials'])->name('auth.save_credentials');
+    
+    // Configuration Instructions
+    Route::get('/config', [App\Http\Controllers\YouTubeDiagnosticsController::class, 'showConfigInstructions'])->name('config');
     
     // Upload
     Route::get('/upload', [App\Http\Controllers\YouTubeUploadController::class, 'showUploadForm'])->name('upload.form');

@@ -25,7 +25,7 @@
                     @if ($isAuthenticated)
                         <div class="alert alert-success">
                             <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                            @if (isset($useSimpleUploader) && $useSimpleUploader)
+                            @if ($useSimple)
                                 <span>You are logged in to YouTube with your account credentials.</span>
                             @else
                                 <span>You are authenticated with YouTube API.</span>
@@ -34,7 +34,7 @@
                     @else
                         <div class="alert alert-warning">
                             <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                            @if (isset($useSimpleUploader) && $useSimpleUploader)
+                            @if ($useSimple)
                                 <span>You need to provide your YouTube account credentials.</span>
                             @else
                                 <span>You are not authenticated with YouTube API.</span>
@@ -61,7 +61,7 @@
                             View Uploaded Videos
                         </a>
                         
-                        @if (isset($useSimpleUploader) && $useSimpleUploader)
+                        @if ($useSimple)
                             <a href="{{ route('youtube.auth.login_form') }}" class="btn btn-outline">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -71,7 +71,7 @@
                             </a>
                         @endif
                     @else
-                        @if (isset($useSimpleUploader) && $useSimpleUploader)
+                        @if ($useSimple)
                             <a href="{{ route('youtube.auth.login_form') }}" class="btn btn-primary">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
@@ -109,7 +109,7 @@
                     <li>Control privacy settings (public, unlisted, private)</li>
                 </ul>
                 
-                @if (isset($useSimpleUploader) && $useSimpleUploader)
+                @if ($useSimple)
                     <div class="alert alert-info mt-4 mb-4">
                         <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         <span>
