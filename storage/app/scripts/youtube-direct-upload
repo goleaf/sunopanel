@@ -1,242 +1,508 @@
 #!/usr/bin/env python3
+"""
+Direct YouTube Uploader using Selenium for browser-based authentication.
+This script automates the YouTube upload process using username and password.
+"""
 
 import argparse
 import os
-import time
 import sys
-import subprocess
+import time
+import tempfile
+import traceback
 from datetime import datetime
 
+# Check if required packages are installed
+try:
+    from selenium import webdriver
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.common.keys import Keys
+    from selenium.webdriver.support.ui import WebDriverWait
+    from selenium.webdriver.support import expected_conditions as EC
+    from selenium.webdriver.chrome.options import Options
+    from selenium.webdriver.chrome.service import Service
+    from selenium.common.exceptions import TimeoutException, NoSuchElementException
+except ImportError:
+    # Install the required packages
+    print("Installing required packages...")
+    import subprocess
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "selenium", "webdriver-manager"])
+    
+    from selenium import webdriver
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.common.keys import Keys
+    from selenium.webdriver.support.ui import WebDriverWait
+    from selenium.webdriver.support import expected_conditions as EC
+    from selenium.webdriver.chrome.options import Options
+    from selenium.webdriver.chrome.service import Service
+    from selenium.common.exceptions import TimeoutException, NoSuchElementException
+
+try:
+    from webdriver_manager.chrome import ChromeDriverManager
+except ImportError:
+    import subprocess
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "webdriver-manager"])
+    from webdriver_manager.chrome import ChromeDriverManager
+
+def log(message, level="INFO"):
+    """Log message to stdout with timestamp"""
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print(f"[{timestamp}] {level}: {message}")
+
+def create_driver(headless=True):
+    """Create and configure Chrome WebDriver"""
+    chrome_options = Options()
+    if headless:
+        chrome_options.add_argument("--headless=new")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--window-size=1920,1080")
+    chrome_options.add_argument("--disable-extensions")
+    chrome_options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36")
+    
+    try:
+        service = Service(ChromeDriverManager().install())
+        driver = webdriver.Chrome(service=service, options=chrome_options)
+        return driver
+    except Exception as e:
+        log(f"Failed to create Chrome driver: {str(e)}", "ERROR")
+        # Try Firefox as fallback
+        try:
+            from selenium.webdriver.firefox.options import Options as FirefoxOptions
+            from selenium.webdriver.firefox.service import Service as FirefoxService
+            from webdriver_manager.firefox import GeckoDriverManager
+            
+            firefox_options = FirefoxOptions()
+            if headless:
+                firefox_options.add_argument("--headless")
+            
+            service = FirefoxService(GeckoDriverManager().install())
+            driver = webdriver.Firefox(service=service, options=firefox_options)
+            return driver
+        except Exception as e2:
+            log(f"Failed to create Firefox driver: {str(e2)}", "ERROR")
+            raise Exception("Could not initialize any supported browser")
+
+def login_to_youtube(driver, email, password):
+    """Log in to YouTube with email and password"""
+    log("Logging in to YouTube...")
+    driver.get("https://studio.youtube.com")
+    
+    # Take a screenshot for debugging
+    driver.save_screenshot("/tmp/youtube_login_initial.png")
+    
+    # Email input - improved with better wait conditions and multiple selector attempts
+    try:
+        # Try different selectors for the email field
+        email_selectors = [
+            (By.ID, "identifierId"),
+            (By.NAME, "identifier"),
+            (By.CSS_SELECTOR, "input[type='email']"),
+            (By.XPATH, "//input[@type='email']")
+        ]
+        
+        email_input = None
+        for selector in email_selectors:
+            try:
+                log(f"Trying email selector: {selector}")
+                email_input = WebDriverWait(driver, 10).until(
+                    EC.element_to_be_clickable(selector)
+                )
+                if email_input:
+                    break
+            except:
+                continue
+                
+        if not email_input:
+            raise Exception("Email field not found")
+            
+        # Clear any existing text and enter email
+        email_input.clear()
+        email_input.send_keys(email)
+        log("Email entered: " + email)
+        
+        # Take a screenshot for debugging
+        driver.save_screenshot("/tmp/youtube_login_email_entered.png")
+        
+        # Find the "Next" button
+        next_button_selectors = [
+            (By.ID, "identifierNext"),
+            (By.XPATH, "//button[contains(., 'Next')]"),
+            (By.XPATH, "//div[@id='identifierNext']"),
+            (By.XPATH, "//button[@jsname='LgbsSe']")
+        ]
+        
+        next_button = None
+        for selector in next_button_selectors:
+            try:
+                next_button = WebDriverWait(driver, 5).until(
+                    EC.element_to_be_clickable(selector)
+                )
+                if next_button:
+                    break
+            except:
+                continue
+                
+        if next_button:
+            next_button.click()
+            log("Clicked Next button after email")
+        else:
+            # If no Next button found, try pressing Enter key
+            email_input.send_keys(Keys.RETURN)
+            log("Pressed Enter key after email (Next button not found)")
+            
+        # Wait for the page to transition
+        time.sleep(2)
+        
+    except Exception as e:
+        log(f"Failed to enter email: {str(e)}", "ERROR")
+        driver.save_screenshot("/tmp/youtube_login_email_error.png")
+        raise Exception(f"Failed to enter email: {str(e)}")
+    
+    # Password input - improved with better wait conditions and multiple selector attempts
+    try:
+        # Wait a moment for the password page to load
+        time.sleep(3)
+        driver.save_screenshot("/tmp/youtube_login_password_page.png")
+        
+        # Try different selectors for the password field
+        password_selectors = [
+            (By.NAME, "password"),
+            (By.ID, "password"),
+            (By.CSS_SELECTOR, "input[type='password']"),
+            (By.XPATH, "//input[@type='password']"),
+            (By.XPATH, "//input[@name='password']"),
+            (By.XPATH, "//input[@autocomplete='current-password']"),
+            (By.XPATH, "//input[contains(@aria-label, 'password') or contains(@aria-label, 'Password')]")
+        ]
+        
+        password_input = None
+        for selector in password_selectors:
+            try:
+                log(f"Trying password selector: {selector}")
+                password_input = WebDriverWait(driver, 10).until(
+                    EC.element_to_be_clickable(selector)
+                )
+                if password_input:
+                    break
+            except:
+                continue
+                
+        if not password_input:
+            log("Password field not found with direct selectors, trying to find password container")
+            # Try to find container elements that might contain the password field
+            containers = driver.find_elements(By.XPATH, "//div[contains(@class, 'password')]")
+            if containers:
+                for container in containers:
+                    try:
+                        password_input = container.find_element(By.TAG_NAME, "input")
+                        if password_input:
+                            log("Found password field within container")
+                            break
+                    except:
+                        continue
+                        
+        if not password_input:
+            log("Password field still not found. Dumping page source for debugging")
+            with open("/tmp/youtube_login_html.txt", "w") as f:
+                f.write(driver.page_source)
+            raise Exception("Password field not found")
+            
+        # Clear any existing text and enter password
+        password_input.clear()
+        password_input.send_keys(password)
+        log("Password entered")
+        
+        # Take a screenshot for debugging
+        driver.save_screenshot("/tmp/youtube_login_password_entered.png")
+        
+        # Find the "Next" button for password
+        next_button_selectors = [
+            (By.ID, "passwordNext"),
+            (By.XPATH, "//button[contains(., 'Next')]"),
+            (By.XPATH, "//div[@id='passwordNext']"),
+            (By.XPATH, "//button[@jsname='LgbsSe']")
+        ]
+        
+        next_button = None
+        for selector in next_button_selectors:
+            try:
+                next_button = WebDriverWait(driver, 5).until(
+                    EC.element_to_be_clickable(selector)
+                )
+                if next_button:
+                    break
+            except:
+                continue
+                
+        if next_button:
+            next_button.click()
+            log("Clicked Next button after password")
+        else:
+            # If no Next button found, try pressing Enter key
+            password_input.send_keys(Keys.RETURN)
+            log("Pressed Enter key after password (Next button not found)")
+            
+        # Wait for redirection and check for authentication success
+        time.sleep(5)
+        driver.save_screenshot("/tmp/youtube_login_after_password.png")
+        
+        # Check if we're on YouTube Studio or still on the login page
+        current_url = driver.current_url
+        log(f"Current URL after login attempt: {current_url}")
+        
+        if "studio.youtube.com" in current_url:
+            log("Successfully logged in to YouTube Studio")
+            return True
+        elif "myaccount.google.com" in current_url:
+            log("Redirected to Google Account page, continuing to YouTube Studio")
+            driver.get("https://studio.youtube.com")
+            time.sleep(5)
+            return True
+        else:
+            # Check for common error messages
+            error_messages = driver.find_elements(By.XPATH, "//div[contains(@class, 'error') or contains(@class, 'alert')]")
+            if error_messages:
+                error_text = error_messages[0].text
+                log(f"Login error message: {error_text}", "ERROR")
+                raise Exception(f"Login failed: {error_text}")
+            
+            log("Could not confirm successful login to YouTube Studio", "WARNING")
+            # Try to continue anyway
+            driver.get("https://studio.youtube.com")
+            time.sleep(5)
+            return True
+            
+    except Exception as e:
+        log(f"Failed during password entry: {str(e)}", "ERROR")
+        driver.save_screenshot("/tmp/youtube_login_password_error.png")
+        raise Exception(f"Failed to complete login: {str(e)}")
+
+def upload_video(driver, video_path, title, description, tags, privacy, category):
+    """Upload a video to YouTube"""
+    if not os.path.exists(video_path):
+        raise Exception(f"Video file not found: {video_path}")
+    
+    # Navigate to upload page
+    log("Navigating to upload page...")
+    driver.get("https://studio.youtube.com/channel/upload")
+    
+    # Wait for upload button and click it
+    try:
+        upload_button = WebDriverWait(driver, 20).until(
+            EC.presence_of_element_located((By.XPATH, "//input[@type='file']"))
+        )
+        upload_button.send_keys(os.path.abspath(video_path))
+        log("Video file selected for upload")
+    except Exception as e:
+        log(f"Failed to select video file: {str(e)}", "ERROR")
+        driver.save_screenshot("/tmp/youtube_upload_file_error.png")
+        raise Exception("Failed to select video file")
+    
+    # Wait for title field and enter details
+    try:
+        title_input = WebDriverWait(driver, 30).until(
+            EC.element_to_be_clickable((By.XPATH, "//div[contains(@class, 'title-textarea')]//textarea"))
+        )
+        title_input.clear()
+        title_input.send_keys(title)
+        log("Title entered")
+        
+        # Enter description
+        description_input = driver.find_element(By.XPATH, "//div[contains(@class, 'description-textarea')]//textarea")
+        description_input.clear()
+        description_input.send_keys(description)
+        log("Description entered")
+        
+        # Enter tags if provided
+        if tags:
+            try:
+                # Click "Show more" if available
+                try:
+                    more_button = driver.find_element(By.XPATH, "//div[contains(text(), 'Show more')]")
+                    more_button.click()
+                    time.sleep(1)
+                except:
+                    pass
+                
+                # Find the tags field
+                tags_input = None
+                for xpath in [
+                    "//div[contains(@class, 'tags-form-input')]//input",
+                    "//input[@placeholder='Add tag']",
+                    "//input[contains(@aria-label, 'Tags')]",
+                ]:
+                    try:
+                        tags_input = driver.find_element(By.XPATH, xpath)
+                        break
+                    except:
+                        continue
+
+                if tags_input:
+                    for tag in tags.split(","):
+                        tag = tag.strip()
+                        if tag:
+                            tags_input.send_keys(tag)
+                            tags_input.send_keys(Keys.RETURN)
+                    log("Tags entered")
+                else:
+                    log("Tags field not found", "WARNING")
+            except Exception as e:
+                log(f"Failed to enter tags: {str(e)}", "WARNING")
+        
+        # Set privacy setting
+        try:
+            log(f"Setting privacy to {privacy}...")
+            # Click the privacy dropdown
+            privacy_dropdown = WebDriverWait(driver, 10).until(
+                EC.element_to_be_clickable((By.XPATH, "//div[contains(@class, 'privacy-selector')]"))
+            )
+            privacy_dropdown.click()
+            time.sleep(1)
+            
+            # Select the privacy option
+            privacy_map = {
+                "public": "Public",
+                "unlisted": "Unlisted",
+                "private": "Private",
+            }
+            privacy_option = WebDriverWait(driver, 10).until(
+                EC.element_to_be_clickable((By.XPATH, f"//tp-yt-paper-item[contains(text(), '{privacy_map.get(privacy, 'Unlisted')}')]"))
+            )
+            privacy_option.click()
+            log(f"Privacy set to {privacy}")
+        except Exception as e:
+            log(f"Failed to set privacy: {str(e)}", "WARNING")
+            driver.save_screenshot("/tmp/youtube_privacy_error.png")
+        
+        # Click Next buttons to navigate through the upload process
+        for i in range(3):  # There are typically 3 "Next" steps
+            try:
+                next_button = WebDriverWait(driver, 10).until(
+                    EC.element_to_be_clickable((By.XPATH, "//div[contains(@class, 'next-button')]"))
+                )
+                next_button.click()
+                time.sleep(1)
+            except:
+                break
+        
+        # Click the "Publish" or "Done" button
+        try:
+            # Look for "Publish" button (for Public) or "Done" button (for Private/Unlisted)
+            for button_text in ["Publish", "Done"]:
+                try:
+                    publish_button = WebDriverWait(driver, 10).until(
+                        EC.element_to_be_clickable((By.XPATH, f"//div[contains(@class, 'button-area')]//tp-yt-paper-button[contains(text(), '{button_text}')]"))
+                    )
+                    publish_button.click()
+                    log(f"Clicked {button_text} button")
+                    break
+                except:
+                    continue
+            
+            # Wait for upload to complete
+            WebDriverWait(driver, 120).until(
+                EC.presence_of_element_located((By.XPATH, "//div[contains(@class, 'upload-success')]"))
+            )
+            log("Upload completed successfully!")
+        except TimeoutException:
+            log("Timeout waiting for upload completion, but upload might still be processing", "WARNING")
+        
+        # Try to get the video ID from the URL or success message
+        try:
+            # Wait for URL to update or success message with video ID
+            time.sleep(5)  # Give a moment for page to update
+            
+            # Try to extract from URL first
+            video_id = None
+            current_url = driver.current_url
+            if "watch?v=" in current_url:
+                video_id = current_url.split("watch?v=")[1].split("&")[0]
+            elif "video/" in current_url:
+                video_id = current_url.split("video/")[1].split("/")[0]
+            
+            # If not found in URL, try to find in the success message
+            if not video_id:
+                success_elements = driver.find_elements(By.XPATH, "//div[contains(@class, 'upload-success')]")
+                if success_elements:
+                    success_text = success_elements[0].text
+                    # Look for YouTube URL patterns in the text
+                    import re
+                    id_match = re.search(r'(?:youtube\.com/watch\?v=|youtu\.be/)([a-zA-Z0-9_-]{11})', success_text)
+                    if id_match:
+                        video_id = id_match.group(1)
+            
+            if video_id:
+                log(f"Video ID: {video_id}")
+                return video_id
+        except Exception as e:
+            log(f"Error extracting video ID: {str(e)}", "WARNING")
+        
+        return "UPLOAD_COMPLETED_BUT_ID_UNKNOWN"
+    except Exception as e:
+        log(f"Failed during upload process: {str(e)}", "ERROR")
+        driver.save_screenshot("/tmp/youtube_upload_error.png")
+        raise Exception(f"Upload failed: {str(e)}")
+
 def main():
-    parser = argparse.ArgumentParser(description='Upload a video to YouTube with email/password')
-    parser.add_argument('--email', required=True, help='YouTube/Google account email')
-    parser.add_argument('--password', required=True, help='YouTube/Google account password')
-    parser.add_argument('--title', required=True, help='Video title')
-    parser.add_argument('--description', default='', help='Video description')
-    parser.add_argument('--tags', default='', help='Video tags (comma separated)')
-    parser.add_argument('--privacy', default='unlisted', 
-                       choices=['public', 'unlisted', 'private'], 
-                       help='Privacy setting')
-    parser.add_argument('--category', default='Music', help='Video category')
-    parser.add_argument('video_file', help='Video file to upload')
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description="Upload videos to YouTube with username/password authentication")
+    parser.add_argument("--email", required=True, help="YouTube/Google account email")
+    parser.add_argument("--password", required=True, help="YouTube/Google account password")
+    parser.add_argument("--title", required=True, help="Video title")
+    parser.add_argument("--description", default="", help="Video description")
+    parser.add_argument("--tags", default="", help="Video tags (comma separated)")
+    parser.add_argument("--privacy", default="unlisted", choices=["public", "unlisted", "private"], help="Privacy setting")
+    parser.add_argument("--category", default="Music", help="Video category")
+    parser.add_argument("--headless", action="store_true", help="Run browser in headless mode (no visible window)")
+    parser.add_argument("video_file", help="Path to the video file to upload")
     
     args = parser.parse_args()
     
     if not os.path.exists(args.video_file):
-        print(f"Error: Video file not found: {args.video_file}", file=sys.stderr)
+        log(f"Video file not found: {args.video_file}", "ERROR")
         return 1
-        
-    # Create a temporary upload script
-    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-    script_file = f"/tmp/youtube_upload_{timestamp}.py"
     
-    with open(script_file, "w") as f:
-        f.write("""
-import os
-import google_auth_oauthlib.flow
-import googleapiclient.discovery
-import googleapiclient.errors
-from googleapiclient.http import MediaFileUpload
-import google.oauth2.credentials
-import google_auth_oauthlib.flow
-import sys
-
-def get_authenticated_service(email, password):
-    # This would be the place to implement email/password authentication
-    # For now, we'll use a workaround
-    
-    # Try to use existing token
-    # Need to implement token generation
-
-    # Fallback to interactive auth
-    flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_secrets_file(
-        '/tmp/client_secrets.json',
-        ['https://www.googleapis.com/auth/youtube.upload']
-    )
-    credentials = flow.run_console()
-    return googleapiclient.discovery.build('youtube', 'v3', credentials=credentials)
-
-def upload_video(youtube, file_path, title, description, tags, privacy_status, category):
-    body = {
-        'snippet': {
-            'title': title,
-            'description': description,
-            'tags': tags.split(',') if tags else [],
-            'categoryId': category_id_map.get(category, '10')  # Default to Music
-        },
-        'status': {
-            'privacyStatus': privacy_status,
-            'selfDeclaredMadeForKids': False
-        }
-    }
-
-    # Call the API's videos.insert method to create and upload the video
-    media = MediaFileUpload(file_path, chunksize=-1, resumable=True)
-    request = youtube.videos().insert(
-        part=','.join(body.keys()),
-        body=body,
-        media_body=media
-    )
-    
-    # Upload the video
-    response = None
-    while response is None:
-        try:
-            status, response = request.next_chunk()
-            if status:
-                print(f"Uploaded {int(status.progress() * 100)}%")
-        except HttpError as e:
-            print(f"An HTTP error {e.resp.status} occurred:\\n{e.content}")
-            break
-    
-    if response:
-        print(f"Video uploaded successfully! Video ID: {response['id']}")
-        print(f"Video ID: {response['id']}")
-        return response['id']
-    return None
-
-# Map of category names to IDs
-category_id_map = {
-    'Film & Animation': '1',
-    'Autos & Vehicles': '2',
-    'Music': '10',
-    'Pets & Animals': '15',
-    'Sports': '17',
-    'Short Movies': '18',
-    'Travel & Events': '19',
-    'Gaming': '20',
-    'Videoblogging': '21',
-    'People & Blogs': '22',
-    'Comedy': '23',
-    'Entertainment': '24',
-    'News & Politics': '25',
-    'Howto & Style': '26',
-    'Education': '27',
-    'Science & Technology': '28',
-    'Nonprofits & Activism': '29',
-    'Movies': '30',
-    'Anime/Animation': '31',
-    'Action/Adventure': '32',
-    'Classics': '33',
-    'Comedy': '34',
-    'Documentary': '35',
-    'Drama': '36',
-    'Family': '37',
-    'Foreign': '38',
-    'Horror': '39',
-    'Sci-Fi/Fantasy': '40',
-    'Thriller': '41',
-    'Shorts': '42',
-    'Shows': '43',
-    'Trailers': '44'
-}
-
-if __name__ == '__main__':
-    email = sys.argv[1]
-    password = sys.argv[2]
-    file_path = sys.argv[3]
-    title = sys.argv[4]
-    description = sys.argv[5]
-    tags = sys.argv[6]
-    privacy_status = sys.argv[7]
-    category = sys.argv[8]
-    
-    youtube = get_authenticated_service(email, password)
-    upload_video(youtube, file_path, title, description, tags, privacy_status, category)
-""")
-    
-    # Create a client secrets file (with placeholder values)
-    client_secrets = """{
-  "installed": {
-    "client_id": "YOUR_CLIENT_ID.apps.googleusercontent.com",
-    "project_id": "YOUR_PROJECT_ID",
-    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-    "token_uri": "https://oauth2.googleapis.com/token",
-    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-    "client_secret": "YOUR_CLIENT_SECRET",
-    "redirect_uris": ["urn:ietf:wg:oauth:2.0:oob", "http://localhost"]
-  }
-}"""
-    
-    with open('/tmp/client_secrets.json', 'w') as f:
-        f.write(client_secrets)
-    
-    # Make the script executable    
-    os.chmod(script_file, 0o755)
-    
-    # Due to limitations, we need to use third-party tools to upload videos with username/password
-    print("Starting upload with alternative method...")
-    
-    # First, check if we can use curl and selenium for YouTube uploading
+    driver = None
     try:
-        # Use the external upload script with Selenium
-        cmd = [
-            "python3", script_file,
-            args.email,
-            args.password,
-            args.video_file,
-            args.title, 
-            args.description,
-            args.tags,
-            args.privacy,
-            args.category
-        ]
+        log(f"Starting upload for {args.video_file}...")
+        driver = create_driver(headless=True)  # Always run headless on server
         
-        process = subprocess.Popen(
-            cmd, 
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            universal_newlines=True
+        # Log in to YouTube
+        login_to_youtube(driver, args.email, args.password)
+        
+        # Upload the video
+        video_id = upload_video(
+            driver, 
+            args.video_file, 
+            args.title, 
+            args.description, 
+            args.tags, 
+            args.privacy, 
+            args.category
         )
         
-        stdout, stderr = process.communicate()
-        
-        if process.returncode != 0:
-            print(f"Upload failed: {stderr}")
-            print("Trying fallback method...")
-            
-            # Fallback to using pytube
-            print(f"""
-Since YouTube doesn't provide a direct email/password authentication method,
-you'll need to manually upload the video at:
-1. Go to https://studio.youtube.com/
-2. Sign in with your Google account ({args.email})
-3. Click "CREATE" > "Upload video"
-4. Select the file: {args.video_file}
-5. Fill in the details:
-   - Title: {args.title}
-   - Description: {args.description}
-   - Privacy: {args.privacy}
-
-Once uploaded, the video URL will be displayed on the final screen.
-            """)
-            return 1
-        
-        print(stdout)
-        
-        # Check if video ID is in the output
-        import re
-        video_id_match = re.search(r'Video ID: ([A-Za-z0-9_-]+)', stdout)
-        if video_id_match:
-            video_id = video_id_match.group(1)
-            print(f"Video successfully uploaded! Video ID: {video_id}")
+        if video_id:
+            log(f"Upload successful! Video ID: {video_id}")
+            print(f"Video ID: {video_id}")
             return 0
         else:
-            print("Video upload process completed, but couldn't extract video ID")
+            log("Upload appeared to complete but couldn't extract video ID", "WARNING")
             return 1
         
     except Exception as e:
-        print(f"Error during upload: {str(e)}")
+        log(f"Error during YouTube upload: {str(e)}", "ERROR")
+        log(traceback.format_exc(), "DEBUG")
         return 1
+        
     finally:
         # Clean up
-        try:
-            if os.path.exists(script_file):
-                os.remove(script_file)
-            if os.path.exists('/tmp/client_secrets.json'):
-                os.remove('/tmp/client_secrets.json')
-        except:
-            pass
+        if driver:
+            try:
+                driver.quit()
+            except:
+                pass
 
-if __name__ == '__main__':
-    sys.exit(main())
+if __name__ == "__main__":
+    sys.exit(main()) 

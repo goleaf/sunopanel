@@ -3,178 +3,148 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Services\YouTubeUploader;
+use App\Services\YouTubeApiService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 
-final class YouTubeAuthController extends Controller
+class YouTubeAuthController extends Controller
 {
-    private YouTubeUploader $youtubeUploader;
-    
-    public function __construct(YouTubeUploader $youtubeUploader)
+    protected $youtubeApiService;
+
+    public function __construct(YouTubeApiService $youtubeApiService)
     {
-        $this->youtubeUploader = $youtubeUploader;
+        $this->youtubeApiService = $youtubeApiService;
     }
-    
+
     /**
-     * Show the authentication page.
-     *
-     * @return \Illuminate\View\View
+     * Show the YouTube authentication page.
      */
     public function index()
     {
-        return view('youtube.auth');
+        $isAuthenticated = $this->youtubeApiService->isAuthenticated();
+        $authUrl = $isAuthenticated ? null : $this->youtubeApiService->getAuthUrl();
+
+        return view('youtube.auth', [
+            'isAuthenticated' => $isAuthenticated,
+            'authUrl' => $authUrl,
+            'useOAuth' => config('youtube.use_oauth', false),
+            'useSimple' => config('youtube.use_simple', true),
+        ]);
     }
-    
+
     /**
-     * Redirect the user to the YouTube auth page
-     *
-     * @return \Illuminate\Http\RedirectResponse
+     * Redirect to Google for authorization.
      */
     public function redirectToProvider()
     {
-        $authUrl = $this->youtubeUploader->getAuthUrl();
-        return redirect()->away($authUrl);
+        return redirect($this->youtubeApiService->getAuthUrl());
     }
-    
+
     /**
-     * Handle the YouTube OAuth callback
-     *
-     * @param Request $request
-     * @return \Illuminate\Http\RedirectResponse
+     * Handle the callback from Google.
      */
     public function handleProviderCallback(Request $request)
     {
-        $code = $request->input('code');
-        
-        if (!$code) {
-            Log::error('No authorization code provided by YouTube');
-            return redirect()->route('home')->with('error', 'Authorization failed. No code provided.');
+        if ($request->has('error')) {
+            Log::error('YouTube authentication error: ' . $request->input('error'));
+            return redirect()->route('youtube.auth')
+                ->with('error', 'Authentication failed: ' . $request->input('error'));
         }
-        
-        $tokenData = $this->youtubeUploader->handleAuthCallback($code);
-        
-        if (!$tokenData) {
-            Log::error('Failed to get tokens from YouTube');
-            return redirect()->route('home')->with('error', 'Failed to authenticate with YouTube.');
+
+        if (!$request->has('code')) {
+            return redirect()->route('youtube.auth')
+                ->with('error', 'No authorization code provided');
         }
-        
-        // Save these values to the .env file
-        $this->updateEnvFile([
-            'YOUTUBE_ACCESS_TOKEN' => $tokenData['access_token'],
-            'YOUTUBE_REFRESH_TOKEN' => $tokenData['refresh_token'] ?? '',
-            'YOUTUBE_TOKEN_EXPIRES_AT' => $tokenData['expires_at'],
-        ]);
-        
-        return redirect()->route('youtube.auth')->with('success', 'Successfully authenticated with YouTube!');
+
+        try {
+            $this->youtubeApiService->fetchAccessTokenWithAuthCode($request->input('code'));
+            $this->updateEnvVariable('YOUTUBE_USE_OAUTH', 'true');
+
+            return redirect()->route('youtube.auth')
+                ->with('success', 'Successfully authenticated with YouTube!');
+        } catch (\Exception $e) {
+            Log::error('Error handling YouTube callback: ' . $e->getMessage());
+            return redirect()->route('youtube.auth')
+                ->with('error', 'Authentication failed: ' . $e->getMessage());
+        }
     }
-    
+
     /**
-     * Show the simple authentication form
-     *
-     * @return \Illuminate\View\View
+     * Show login form for simple YouTube uploader.
      */
     public function showLoginForm()
     {
-        return view('youtube.login');
+        return view('youtube.login_form', [
+            'email' => config('youtube.email'),
+            'password' => config('youtube.password') ? '*********' : '',
+        ]);
     }
-    
+
     /**
-     * Save YouTube credentials
-     *
-     * @param Request $request
-     * @return \Illuminate\Http\RedirectResponse
+     * Save YouTube credentials for simple uploader.
      */
     public function saveCredentials(Request $request)
     {
         $validated = $request->validate([
             'email' => 'required|email',
             'password' => 'required',
-            'use_simple_uploader' => 'nullable|boolean',
         ]);
-        
-        $useSimpleUploader = isset($validated['use_simple_uploader']) && $validated['use_simple_uploader'] ? 'true' : 'false';
-        
-        $this->updateEnvFile([
-            'YOUTUBE_EMAIL' => $validated['email'],
-            'YOUTUBE_PASSWORD' => $validated['password'],
-            'YOUTUBE_USE_SIMPLE_UPLOADER' => $useSimpleUploader,
-            'YOUTUBE_USE_OAUTH' => 'false', // If simple login is used, disable OAuth
-        ]);
-        
-        return redirect()->route('youtube.auth')->with('success', 'YouTube credentials saved successfully!');
+
+        $this->updateEnvVariable('YOUTUBE_EMAIL', $validated['email']);
+        $this->updateEnvVariable('YOUTUBE_PASSWORD', $validated['password']);
+        $this->updateEnvVariable('YOUTUBE_USE_SIMPLE', 'true');
+
+        return redirect()->route('youtube.auth')
+            ->with('success', 'YouTube credentials saved successfully!');
     }
-    
+
     /**
-     * Toggle OAuth setting
-     *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
+     * Toggle OAuth authentication.
      */
     public function toggleOAuth(Request $request)
     {
-        $useOAuth = (bool) $request->input('use_oauth', false);
-        
-        $this->updateEnvFile([
-            'YOUTUBE_USE_OAUTH' => $useOAuth ? 'true' : 'false',
-            'YOUTUBE_USE_SIMPLE_UPLOADER' => $useOAuth ? 'false' : 'true',
-        ]);
-        
-        return response()->json(['success' => true]);
+        $currentStatus = config('youtube.use_oauth', false);
+        $newStatus = !$currentStatus;
+
+        $this->updateEnvVariable('YOUTUBE_USE_OAUTH', $newStatus ? 'true' : 'false');
+
+        return redirect()->route('youtube.auth')
+            ->with('success', 'YouTube OAuth ' . ($newStatus ? 'enabled' : 'disabled') . ' successfully!');
     }
-    
+
     /**
-     * Toggle simple uploader setting
-     *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
+     * Toggle simple uploader.
      */
     public function toggleSimple(Request $request)
     {
-        $useSimple = (bool) $request->input('use_simple', false);
-        
-        $this->updateEnvFile([
-            'YOUTUBE_USE_SIMPLE_UPLOADER' => $useSimple ? 'true' : 'false',
-            'YOUTUBE_USE_OAUTH' => $useSimple ? 'false' : 'true',
-        ]);
-        
-        return response()->json(['success' => true]);
+        $currentStatus = config('youtube.use_simple', true);
+        $newStatus = !$currentStatus;
+
+        $this->updateEnvVariable('YOUTUBE_USE_SIMPLE', $newStatus ? 'true' : 'false');
+
+        return redirect()->route('youtube.auth')
+            ->with('success', 'Simple YouTube uploader ' . ($newStatus ? 'enabled' : 'disabled') . ' successfully!');
     }
-    
+
     /**
-     * Update .env file with new values
-     *
-     * @param array $data
-     * @return bool
+     * Update .env variable.
      */
-    private function updateEnvFile(array $data): bool
+    protected function updateEnvVariable($key, $value)
     {
-        try {
-            $envFile = base_path('.env');
-            $contentArray = file($envFile, FILE_IGNORE_NEW_LINES);
-            
-            foreach ($data as $key => $value) {
-                $found = false;
-                
-                foreach ($contentArray as $index => $line) {
-                    if (strpos($line, "$key=") === 0) {
-                        $contentArray[$index] = "$key=\"$value\"";
-                        $found = true;
-                        break;
-                    }
-                }
-                
-                if (!$found) {
-                    $contentArray[] = "$key=\"$value\"";
-                }
+        $path = base_path('.env');
+
+        if (file_exists($path)) {
+            $content = file_get_contents($path);
+
+            // If the key exists, replace it
+            if (strpos($content, $key . '=') !== false) {
+                $content = preg_replace("/^{$key}=.*$/m", "{$key}=\"{$value}\"", $content);
+            } else {
+                // Otherwise, append it to the end of the file
+                $content .= "\n{$key}=\"{$value}\"";
             }
-            
-            file_put_contents($envFile, implode("\n", $contentArray));
-            return true;
-        } catch (\Exception $e) {
-            Log::error('Failed to update .env file: ' . $e->getMessage());
-            return false;
+
+            file_put_contents($path, $content);
         }
     }
 } 

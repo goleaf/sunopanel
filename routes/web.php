@@ -94,4 +94,8 @@ Route::prefix('youtube')->name('youtube.')->group(function () {
     Route::post('/upload', [App\Http\Controllers\YouTubeUploadController::class, 'uploadTrack'])->name('upload.process');
     Route::get('/uploads', [App\Http\Controllers\YouTubeUploadController::class, 'viewUploads'])->name('uploads');
     Route::post('/tracks/{id}/upload', [App\Http\Controllers\YouTubeUploadController::class, 'uploadTrackDirect'])->name('upload.direct');
+    
+    // Diagnostics
+    Route::get('/diagnostics', [App\Http\Controllers\YouTubeDiagnosticsController::class, 'index'])->name('diagnostics');
+    Route::post('/diagnostics/test-upload', [App\Http\Controllers\YouTubeDiagnosticsController::class, 'testUpload'])->name('diagnostics.test-upload');
 });

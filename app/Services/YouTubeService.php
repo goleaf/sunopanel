@@ -93,7 +93,7 @@ class YouTubeService
         
         // Prepare the upload command
         $command = [
-            '/usr/local/bin/youtube-direct-upload',
+            base_path('vendor/bin/youtube-direct-upload'),
             '--email', $email,
             '--password', $password,
             '--title', $title,
@@ -156,7 +156,7 @@ class YouTubeService
      */
     private function generateClientSecrets(): string
     {
-        $process = new Process(['/usr/local/bin/youtube-client-secrets']);
+        $process = new Process([base_path('vendor/bin/youtube-client-secrets')]);
         $process->run();
         
         if (!$process->isSuccessful()) {

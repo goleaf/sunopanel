@@ -39,4 +39,23 @@ Route::prefix('tracks')->group(function() {
     Route::post('/retry-all', [TrackController::class, 'retryAll']);
     Route::post('/status-bulk', [TrackController::class, 'statusBulk']);
     Route::post('/bulk-action', [TrackController::class, 'bulkAction']);
+});
+
+// YouTube routes
+Route::prefix('youtube')->group(function () {
+    Route::post('/upload/{id}', [App\Http\Controllers\Api\YouTubeController::class, 'uploadVideo']);
+    Route::post('/upload-all', [App\Http\Controllers\Api\YouTubeController::class, 'uploadAll']);
+});
+
+// YouTube upload routes
+Route::post('/youtube/upload/{id}', [App\Http\Controllers\Api\YouTubeController::class, 'uploadVideo']);
+Route::post('/youtube/upload-all', [App\Http\Controllers\Api\YouTubeController::class, 'uploadAll']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    // YouTube upload routes
+    Route::prefix('youtube')->group(function () {
+        Route::get('/status', [App\Http\Controllers\Api\YouTubeUploadController::class, 'getUploadStatus']);
+        Route::post('/upload/track/{trackId}', [App\Http\Controllers\Api\YouTubeUploadController::class, 'uploadTrack']);
+        Route::post('/upload/all', [App\Http\Controllers\Api\YouTubeUploadController::class, 'uploadAllTracks']);
+    });
 }); 

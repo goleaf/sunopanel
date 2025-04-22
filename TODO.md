@@ -62,6 +62,40 @@
 - [x] Improve OAuth integration for direct uploads
 - [x] Update YouTube upload documentation
 
+## YouTube Upload Improvements
+
+## Current Issues
+- The direct upload approach using browser automation (`youtube-direct-upload`) is failing due to changes in Google's login process
+- Selenium-based automation is unreliable for YouTube login due to:
+  - Frequent changes to Google's authentication flow
+  - Anti-automation measures by Google
+  - Captchas and 2FA challenges
+
+## Action Plan
+1. Implement proper OAuth authentication for YouTube uploads
+   - Create a Google Cloud project and enable YouTube Data API v3
+   - Configure OAuth consent screen and credentials
+   - Update the SimpleYouTubeUploader to use OAuth instead of browser automation
+   
+2. Implement YouTube API client with refresh token support
+   - Store refresh tokens securely in the database
+   - Handle token refresh automatically
+   - Implement proper error handling and retry logic
+
+3. Create a web interface for YouTube account connection
+   - Add routes for OAuth flow
+   - Create a connection wizard UI
+   - Display connection status
+
+## Tasks
+- [ ] Set up Google Cloud project with YouTube Data API v3
+- [ ] Create OAuth credentials for YouTube API
+- [ ] Update SimpleYouTubeUploader to use YouTube Data API
+- [ ] Implement token storage and refresh mechanism
+- [ ] Update job queue system for YouTube uploads
+- [ ] Create web UI for connecting YouTube accounts
+- [ ] Update test scripts and diagnostic tools
+
 ## Remaining Tasks
 
 - [x] Test the YouTube upload functionality

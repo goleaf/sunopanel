@@ -4,9 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Jobs\UploadTrackToYouTube;
 use App\Models\Track;
+use App\Models\Genre;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use App\Services\YoutubeThumbnailGenerator;
+use App\Services\TrackProcessor;
 
 class TrackController extends Controller
 {
@@ -231,5 +234,59 @@ class TrackController extends Controller
         );
         
         return back()->with('success', 'The track has been queued for upload to YouTube. This may take a few minutes.');
+    }
+
+    /**
+     * Upload all completed tracks to YouTube.
+     */
+    public function uploadAllToYoutube(Request $request)
+    {
+        // Check if YouTube credentials are set
+        if (empty(config('youtube.email')) || empty(config('youtube.password'))) {
+            return redirect()->route('tracks.index')
+                ->with('error', 'YouTube credentials are not set. Please set them first.');
+        }
+        
+        // Get all completed tracks that have an MP4 file and haven't been uploaded to YouTube yet
+        $tracks = Track::where('status', 'completed')
+            ->whereNotNull('mp4_file')
+            ->where(function($query) {
+                $query->whereNull('youtube_video_id')
+                    ->orWhere('youtube_video_id', '');
+            })
+            ->get();
+        
+        $count = $tracks->count();
+        
+        if ($count === 0) {
+            return redirect()->route('tracks.index')
+                ->with('info', 'No eligible tracks found for YouTube upload.');
+        }
+        
+        // Queue upload jobs for all eligible tracks
+        foreach ($tracks as $track) {
+            // Set default title and description
+            $title = $track->title;
+            $description = "Generated with SunoPanel\nTrack: {$track->title}";
+            
+            if (!empty($track->genres_string)) {
+                $description .= "\nGenres: {$track->genres_string}";
+            }
+            
+            // Use the privacy status from the form or default to 'unlisted'
+            $privacyStatus = $request->input('privacy_status', 'unlisted');
+            
+            // Dispatch the upload job with a delay to prevent API rate limiting
+            UploadTrackToYouTube::dispatch(
+                $track,
+                $title,
+                $description,
+                true, // Add to playlist based on genre
+                $privacyStatus
+            )->delay(now()->addSeconds($track->id % 30)); // Stagger uploads to avoid overloading
+        }
+        
+        return redirect()->route('tracks.index')
+            ->with('success', "{$count} tracks have been queued for upload to YouTube. This may take some time to complete.");
     }
 }
