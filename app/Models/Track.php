@@ -20,6 +20,7 @@ class Track extends Model
     protected $fillable = [
         'title',
         'slug',
+        'suno_id',
         'mp3_url',
         'image_url',
         'mp3_path',

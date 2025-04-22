@@ -105,6 +105,20 @@ class ImportSunoPlaylist extends Command
      */
     protected function processTrack(array $clip)
     {
+        // Extract Suno ID
+        $sunoId = $clip['id'] ?? null;
+        
+        // Skip if song with this Suno ID already exists
+        if ($sunoId) {
+            // Check if track with this Suno ID exists in the database
+            $existingTrack = Track::where('suno_id', $sunoId)->first();
+                
+            if ($existingTrack) {
+                $this->info("Track with Suno ID {$sunoId} already exists (ID: {$existingTrack->id}), skipping");
+                return;
+            }
+        }
+    
         // Extract track info
         $title = $clip['title'] ?? null;
         if (empty($title)) {
@@ -125,8 +139,9 @@ class ImportSunoPlaylist extends Command
 
         // Create or update the track
         $track = Track::updateOrCreate(
-            ['title' => $title],
+            ['suno_id' => $sunoId], // Use suno_id for lookup instead of title
             [
+                'title' => $title,
                 'mp3_url' => $mp3Url,
                 'image_url' => $imageUrl,
                 'genres_string' => $tagsString,
