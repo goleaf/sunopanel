@@ -19,7 +19,6 @@ class Track extends Model
      */
     protected $fillable = [
         'title',
-        'slug',
         'suno_id',
         'mp3_url',
         'image_url',
@@ -63,18 +62,6 @@ class Track extends Model
         'failed',      // Processing failed
         'stopped',     // Processing manually stopped
     ];
-
-    /**
-     * The "booted" method of the model.
-     */
-    protected static function booted(): void
-    {
-        static::creating(function (Track $track) {
-            if (empty($track->slug)) {
-                $track->slug = Str::slug($track->title);
-            }
-        });
-    }
 
     /**
      * Get the genres that belong to this track.
