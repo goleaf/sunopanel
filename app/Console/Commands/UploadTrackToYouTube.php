@@ -112,19 +112,12 @@ class UploadTrackToYouTube extends Command
             // Log file existence
             $this->info("Video file found, size: " . File::size($videoPath) . " bytes");
             
+            // Use SimpleYouTubeUploader to handle the upload
+            $uploader = app(\App\Services\SimpleYouTubeUploader::class);
+            
             // Prepare title and description
             $title = $this->option('title') ?: $track->title;
-            $description = $this->option('description') ?: "Generated with SunoPanel\nTrack: {$track->title}";
-            
-            if (!empty($track->genres_string)) {
-                $description .= "\nGenres: {$track->genres_string}";
-            }
-            
-            // Prepare tags
-            $tagsString = $this->option('tags');
-            $genres = $track->genres()->pluck('name')->toArray();
-            $tags = $tagsString ? array_map('trim', explode(',', $tagsString)) : [];
-            $tags = array_merge($tags, $genres, ['sunopanel', 'ai music', 'ai generated']);
+            $description = $this->option('description') ?: null; // Let the uploader use the default
             
             // Get the privacy setting
             $privacy = $this->getPrivacySetting();
@@ -134,13 +127,12 @@ class UploadTrackToYouTube extends Command
             $this->info("Title: {$title}");
             $this->info("Privacy: {$privacy}");
             
-            $videoId = $this->youtubeService->uploadVideo(
-                $videoPath,
+            $videoId = $uploader->uploadTrack(
+                $track,
                 $title,
                 $description,
-                $tags,
                 $privacy,
-                '10' // Music category
+                true // Always add to playlists
             );
             
             if (!$videoId) {
@@ -148,24 +140,8 @@ class UploadTrackToYouTube extends Command
                 return 1;
             }
             
-            // Update the track with the YouTube ID
-            $track->youtube_video_id = $videoId;
-            $track->youtube_uploaded_at = now();
-            $track->save();
-            
             $this->info("Upload successful! Video ID: {$videoId}");
             $this->info("Video URL: https://www.youtube.com/watch?v={$videoId}");
-            
-            // Add to playlist if specified
-            $playlistName = $this->option('playlist');
-            if ($playlistName) {
-                $this->addToPlaylist($videoId, $playlistName, $track);
-            }
-            
-            // Add to genre playlists if track has genres
-            if ($track->genres->isNotEmpty()) {
-                $this->addToGenrePlaylists($videoId, $track);
-            }
             
             return 0;
         } catch (\Exception $e) {
