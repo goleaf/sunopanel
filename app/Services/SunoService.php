@@ -16,6 +16,21 @@ class SunoService
     protected string $baseUrl = 'https://suno.com';
     
     /**
+     * @var BrowserAutomationService
+     */
+    protected BrowserAutomationService $browserAutomationService;
+    
+    /**
+     * Constructor
+     * 
+     * @param BrowserAutomationService $browserAutomationService
+     */
+    public function __construct(BrowserAutomationService $browserAutomationService)
+    {
+        $this->browserAutomationService = $browserAutomationService;
+    }
+    
+    /**
      * Fetch tracks by music style from Suno.com
      *
      * @param string $style Music style to fetch tracks for (e.g. "dark trap metalcore")
@@ -25,28 +40,21 @@ class SunoService
     public function getTracksByStyle(string $style): array
     {
         try {
-            // Unfortunately, direct API access to Suno.com is challenging due to Cloudflare protection
-            // For a production implementation, you would need to:
-            // 1. Use a proper API like the ones offered by third-party services (e.g., PiAPI or others)
-            // 2. Or implement a sophisticated browser automation with CAPTCHA solving
+            // First, try with browser automation
+            $tracks = $this->browserAutomationService->fetchTracksByStyle($style);
             
-            // Since we can't directly access their data in a simple way without paying for services,
-            // we'll return an error message with recommendations
+            // Check if there was an error with browser automation
+            if (isset($tracks['error']) && $tracks['error'] === true) {
+                Log::warning('Browser automation failed, falling back to sample data', [
+                    'style' => $style,
+                    'message' => $tracks['message']
+                ]);
+                
+                // Fall back to sample data
+                return $this->getSampleTrackData($style);
+            }
             
-            Log::info('Attempting to fetch tracks by style', [
-                'style' => $style
-            ]);
-            
-            return [
-                'error' => true,
-                'message' => 'Direct data fetching from Suno.com requires specialized authentication and CAPTCHA solving.',
-                'recommendations' => [
-                    'Use a third-party API service like PiAPI (https://piapi.ai/suno-api) or similar',
-                    'Implement a browser automation solution with CAPTCHA solving (e.g., using the open-source suno-api project: https://github.com/gcui-art/suno-api)',
-                    'Contact Suno directly for API access if you are a business partner'
-                ],
-                'style_requested' => $style
-            ];
+            return $tracks;
         } catch (\Exception $e) {
             Log::error('Error in SunoService::getTracksByStyle', [
                 'style' => $style,
