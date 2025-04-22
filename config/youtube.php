@@ -8,6 +8,7 @@ return [
     // OAuth Credentials - Required for YouTube API authentication
     'client_id' => env('YOUTUBE_CLIENT_ID'),
     'client_secret' => env('YOUTUBE_CLIENT_SECRET'),
+    'redirect_uri' => env('YOUTUBE_REDIRECT_URI', 'https://sunopanel.prus.dev/youtube-auth'),
     'access_token' => env('YOUTUBE_ACCESS_TOKEN'),
     'refresh_token' => env('YOUTUBE_REFRESH_TOKEN'),
     'token_created_at' => env('YOUTUBE_TOKEN_CREATED_AT'),

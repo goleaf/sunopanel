@@ -105,3 +105,6 @@ Route::prefix('youtube')->name('youtube.')->group(function () {
     Route::get('/diagnostics', [App\Http\Controllers\YouTubeDiagnosticsController::class, 'index'])->name('diagnostics');
     Route::post('/diagnostics/test-upload', [App\Http\Controllers\YouTubeDiagnosticsController::class, 'testUpload'])->name('diagnostics.test-upload');
 });
+
+// Special route for YouTube OAuth callback to match the redirect URI in Google Console
+Route::get('/youtube-auth', [App\Http\Controllers\Api\YouTubeAuthController::class, 'handleProviderCallback'])->name('youtube.auth.external_callback');

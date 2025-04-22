@@ -53,7 +53,7 @@ class YouTubeApiService
         // Load credentials from config
         $clientId = config('youtube.client_id');
         $clientSecret = config('youtube.client_secret');
-        $redirectUri = route('youtube.auth.callback');
+        $redirectUri = config('youtube.redirect_uri', 'https://sunopanel.prus.dev/youtube-auth');
         
         if (empty($clientId) || empty($clientSecret)) {
             Log::warning('YouTube API credentials not configured. OAuth will not work properly.');
