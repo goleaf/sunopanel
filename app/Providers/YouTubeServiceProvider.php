@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Services\YouTubeUploaderScripts;
 use Google_Client;
 use Google_Service_YouTube;
 use Illuminate\Support\ServiceProvider;
@@ -57,6 +58,11 @@ class YouTubeServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__ . '/../config/youtube.php' => config_path('youtube.php'),
         ], 'config');
+        
+        // Install YouTube uploader scripts
+        if ($this->app->environment() !== 'testing') {
+            YouTubeUploaderScripts::install();
+        }
     }
     
     /**

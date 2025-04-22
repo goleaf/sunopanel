@@ -14,6 +14,8 @@ use Google_Service_YouTube_VideoSnippet;
 use Google_Service_YouTube_VideoStatus;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\Process\Process;
+use Exception;
 
 class YouTubeService
 {
@@ -60,88 +62,108 @@ class YouTubeService
     
     /**
      * Upload a video to YouTube
-     * 
-     * @param string $filePath Local file path to the video
-     * @param string $title Title of the video
-     * @param string $description Description of the video
-     * @param array $tags Tags for the video
-     * @param string $privacyStatus Privacy status (public, unlisted, private)
-     * @param int $categoryId YouTube category ID
-     * @return string|null YouTube video ID if successful, null if failed
+     *
+     * @param string $videoPath Path to the video file
+     * @param string $email YouTube/Google account email
+     * @param string $password YouTube/Google account password
+     * @param string $title Video title
+     * @param string $description Video description
+     * @param string $tags Video tags (comma separated)
+     * @param string $privacy Privacy setting (public, unlisted, private)
+     * @param string $category Video category
+     * @return array The result of the upload process
      */
     public function uploadVideo(
-        string $filePath,
+        string $videoPath,
+        string $email,
+        string $password,
         string $title,
-        string $description,
-        array $tags = [],
-        string $privacyStatus = null,
-        int $categoryId = null
-    ): ?string {
-        if (!$this->isAuthenticated()) {
-            Log::error('Cannot upload video: Not authenticated with YouTube');
-            return null;
+        string $description = '',
+        string $tags = '',
+        string $privacy = 'unlisted',
+        string $category = 'Music'
+    ): array {
+        // First, generate the client secrets file
+        $this->generateClientSecrets();
+        
+        // Check if the video file exists
+        if (!file_exists($videoPath)) {
+            throw new Exception("Video file not found: {$videoPath}");
         }
         
-        if (!file_exists($filePath)) {
-            Log::error("Cannot upload video: File does not exist at {$filePath}");
-            return null;
+        // Prepare the upload command
+        $command = [
+            '/usr/local/bin/youtube-direct-upload',
+            '--email', $email,
+            '--password', $password,
+            '--title', $title,
+            '--description', $description,
+            '--tags', $tags,
+            '--privacy', $privacy,
+            '--category', $category,
+            $videoPath
+        ];
+        
+        // Execute the command
+        $process = new Process($command);
+        $process->setTimeout(3600); // 1 hour timeout for large uploads
+        $process->run();
+        
+        // Get output and error
+        $output = $process->getOutput();
+        $errorOutput = $process->getErrorOutput();
+        
+        // Log the process output
+        Log::info('YouTube upload output', [
+            'output' => $output,
+            'error' => $errorOutput
+        ]);
+        
+        // Check if upload was successful
+        if (!$process->isSuccessful()) {
+            Log::error('YouTube upload failed', [
+                'command' => implode(' ', $command),
+                'exit_code' => $process->getExitCode(),
+                'output' => $output,
+                'error' => $errorOutput
+            ]);
+            
+            return [
+                'success' => false,
+                'message' => 'Upload failed: ' . $errorOutput,
+                'output' => $output
+            ];
         }
         
-        try {
-            // Create a snippet with title, description, tags, and category ID
-            $snippet = new Google_Service_YouTube_VideoSnippet();
-            $snippet->setTitle($title);
-            $snippet->setDescription($description);
-            $snippet->setTags($tags);
-            $snippet->setCategoryId($categoryId ?? config('youtube.default_category_id'));
-            
-            // Set the privacy status
-            $status = new Google_Service_YouTube_VideoStatus();
-            $status->setPrivacyStatus($privacyStatus ?? config('youtube.default_privacy_status'));
-            
-            // Create the video resource
-            $video = new Google_Service_YouTube_Video();
-            $video->setSnippet($snippet);
-            $video->setStatus($status);
-            
-            // Set the chunk size to 50MB to reduce memory usage
-            $this->client->setDefer(true);
-            
-            // Create the insert request
-            $insertRequest = $this->youtube->videos->insert(
-                'snippet,status',
-                $video
-            );
-            
-            // Create an upload MediaFileUpload object
-            $media = $this->client->getHttpClient()->mediaFileUpload(
-                $insertRequest->buildUri(),
-                file_get_contents($filePath),
-                'video/*',
-                null
-            );
-            
-            // Upload the file chunk by chunk
-            $status = false;
-            $handle = fopen($filePath, 'rb');
-            while (!$status && !feof($handle)) {
-                $chunk = fread($handle, 1024 * 1024 * 5); // 5MB chunks
-                $status = $media->nextChunk($chunk);
-            }
-            fclose($handle);
-            
-            // Reset the defer flag
-            $this->client->setDefer(false);
-            
-            if ($status) {
-                Log::info("Video uploaded successfully: {$status['id']}");
-                return $status['id'];
-            }
-        } catch (\Exception $e) {
-            Log::error('YouTube upload error: ' . $e->getMessage());
+        // Extract video ID if available
+        $videoId = null;
+        if (preg_match('/Video ID: ([A-Za-z0-9_-]+)/', $output, $matches)) {
+            $videoId = $matches[1];
         }
         
-        return null;
+        return [
+            'success' => true,
+            'message' => 'Upload succeeded',
+            'video_id' => $videoId,
+            'output' => $output
+        ];
+    }
+    
+    /**
+     * Generate client secrets JSON file from environment variables
+     *
+     * @return string Path to the generated file
+     */
+    private function generateClientSecrets(): string
+    {
+        $process = new Process(['/usr/local/bin/youtube-client-secrets']);
+        $process->run();
+        
+        if (!$process->isSuccessful()) {
+            throw new Exception('Failed to generate client secrets: ' . $process->getErrorOutput());
+        }
+        
+        return '/tmp/client_secrets.json';
     }
     
     /**
@@ -339,14 +361,16 @@ class YouTubeService
         // Upload the video
         $videoId = $this->uploadVideo(
             $filePath,
+            '',
+            '',
             $title,
             $description,
-            $tags,
-            $privacyStatus,
-            $categoryId
+            implode(',', $tags),
+            $privacyStatus ?? 'unlisted',
+            $categoryId ?? 'Music'
         );
         
-        if (!$videoId) {
+        if (!$videoId['success']) {
             return null;
         }
         
@@ -359,19 +383,19 @@ class YouTubeService
         
         if (!$playlistId) {
             Log::error("Failed to find or create playlist: {$playlistTitle}");
-            return ['video_id' => $videoId, 'playlist_id' => null];
+            return ['video_id' => $videoId['video_id'], 'playlist_id' => null];
         }
         
         // Add the video to the playlist
-        $success = $this->addVideoToPlaylist($videoId, $playlistId);
+        $success = $this->addVideoToPlaylist($videoId['video_id'], $playlistId);
         
         if (!$success) {
-            Log::error("Failed to add video {$videoId} to playlist {$playlistId}");
-            return ['video_id' => $videoId, 'playlist_id' => $playlistId];
+            Log::error("Failed to add video {$videoId['video_id']} to playlist {$playlistId}");
+            return ['video_id' => $videoId['video_id'], 'playlist_id' => $playlistId];
         }
         
         return [
-            'video_id' => $videoId,
+            'video_id' => $videoId['video_id'],
             'playlist_id' => $playlistId,
             'success' => true,
         ];
