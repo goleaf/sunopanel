@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Jobs\UploadTrackToYouTube;
 use App\Models\Track;
 use App\Models\Genre;
 use Illuminate\Http\JsonResponse;
@@ -186,51 +185,50 @@ class TrackController extends Controller
 
     /**
      * Upload a track to YouTube.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @param \App\Models\Track $track
+     * @return \Illuminate\Http\Response
      */
     public function uploadToYoutube(Request $request, Track $track)
     {
-        // Check if track is completed and has an MP4 file
-        if ($track->status !== 'completed' || !$track->mp4_path) {
-            return back()->with('error', 'This track must be completed with an MP4 file before uploading to YouTube.');
-        }
-        
-        // Validate the request
-        $validated = $request->validate([
+        $request->validate([
             'title' => 'required|string|max:100',
-            'description' => 'nullable|string|max:5000',
-            'privacy_status' => 'required|in:public,unlisted,private',
+            'description' => 'nullable|string',
+            'privacy' => 'required|in:public,unlisted,private',
         ]);
-        
-        // Set a default title if not provided
-        if (empty($validated['title'])) {
-            $validated['title'] = $track->title;
-        }
-        
-        // Set a default description if not provided
-        if (empty($validated['description'])) {
-            $validated['description'] = "Generated with SunoPanel\nTrack: {$track->title}";
-            if (!empty($track->genres_string)) {
-                $validated['description'] .= "\nGenres: {$track->genres_string}";
+
+        try {
+            // Check if track is completed and has an MP4 file
+            if ($track->status !== 'completed' || empty($track->mp4_path)) {
+                return back()->with('error', 'Track must be completed and have a video file to upload to YouTube.');
             }
-        }
-        
-        // Use Artisan command to upload to YouTube
-        $exitCode = Artisan::call('youtube:upload', [
-            '--track_id' => $track->id,
-            '--title' => $validated['title'],
-            '--description' => $validated['description'],
-            '--privacy' => $validated['privacy_status'],
-        ]);
-        
-        if ($exitCode === 0) {
-            return back()->with('success', 'The track has been uploaded to YouTube successfully.');
-        } else {
-            $output = Artisan::output();
-            \Log::error('YouTube upload failed from controller', [
-                'track_id' => $track->id,
-                'output' => $output
+            
+            // Run the Artisan command to upload to YouTube
+            $exitCode = Artisan::call('youtube:upload', [
+                '--track_id' => $track->id,
+                '--title' => $request->title,
+                '--description' => $request->description ?? '',
+                '--privacy' => $request->privacy,
             ]);
-            return back()->with('error', 'YouTube upload failed. Please check the logs for details.');
+            
+            if ($exitCode !== 0) {
+                $output = Artisan::output();
+                \Log::error('YouTube upload failed via command', [
+                    'track_id' => $track->id,
+                    'command_output' => $output,
+                ]);
+                return back()->with('error', 'Failed to upload track to YouTube. Check logs for details.');
+            }
+            
+            return back()->with('success', 'Track uploaded successfully to YouTube!');
+        } catch (\Exception $e) {
+            \Log::error('YouTube upload failed', [
+                'track_id' => $track->id,
+                'error' => $e->getMessage(),
+            ]);
+            
+            return back()->with('error', 'Failed to upload track to YouTube: ' . $e->getMessage());
         }
     }
 
@@ -258,41 +256,21 @@ class TrackController extends Controller
         // Use the privacy status from the form or default to 'unlisted'
         $privacyStatus = $request->input('privacy_status', 'unlisted');
         
-        // Track how many uploads were successful
-        $successCount = 0;
+        // Run command to upload all eligible tracks
+        $exitCode = Artisan::call('youtube:upload-all', [
+            '--privacy' => $privacyStatus,
+        ]);
         
-        // Process each track
-        foreach ($tracks as $track) {
-            // Set default title and description
-            $title = $track->title;
-            $description = "Generated with SunoPanel\nTrack: {$track->title}";
-            
-            if (!empty($track->genres_string)) {
-                $description .= "\nGenres: {$track->genres_string}";
-            }
-            
-            // Use Artisan command to upload to YouTube
-            $exitCode = Artisan::call('youtube:upload', [
-                '--track_id' => $track->id,
-                '--title' => $title,
-                '--description' => $description,
-                '--privacy' => $privacyStatus,
+        if ($exitCode !== 0) {
+            $output = Artisan::output();
+            \Log::error('YouTube bulk upload failed via command', [
+                'command_output' => $output,
             ]);
-            
-            if ($exitCode === 0) {
-                $successCount++;
-            } else {
-                \Log::error('YouTube bulk upload failed for track', [
-                    'track_id' => $track->id,
-                    'output' => Artisan::output()
-                ]);
-            }
-            
-            // Pause between uploads to avoid API rate limits
-            sleep(2);
+            return redirect()->route('tracks.index')
+                ->with('error', 'Failed to upload tracks to YouTube. Check logs for details.');
         }
         
         return redirect()->route('tracks.index')
-            ->with('success', "{$successCount} of {$count} tracks have been uploaded to YouTube successfully.");
+            ->with('success', "Tracks have been queued for upload to YouTube.");
     }
 }

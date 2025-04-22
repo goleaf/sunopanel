@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Jobs\UploadTrackToYouTube;
 use App\Models\Track;
 use App\Services\YouTubeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Artisan;
 
 class YouTubeUploadController extends Controller
 {
@@ -60,17 +60,26 @@ class YouTubeUploadController extends Controller
                 ->with('warning', 'You must authenticate with YouTube first');
         }
         
-        // Dispatch the upload job
-        UploadTrackToYouTube::dispatch(
-            $track,
-            $validated['title'],
-            $validated['description'] ?? '',
-            (bool) ($validated['add_to_playlist'] ?? true),
-            $validated['privacy_status']
-        );
+        // Use the Artisan command to upload the track
+        $exitCode = Artisan::call('youtube:upload', [
+            '--track_id' => $track->id,
+            '--title' => $validated['title'],
+            '--description' => $validated['description'] ?? '',
+            '--privacy' => $validated['privacy_status']
+        ]);
+        
+        if ($exitCode !== 0) {
+            $output = Artisan::output();
+            Log::error('YouTube upload failed via command', [
+                'track_id' => $track->id,
+                'command_output' => $output,
+            ]);
+            return redirect()->route('tracks.index')
+                ->with('error', 'Failed to upload track to YouTube. Check logs for details.');
+        }
         
         return redirect()->route('tracks.index')
-            ->with('success', 'Track upload to YouTube has been queued');
+            ->with('success', 'Track has been successfully uploaded to YouTube');
     }
     
     /**
@@ -99,16 +108,25 @@ class YouTubeUploadController extends Controller
                 ->with('warning', 'You must authenticate with YouTube first');
         }
         
-        // Dispatch the upload job
-        UploadTrackToYouTube::dispatch(
-            $track,
-            $track->title,
-            "Uploaded from SunoPanel\nOriginal track: {$track->title}",
-            true,
-            'unlisted'
-        );
+        // Use the Artisan command to upload the track
+        $exitCode = Artisan::call('youtube:upload', [
+            '--track_id' => $track->id,
+            '--title' => $track->title,
+            '--description' => "Uploaded from SunoPanel\nOriginal track: {$track->title}",
+            '--privacy' => 'unlisted'
+        ]);
+        
+        if ($exitCode !== 0) {
+            $output = Artisan::output();
+            Log::error('YouTube direct upload failed via command', [
+                'track_id' => $track->id,
+                'command_output' => $output,
+            ]);
+            return redirect()->route('tracks.show', $track->id)
+                ->with('error', 'Failed to upload track to YouTube. Check logs for details.');
+        }
         
         return redirect()->route('tracks.show', $track->id)
-            ->with('success', 'Track upload to YouTube has been queued');
+            ->with('success', 'Track has been successfully uploaded to YouTube');
     }
 } 

@@ -2,9 +2,9 @@
 
 namespace App\Console\Commands;
 
-use App\Jobs\UploadTrackToYouTube;
 use App\Models\Track;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Log;
 
 final class TestYouTubeUpload extends Command
@@ -14,7 +14,7 @@ final class TestYouTubeUpload extends Command
      *
      * @var string
      */
-    protected $signature = 'youtube:test-upload {track_id? : The ID of the track to upload} {--now : Process immediately instead of queueing}';
+    protected $signature = 'youtube:test-upload {track_id? : The ID of the track to upload}';
 
     /**
      * The console command description.
@@ -66,17 +66,23 @@ final class TestYouTubeUpload extends Command
         $this->info("Video file exists at: {$videoPath}");
         
         try {
-            if ($this->option('now')) {
-                $this->info('Processing upload immediately...');
-                $job = new UploadTrackToYouTube($track);
-                $job->handle(app()->make('App\Services\SimpleYouTubeUploader'));
-                $this->info('Upload process completed. Check logs for details.');
-            } else {
-                $this->info('Dispatching upload job to queue...');
-                UploadTrackToYouTube::dispatch($track);
-                $this->info('Upload job dispatched to queue. Process with queue worker.');
+            $this->info('Executing YouTube upload command...');
+            
+            // Use the direct upload command
+            $exitCode = Artisan::call('youtube:upload', [
+                '--track_id' => $track->id,
+                '--title' => '[TEST] ' . $track->title,
+                '--description' => 'This is a test upload from SunoPanel',
+                '--privacy' => 'unlisted'
+            ]);
+            
+            if ($exitCode !== 0) {
+                $output = Artisan::output();
+                $this->error('YouTube upload command failed: ' . $output);
+                return 1;
             }
             
+            $this->info('Upload process completed successfully.');
             return 0;
         } catch (\Exception $e) {
             $this->error("Error: " . $e->getMessage());

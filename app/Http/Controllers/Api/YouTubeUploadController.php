@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Jobs\UploadTrackToYouTube;
 use App\Models\Track;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Artisan;
 
 final readonly class YouTubeUploadController extends Controller
 {
@@ -55,12 +55,30 @@ final readonly class YouTubeUploadController extends Controller
                 ], 400);
             }
             
-            // Dispatch the upload job
-            UploadTrackToYouTube::dispatch($track);
+            // Use Artisan command to upload track
+            $exitCode = Artisan::call('youtube:upload', [
+                '--track_id' => $track->id,
+                '--title' => $track->title,
+                '--description' => "Uploaded from SunoPanel API\nTrack: {$track->title}",
+                '--privacy' => 'unlisted'
+            ]);
+            
+            if ($exitCode !== 0) {
+                $output = Artisan::output();
+                Log::error('YouTube upload failed via API command', [
+                    'track_id' => $track->id,
+                    'command_output' => $output
+                ]);
+                
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to upload track to YouTube'
+                ], 500);
+            }
             
             return response()->json([
                 'success' => true,
-                'message' => 'Track queued for upload to YouTube'
+                'message' => 'Track uploaded to YouTube successfully'
             ]);
             
         } catch (\Exception $e) {
@@ -81,23 +99,28 @@ final readonly class YouTubeUploadController extends Controller
     public function uploadAllTracks(): JsonResponse
     {
         try {
-            // Get all completed tracks that have mp4 file and not uploaded to YouTube yet
-            $tracks = Track::where('is_completed', true)
+            // Use Artisan command to upload all tracks
+            $exitCode = Artisan::call('youtube:upload-all', [
+                '--privacy' => 'unlisted'
+            ]);
+            
+            if ($exitCode !== 0) {
+                $output = Artisan::output();
+                Log::error('YouTube bulk upload failed via API command', [
+                    'command_output' => $output
+                ]);
+                
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to upload tracks to YouTube'
+                ], 500);
+            }
+            
+            // Get the number of eligible tracks for upload
+            $uploadCount = Track::where('is_completed', true)
                 ->whereNotNull('mp4_file')
                 ->whereNull('youtube_id')
-                ->get();
-            
-            $uploadCount = 0;
-            
-            foreach ($tracks as $track) {
-                // Check if file exists
-                $videoPath = storage_path('app/public/videos/' . $track->mp4_file);
-                if (file_exists($videoPath)) {
-                    // Dispatch the upload job
-                    UploadTrackToYouTube::dispatch($track);
-                    $uploadCount++;
-                }
-            }
+                ->count();
             
             return response()->json([
                 'success' => true,

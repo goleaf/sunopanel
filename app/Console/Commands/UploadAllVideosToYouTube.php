@@ -2,10 +2,10 @@
 
 namespace App\Console\Commands;
 
-use App\Jobs\UploadTrackToYouTube;
 use App\Models\Track;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Artisan;
 
 final class UploadAllVideosToYouTube extends Command
 {
@@ -14,14 +14,17 @@ final class UploadAllVideosToYouTube extends Command
      *
      * @var string
      */
-    protected $signature = 'youtube:upload-all {--force : Force re-upload of videos already on YouTube} {--limit= : Limit the number of videos to process}';
+    protected $signature = 'youtube:upload-all 
+                           {--force : Force re-upload of videos already on YouTube} 
+                           {--limit= : Limit the number of videos to process}
+                           {--privacy=unlisted : Privacy setting (public, unlisted, private)}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Upload all videos to YouTube using the queue system';
+    protected $description = 'Upload all eligible videos to YouTube';
 
     /**
      * Execute the console command.
@@ -30,6 +33,7 @@ final class UploadAllVideosToYouTube extends Command
     {
         $forceReupload = $this->option('force');
         $limit = $this->option('limit');
+        $privacy = $this->option('privacy');
         
         $query = Track::whereNotNull('mp4_file')
             ->where('mp4_file', '!=', '');
@@ -50,7 +54,7 @@ final class UploadAllVideosToYouTube extends Command
         }
         
         $count = $tracks->count();
-        $this->info("Dispatching upload jobs for {$count} tracks to the queue");
+        $this->info("Processing uploads for {$count} tracks");
         
         $successCount = 0;
         $errorCount = 0;
@@ -65,12 +69,30 @@ final class UploadAllVideosToYouTube extends Command
             }
             
             try {
-                UploadTrackToYouTube::dispatch($track);
-                $successCount++;
-                $this->line("Queued track '{$track->title}' (ID: {$track->id}) for upload");
+                $this->line("Uploading track '{$track->title}' (ID: {$track->id})...");
+                
+                // Execute the upload command for each track
+                $exitCode = Artisan::call('youtube:upload', [
+                    '--track_id' => $track->id,
+                    '--title' => $track->title,
+                    '--description' => "Generated with SunoPanel\nTrack: {$track->title}",
+                    '--privacy' => $privacy
+                ]);
+                
+                if ($exitCode === 0) {
+                    $successCount++;
+                    $this->info("Successfully uploaded track '{$track->title}' (ID: {$track->id})");
+                } else {
+                    $output = Artisan::output();
+                    $this->error("Failed to upload track '{$track->title}' (ID: {$track->id}): {$output}");
+                    $errorCount++;
+                }
+                
+                // Add a small delay to avoid API rate limits
+                sleep(2);
             } catch (\Exception $e) {
-                $this->error("Failed to queue track '{$track->title}' (ID: {$track->id}): {$e->getMessage()}");
-                Log::error('Failed to queue YouTube upload', [
+                $this->error("Error uploading track '{$track->title}' (ID: {$track->id}): {$e->getMessage()}");
+                Log::error('Error in YouTube upload command', [
                     'track_id' => $track->id,
                     'error' => $e->getMessage(),
                     'trace' => $e->getTraceAsString()
@@ -80,10 +102,9 @@ final class UploadAllVideosToYouTube extends Command
         }
         
         $this->newLine();
-        $this->info("Upload queuing summary:");
-        $this->info("- Successfully queued: {$successCount}");
+        $this->info("Upload summary:");
+        $this->info("- Successfully uploaded: {$successCount}");
         $this->info("- Errors: {$errorCount}");
-        $this->info("Run your queue worker to process the uploads: php artisan queue:work");
         
         return $errorCount > 0 ? 1 : 0;
     }
