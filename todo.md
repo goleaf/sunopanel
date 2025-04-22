@@ -8,4 +8,5 @@
 
 ## Bug Fixes
 
-- [x] Fix `Undefined variable $tracks` error in YouTube uploads page by changing variable name from `$uploads` to `$tracks` in the controller 
+- [x] Fix `Undefined variable $tracks` error in YouTube uploads page by changing variable name from `$uploads` to `$tracks` in the controller
+- [x] Fix `Route [youtube.auth.login_form] not defined` error by adding missing YouTube auth routes and updating the videos/upload.blade.php template 
