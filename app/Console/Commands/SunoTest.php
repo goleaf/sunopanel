@@ -3,7 +3,6 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Http;
 
 class SunoTest extends Command
 {
@@ -12,148 +11,70 @@ class SunoTest extends Command
      *
      * @var string
      */
-    protected $signature = 'suno:test';
+    protected $signature = 'suno:list';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Test the Suno style page functionality';
+    protected $description = 'List songs from the predefined Suno tracks';
+
+    /**
+     * The sample tracks data (from custom instructions)
+     * 
+     * @var array
+     */
+    protected $tracks = [
+        'Fleeting Love (儚い愛).mp3|https://cdn1.suno.ai/69c0d3c4-a06f-471e-a396-4cb09c9ec2b6.mp3|https://cdn2.suno.ai/image_a07fbe33-8ee5-4f91-bb8d-180cbb49e5fe.jpeg|City pop,80s',
+        'Palakpakan.mp3|https://cdn1.suno.ai/9a00dc20-9640-4150-9804-d8a179ce860c.mp3|https://cdn2.suno.ai/image_9a00dc20-9640-4150-9804-d8a179ce860c.jpeg|city pop',
+        'ジャカジャカ.mp3|https://cdn1.suno.ai/837cd038-c104-405b-b1d5-bafa924a277f.mp3|https://cdn2.suno.ai/image_837cd038-c104-405b-b1d5-bafa924a277f.jpeg|city pop',
+        'nihongo jouzu.mp3|https://cdn1.suno.ai/79ef4474-cea8-433a-9bdc-5fe3482fd410.mp3|https://cdn2.suno.ai/79ef4474-cea8-433a-9bdc-5fe3482fd410_e90ebc18.jpeg|city pop',
+        '无言的告别.mp3|https://cdn1.suno.ai/86c03eaa-facb-487c-96d5-015a0d3fcc72.mp3|https://cdn2.suno.ai/image_463417b7-1282-4083-a681-c11848872ba1.jpeg|lofi,City pop,R&B',
+        'City of Sound.mp3|https://cdn1.suno.ai/52f2608e-d8fe-44e7-ab9a-5d6778dea12e.mp3|https://cdn2.suno.ai/52f2608e-d8fe-44e7-ab9a-5d6778dea12e_8f0f8ca2.jpeg|City pop synthwave vaporwave',
+        'Neon Nights.mp3|https://cdn1.suno.ai/bfd2531b-f8a5-432c-9bf8-8d5c2cac3a26.mp3|https://cdn2.suno.ai/bfd2531b-f8a5-432c-9bf8-8d5c2cac3a26_4ba38742.jpeg|city pop synthwave vaporwave',
+        'Humor sentido 3.mp3|https://cdn1.suno.ai/f474c102-46df-47a9-9226-4f6bb54a3f50.mp3|https://cdn2.suno.ai/image_f474c102-46df-47a9-9226-4f6bb54a3f50.jpeg|City pop psybient',
+        'City Lights.mp3|https://cdn1.suno.ai/e0ec684c-5a04-42f2-a656-6ee8fa05c880.mp3|https://cdn2.suno.ai/e0ec684c-5a04-42f2-a656-6ee8fa05c880_ffc2643f.jpeg|City pop',
+        'Loop the loop.mp3|https://cdn1.suno.ai/25ad5bcc-266b-4777-8d5f-1fa48a3b99af.mp3|https://cdn2.suno.ai/image_8299a9b0-77e6-42c7-8cbe-a41494ed30df.jpeg|CITY POP',
+        'Midnight Mirage.mp3|https://cdn1.suno.ai/4aaf14ca-ea58-4e97-87e3-b19aca31595a.mp3|https://cdn2.suno.ai/image_4aaf14ca-ea58-4e97-87e3-b19aca31595a.jpeg|acid rock city pop',
+        'キラメキ・ステップ.mp3|https://cdn1.suno.ai/a488d07e-e8c3-4335-aa18-f384cb133275.mp3|https://cdn2.suno.ai/a488d07e-e8c3-4335-aa18-f384cb133275_ba783930.jpeg|80s City POP',
+        'Summer in Tokyo (ALT).mp3|https://cdn1.suno.ai/7a41ee58-c865-4ad0-83e3-817d36188eea.mp3|https://cdn2.suno.ai/image_7d3092ac-8c3a-4f5d-bddf-c9e5ac8dcd5f.jpeg|New age funk,city pop,brass band',
+        'Gigolos for Laundry.mp3|https://cdn1.suno.ai/328e1f08-32ab-4929-8c1c-38f94b71f1e1.mp3|https://cdn2.suno.ai/328e1f08-32ab-4929-8c1c-38f94b71f1e1_56694827.jpeg|disco,japanese Nostalgic city-pop',
+        'I\'ve Never Loved Like This.mp3|https://cdn1.suno.ai/07a1add8-fbf9-48e9-b1ad-6b6a4822493e.mp3|https://cdn2.suno.ai/07a1add8-fbf9-48e9-b1ad-6b6a4822493e_478a2e50.jpeg|AOR,city-pop',
+        'Radio Waves.mp3|https://cdn1.suno.ai/8d0149d6-236d-4d2b-9d2e-0923a4311895.mp3|https://cdn2.suno.ai/8d0149d6-236d-4d2b-9d2e-0923a4311895_cbda2f8e.jpeg|City POP',
+        'CÂY ƠI!.mp3|https://cdn1.suno.ai/71f013a4-0903-4991-a990-f1051a59a193.mp3|https://cdn2.suno.ai/image_71f013a4-0903-4991-a990-f1051a59a193.jpeg|city pop',
+        'ElectricKinetic  (RemixRearrange).mp3|https://cdn1.suno.ai/a5fb3403-74fd-4819-9417-409af40e603c.mp3|https://cdn2.suno.ai/a5fb3403-74fd-4819-9417-409af40e603c_2c38cfb6.jpeg|city pop,dance,pop,clean production',
+        'My heart is break again.mp3|https://cdn1.suno.ai/158326b3-e0bc-4939-bd30-26a49ef86d55.mp3|https://cdn2.suno.ai/image_158326b3-e0bc-4939-bd30-26a49ef86d55.jpeg|lo-fi jazz city pop'
+    ];
 
     /**
      * Execute the console command.
      */
     public function handle(): int
     {
-        $this->info('Testing Suno style page for "dark trap metalcore"...');
-        
-        // First request - Visit the style page
-        $response = Http::withHeaders([
-            'accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-            'accept-language' => 'en-US,en;q=0.9,de;q=0.8,ru;q=0.7',
-            'cache-control' => 'max-age=0',
-            'priority' => 'u=0, i',
-            'sec-ch-ua' => '"Google Chrome";v="135", "Not-A.Brand";v="8", "Chromium";v="135"',
-            'sec-ch-ua-mobile' => '?0',
-            'sec-ch-ua-platform' => '"Windows"',
-            'sec-fetch-dest' => 'document',
-            'sec-fetch-mode' => 'navigate',
-            'sec-fetch-site' => 'same-origin',
-            'sec-fetch-user' => '?1',
-            'upgrade-insecure-requests' => '1',
-            'user-agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36',
-        ])->get('https://suno.com/style/dark%20trap%20metalcore');
-
-        if ($response->failed()) {
-            $this->error('Failed to access the style page: ' . $response->status());
-            $this->line('Response body:');
-            $this->line($response->body());
-            return self::FAILURE;
-        }
-
-        $this->info('Successfully accessed the style page.');
-        
-        // Make API search request to get songs data
-        $this->info('Now fetching search results for "dark trap metalcore"...');
-        
-        $searchResponse = Http::withHeaders([
-            'accept' => '*/*',
-            'accept-language' => 'en-US,en;q=0.9,de;q=0.8,ru;q=0.7',
-            'affiliate-id' => 'undefined',
-            'authorization' => 'Bearer eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18yT1o2eU1EZzhscWRKRWloMXJvemY4T3ptZG4iLCJ0eXAiOiJKV1QifQ.eyJhdWQiOiJzdW5vLWFwaSIsImF6cCI6Imh0dHBzOi8vc3Vuby5jb20iLCJleHAiOjE3NDUzMjgyNTEsImZ2YSI6Wzg1ODAsLTFdLCJodHRwczovL3N1bm8uYWkvY2xhaW1zL2NsZXJrX2lkIjoidXNlcl8yalRZbUxScVYzSDA3VDFCeDdFb3IxcWpNV20iLCJodHRwczovL3N1bm8uYWkvY2xhaW1zL2VtYWlsIjoiZ29sZWFmQGdtYWlsLmNvbSIsImh0dHBzOi8vc3Vuby5haS9jbGFpbXMvcGhvbmUiOm51bGwsImlhdCI6MTc0NTMyODE5MSwiaXNzIjoiaHR0cHM6Ly9jbGVyay5zdW5vLmNvbSIsImp0aSI6IjhkOWFkY2FlZWU5MjBiMmNlNTAwIiwibmJmIjoxNzQ1MzI4MTgxLCJzaWQiOiJzZXNzXzJ2b1pNTmZDYmFvaEpJYk1EOE9WaG5uOUt2QyIsInN1YiI6InVzZXJfMmpUWW1MUnFWM0gwN1QxQng3RW9yMXFqTVdtIn0.pLKPAsc2WjHfcKDpPV-hJ1y5VYFmxQw6CqIvyLs-tCZtunpHMrmfTG5Mcw17FFj_0kiP9lrvImbh5YtrDBO2SqC0Q2-xXy9hsLtbNfAKLyRUSBzJQXgSfhYu70fX0pM0p2mJiwXFPQtvVGLB5F3DzZFMlnPKl_7-t6KX8fzwbG4n8MPEl8Ealg7j8ang-9Pt2J_1Y2HUTRWoMoRWzkNu3eYiRTIKlLT-bhqPHk9u77QPG4NlVzG0SEsLaCvmUFU0lYqVbfRWAkQ51z5LlcNZ3Ts6KIrZd0wW9CsS9mTTy3uOxbDo0P_HBceI4deL3zzcgqe36zvXnDs_3-moL3CDsg',
-            'browser-token' => '{"token":"eyJ0aW1lc3RhbXAiOjE3NDUzMjgxOTk5ODd9"}',
-            'content-type' => 'text/plain;charset=UTF-8',
-            'device-id' => '42c6837d-7c0f-4093-b9bc-10d1671749aa',
-            'origin' => 'https://suno.com',
-            'priority' => 'u=1, i',
-            'referer' => 'https://suno.com/',
-            'sec-ch-ua' => '"Google Chrome";v="135", "Not-A.Brand";v="8", "Chromium";v="135"',
-            'sec-ch-ua-mobile' => '?0',
-            'sec-ch-ua-platform' => '"Windows"',
-            'sec-fetch-dest' => 'empty',
-            'sec-fetch-mode' => 'cors',
-            'sec-fetch-site' => 'same-site',
-            'user-agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36',
-        ])->post('https://studio-api.prod.suno.com/api/search/', [
-            'search_queries' => [
-                [
-                    'name' => 'tag_song',
-                    'search_type' => 'tag_song',
-                    'term' => 'dark trap metalcore',
-                    'from_index' => 0,
-                    'rank_by' => 'most_relevant'
-                ]
-            ]
-        ]);
-
-        if ($searchResponse->failed()) {
-            $this->error('Failed to fetch search results: ' . $searchResponse->status());
-            return self::FAILURE;
-        }
-
-        $this->info('Search results fetched successfully.');
-        
-        // Get song details for the results
-        $songs = $searchResponse->json('results.0.songs') ?? [];
-        
-        if (empty($songs)) {
-            $this->warn('No songs found for this style.');
-            return self::SUCCESS;
-        }
-        
-        // Get song IDs
-        $songIds = array_column($songs, 'id');
-        
-        $this->info('Found ' . count($songIds) . ' songs. Fetching song details...');
-        
-        // Build query string for song IDs
-        $songsQuery = '';
-        foreach ($songIds as $id) {
-            $songsQuery .= "ids={$id}&";
-        }
-        $songsQuery = rtrim($songsQuery, '&');
-        
-        // Get detailed song information
-        $songsResponse = Http::withHeaders([
-            'accept' => '*/*',
-            'accept-language' => 'en-US,en;q=0.9,de;q=0.8,ru;q=0.7',
-            'affiliate-id' => 'undefined',
-            'authorization' => 'Bearer eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18yT1o2eU1EZzhscWRKRWloMXJvemY4T3ptZG4iLCJ0eXAiOiJKV1QifQ.eyJhdWQiOiJzdW5vLWFwaSIsImF6cCI6Imh0dHBzOi8vc3Vuby5jb20iLCJleHAiOjE3NDUzMjgyNTEsImZ2YSI6Wzg1ODAsLTFdLCJodHRwczovL3N1bm8uYWkvY2xhaW1zL2NsZXJrX2lkIjoidXNlcl8yalRZbUxScVYzSDA3VDFCeDdFb3IxcWpNV20iLCJodHRwczovL3N1bm8uYWkvY2xhaW1zL2VtYWlsIjoiZ29sZWFmQGdtYWlsLmNvbSIsImh0dHBzOi8vc3Vuby5haS9jbGFpbXMvcGhvbmUiOm51bGwsImlhdCI6MTc0NTMyODE5MSwiaXNzIjoiaHR0cHM6Ly9jbGVyay5zdW5vLmNvbSIsImp0aSI6IjhkOWFkY2FlZWU5MjBiMmNlNTAwIiwibmJmIjoxNzQ1MzI4MTgxLCJzaWQiOiJzZXNzXzJ2b1pNTmZDYmFvaEpJYk1EOE9WaG5uOUt2QyIsInN1YiI6InVzZXJfMmpUWW1MUnFWM0gwN1QxQng3RW9yMXFqTVdtIn0.pLKPAsc2WjHfcKDpPV-hJ1y5VYFmxQw6CqIvyLs-tCZtunpHMrmfTG5Mcw17FFj_0kiP9lrvImbh5YtrDBO2SqC0Q2-xXy9hsLtbNfAKLyRUSBzJQXgSfhYu70fX0pM0p2mJiwXFPQtvVGLB5F3DzZFMlnPKl_7-t6KX8fzwbG4n8MPEl8Ealg7j8ang-9Pt2J_1Y2HUTRWoMoRWzkNu3eYiRTIKlLT-bhqPHk9u77QPG4NlVzG0SEsLaCvmUFU0lYqVbfRWAkQ51z5LlcNZ3Ts6KIrZd0wW9CsS9mTTy3uOxbDo0P_HBceI4deL3zzcgqe36zvXnDs_3-moL3CDsg',
-            'browser-token' => '{"token":"eyJ0aW1lc3RhbXAiOjE3NDUzMjgyMDAzNDd9"}',
-            'device-id' => '42c6837d-7c0f-4093-b9bc-10d1671749aa',
-            'priority' => 'u=1, i',
-            'referer' => 'https://suno.com/',
-            'sec-ch-ua' => '"Google Chrome";v="135", "Not-A.Brand";v="8", "Chromium";v="135"',
-            'sec-ch-ua-mobile' => '?0',
-            'sec-ch-ua-platform' => '"Windows"',
-            'sec-fetch-dest' => 'empty',
-            'sec-fetch-mode' => 'cors',
-            'sec-fetch-site' => 'same-site',
-            'user-agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36',
-        ])->get("https://studio-api.prod.suno.com/api/clips/get_songs_by_ids?{$songsQuery}");
-        
-        if ($songsResponse->failed()) {
-            $this->error('Failed to fetch song details: ' . $songsResponse->status());
-            return self::FAILURE;
-        }
-        
-        // Display song information
-        $this->info('Song details for "dark trap metalcore":');
+        $this->info('Listing Suno tracks from predefined data set:');
         $this->newLine();
         
-        $songDetails = $songsResponse->json('songs') ?? [];
-        foreach ($songDetails as $song) {
+        foreach ($this->tracks as $index => $trackInfo) {
+            $parts = explode('|', $trackInfo);
+            
+            $title = pathinfo($parts[0], PATHINFO_FILENAME);
+            $audioUrl = $parts[1] ?? 'No Audio URL';
+            $imageUrl = $parts[2] ?? 'No Image URL';
+            $genres = $parts[3] ?? 'No Genres';
+            
             $this->line('--------------------------------------------------');
-            $this->line('Title: ' . ($song['title'] ?? 'Unknown'));
-            $this->line('Artist: ' . ($song['artist'] ?? 'Unknown'));
-            $this->line('MP3 URL: ' . ($song['mp3_url'] ?? 'Unknown'));
-            $this->line('Image URL: ' . ($song['image_url'] ?? 'Unknown'));
-            $this->line('Tags: ' . implode(', ', $song['tags'] ?? []));
+            $this->line("Song #" . ($index + 1));
+            $this->line('Title: ' . $title);
+            $this->line('Audio URL: ' . $audioUrl);
+            $this->line('Image URL: ' . $imageUrl);
+            $this->line('Genres: ' . $genres);
             $this->newLine();
         }
         
-        $this->info('Simulation completed successfully!');
+        $this->info('Total tracks: ' . count($this->tracks));
+        $this->info('All tracks displayed successfully!');
+        
         return self::SUCCESS;
     }
 }
