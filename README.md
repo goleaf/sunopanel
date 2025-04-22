@@ -151,41 +151,69 @@ npm run dev
 - Organize tracks by genres
 - Dark/light theme toggle
 
-# YouTube Upload with Username/Password
+## YouTube Video Uploads
 
-To use the YouTube upload feature with username/password authentication (instead of OAuth), you need to install the following prerequisites:
+SunoPanel supports uploading videos to YouTube directly from the application. There are two authentication methods supported:
 
-1. Install the youtube-upload tool:
-```bash
-# Install pip if not already installed
-sudo apt-get install python3-pip   # For Debian/Ubuntu
-# OR
-sudo yum install python3-pip       # For CentOS/RHEL
+### 1. OAuth Authentication (Recommended)
 
-# Install youtube-upload
-pip3 install git+https://github.com/tokland/youtube-upload.git
+Using OAuth is the recommended method for YouTube uploads as it's more secure and reliable:
 
-# Make sure it's in your PATH
-which youtube-upload
-```
-
-2. Configure your Google credentials:
-   - Add the following to your `.env` file:
+1. Create a project in the [Google Cloud Console](https://console.cloud.google.com/)
+2. Enable the YouTube Data API v3
+3. Create OAuth 2.0 credentials (Web application type)
+4. Configure your `.env` file with the following values:
    ```
-   YOUTUBE_EMAIL=your_google_email@gmail.com
-   YOUTUBE_PASSWORD=your_app_password
+   YOUTUBE_CLIENT_ID=your_client_id
+   YOUTUBE_CLIENT_SECRET=your_client_secret
+   YOUTUBE_REDIRECT_URI=https://your-app.com/youtube/callback
+   YOUTUBE_USE_OAUTH=true
+   ```
+5. Open your application and navigate to the YouTube authentication page
+6. Follow the OAuth flow to authorize the application
+7. The access and refresh tokens will be stored automatically
+
+### 2. Command-line Authentication
+
+For testing or local development, you can use the command-line authentication:
+
+1. Create a project in the [Google Cloud Console](https://console.cloud.google.com/)
+2. Enable the YouTube Data API v3
+3. Create OAuth 2.0 credentials (Desktop application type)
+4. Configure your `.env` file with the client ID and secret:
+   ```
+   YOUTUBE_CLIENT_ID=your_client_id
+   YOUTUBE_CLIENT_SECRET=your_client_secret
    YOUTUBE_USE_SIMPLE_UPLOADER=true
    ```
-   
-   Note: If you have 2-factor authentication enabled (recommended), you'll need to generate an app password:
-   1. Go to your Google Account
-   2. Select Security
-   3. Under "Signing in to Google", select App Passwords
-   4. Generate a new app password for "Other (Custom name)" and name it "SunoPanel"
-   5. Use this generated password in the YOUTUBE_PASSWORD setting
+5. When uploading a video, you'll be prompted to visit a URL and paste the authorization code
 
-3. Upload videos:
-   - Navigate to YouTube → Status in the app
-   - If not already logged in, click "Login with YouTube Account"
-   - Enter your Google email and app password
-   - You can now upload videos directly from the tracks page
+### Testing YouTube Uploads
+
+To test YouTube uploads, use the included command:
+
+```bash
+php artisan youtube:test-upload --file=/path/to/video.mp4 --title="Test Video" --oauth
+```
+
+Options:
+- `--file`: Path to the video file (required)
+- `--title`: Video title
+- `--description`: Video description
+- `--tags`: Comma-separated list of tags
+- `--privacy`: Privacy setting (public, unlisted, private)
+- `--category`: Video category
+- `--oauth`: Force using OAuth uploader
+- `--simple`: Force using simple uploader
+
+### Troubleshooting
+
+If you encounter issues with YouTube uploads:
+
+1. Check that your Google Cloud project has the YouTube Data API v3 enabled
+2. Verify that your OAuth credentials are correctly configured
+3. Ensure your application has been authorized with the correct scopes
+4. Check the application logs for detailed error messages
+5. Use the `php artisan youtube:test-upload` command to test the upload process
+
+For more information, see the [YouTube Data API documentation](https://developers.google.com/youtube/v3/getting-started).

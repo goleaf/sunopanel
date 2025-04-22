@@ -58,6 +58,9 @@
 - [x] Create SimpleYouTubeUploader service
 - [x] Update YouTubeServiceProvider to install scripts
 - [x] Add test command for YouTube uploads
+- [x] Fix email/password authentication method
+- [x] Improve OAuth integration for direct uploads
+- [x] Update YouTube upload documentation
 
 ## Remaining Tasks
 

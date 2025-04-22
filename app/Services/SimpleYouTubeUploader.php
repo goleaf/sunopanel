@@ -57,7 +57,7 @@ final class SimpleYouTubeUploader
         }
         
         // Fall back to command-line script if it exists
-        $scriptPath = base_path('vendor/bin/youtube-direct-upload');
+        $scriptPath = storage_path('app/scripts/youtube-direct-upload');
         if (!file_exists($scriptPath)) {
             Log::error("YouTube upload script not found: {$scriptPath}");
             
@@ -97,23 +97,9 @@ final class SimpleYouTubeUploader
             return null;
         }
         
-        // Get YouTube account credentials from config
-        $email = Config::get('youtube.email');
-        $password = Config::get('youtube.password');
-        
-        if (empty($email) || empty($password)) {
-            Log::error('YouTube email or password not configured');
-            
-            // If OAuth uploader is available, use it as fallback
-            if ($this->oauthUploader) {
-                Log::info('Falling back to OAuth uploader due to missing credentials');
-                $authUrl = $this->oauthUploader->getAuthUrl();
-                Log::info("Authentication URL: {$authUrl}");
-                throw new Exception('YouTube email or password not configured. Please authenticate using OAuth first at: ' . $authUrl);
-            }
-            
-            return null;
-        }
+        // Set up environment variables for the script to use
+        putenv('YOUTUBE_CLIENT_ID=' . Config::get('youtube.client_id'));
+        putenv('YOUTUBE_CLIENT_SECRET=' . Config::get('youtube.client_secret'));
         
         // Convert tags array to comma-separated string
         $tagsString = implode(',', $tags);
@@ -121,8 +107,8 @@ final class SimpleYouTubeUploader
         // Prepare the upload command
         $command = [
             $scriptPath,
-            '--email', $email,
-            '--password', $password,
+            '--email', Config::get('youtube.email', ''),
+            '--password', Config::get('youtube.password', ''),
             '--title', $title,
             '--description', $description,
             '--tags', $tagsString,
@@ -152,6 +138,18 @@ final class SimpleYouTubeUploader
                 'exit_code' => $process->getExitCode(),
                 'error' => $errorOutput
             ]);
+            
+            // Check if it's an authentication error
+            if (strpos($errorOutput, 'Authentication required') !== false || 
+                strpos($output, 'Authentication required') !== false) {
+                
+                // If OAuth uploader is available, suggest using it
+                if ($this->oauthUploader) {
+                    $authUrl = $this->oauthUploader->getAuthUrl();
+                    Log::info("Authentication URL: {$authUrl}");
+                    throw new Exception('YouTube upload failed due to authentication issues. Please authenticate using OAuth first at: ' . $authUrl);
+                }
+            }
             
             return null;
         }
@@ -253,7 +251,7 @@ final class SimpleYouTubeUploader
      */
     private function generateClientSecrets(): string
     {
-        $scriptPath = base_path('vendor/bin/youtube-client-secrets');
+        $scriptPath = storage_path('app/scripts/youtube-client-secrets');
         
         if (!file_exists($scriptPath)) {
             throw new Exception("Client secrets generation script not found: {$scriptPath}");
