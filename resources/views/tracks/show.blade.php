@@ -419,40 +419,6 @@
         </div>
     </div>
 
-    <!-- MP4 Video Section (if available) -->
-    @if(($track->status === 'completed' || $track->status === 'processing') && $track->mp4_path)
-    <div class="card bg-base-100 shadow-xl mb-6">
-        <div class="card-body">
-            <h2 class="card-title flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                </svg>
-                MP4 Video
-                @if($track->status === 'processing')
-                <span class="badge badge-warning">Processing</span>
-                @endif
-            </h2>
-            
-            <div class="mt-4">
-                <div class="max-w-[700px] mx-auto">
-                    <video controls class="w-full rounded-lg max-h-[700px] object-contain">
-                        <source src="{{ $track->mp4_storage_url }}" type="video/mp4">
-                        Your browser does not support the video tag.
-                    </video>
-                </div>
-                
-                @if($track->status === 'processing')
-                <div class="alert alert-info mt-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    <span>This video is still being processed. The preview may be incomplete or lower quality than the final version.</span>
-                </div>
-                @endif
-            </div>
-        </div>
-    </div>
-    @endif
 
     <!-- Additional Information Section -->
     <div class="card bg-base-100 shadow-xl mb-6">

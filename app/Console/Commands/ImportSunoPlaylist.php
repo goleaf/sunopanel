@@ -54,7 +54,7 @@ class ImportSunoPlaylist extends Command
                 $this->info("\nProcessing playlist for genre: {$genre->name} (ID: {$genre->genre_id})");
                 
                 // Construct the URL using the genre_id
-                $playlistUrl = "https://api.suno.ai/api/playlist/genres/{$genre->genre_id}";
+                $playlistUrl = "https://studio-api.prod.suno.com/api/playlist/{$genre->genre_id}";
                 
                 try {
                     $this->processPlaylistUrl($playlistUrl);

@@ -305,35 +305,6 @@ export default class TrackStatusManager {
      * Set up UI control elements
      */
     setupUIControls() {
-        // Toggle completed tracks visibility
-        const toggleCompletedEl = document.getElementById('toggle-completed');
-        if (toggleCompletedEl) {
-            toggleCompletedEl.addEventListener('change', () => {
-                if (this.statusUpdater) {
-                    this.statusUpdater.visibilityFilters.completed = toggleCompletedEl.checked;
-                    this.statusUpdater.applyVisibilityFilters();
-                    this.showToast(
-                        toggleCompletedEl.checked ? 'Showing completed tracks' : 'Hiding completed tracks', 
-                        'info'
-                    );
-                }
-            });
-        }
-        
-        // Toggle auto-refresh
-        const toggleAutoRefreshEl = document.getElementById('toggle-auto-refresh');
-        if (toggleAutoRefreshEl) {
-            toggleAutoRefreshEl.addEventListener('change', () => {
-                if (this.statusUpdater) {
-                    this.options.autoRefresh = toggleAutoRefreshEl.checked;
-                    this.showToast(
-                        toggleAutoRefreshEl.checked ? 'Auto-refresh enabled' : 'Auto-refresh disabled', 
-                        'info'
-                    );
-                }
-            });
-        }
-        
         // Manual refresh button
         const refreshNowEl = document.getElementById('refresh-now');
         if (refreshNowEl) {
@@ -387,14 +358,6 @@ export default class TrackStatusManager {
                 console.log(`Setting polling interval to ${this.options.activePollingInterval}ms (${this.activeTracksCount} active tracks)`);
                 this.statusUpdater.options.interval = this.options.activePollingInterval;
             }
-            
-            // Check if we need to refresh the page (if some tracks have completed processing)
-            const completedCount = tracks.filter(t => t.status === 'completed').length;
-            const failedCount = tracks.filter(t => t.status === 'failed').length;
-            
-            if (completedCount > 0 || failedCount > 0) {
-                this.considerPageRefresh();
-            }
         } else {
             // Slow polling when no tracks are active
             if (this.statusUpdater.options.interval !== this.options.idlePollingInterval) {
@@ -411,29 +374,7 @@ export default class TrackStatusManager {
      * Consider if a page refresh is needed and schedule it if appropriate
      */
     considerPageRefresh() {
-        // Only refresh if auto-refresh is enabled
-        const toggleAutoRefreshEl = document.getElementById('toggle-auto-refresh');
-        if (!toggleAutoRefreshEl || !toggleAutoRefreshEl.checked) {
-            return;
-        }
-        
-        // Check when the page was last refreshed
-        const now = Date.now();
-        const lastRefresh = this.lastPageRefresh || 0;
-        
-        // Only refresh if enough time has passed since the last refresh
-        if (now - lastRefresh > this.options.refreshThreshold) {
-            console.log('Scheduling page refresh due to status changes');
-            
-            // Schedule refresh to allow the user to see the updated status first
-            setTimeout(() => {
-                console.log('Performing scheduled page refresh');
-                window.location.reload();
-            }, 1500);
-            
-            // Update last refresh time to prevent multiple refreshes
-            this.lastPageRefresh = now;
-        }
+        return;
     }
     
     /**

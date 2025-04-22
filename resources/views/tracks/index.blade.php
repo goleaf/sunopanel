@@ -166,18 +166,7 @@
         </div>
         
         <div class="flex flex-wrap gap-3 items-center">
-            <div class="form-control">
-                <label class="cursor-pointer label flex justify-start gap-2 p-0">
-                    <span class="label-text">Show Completed</span> 
-                    <input type="checkbox" id="toggle-completed" class="toggle toggle-sm toggle-success" checked />
-                </label>
-            </div>
-            <div class="form-control">
-                <label class="cursor-pointer label flex justify-start gap-2 p-0">
-                    <span class="label-text">Auto-Refresh</span> 
-                    <input type="checkbox" id="toggle-auto-refresh" class="toggle toggle-sm toggle-info" checked />
-                </label>
-            </div>
+            <!-- Removed Show Completed and Auto-Refresh toggles -->
         </div>
     </div>
 
