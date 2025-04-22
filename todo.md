@@ -22,6 +22,8 @@
 - [x] Add proper error handling
 - [x] Test the command availability in Artisan
 - [x] Commit changes to the main branch
+- [x] Update command to simulate browsing to style page instead of just API search
+- [x] Implement song details extraction and display
 
 ## Usage
 
@@ -31,4 +33,4 @@ To run the command:
 php artisan suno:test
 ```
 
-This command will simulate a search request to the Suno API with the query "dark trap metalcore" and display the response 
+This command will simulate browsing to Suno's style page for "dark trap metalcore", fetch search results, and display detailed information about each song found in that style. 
