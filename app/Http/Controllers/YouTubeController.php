@@ -149,10 +149,10 @@ class YouTubeController extends Controller
             ->paginate(15);
             
         // Count total tracks with YouTube videos
-        $totalYoutubeUploads = \App\Models\Track::whereNotNull('youtube_video_id')->count();
+        $totalUploads = \App\Models\Track::whereNotNull('youtube_video_id')->count();
         
         // Count total tracks with MP4 files that could be uploaded
-        $uploadableTracksCount = \App\Models\Track::where('status', 'completed')
+        $tracksReadyToUpload = \App\Models\Track::where('status', 'completed')
             ->whereNotNull('mp4_path')
             ->whereNull('youtube_video_id')
             ->count();
@@ -180,8 +180,8 @@ class YouTubeController extends Controller
             
         return view('youtube.uploads', compact(
             'tracks', 
-            'totalYoutubeUploads', 
-            'uploadableTracksCount',
+            'totalUploads', 
+            'tracksReadyToUpload',
             'videoStats',
             'totalViews'
         ));
