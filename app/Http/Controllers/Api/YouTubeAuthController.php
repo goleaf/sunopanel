@@ -18,6 +18,16 @@ final class YouTubeAuthController extends Controller
     }
     
     /**
+     * Show the authentication page.
+     *
+     * @return \Illuminate\View\View
+     */
+    public function index()
+    {
+        return view('youtube.auth');
+    }
+    
+    /**
      * Redirect the user to the YouTube auth page
      *
      * @return \Illuminate\Http\RedirectResponse
@@ -50,23 +60,86 @@ final class YouTubeAuthController extends Controller
             return redirect()->route('home')->with('error', 'Failed to authenticate with YouTube.');
         }
         
-        // Here you could save these values to your .env file or database
-        // For demonstration, we'll just log them
-        Log::info('YouTube auth successful', [
-            'access_token' => $tokenData['access_token'],
-            'refresh_token' => $tokenData['refresh_token'] ?? 'No refresh token',
-            'expires_at' => $tokenData['expires_at'],
+        // Save these values to the .env file
+        $this->updateEnvFile([
+            'YOUTUBE_ACCESS_TOKEN' => $tokenData['access_token'],
+            'YOUTUBE_REFRESH_TOKEN' => $tokenData['refresh_token'] ?? '',
+            'YOUTUBE_TOKEN_EXPIRES_AT' => $tokenData['expires_at'],
         ]);
         
-        // In a real application, you would update your .env or database with these values
-        // For example:
-        // $this->updateEnvFile([
-        //     'YOUTUBE_ACCESS_TOKEN' => $tokenData['access_token'],
-        //     'YOUTUBE_REFRESH_TOKEN' => $tokenData['refresh_token'] ?? '',
-        //     'YOUTUBE_TOKEN_EXPIRES_AT' => $tokenData['expires_at'],
-        // ]);
+        return redirect()->route('youtube.auth')->with('success', 'Successfully authenticated with YouTube!');
+    }
+    
+    /**
+     * Show the simple authentication form
+     *
+     * @return \Illuminate\View\View
+     */
+    public function showLoginForm()
+    {
+        return view('youtube.login');
+    }
+    
+    /**
+     * Save YouTube credentials
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function saveCredentials(Request $request)
+    {
+        $validated = $request->validate([
+            'email' => 'required|email',
+            'password' => 'required',
+            'use_simple_uploader' => 'nullable|boolean',
+        ]);
         
-        return redirect()->route('home')->with('success', 'Successfully authenticated with YouTube!');
+        $useSimpleUploader = isset($validated['use_simple_uploader']) && $validated['use_simple_uploader'] ? 'true' : 'false';
+        
+        $this->updateEnvFile([
+            'YOUTUBE_EMAIL' => $validated['email'],
+            'YOUTUBE_PASSWORD' => $validated['password'],
+            'YOUTUBE_USE_SIMPLE_UPLOADER' => $useSimpleUploader,
+            'YOUTUBE_USE_OAUTH' => 'false', // If simple login is used, disable OAuth
+        ]);
+        
+        return redirect()->route('youtube.auth')->with('success', 'YouTube credentials saved successfully!');
+    }
+    
+    /**
+     * Toggle OAuth setting
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function toggleOAuth(Request $request)
+    {
+        $useOAuth = (bool) $request->input('use_oauth', false);
+        
+        $this->updateEnvFile([
+            'YOUTUBE_USE_OAUTH' => $useOAuth ? 'true' : 'false',
+            'YOUTUBE_USE_SIMPLE_UPLOADER' => $useOAuth ? 'false' : 'true',
+        ]);
+        
+        return response()->json(['success' => true]);
+    }
+    
+    /**
+     * Toggle simple uploader setting
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function toggleSimple(Request $request)
+    {
+        $useSimple = (bool) $request->input('use_simple', false);
+        
+        $this->updateEnvFile([
+            'YOUTUBE_USE_SIMPLE_UPLOADER' => $useSimple ? 'true' : 'false',
+            'YOUTUBE_USE_OAUTH' => $useSimple ? 'false' : 'true',
+        ]);
+        
+        return response()->json(['success' => true]);
     }
     
     /**

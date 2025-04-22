@@ -306,4 +306,23 @@ final class YouTubeUploader
         
         return round($bytes, $precision) . ' ' . $units[$pow];
     }
+    
+    public function getService(): Google_Service_YouTube
+    {
+        if (!$this->isAuthenticated) {
+            throw new Exception('YouTube uploader is not authenticated');
+        }
+        
+        return $this->youtube;
+    }
+    
+    /**
+     * Check if authenticated with YouTube
+     *
+     * @return bool True if authenticated, false otherwise
+     */
+    public function isAuthenticated(): bool
+    {
+        return $this->isAuthenticated;
+    }
 } 

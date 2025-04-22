@@ -6,6 +6,7 @@ use App\Models\Track;
 use App\Services\SimpleYouTubeUploader;
 use App\Services\YouTubeService;
 use App\Services\YouTubeUploader;
+use App\Services\YouTubePlaylistManager;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -66,7 +67,7 @@ class UploadTrackToYouTube implements ShouldQueue
     /**
      * Execute the job.
      */
-    public function handle(SimpleYouTubeUploader $uploader): void
+    public function handle(SimpleYouTubeUploader $uploader, YouTubePlaylistManager $playlistManager): void
     {
         Log::info("Starting YouTube upload job for track ID {$this->track->id}");
         
@@ -125,16 +126,26 @@ class UploadTrackToYouTube implements ShouldQueue
                 $playlistTitle = trim($genres[0]); // Use the first genre as playlist title
                 
                 try {
-                    // Here we would need to get or create a playlist
-                    // This is left as a future enhancement
-                    Log::info("Would add video to playlist: {$playlistTitle}");
+                    // Try to find or create the playlist
+                    $playlistId = $playlistManager->findOrCreatePlaylist(
+                        $playlistTitle,
+                        "SunoPanel generated playlist for {$playlistTitle} tracks",
+                        $this->privacyStatus
+                    );
                     
-                    // Placeholder for future implementation
-                    // $playlistId = ... get or create playlist by title
-                    // $result = $uploader->addToPlaylist($videoId, $playlistId);
-                    // if ($result) {
-                    //     $this->track->youtube_playlist_id = $playlistId;
-                    // }
+                    if ($playlistId) {
+                        // Add the video to the playlist
+                        $success = $playlistManager->addVideoToPlaylist($videoId, $playlistId);
+                        
+                        if ($success) {
+                            $this->track->youtube_playlist_id = $playlistId;
+                            Log::info("Added video to playlist '{$playlistTitle}' with ID: {$playlistId}");
+                        } else {
+                            Log::warning("Failed to add video to playlist, but upload was successful");
+                        }
+                    } else {
+                        Log::warning("Could not find or create playlist '{$playlistTitle}'");
+                    }
                 } catch (\Exception $e) {
                     Log::warning("Failed to add video to playlist, but upload was successful: " . $e->getMessage());
                     // Don't re-throw this exception as the upload succeeded

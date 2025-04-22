@@ -56,11 +56,40 @@ final class SimpleYouTubeUploader
             );
         }
         
-        // Fall back to command-line script
+        // Fall back to command-line script if it exists
+        $scriptPath = base_path('vendor/bin/youtube-direct-upload');
+        if (!file_exists($scriptPath)) {
+            Log::error("YouTube upload script not found: {$scriptPath}");
+            
+            // If OAuth uploader is available but not configured, use it as fallback
+            if ($this->oauthUploader) {
+                Log::info('Falling back to OAuth uploader without tokens');
+                $authUrl = $this->oauthUploader->getAuthUrl();
+                Log::info("Authentication URL: {$authUrl}");
+                throw new Exception('YouTube upload script not found. Please authenticate using OAuth first at: ' . $authUrl);
+            }
+            
+            throw new Exception('YouTube upload script not found and OAuth not available. Please set up YouTube authentication.');
+        }
+        
         Log::info('Using command-line YouTube uploader');
         
-        // Generate client secrets for the upload
-        $this->generateClientSecrets();
+        // Try to generate client secrets for the upload
+        try {
+            $this->generateClientSecrets();
+        } catch (Exception $e) {
+            Log::error('Failed to generate client secrets: ' . $e->getMessage());
+            
+            // If OAuth uploader is available, use it as fallback
+            if ($this->oauthUploader) {
+                Log::info('Falling back to OAuth uploader due to client secrets failure');
+                $authUrl = $this->oauthUploader->getAuthUrl();
+                Log::info("Authentication URL: {$authUrl}");
+                throw new Exception('Failed to generate client secrets. Please authenticate using OAuth first at: ' . $authUrl);
+            }
+            
+            throw $e;
+        }
         
         // Check if the video file exists
         if (!file_exists($videoPath)) {
@@ -74,6 +103,15 @@ final class SimpleYouTubeUploader
         
         if (empty($email) || empty($password)) {
             Log::error('YouTube email or password not configured');
+            
+            // If OAuth uploader is available, use it as fallback
+            if ($this->oauthUploader) {
+                Log::info('Falling back to OAuth uploader due to missing credentials');
+                $authUrl = $this->oauthUploader->getAuthUrl();
+                Log::info("Authentication URL: {$authUrl}");
+                throw new Exception('YouTube email or password not configured. Please authenticate using OAuth first at: ' . $authUrl);
+            }
+            
             return null;
         }
         
@@ -82,7 +120,7 @@ final class SimpleYouTubeUploader
         
         // Prepare the upload command
         $command = [
-            base_path('vendor/bin/youtube-direct-upload'),
+            $scriptPath,
             '--email', $email,
             '--password', $password,
             '--title', $title,
@@ -151,6 +189,14 @@ final class SimpleYouTubeUploader
         
         // Not implemented in direct upload script
         Log::warning('Adding to playlist not supported in direct upload mode');
+        
+        // If OAuth uploader is available but not configured, suggest it
+        if ($this->oauthUploader) {
+            $authUrl = $this->oauthUploader->getAuthUrl();
+            Log::info("Authentication URL for playlist support: {$authUrl}");
+            throw new Exception('Playlist support requires OAuth authentication. Please authenticate at: ' . $authUrl);
+        }
+        
         return null;
     }
     
@@ -203,10 +249,17 @@ final class SimpleYouTubeUploader
      * Generate client secrets JSON file from environment variables
      *
      * @return string Path to the generated file
+     * @throws Exception If client secrets script is not found
      */
     private function generateClientSecrets(): string
     {
-        $process = new Process([base_path('vendor/bin/youtube-client-secrets')]);
+        $scriptPath = base_path('vendor/bin/youtube-client-secrets');
+        
+        if (!file_exists($scriptPath)) {
+            throw new Exception("Client secrets generation script not found: {$scriptPath}");
+        }
+        
+        $process = new Process([$scriptPath]);
         $process->run();
         
         if (!$process->isSuccessful()) {

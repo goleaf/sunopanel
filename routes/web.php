@@ -79,12 +79,15 @@ Route::get('/test-track-stop/{id}', function($id) {
 // YouTube Integration
 Route::prefix('youtube')->name('youtube.')->group(function () {
     // Authentication
-    Route::get('/auth', [App\Http\Controllers\Api\YouTubeAuthController::class, 'redirectToProvider'])->name('auth.redirect');
+    Route::get('/auth', [App\Http\Controllers\Api\YouTubeAuthController::class, 'index'])->name('auth');
+    Route::get('/connect', [App\Http\Controllers\Api\YouTubeAuthController::class, 'redirectToProvider'])->name('auth.redirect');
     Route::get('/callback', [App\Http\Controllers\Api\YouTubeAuthController::class, 'handleProviderCallback'])->name('auth.callback');
+    Route::post('/toggle-oauth', [App\Http\Controllers\Api\YouTubeAuthController::class, 'toggleOAuth'])->name('toggle.oauth');
+    Route::post('/toggle-simple', [App\Http\Controllers\Api\YouTubeAuthController::class, 'toggleSimple'])->name('toggle.simple');
     
     // Simple YouTube Uploader Login
-    Route::get('/login', [App\Http\Controllers\YouTubeAuthController::class, 'showLoginForm'])->name('auth.login_form');
-    Route::post('/login', [App\Http\Controllers\YouTubeAuthController::class, 'saveCredentials'])->name('auth.save_credentials');
+    Route::get('/login', [App\Http\Controllers\Api\YouTubeAuthController::class, 'showLoginForm'])->name('auth.login_form');
+    Route::post('/login', [App\Http\Controllers\Api\YouTubeAuthController::class, 'saveCredentials'])->name('auth.save_credentials');
     
     // Upload
     Route::get('/upload', [App\Http\Controllers\YouTubeUploadController::class, 'showUploadForm'])->name('upload.form');
