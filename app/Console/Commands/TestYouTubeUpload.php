@@ -70,7 +70,7 @@ final class TestYouTubeUpload extends Command
             
             // Use the direct upload command
             $exitCode = Artisan::call('youtube:upload', [
-                '--track_id' => $track->id,
+                'track_id' => $track->id,
                 '--title' => '[TEST] ' . $track->title,
                 '--description' => 'This is a test upload from SunoPanel',
                 '--privacy' => 'unlisted'

@@ -226,10 +226,10 @@ class TrackController extends Controller
             
             // Run the Artisan command to upload to YouTube
             $exitCode = Artisan::call('youtube:upload', [
-                '--track_id' => $track->id,
+                'track_id' => $track->id,
                 '--title' => $request->title,
                 '--description' => $request->description ?? '',
-                '--privacy' => $request->privacy_status, // Changed to match form field name
+                '--privacy' => $request->privacy_status,
             ]);
             
             if ($exitCode !== 0) {

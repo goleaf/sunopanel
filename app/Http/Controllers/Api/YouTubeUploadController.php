@@ -57,7 +57,7 @@ final readonly class YouTubeUploadController extends Controller
             
             // Use Artisan command to upload track
             $exitCode = Artisan::call('youtube:upload', [
-                '--track_id' => $track->id,
+                'track_id' => $track->id,
                 '--title' => $track->title,
                 '--description' => "Uploaded from SunoPanel API\nTrack: {$track->title}",
                 '--privacy' => 'unlisted'

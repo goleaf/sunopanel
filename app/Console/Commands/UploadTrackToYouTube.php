@@ -16,7 +16,7 @@ class UploadTrackToYouTube extends Command
      * @var string
      */
     protected $signature = 'youtube:upload 
-                            {--track_id=0 : ID of track to upload} 
+                            {track_id? : ID of track to upload} 
                             {--file= : Path to MP4 file} 
                             {--title= : Video title} 
                             {--description= : Video description} 
@@ -59,10 +59,10 @@ class UploadTrackToYouTube extends Command
         }
         
         // Check if we're uploading a track or a file
-        $trackId = $this->option('track_id');
+        $trackId = $this->argument('track_id');
         $filePath = $this->option('file');
         
-        if ($trackId && $trackId != '0') {
+        if ($trackId) {
             return $this->uploadTrack($trackId);
         } elseif ($filePath) {
             return $this->uploadFile($filePath);
