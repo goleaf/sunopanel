@@ -185,8 +185,7 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('js/youtube-stats.js') }}"></script>
-<script src="{{ asset('js/youtube-toggle.js') }}"></script>
+@vite(['resources/js/youtube-stats.js', 'resources/js/youtube-toggle.js'])
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Initialize YouTube Stats Manager

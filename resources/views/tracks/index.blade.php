@@ -302,5 +302,5 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('js/youtube-toggle.js') }}"></script>
+@vite(['resources/js/youtube-toggle.js'])
 @endpush 
