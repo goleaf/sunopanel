@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Services\SimpleYouTubeUploader;
+use App\Services\YouTubeUploader;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -11,7 +13,17 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Register the YouTubeUploader service
+        $this->app->singleton(YouTubeUploader::class, function ($app) {
+            return new YouTubeUploader();
+        });
+        
+        // Register the SimpleYouTubeUploader service with dependency injection
+        $this->app->singleton(SimpleYouTubeUploader::class, function ($app) {
+            return new SimpleYouTubeUploader(
+                $app->make(YouTubeUploader::class)
+            );
+        });
     }
 
     /**

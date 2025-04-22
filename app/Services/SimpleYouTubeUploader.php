@@ -9,8 +9,15 @@ use Exception;
 
 final class SimpleYouTubeUploader
 {
+    private ?YouTubeUploader $oauthUploader = null;
+    
+    public function __construct(YouTubeUploader $youtubeUploader = null)
+    {
+        $this->oauthUploader = $youtubeUploader;
+    }
+    
     /**
-     * Upload a video to YouTube using command-line script
+     * Upload a video to YouTube using either OAuth or the command-line script
      *
      * @param string $videoPath Path to the video file
      * @param string $title Video title
@@ -28,6 +35,30 @@ final class SimpleYouTubeUploader
         string $privacyStatus = 'unlisted',
         string $category = 'Music'
     ): ?string {
+        // Try to use OAuth-based uploader if available and configured
+        $useOAuth = Config::get('youtube.use_oauth', false) && 
+                   Config::get('youtube.access_token') && 
+                   Config::get('youtube.refresh_token');
+        
+        if ($useOAuth && $this->oauthUploader) {
+            Log::info('Using OAuth-based YouTube uploader');
+            
+            // Map category name to ID if needed
+            $categoryId = is_numeric($category) ? $category : $this->getCategoryId($category);
+            
+            return $this->oauthUploader->upload(
+                $videoPath,
+                $title,
+                $description,
+                $tags,
+                $privacyStatus,
+                $categoryId
+            );
+        }
+        
+        // Fall back to command-line script
+        Log::info('Using command-line YouTube uploader');
+        
         // Generate client secrets for the upload
         $this->generateClientSecrets();
         
@@ -51,7 +82,7 @@ final class SimpleYouTubeUploader
         
         // Prepare the upload command
         $command = [
-            '/usr/local/bin/youtube-direct-upload',
+            base_path('vendor/bin/youtube-direct-upload'),
             '--email', $email,
             '--password', $password,
             '--title', $title,
@@ -103,15 +134,69 @@ final class SimpleYouTubeUploader
      * Add a video to a YouTube playlist
      *
      * @param string $videoId YouTube video ID
-     * @param string $playlistTitle Playlist title
-     * @return string|null Playlist ID if successful, null if failed
+     * @param string $playlistId Playlist ID
+     * @return string|null Playlist item ID if successful, null if failed
      */
-    public function addToPlaylist(string $videoId, string $playlistTitle): ?string
+    public function addToPlaylist(string $videoId, string $playlistId): ?string
     {
-        // Not implemented in direct upload script yet
-        // This would need additional implementation to work with playlists
+        // Try to use OAuth-based uploader if available and configured
+        $useOAuth = Config::get('youtube.use_oauth', false) && 
+                   Config::get('youtube.access_token') && 
+                   Config::get('youtube.refresh_token');
+        
+        if ($useOAuth && $this->oauthUploader) {
+            Log::info('Using OAuth-based YouTube uploader for playlist');
+            return $this->oauthUploader->addToPlaylist($videoId, $playlistId);
+        }
+        
+        // Not implemented in direct upload script
         Log::warning('Adding to playlist not supported in direct upload mode');
         return null;
+    }
+    
+    /**
+     * Map category name to YouTube category ID
+     *
+     * @param string $categoryName
+     * @return string Category ID
+     */
+    private function getCategoryId(string $categoryName): string
+    {
+        $categories = [
+            'Film & Animation' => '1',
+            'Autos & Vehicles' => '2',
+            'Music' => '10',
+            'Pets & Animals' => '15',
+            'Sports' => '17',
+            'Short Movies' => '18',
+            'Travel & Events' => '19',
+            'Gaming' => '20',
+            'Videoblogging' => '21',
+            'People & Blogs' => '22',
+            'Comedy' => '23',
+            'Entertainment' => '24',
+            'News & Politics' => '25',
+            'Howto & Style' => '26',
+            'Education' => '27',
+            'Science & Technology' => '28',
+            'Nonprofits & Activism' => '29',
+            'Movies' => '30',
+            'Anime/Animation' => '31',
+            'Action/Adventure' => '32',
+            'Classics' => '33',
+            'Documentary' => '35',
+            'Drama' => '36',
+            'Family' => '37',
+            'Foreign' => '38',
+            'Horror' => '39',
+            'Sci-Fi/Fantasy' => '40',
+            'Thriller' => '41',
+            'Shorts' => '42',
+            'Shows' => '43',
+            'Trailers' => '44',
+        ];
+        
+        return $categories[$categoryName] ?? '10'; // Default to Music (10)
     }
     
     /**
@@ -121,7 +206,7 @@ final class SimpleYouTubeUploader
      */
     private function generateClientSecrets(): string
     {
-        $process = new Process(['/usr/local/bin/youtube-client-secrets']);
+        $process = new Process([base_path('vendor/bin/youtube-client-secrets')]);
         $process->run();
         
         if (!$process->isSuccessful()) {

@@ -22,4 +22,7 @@ return [
     
     // Use simple uploader (username/password) instead of API
     'use_simple_uploader' => env('YOUTUBE_USE_SIMPLE_UPLOADER', true),
+    
+    // Use OAuth-based authentication when tokens are available
+    'use_oauth' => env('YOUTUBE_USE_OAUTH', false),
 ]; 

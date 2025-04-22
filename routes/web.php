@@ -79,9 +79,8 @@ Route::get('/test-track-stop/{id}', function($id) {
 // YouTube Integration
 Route::prefix('youtube')->name('youtube.')->group(function () {
     // Authentication
-    Route::get('/auth', [App\Http\Controllers\YouTubeAuthController::class, 'redirect'])->name('auth.redirect');
-    Route::get('/callback', [App\Http\Controllers\YouTubeAuthController::class, 'callback'])->name('auth.callback');
-    Route::get('/status', [App\Http\Controllers\YouTubeAuthController::class, 'status'])->name('status');
+    Route::get('/auth', [App\Http\Controllers\Api\YouTubeAuthController::class, 'redirectToProvider'])->name('auth.redirect');
+    Route::get('/callback', [App\Http\Controllers\Api\YouTubeAuthController::class, 'handleProviderCallback'])->name('auth.callback');
     
     // Simple YouTube Uploader Login
     Route::get('/login', [App\Http\Controllers\YouTubeAuthController::class, 'showLoginForm'])->name('auth.login_form');
