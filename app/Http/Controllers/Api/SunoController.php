@@ -37,13 +37,23 @@ class SunoController extends Controller
     public function getTracksByStyle(Request $request, string $style): JsonResponse
     {
         try {
-            $tracks = $this->sunoService->getTracksByStyle($style);
+            $result = $this->sunoService->getTracksByStyle($style);
+            
+            // Check if an error was returned
+            if (isset($result['error']) && $result['error'] === true) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $result['message'],
+                    'recommendations' => $result['recommendations'],
+                    'style' => $style,
+                ], 503); // Service Unavailable
+            }
             
             return response()->json([
                 'success' => true,
                 'style' => $style,
-                'tracks' => $tracks,
-                'count' => count($tracks),
+                'tracks' => $result,
+                'count' => count($result),
             ]);
         } catch (\Exception $e) {
             Log::error('Error in SunoController::getTracksByStyle', [
