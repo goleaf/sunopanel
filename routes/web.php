@@ -103,10 +103,10 @@ Route::prefix('youtube')->name('youtube.')->group(function () {
     
     // YouTube Auth routes
     Route::prefix('auth')->name('auth.')->group(function () {
-        Route::get('/login', [YouTubeController::class, 'showLoginForm'])->name('login_form');
-        Route::get('/redirect', [YouTubeController::class, 'redirectToProvider'])->name('redirect');
+        Route::get('/login', [\App\Http\Controllers\YouTubeAuthController::class, 'showLoginForm'])->name('login_form');
+        Route::get('/redirect', [\App\Http\Controllers\YouTubeAuthController::class, 'redirect'])->name('redirect');
     });
 });
 
 // Special route for YouTube OAuth callback
-Route::get('/youtube-auth', [YouTubeController::class, 'handleCallback'])->name('youtube.auth.callback');
+Route::get('/youtube-auth', [\App\Http\Controllers\YouTubeAuthController::class, 'callback'])->name('youtube.auth.callback');
