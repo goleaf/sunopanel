@@ -33,7 +33,7 @@
                             <span>No completed tracks found. Please wait for tracks to complete processing before uploading to YouTube.</span>
                         </div>
                     @else
-                        <form action="{{ route('youtube.upload.process') }}" method="POST" class="space-y-6">
+                        <form action="{{ route('youtube.upload') }}" method="POST" class="space-y-6">
                             @csrf
                             
                             <div>
