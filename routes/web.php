@@ -29,6 +29,7 @@ Route::delete('/tracks/{track}', [TrackController::class, 'destroy'])->name('tra
 Route::get('/tracks/{track}/status', [TrackController::class, 'status'])->name('tracks.status');
 Route::post('/tracks/{track}/retry', [TrackController::class, 'retry'])->name('tracks.retry');
 Route::post('/tracks/retry-all', [TrackController::class, 'retryAll'])->name('tracks.retry-all');
+Route::post('/tracks/{track}/upload-to-youtube', [TrackController::class, 'uploadToYoutube'])->name('tracks.upload-to-youtube');
 
 // Genre routes
 Route::resource('genres', GenreController::class);

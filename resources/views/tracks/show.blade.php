@@ -248,58 +248,109 @@
                 </div>
                 
                 <div class="flex flex-wrap gap-2">
-                    <a href="{{ $track->youtube_url }}" target="_blank" class="btn btn-primary">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"></path>
-                            <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"></polygon>
+                    <a href="{{ $track->youtube_url }}" target="_blank" class="btn btn-primary btn-sm gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                         </svg>
-                        View on YouTube
+                        Watch on YouTube
                     </a>
                     
-                    @if ($track->youtube_playlist_id)
-                        <a href="{{ $track->youtube_playlist_url }}" target="_blank" class="btn btn-outline">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                <line x1="12" y1="3" x2="12" y2="21"></line>
-                            </svg>
-                            View Playlist
-                        </a>
+                    @if ($track->youtube_playlist_url)
+                    <a href="{{ $track->youtube_playlist_url }}" target="_blank" class="btn btn-secondary btn-sm gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                        </svg>
+                        View Playlist
+                    </a>
                     @endif
                 </div>
-            @else
-                @if ($track->status === 'completed')
-                    <div class="alert alert-info mb-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                        <span>This track is ready to be uploaded to YouTube.</span>
+            @elseif ($track->status === 'completed' && $track->mp4_path)
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div>
+                        <div class="aspect-video w-full rounded-lg overflow-hidden bg-base-200 flex items-center justify-center">
+                            <video 
+                                controls
+                                class="w-full h-full"
+                                poster="{{ $track->image_storage_url }}"
+                            >
+                                <source src="{{ $track->mp4_storage_url }}" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                        </div>
                     </div>
                     
-                    <div class="flex flex-wrap gap-2">
-                        <form action="{{ route('youtube.upload.direct', $track->id) }}" method="POST">
+                    <div>
+                        <form action="{{ route('tracks.upload-to-youtube', $track) }}" method="POST" class="space-y-4">
                             @csrf
-                            <button type="submit" class="btn btn-primary">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                    <polyline points="17 8 12 3 7 8"></polyline>
-                                    <line x1="12" y1="3" x2="12" y2="15"></line>
-                                </svg>
-                                Upload to YouTube
-                            </button>
+                            
+                            <div>
+                                <label for="title" class="block text-sm font-medium mb-2">YouTube Title:</label>
+                                <input type="text" id="title" name="title" class="input input-bordered w-full" 
+                                        value="{{ old('title', $track->title) }}" required maxlength="100">
+                                <p class="text-xs text-base-content/70 mt-1">Maximum 100 characters</p>
+                                @error('title')
+                                    <span class="text-red-500 text-sm">{{ $message }}</span>
+                                @enderror
+                            </div>
+                            
+                            <div class="mt-4">
+                                <label for="description" class="block text-sm font-medium mb-2">YouTube Description:</label>
+                                <textarea id="description" name="description" rows="4" class="textarea textarea-bordered w-full" 
+                                        maxlength="5000">{{ old('description', "Generated with SunoPanel\nTrack: {$track->title}\nGenres: {$track->genres_string}") }}</textarea>
+                                <p class="text-xs text-base-content/70 mt-1">Maximum 5000 characters</p>
+                                @error('description')
+                                    <span class="text-red-500 text-sm">{{ $message }}</span>
+                                @enderror
+                            </div>
+                            
+                            <div class="mt-4">
+                                <label for="privacy_status" class="block text-sm font-medium mb-2">Privacy:</label>
+                                <select id="privacy_status" name="privacy_status" class="select select-bordered w-full" required>
+                                    <option value="unlisted" {{ old('privacy_status') == 'unlisted' ? 'selected' : '' }}>
+                                        Unlisted (anyone with the link can view)
+                                    </option>
+                                    <option value="public" {{ old('privacy_status') == 'public' ? 'selected' : '' }}>
+                                        Public (visible to everyone)
+                                    </option>
+                                    <option value="private" {{ old('privacy_status') == 'private' ? 'selected' : '' }}>
+                                        Private (only you can view)
+                                    </option>
+                                </select>
+                                @error('privacy_status')
+                                    <span class="text-red-500 text-sm">{{ $message }}</span>
+                                @enderror
+                            </div>
+                            
+                            <div class="alert alert-info mt-4">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                <div>
+                                    <span>Track will be uploaded to YouTube and added to a playlist based on its genre ({{ $track->genres_list }}).</span>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-6">
+                                <button type="submit" class="btn btn-primary w-full">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"></path>
+                                        <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"></polygon>
+                                    </svg>
+                                    Upload to YouTube
+                                </button>
+                            </div>
                         </form>
-                        
-                        <a href="{{ route('youtube.upload.form') }}" class="btn btn-outline">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                            </svg>
-                            Custom Upload Options
-                        </a>
                     </div>
-                @else
-                    <div class="alert alert-warning mb-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                        <span>This track needs to be processed completely before it can be uploaded to YouTube.</span>
-                    </div>
-                @endif
+                </div>
+            @else
+                <div class="alert alert-warning">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                    <span>
+                        @if ($track->status !== 'completed')
+                            This track needs to be completed before uploading to YouTube.
+                        @else
+                            This track needs to have an MP4 file before uploading to YouTube.
+                        @endif
+                    </span>
+                </div>
             @endif
         </div>
     </div>

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\UploadTrackToYouTube;
 use App\Models\Track;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -177,5 +178,58 @@ class TrackController extends Controller
         
         return redirect()->route('tracks.index')
             ->with('success', "{$count} failed tracks have been requeued for processing.");
+    }
+
+    /**
+     * Upload a track to YouTube.
+     */
+    public function uploadToYoutube(Request $request, Track $track)
+    {
+        // Check if track is completed and has an MP4 file
+        if ($track->status !== 'completed' || !$track->mp4_path) {
+            return back()->with('error', 'This track must be completed with an MP4 file before uploading to YouTube.');
+        }
+        
+        // Check if already uploaded to YouTube
+        if ($track->is_uploaded_to_youtube) {
+            return back()->with('error', 'This track has already been uploaded to YouTube.');
+        }
+        
+        // Check if YouTube credentials are set
+        if (empty(config('youtube.email')) || empty(config('youtube.password'))) {
+            return redirect()->route('youtube.auth.login_form')
+                ->with('warning', 'YouTube credentials are not set. Please set them first.');
+        }
+        
+        // Validate the request
+        $validated = $request->validate([
+            'title' => 'required|string|max:100',
+            'description' => 'nullable|string|max:5000',
+            'privacy_status' => 'required|in:public,unlisted,private',
+        ]);
+        
+        // Set a default title if not provided
+        if (empty($validated['title'])) {
+            $validated['title'] = $track->title;
+        }
+        
+        // Set a default description if not provided
+        if (empty($validated['description'])) {
+            $validated['description'] = "Generated with SunoPanel\nTrack: {$track->title}";
+            if (!empty($track->genres_string)) {
+                $validated['description'] .= "\nGenres: {$track->genres_string}";
+            }
+        }
+        
+        // Dispatch the upload job
+        UploadTrackToYouTube::dispatch(
+            $track,
+            $validated['title'],
+            $validated['description'],
+            true, // Add to playlist based on genre
+            $validated['privacy_status']
+        );
+        
+        return back()->with('success', 'The track has been queued for upload to YouTube. This may take a few minutes.');
     }
 }
