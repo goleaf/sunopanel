@@ -53,21 +53,32 @@ class UploadTrackToYouTube extends Command
      */
     public function handle()
     {
-        if (!$this->youtubeService->isAuthenticated()) {
-            $this->error("YouTube authentication required. Please authenticate first by visiting the YouTube settings page.");
-            return 1;
-        }
-        
-        // Check if we're uploading a track or a file
-        $trackId = $this->argument('track_id');
-        $filePath = $this->option('file');
-        
-        if ($trackId) {
-            return $this->uploadTrack($trackId);
-        } elseif ($filePath) {
-            return $this->uploadFile($filePath);
-        } else {
-            $this->error("Either a track ID or file path must be provided.");
+        try {
+            // Use SimpleYouTubeUploader for authentication checks
+            $uploader = app(\App\Services\SimpleYouTubeUploader::class);
+            
+            if (!$uploader->isAuthenticated()) {
+                $this->error("YouTube authentication required. Please authenticate first by visiting the YouTube settings page.");
+                return 1;
+            }
+            
+            // Check if we're uploading a track or a file
+            $trackId = $this->argument('track_id');
+            $filePath = $this->option('file');
+            
+            if ($trackId) {
+                return $this->uploadTrack($trackId);
+            } elseif ($filePath) {
+                return $this->uploadFile($filePath);
+            } else {
+                $this->error("Either a track ID or file path must be provided.");
+                return 1;
+            }
+        } catch (\Exception $e) {
+            $this->error("Error initializing uploader: " . $e->getMessage());
+            Log::error("UploadTrackToYouTube command error: " . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
             return 1;
         }
     }

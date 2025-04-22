@@ -205,43 +205,23 @@ class TrackController extends Controller
                 return back()->with('error', 'Track must be completed and have a video file to upload to YouTube.');
             }
             
-            // Check YouTube authentication
-            $youtubeService = app(YouTubeService::class);
-            if (!$youtubeService->isAuthenticated()) {
+            // Use SimpleYouTubeUploader for direct and simple upload
+            $uploader = app(\App\Services\SimpleYouTubeUploader::class);
+            
+            if (!$uploader->isAuthenticated()) {
                 return redirect()->route('youtube.auth.redirect')
                     ->with('warning', 'YouTube authentication required. Please authenticate first.');
             }
             
-            // Check if the file exists before attempting upload
-            $videoPath = storage_path('app/public/' . $track->mp4_path);
-            if (!file_exists($videoPath)) {
-                \Log::error('MP4 file not found for track', [
-                    'track_id' => $track->id,
-                    'mp4_path' => $track->mp4_path,
-                    'expected_path' => $videoPath
-                ]);
-                
-                return back()->with('error', 'MP4 file not found. Please contact administrator.');
-            }
+            // Directly upload the track
+            $videoId = $uploader->uploadTrack(
+                $track,
+                $request->title,
+                $request->description,
+                $request->privacy_status
+            );
             
-            // Run the Artisan command to upload to YouTube
-            $exitCode = Artisan::call('youtube:upload', [
-                'track_id' => $track->id,
-                '--title' => $request->title,
-                '--description' => $request->description ?? '',
-                '--privacy' => $request->privacy_status,
-            ]);
-            
-            if ($exitCode !== 0) {
-                $output = Artisan::output();
-                \Log::error('YouTube upload failed via command', [
-                    'track_id' => $track->id,
-                    'command_output' => $output,
-                ]);
-                return back()->with('error', 'Failed to upload track to YouTube. Check logs for details.');
-            }
-            
-            return back()->with('success', 'Track uploaded successfully to YouTube!');
+            return back()->with('success', 'Track uploaded successfully to YouTube! Video ID: ' . $videoId);
         } catch (\Exception $e) {
             \Log::error('YouTube upload failed', [
                 'track_id' => $track->id,
@@ -260,7 +240,7 @@ class TrackController extends Controller
     {
         // Get all completed tracks that have an MP4 file and haven't been uploaded to YouTube yet
         $tracks = Track::where('status', 'completed')
-            ->whereNotNull('mp4_file')
+            ->whereNotNull('mp4_path')
             ->where(function($query) {
                 $query->whereNull('youtube_video_id')
                     ->orWhere('youtube_video_id', '');
@@ -274,24 +254,52 @@ class TrackController extends Controller
                 ->with('info', 'No eligible tracks found for YouTube upload.');
         }
         
-        // Use the privacy status from the form or default to 'unlisted'
-        $privacyStatus = $request->input('privacy_status', 'unlisted');
+        // Use the privacy status from the form or default to 'public'
+        $privacyStatus = $request->input('privacy_status', 'public');
         
-        // Run command to upload all eligible tracks
-        $exitCode = Artisan::call('youtube:upload-all', [
-            '--privacy' => $privacyStatus,
-        ]);
+        // Get uploader service
+        $uploader = app(\App\Services\SimpleYouTubeUploader::class);
         
-        if ($exitCode !== 0) {
-            $output = Artisan::output();
-            \Log::error('YouTube bulk upload failed via command', [
-                'command_output' => $output,
-            ]);
-            return redirect()->route('tracks.index')
-                ->with('error', 'Failed to upload tracks to YouTube. Check logs for details.');
+        if (!$uploader->isAuthenticated()) {
+            return redirect()->route('youtube.auth.redirect')
+                ->with('warning', 'YouTube authentication required. Please authenticate first.');
         }
         
-        return redirect()->route('tracks.index')
-            ->with('success', "Tracks have been queued for upload to YouTube.");
+        $successCount = 0;
+        $failedTracks = [];
+        
+        // Process each track
+        foreach ($tracks as $track) {
+            try {
+                // Use simple uploader to directly upload the track
+                $videoId = $uploader->uploadTrack(
+                    $track,
+                    null, // Default title
+                    null, // Default description (just track title)
+                    $privacyStatus
+                );
+                
+                if ($videoId) {
+                    $successCount++;
+                }
+                
+                // Small delay to avoid rate limits
+                usleep(500000); // 0.5 second delay
+            } catch (\Exception $e) {
+                \Log::error('YouTube bulk upload failed for track', [
+                    'track_id' => $track->id,
+                    'error' => $e->getMessage()
+                ]);
+                $failedTracks[] = $track->id;
+            }
+        }
+        
+        if (count($failedTracks) > 0) {
+            $message = "{$successCount} of {$count} tracks uploaded successfully. Failed tracks: " . implode(', ', $failedTracks);
+            return redirect()->route('tracks.index')->with('warning', $message);
+        } else {
+            return redirect()->route('tracks.index')
+                ->with('success', "All {$count} tracks have been uploaded to YouTube successfully.");
+        }
     }
 }

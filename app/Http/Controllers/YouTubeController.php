@@ -165,25 +165,53 @@ class YouTubeController extends Controller
             'playlist' => 'nullable|string',
         ]);
         
-        $exitCode = Artisan::call('youtube:upload', [
-            '--track_id' => $validated['track_id'],
-            '--title' => $validated['title'],
-            '--description' => $validated['description'] ?? '',
-            '--privacy' => $validated['privacy'],
-            '--playlist' => $validated['playlist'] ?? '',
-        ]);
-        
-        if ($exitCode === 0) {
+        try {
+            if (!$this->youtubeService->isAuthenticated()) {
+                return back()->with('error', 'YouTube authentication required. Please authenticate first.');
+            }
+            
+            $track = \App\Models\Track::findOrFail($validated['track_id']);
+            
+            // Use SimpleYouTubeUploader for direct upload
+            $uploader = app(\App\Services\SimpleYouTubeUploader::class);
+            
+            // Add to playlist if specified
+            $addToPlaylist = !empty($validated['playlist']);
+            
+            // Upload the track
+            $videoId = $uploader->uploadTrack(
+                $track,
+                $validated['title'],
+                $validated['description'] ?? $track->title,
+                $validated['privacy'],
+                $addToPlaylist
+            );
+            
+            // Add to custom playlist if specified
+            if ($addToPlaylist) {
+                $playlistId = $this->youtubeService->findOrCreatePlaylist(
+                    $validated['playlist'],
+                    "SunoPanel playlist - {$validated['playlist']}",
+                    'public'
+                );
+                
+                if ($playlistId) {
+                    $this->youtubeService->addVideoToPlaylist($videoId, $playlistId);
+                    $track->youtube_playlist_id = $playlistId;
+                    $track->save();
+                }
+            }
+            
             return redirect()->route('youtube.uploads')
                 ->with('success', 'Track uploaded successfully to YouTube!');
-        } else {
-            $output = Artisan::output();
+        } catch (\Exception $e) {
             Log::error('YouTube upload failed', [
                 'track_id' => $validated['track_id'],
-                'output' => $output,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
             
-            return back()->with('error', 'Failed to upload track to YouTube. Please check logs.');
+            return back()->with('error', 'Failed to upload track to YouTube: ' . $e->getMessage());
         }
     }
     
@@ -199,7 +227,7 @@ class YouTubeController extends Controller
         
         // Get a completed track for testing
         $track = \App\Models\Track::where('status', 'completed')
-            ->whereNotNull('mp4_file')
+            ->whereNotNull('mp4_path')
             ->first();
             
         if (!$track) {
@@ -207,25 +235,33 @@ class YouTubeController extends Controller
                 ->with('error', 'No completed tracks found for testing');
         }
         
-        $exitCode = Artisan::call('youtube:upload', [
-            '--track_id' => $track->id,
-            '--title' => '[TEST] ' . $track->title,
-            '--description' => 'This is a test upload from SunoPanel',
-            '--privacy' => 'unlisted',
-        ]);
-        
-        if ($exitCode === 0) {
+        try {
+            // Use SimpleYouTubeUploader for test upload
+            $uploader = app(\App\Services\SimpleYouTubeUploader::class);
+            
+            // Create a test title with timestamp
+            $title = '[TEST] ' . $track->title . ' - ' . now()->format('Y-m-d H:i:s');
+            
+            // Upload the track
+            $videoId = $uploader->uploadTrack(
+                $track,
+                $title,
+                'This is a test upload from SunoPanel',
+                'unlisted',
+                false // Don't add to playlists for test uploads
+            );
+            
             return redirect()->route('youtube.status')
-                ->with('success', 'Test upload successful!');
-        } else {
-            $output = Artisan::output();
+                ->with('success', 'Test upload successful! Video ID: ' . $videoId);
+        } catch (\Exception $e) {
             Log::error('YouTube test upload failed', [
                 'track_id' => $track->id,
-                'output' => $output,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
             
             return redirect()->route('youtube.status')
-                ->with('error', 'Test upload failed. Please check logs.');
+                ->with('error', 'Test upload failed: ' . $e->getMessage());
         }
     }
 }

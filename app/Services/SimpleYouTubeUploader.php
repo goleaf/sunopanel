@@ -50,7 +50,7 @@ class SimpleYouTubeUploader
         Track $track,
         ?string $title = null,
         ?string $description = null,
-        string $privacy = 'unlisted',
+        string $privacy = 'public',
         bool $addToPlaylist = true
     ): ?string {
         // Check if the YouTube service is authenticated
@@ -69,14 +69,9 @@ class SimpleYouTubeUploader
             throw new Exception("Video file not found: {$videoPath}");
         }
         
-        // Set defaults
+        // Set defaults - simplified as requested
         $title = $title ?? $track->title;
-        $description = $description ?? "Generated with SunoPanel\nTrack: {$track->title}";
-        
-        // Add genre information if available
-        if (!empty($track->genres_string)) {
-            $description .= "\nGenres: {$track->genres_string}";
-        }
+        $description = $description ?? $track->title;
         
         // Prepare tags
         $tags = [];
@@ -86,32 +81,47 @@ class SimpleYouTubeUploader
         $tags = array_merge($tags, ['sunopanel', 'ai music', 'ai generated']);
         
         // Upload the video
-        $videoId = $this->youtubeService->uploadVideo(
-            $videoPath,
-            $title,
-            $description,
-            $tags,
-            $privacy
-        );
-        
-        if (!$videoId) {
-            throw new Exception('Failed to upload video to YouTube');
-        }
-        
-        // Update the track with YouTube info
-        $track->youtube_video_id = $videoId;
-        $track->youtube_uploaded_at = now();
-        $track->save();
-        
-        // Add to genre-based playlists if requested
-        if ($addToPlaylist && $track->genres->isNotEmpty()) {
-            foreach ($track->genres as $genre) {
-                $playlistName = "SunoPanel - {$genre->name}";
-                $this->addToPlaylist($videoId, $playlistName, $track);
+        try {
+            $videoId = $this->youtubeService->uploadVideo(
+                $videoPath,
+                $title,
+                $description,
+                $tags,
+                $privacy,
+                false, // Not made for kids
+                false  // Not a Short video
+            );
+            
+            if (!$videoId) {
+                throw new Exception('Failed to upload video to YouTube');
             }
+            
+            // Update the track with YouTube info
+            $track->youtube_video_id = $videoId;
+            $track->youtube_uploaded_at = now();
+            $track->save();
+            
+            // Add to genre-based playlists if requested
+            if ($addToPlaylist && !empty($track->genres_string)) {
+                $genres = explode(',', $track->genres_string);
+                foreach ($genres as $genre) {
+                    $genre = trim($genre);
+                    if (!empty($genre)) {
+                        $playlistName = "SunoPanel - {$genre}";
+                        $this->addToPlaylist($videoId, $playlistName, $track);
+                    }
+                }
+            }
+            
+            return $videoId;
+        } catch (Exception $e) {
+            Log::error('YouTube upload failed: ' . $e->getMessage(), [
+                'track_id' => $track->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
         }
-        
-        return $videoId;
     }
     
     /**

@@ -35,8 +35,16 @@ final class UploadAllVideosToYouTube extends Command
         $limit = $this->option('limit');
         $privacy = $this->option('privacy');
         
-        $query = Track::whereNotNull('mp4_file')
-            ->where('mp4_file', '!=', '');
+        // Get uploader service
+        $uploader = app(\App\Services\SimpleYouTubeUploader::class);
+        
+        if (!$uploader->isAuthenticated()) {
+            $this->error('YouTube service is not authenticated. Please authenticate first.');
+            return 1;
+        }
+        
+        $query = Track::whereNotNull('mp4_path')
+            ->where('status', 'completed');
             
         if (!$forceReupload) {
             $query->whereNull('youtube_video_id');
@@ -59,37 +67,26 @@ final class UploadAllVideosToYouTube extends Command
         $successCount = 0;
         $errorCount = 0;
         
+        // Create progress bar
+        $bar = $this->output->createProgressBar($count);
+        $bar->start();
+        
         foreach ($tracks as $track) {
-            $videoPath = storage_path('app/public/videos/' . $track->mp4_file);
-            
-            if (!file_exists($videoPath)) {
-                $this->warn("Video file not found for track '{$track->title}' (ID: {$track->id}). Skipping.");
-                $errorCount++;
-                continue;
-            }
-            
             try {
-                $this->line("Uploading track '{$track->title}' (ID: {$track->id})...");
+                // Upload directly using SimpleYouTubeUploader
+                $videoId = $uploader->uploadTrack(
+                    $track,
+                    null, // Default title
+                    null, // Default description (just track title)
+                    $privacy
+                );
                 
-                // Execute the upload command for each track
-                $exitCode = Artisan::call('youtube:upload', [
-                    '--track_id' => $track->id,
-                    '--title' => $track->title,
-                    '--description' => "Generated with SunoPanel\nTrack: {$track->title}",
-                    '--privacy' => $privacy
-                ]);
-                
-                if ($exitCode === 0) {
+                if ($videoId) {
                     $successCount++;
-                    $this->info("Successfully uploaded track '{$track->title}' (ID: {$track->id})");
-                } else {
-                    $output = Artisan::output();
-                    $this->error("Failed to upload track '{$track->title}' (ID: {$track->id}): {$output}");
-                    $errorCount++;
                 }
                 
-                // Add a small delay to avoid API rate limits
-                sleep(2);
+                // Small delay to avoid rate limits
+                usleep(500000); // 0.5 second delay
             } catch (\Exception $e) {
                 $this->error("Error uploading track '{$track->title}' (ID: {$track->id}): {$e->getMessage()}");
                 Log::error('Error in YouTube upload command', [
@@ -99,9 +96,13 @@ final class UploadAllVideosToYouTube extends Command
                 ]);
                 $errorCount++;
             }
+            
+            $bar->advance();
         }
         
-        $this->newLine();
+        $bar->finish();
+        $this->newLine(2);
+        
         $this->info("Upload summary:");
         $this->info("- Successfully uploaded: {$successCount}");
         $this->info("- Errors: {$errorCount}");
