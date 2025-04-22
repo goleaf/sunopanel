@@ -196,13 +196,31 @@
                     </td>
                     <td class="w-24">
                         @if($track->youtube_uploaded)
-                            <a href="{{ $track->youtube_video_url }}" target="_blank" class="flex items-center justify-center tooltip" data-tip="View on YouTube">
-                                <span class="badge badge-sm badge-success">Uploaded</span>
-                            </a>
+                            <div class="flex items-center justify-center">
+                                <a href="{{ $track->youtube_video_url }}" target="_blank" class="tooltip" data-tip="View on YouTube">
+                                    <span class="badge badge-sm badge-success">Uploaded</span>
+                                </a>
+                                <form action="{{ route('tracks.toggle-youtube-status', $track) }}" method="POST" class="ml-2">
+                                    @csrf
+                                    <button type="submit" class="btn btn-xs btn-circle btn-ghost tooltip" data-tip="Mark as not uploaded">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                </form>
+                            </div>
                         @else
-                            <span class="flex items-center justify-center">
+                            <div class="flex items-center justify-center">
                                 <span class="badge badge-sm badge-ghost">Not uploaded</span>
-                            </span>
+                                <form action="{{ route('tracks.toggle-youtube-status', $track) }}" method="POST" class="ml-2">
+                                    @csrf
+                                    <button type="submit" class="btn btn-xs btn-circle btn-ghost tooltip" data-tip="Mark as uploaded">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                    </button>
+                                </form>
+                            </div>
                         @endif
                     </td>
                     <td class="text-right">
