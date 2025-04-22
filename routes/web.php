@@ -85,7 +85,9 @@ Route::prefix('youtube')->name('youtube.')->group(function () {
     
     // Authentication
     Route::get('/auth', [YouTubeController::class, 'redirectToProvider'])->name('auth');
+    Route::get('/auth/redirect', [YouTubeController::class, 'redirectToProvider'])->name('auth.redirect');
     Route::post('/credentials', [YouTubeController::class, 'saveCredentials'])->name('save.credentials');
+    Route::get('/login', [YouTubeController::class, 'showLoginForm'])->name('auth.login_form');
     
     // Upload
     Route::get('/upload', [YouTubeController::class, 'showUploadForm'])->name('upload.form');

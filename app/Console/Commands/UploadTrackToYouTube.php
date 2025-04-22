@@ -16,12 +16,13 @@ class UploadTrackToYouTube extends Command
      * @var string
      */
     protected $signature = 'youtube:upload 
-                            {--track_id= : ID of track to upload} 
+                            {--track_id=0 : ID of track to upload} 
                             {--file= : Path to MP4 file} 
                             {--title= : Video title} 
                             {--description= : Video description} 
                             {--tags= : Comma-separated tags} 
                             {--privacy=unlisted : Privacy setting (public, unlisted, private)}
+                            {--privacy_status=unlisted : Alternative privacy setting name}
                             {--playlist= : Playlist name to add the video to}';
 
     /**
@@ -61,7 +62,7 @@ class UploadTrackToYouTube extends Command
         $trackId = $this->option('track_id');
         $filePath = $this->option('file');
         
-        if ($trackId) {
+        if ($trackId && $trackId != '0') {
             return $this->uploadTrack($trackId);
         } elseif ($filePath) {
             return $this->uploadFile($filePath);
@@ -69,6 +70,21 @@ class UploadTrackToYouTube extends Command
             $this->error("Either a track ID or file path must be provided.");
             return 1;
         }
+    }
+    
+    /**
+     * Get the privacy setting from options
+     *
+     * @return string
+     */
+    protected function getPrivacySetting()
+    {
+        // Check for either privacy or privacy_status option
+        $privacy = $this->option('privacy');
+        $privacyStatus = $this->option('privacy_status');
+        
+        // Return whichever one is set, with privacy taking precedence
+        return $privacy !== 'unlisted' ? $privacy : $privacyStatus;
     }
     
     /**
@@ -104,16 +120,20 @@ class UploadTrackToYouTube extends Command
             $tags = $tagsString ? array_map('trim', explode(',', $tagsString)) : [];
             $tags = array_merge($tags, $genres, ['sunopanel', 'ai music', 'ai generated']);
             
+            // Get the privacy setting
+            $privacy = $this->getPrivacySetting();
+            
             // Upload the video
             $this->info("Uploading track #{$trackId} to YouTube...");
             $this->info("Title: {$title}");
+            $this->info("Privacy: {$privacy}");
             
             $videoId = $this->youtubeService->uploadVideo(
                 $videoPath,
                 $title,
                 $description,
                 $tags,
-                $this->option('privacy'),
+                $privacy,
                 '10' // Music category
             );
             
@@ -181,16 +201,19 @@ class UploadTrackToYouTube extends Command
             $tagsString = $this->option('tags');
             $tags = $tagsString ? array_map('trim', explode(',', $tagsString)) : [];
             
+            // Get the privacy setting
+            $privacy = $this->getPrivacySetting();
+            
             $this->info("Uploading {$filePath} to YouTube...");
             $this->info("Title: {$title}");
-            $this->info("Privacy: " . $this->option('privacy'));
+            $this->info("Privacy: {$privacy}");
             
             $videoId = $this->youtubeService->uploadVideo(
                 $filePath,
                 $title,
                 $description,
                 $tags,
-                $this->option('privacy'),
+                $privacy,
                 '10' // Music category
             );
             

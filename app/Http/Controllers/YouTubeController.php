@@ -113,6 +113,18 @@ class YouTubeController extends Controller
     }
     
     /**
+     * Show login form
+     */
+    public function showLoginForm()
+    {
+        $credential = YouTubeCredential::getLatest();
+        
+        return view('youtube.login', [
+            'credential' => $credential,
+        ]);
+    }
+    
+    /**
      * Show the uploads page
      */
     public function uploads()
@@ -135,7 +147,9 @@ class YouTubeController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
             
-        return view('youtube.upload', compact('tracks'));
+        $isAuthenticated = $this->youtubeService->isAuthenticated();
+            
+        return view('youtube.upload', compact('tracks', 'isAuthenticated'));
     }
     
     /**
