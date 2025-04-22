@@ -19,7 +19,7 @@ export default class TrackStatusAPI {
      */
     constructor(options = {}) {
         this.options = {
-            interval: 3000,
+            interval: 500,
             useBulk: true,
             autoReload: true,          // Auto-reload the page after a certain time
             reloadInterval: 30000,     // How often to reload the page (30 seconds)

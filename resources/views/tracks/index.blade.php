@@ -320,7 +320,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (trackRows.length > 0) {
         // Create a single global status updater with a faster interval
         window.trackStatusUpdater = new TrackStatusAPI({
-            interval: 1500,
+            interval: 500,
             autoReload: true,
             reloadInterval: 30000,
             hideCompleted: false,
@@ -334,10 +334,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 if (activeTrack) {
                     // If we have active tracks, ensure frequent updates
-                    window.trackStatusUpdater.options.interval = 1500;
+                    window.trackStatusUpdater.options.interval = 500;
                 } else {
                     // If no active tracks, slow down the polling
-                    window.trackStatusUpdater.options.interval = 5000;
+                    window.trackStatusUpdater.options.interval = 3000;
                 }
                 
                 updateStatusCounts();
