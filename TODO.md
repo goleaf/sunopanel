@@ -61,7 +61,9 @@
 
 ## Remaining Tasks
 
-- [ ] Test the YouTube upload functionality
-- [ ] Implement proper error handling for failed uploads
-- [ ] Add support for playlists
-- [ ] Implement proper token refresh mechanism
+- [x] Test the YouTube upload functionality
+- [x] Implement proper error handling for failed uploads
+- [x] Add support for OAuth-based authentication
+- [ ] Add playlist management UI
+- [ ] Complete playlist integration
+- [x] Implement proper token refresh mechanism
