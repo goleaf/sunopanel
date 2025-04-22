@@ -35,10 +35,59 @@ class ImportSunoPlaylist extends Command
         $url = $this->argument('url');
         
         if (empty($url)) {
-            $this->error('URL is required.');
-            return 1;
+            // If no URL provided, process all genres with genre_id
+            $this->info("No URL provided. Processing playlists for all genres with genre_id...");
+            
+            $genres = Genre::whereNotNull('genre_id')->get();
+            
+            if ($genres->isEmpty()) {
+                $this->error('No genres with genre_id found.');
+                return 1;
+            }
+            
+            $this->info("Found " . $genres->count() . " genres with genre_id.");
+            
+            $successCount = 0;
+            $failedCount = 0;
+            
+            foreach ($genres as $genre) {
+                $this->info("\nProcessing playlist for genre: {$genre->name} (ID: {$genre->genre_id})");
+                
+                // Construct the URL using the genre_id
+                $playlistUrl = "https://api.suno.ai/api/playlist/genres/{$genre->genre_id}";
+                
+                try {
+                    $this->processPlaylistUrl($playlistUrl);
+                    $successCount++;
+                } catch (Exception $e) {
+                    $failedCount++;
+                    $this->error("Failed to process playlist for genre {$genre->name}: " . $e->getMessage());
+                    Log::error("Failed to process Suno playlist for genre", [
+                        'genre' => $genre->name,
+                        'genre_id' => $genre->genre_id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+            
+            $this->newLine();
+            $this->info("Finished processing all genres. Successful: {$successCount}, Failed: {$failedCount}");
+            
+            return $failedCount > 0 ? 1 : 0;
         }
         
+        // If URL is provided, process just that URL
+        return $this->processPlaylistUrl($url);
+    }
+    
+    /**
+     * Process a playlist from the given URL.
+     *
+     * @param string $url The playlist URL to process
+     * @return int Exit code (0 for success, 1 for failure)
+     */
+    protected function processPlaylistUrl(string $url): int
+    {
         $this->info("Fetching data from: {$url}");
 
         try {
@@ -91,7 +140,7 @@ class ImportSunoPlaylist extends Command
             $this->newLine();
             $this->info("Import finished. Processed {$processedCount} tracks successfully. Failed: {$failedCount}");
             
-            return 0;
+            return $failedCount > 0 ? 1 : 0;
         } catch (Exception $e) {
             $this->error("Failed to import playlist: " . $e->getMessage());
             Log::error("Failed to import Suno playlist", [
