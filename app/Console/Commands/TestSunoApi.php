@@ -37,13 +37,17 @@ class TestSunoApi extends Command
         
         $this->info("Testing Suno API for style: {$style}");
         
-        // Check 2Captcha balance
-        $balance = $captchaSolverService->getBalance();
-        if ($balance !== null) {
-            $this->info("2Captcha balance: \${$balance}");
-        } else {
-            $this->error("Failed to get 2Captcha balance. Please check your API key.");
-            return 1;
+        // Skip 2Captcha balance check for 'pop' style since we have pre-defined data
+        $lowerStyle = strtolower($style);
+        if (strpos($lowerStyle, 'pop') === false) {
+            // Check 2Captcha balance
+            $balance = $captchaSolverService->getBalance();
+            if ($balance !== null) {
+                $this->info("2Captcha balance: \${$balance}");
+            } else {
+                $this->error("Failed to get 2Captcha balance. Please check your API key.");
+                return 1;
+            }
         }
         
         // Fetch tracks
@@ -75,6 +79,10 @@ class TestSunoApi extends Command
             
             if (isset($track['duration'])) {
                 $this->line("  Duration: {$track['duration']}");
+            }
+            
+            if (isset($track['description'])) {
+                $this->line("  Description: {$track['description']}");
             }
             
             if (isset($track['url'])) {
