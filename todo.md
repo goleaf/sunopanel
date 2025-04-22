@@ -24,13 +24,42 @@
 - [x] Commit changes to the main branch
 - [x] Update command to simulate browsing to style page instead of just API search
 - [x] Implement song details extraction and display
+- [x] Reimplement using Selenium for browser automation with all headers
 
 ## Usage
 
 To run the command:
 
 ```bash
+# Run with browser UI visible
 php artisan suno:test
+
+# Run in headless mode (without visible browser)
+php artisan suno:test --headless
 ```
 
-This command will simulate browsing to Suno's style page for "dark trap metalcore", fetch search results, and display detailed information about each song found in that style. 
+This command will launch a Selenium-controlled Chrome browser that navigates to Suno's style page for "dark trap metalcore", extracts song information from the page, and displays it in the console.
+
+## Requirements
+
+- Selenium WebDriver server running on localhost:4444
+- Chrome browser installed on the system
+
+### Setting up Selenium Server
+
+1. Download Selenium Server and ChromeDriver:
+   ```bash
+   # Download Selenium Server
+   wget https://github.com/SeleniumHQ/selenium/releases/download/selenium-4.15.0/selenium-server-4.15.0.jar
+
+   # Download ChromeDriver (make sure it matches your Chrome version)
+   wget https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/135.0.5217.0/linux64/chromedriver-linux64.zip
+   unzip chromedriver-linux64.zip
+   ```
+
+2. Run Selenium Server:
+   ```bash
+   java -jar selenium-server-4.15.0.jar standalone
+   ```
+
+Note: Make sure your server has Java installed to run the Selenium server. 
