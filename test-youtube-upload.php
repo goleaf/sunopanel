@@ -56,7 +56,7 @@ echo "YouTube service is authenticated. Checking for tracks to upload...\n";
 // Get all tracks with MP4 files that haven't been uploaded to YouTube yet
 $tracks = Track::whereNotNull('mp4_path')
     ->whereNull('youtube_video_id')
-    ->limit(5) // Limit to 5 tracks for initial testing
+    // ->limit(500) // Limit to 5 tracks for initial testing
     ->get();
 
 echo "Found " . $tracks->count() . " tracks that haven't been uploaded yet\n";

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Genre;
+use App\Models\Track;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -15,9 +16,32 @@ class GenreController extends Controller
      */
     public function index(Request $request): View
     {
-        $genres = Genre::withCount('tracks')->orderBy('name')->paginate(15)->withQueryString();
+        $query = Genre::withCount('tracks');
         
-        return view('genres.index', compact('genres'));
+        // Apply search filter if provided
+        if ($request->has('search') && !empty($request->search)) {
+            $query->where('name', 'like', '%' . $request->search . '%');
+        }
+        
+        // Get sort parameters
+        $sortField = $request->input('sort', 'name');
+        $sortDirection = $request->input('direction', 'asc');
+        
+        // Apply sorting
+        $query->orderBy($sortField, $sortDirection);
+        
+        // Get the paginated results
+        $genres = $query->paginate(15)->withQueryString();
+        
+        // Get statistics for the view
+        $statistics = [
+            'total_genres' => Genre::count(),
+            'total_tracks' => Track::count(),
+            'genres_with_tracks' => Genre::has('tracks')->count(),
+            'genres_without_tracks' => Genre::doesntHave('tracks')->count(),
+        ];
+        
+        return view('genres.index', compact('genres', 'statistics', 'sortField', 'sortDirection'));
     }
 
     /**

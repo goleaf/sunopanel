@@ -16,8 +16,7 @@
                     <h2 class="card-title text-xl">Tracks in this Genre</h2>
                     
                     <!-- View Toggle -->
-                    <form method="GET" action="{{ route('genres.show', $genre) }}">
-                        <input type="hidden" name="view" value="{{ request('view', 'table') }}">
+                    <div>
                         <div class="join">
                             <button type="button" onclick="setView('table')" class="join-item btn btn-sm {{ request('view', 'table') === 'table' ? 'btn-active' : '' }}">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -30,7 +29,7 @@
                                 </svg>
                             </button>
                         </div>
-                    </form>
+                    </div>
                 </div>
                 
                 @if($tracks->isEmpty())
@@ -320,11 +319,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // View toggle functionality
 function setView(viewType) {
-    // Update the hidden input value
-    document.querySelector('input[name="view"]').value = viewType;
+    // Get the current URL
+    const url = new URL(window.location.href);
     
-    // Submit the form
-    document.querySelector('form').submit();
+    // Update the view parameter
+    url.searchParams.set('view', viewType);
+    
+    // Navigate to the new URL
+    window.location.href = url.toString();
 }
 </script>
 @endif

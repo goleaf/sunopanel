@@ -615,7 +615,8 @@ class YouTubeService
         }
 
         try {
-            $youtube = $this->getYouTubeClient();
+            // Replace getYouTubeClient with the existing youtube instance
+            $youtube = $this->youtube;
             
             // YouTube API allows a maximum of 50 videos per request
             $chunks = array_chunk($videoIds, 50);

@@ -21,7 +21,7 @@
                     </div>
                 @endif
                 
-                <form action="{{ route('youtube.save.credentials') }}" method="POST" class="space-y-4">
+                <form action="{{ route('youtube.auth.save_credentials') }}" method="POST" class="space-y-4">
                     @csrf
                     
                     <div class="form-control">

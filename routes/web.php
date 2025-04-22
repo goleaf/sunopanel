@@ -5,6 +5,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\TrackController;
 use App\Http\Controllers\VideoUploadController;
 use App\Http\Controllers\YouTubeController;
+use App\Http\Controllers\SunoCommandController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -110,3 +111,6 @@ Route::prefix('youtube')->name('youtube.')->group(function () {
 
 // Special route for YouTube OAuth callback
 Route::get('/youtube-auth', [\App\Http\Controllers\YouTubeAuthController::class, 'callback'])->name('youtube.auth.callback');
+
+// Add the Suno command route at the top of the web routes
+Route::get('/suno/{style}', SunoCommandController::class)->name('suno.command');
