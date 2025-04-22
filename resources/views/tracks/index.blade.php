@@ -320,15 +320,31 @@ document.addEventListener('DOMContentLoaded', function() {
     if (trackRows.length > 0) {
         // Create a single global status updater with a faster interval
         window.trackStatusUpdater = new TrackStatusAPI({
-            interval: 2000,
+            interval: 1500,
             autoReload: true,
-            reloadInterval: 60000, // 1 minute auto-reload
+            reloadInterval: 30000,
             hideCompleted: false,
             onUpdate: function(tracks) {
                 console.log(`Updated ${tracks.length} tracks`);
+                
+                // Check for any processing or pending tracks
+                const activeTrack = tracks.find(track => 
+                    track.status === 'processing' || track.status === 'pending'
+                );
+                
+                if (activeTrack) {
+                    // If we have active tracks, ensure frequent updates
+                    window.trackStatusUpdater.options.interval = 1500;
+                } else {
+                    // If no active tracks, slow down the polling
+                    window.trackStatusUpdater.options.interval = 5000;
+                }
+                
                 updateStatusCounts();
             }
         });
+        
+        console.log(`Registering ${trackRows.length} tracks for status updates`);
         
         // Register ALL tracks for monitoring, regardless of status
         trackRows.forEach(row => {
@@ -336,19 +352,55 @@ document.addEventListener('DOMContentLoaded', function() {
             const statusCell = row.querySelector('.track-status');
             const progressCell = row.querySelector('.track-progress');
             
-            // Set correct row status class
-            if (statusCell) {
+            if (statusCell && progressCell) {
+                // Set correct row status class
                 const status = statusCell.dataset.status;
                 if (status) {
                     row.classList.add(`status-${status}`);
                 }
+                
+                // Watch all tracks, not just processing/pending
+                window.trackStatusUpdater.watchTrack(trackId, {
+                    status: statusCell,
+                    progress: progressCell
+                });
+                
+                // Add click handlers for action buttons
+                const startBtn = row.querySelector('.start-track');
+                if (startBtn) {
+                    startBtn.addEventListener('click', function() {
+                        window.trackStatusUpdater.handleStartClick({ 
+                            target: this,
+                            currentTarget: this,
+                            preventDefault: () => {}
+                        });
+                    });
+                }
+                
+                const stopBtn = row.querySelector('.stop-track');
+                if (stopBtn) {
+                    stopBtn.addEventListener('click', function() {
+                        window.trackStatusUpdater.handleStopClick({ 
+                            target: this,
+                            currentTarget: this,
+                            preventDefault: () => {}
+                        });
+                    });
+                }
+                
+                const retryBtn = row.querySelector('.retry-track');
+                if (retryBtn) {
+                    retryBtn.addEventListener('click', function() {
+                        window.trackStatusUpdater.handleRetryClick({ 
+                            target: this,
+                            currentTarget: this,
+                            preventDefault: () => {}
+                        });
+                    });
+                }
+            } else {
+                console.warn(`Track ${trackId} missing status or progress cells`);
             }
-            
-            // Watch all tracks, not just processing/pending
-            window.trackStatusUpdater.watchTrack(trackId, {
-                status: statusCell,
-                progress: progressCell
-            });
         });
         
         // Start the status updater
@@ -386,6 +438,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         // Restart timer if enabling
                         window.trackStatusUpdater.reloadTimer = setInterval(() => {
                             if (window.trackStatusUpdater.checkIfReloadNeeded()) {
+                                console.log('Auto-refreshing page to update track list...');
                                 window.location.reload();
                             }
                         }, window.trackStatusUpdater.options.reloadInterval);
@@ -404,6 +457,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const refreshNowEl = document.getElementById('refresh-now');
         if (refreshNowEl) {
             refreshNowEl.addEventListener('click', function() {
+                console.log('Manual page refresh requested');
                 window.location.reload();
             });
         }

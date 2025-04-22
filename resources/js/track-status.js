@@ -353,22 +353,35 @@ export default class TrackStatusAPI {
      * @returns {boolean} - Whether a reload is needed
      */
     checkIfReloadNeeded() {
-        // Check if any tracks have completed or failed recently
-        let completedOrFailed = false;
+        // Check if any tracks have completed, failed, or are in process
+        let needsReload = false;
+        let hasProcessing = false;
+        let activeCount = 0;
         
         for (const [_, track] of this.tracks) {
             if (['completed', 'failed'].includes(track.status)) {
-                completedOrFailed = true;
-                break;
+                needsReload = true;
+            }
+            
+            if (['processing', 'pending'].includes(track.status)) {
+                hasProcessing = true;
+                activeCount++;
             }
         }
         
-        // Also reload if it's been more than 2 minutes since the last reload
+        // If we have processing tracks but not too many, don't reload yet
+        if (hasProcessing && activeCount < 5 && !needsReload) {
+            return false;
+        }
+        
+        // Also reload if it's been more than 60 seconds since the last reload
         const currentTime = new Date().getTime();
         const timeSinceLastReload = currentTime - this.lastReloadTime;
-        const forceReload = timeSinceLastReload > 120000; // 2 minutes
+        const forceReload = timeSinceLastReload > 60000; // 1 minute (reduced from 2 minutes)
         
-        return completedOrFailed || forceReload;
+        console.log(`Check if reload needed: hasCompleted=${needsReload}, hasProcessing=${hasProcessing}, activeCount=${activeCount}, timeSince=${Math.round(timeSinceLastReload/1000)}s, forceReload=${forceReload}`);
+        
+        return needsReload || forceReload;
     }
     
     /**
@@ -428,6 +441,7 @@ export default class TrackStatusAPI {
             }
             
             const data = await response.json();
+            console.log(`Single track update for ${track.id}: ${JSON.stringify(data)}`);
             this.updateTrackUI(track, data);
         } catch (error) {
             console.error(`Error updating track ${track.id}:`, error);
@@ -445,7 +459,7 @@ export default class TrackStatusAPI {
             const trackIds = Array.from(this.tracks.values())
                 .map(track => track.id);
             
-            console.log('Tracks to update:', trackIds);
+            console.log(`Bulk update for ${trackIds.length} tracks: ${trackIds.join(', ')}`);
             
             if (trackIds.length === 0) {
                 console.log('No tracks to update');
@@ -457,8 +471,6 @@ export default class TrackStatusAPI {
                 console.error('CSRF token not found');
                 return;
             }
-            
-            console.log('Sending bulk status request for tracks:', trackIds);
             
             const response = await fetch('/api/tracks/status-bulk', {
                 method: 'POST',
@@ -476,17 +488,19 @@ export default class TrackStatusAPI {
             }
             
             const data = await response.json();
-            console.log('Bulk status response:', data);
             
-            // Update each track's UI with the received data
             if (data.tracks && Array.isArray(data.tracks)) {
-                for (const trackData of data.tracks) {
+                console.log(`Received status for ${data.tracks.length} tracks`);
+                
+                // Update each track with its new status
+                data.tracks.forEach(trackData => {
                     const track = this.tracks.get(trackData.id.toString());
                     if (track) {
-                        console.log(`Updating track ${trackData.id} UI:`, trackData);
                         this.updateTrackUI(track, trackData);
+                    } else {
+                        console.warn(`Track ${trackData.id} not found in watched tracks`);
                     }
-                }
+                });
             } else {
                 console.error('Invalid response format:', data);
             }
