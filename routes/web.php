@@ -83,7 +83,7 @@ Route::get('/test-track-stop/{id}', function($id) {
 });
 
 // YouTube routes
-Route::prefix('youtube')->name('youtube.')->middleware(['auth'])->group(function () {
+Route::prefix('youtube')->name('youtube.')->group(function () {
     Route::get('/status', [YouTubeController::class, 'status'])->name('status');
     Route::get('/upload', [YouTubeController::class, 'showUploadForm'])->name('upload');
     Route::post('/upload', [YouTubeController::class, 'uploadTrack'])->name('upload.store');
