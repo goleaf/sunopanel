@@ -9,6 +9,7 @@
 - [x] Simple UI with 3 menu items: Add / Songs / Genres
 - [x] Add option to process tracks immediately and check for failures
 - [x] Upload videos to YouTube with username/password authentication
+- [x] Upload MP4 files directly from track view page to YouTube
 
 ## Implementation Tasks
 - [x] Create database migrations for tracks and genres
@@ -27,6 +28,8 @@
 - [x] Implement parallel processing for 10 tracks simultaneously
 - [x] Create direct video upload controller and views
 - [x] Implement YouTube upload with username/password authentication
+- [x] Add YouTube upload form to track view page
+- [x] Implement genre-based playlist creation and video organization
 
 ## Technical Requirements
 - [x] MP3 and image download from external URLs
@@ -36,6 +39,7 @@
 - [x] Immediate processing with error feedback
 - [x] Parallel processing of track jobs for increased throughput
 - [x] YouTube video upload using username/password from .env
+- [x] YouTube playlist management based on track genres
 
 ## Refactoring Tasks
 - [x] Improve tracks index page layout with better stats display
