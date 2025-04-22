@@ -218,6 +218,8 @@ class YouTubeService
      * @param string $description
      * @param array $tags
      * @param string $privacyStatus
+     * @param bool $madeForKids
+     * @param bool $isShort
      * @param string $categoryId
      * @return string|null Video ID if successful
      * @throws Exception
@@ -228,6 +230,8 @@ class YouTubeService
         string $description = '',
         array $tags = [],
         string $privacyStatus = 'unlisted',
+        bool $madeForKids = false,
+        bool $isShort = false,
         string $categoryId = '10'
     ): ?string {
         if (!$this->isAuthenticated()) {
@@ -252,6 +256,8 @@ class YouTubeService
             Log::info("File size: {$fileSize} bytes");
             Log::info("Title: {$title}");
             Log::info("Privacy status: {$privacyStatus}");
+            Log::info("Made for kids: " . ($madeForKids ? 'Yes' : 'No'));
+            Log::info("Is Short: " . ($isShort ? 'Yes' : 'No'));
             
             // Create a snippet with title, description, tags, and category ID
             $snippet = new Google_Service_YouTube_VideoSnippet();
@@ -260,9 +266,10 @@ class YouTubeService
             $snippet->setTags($tags);
             $snippet->setCategoryId($categoryId);
             
-            // Set the privacy status
+            // Set the privacy status and made for kids setting
             $status = new Google_Service_YouTube_VideoStatus();
             $status->setPrivacyStatus($privacyStatus);
+            $status->setSelfDeclaredMadeForKids($madeForKids);
             
             // Create the video resource
             $video = new Google_Service_YouTube_Video();

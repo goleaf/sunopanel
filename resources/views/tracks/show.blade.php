@@ -296,7 +296,7 @@
                             <div class="mt-4">
                                 <label for="description" class="block text-sm font-medium mb-2">YouTube Description:</label>
                                 <textarea id="description" name="description" rows="4" class="textarea textarea-bordered w-full" 
-                                        maxlength="5000">{{ old('description', "Generated with SunoPanel\nTrack: {$track->title}\nGenres: {$track->genres_string}") }}</textarea>
+                                        maxlength="5000">{{ old('description', "Track: {$track->title}\nGenres: {$track->genres_string}") }}</textarea>
                                 <p class="text-xs text-base-content/70 mt-1">Maximum 5000 characters</p>
                                 @error('description')
                                     <span class="text-red-500 text-sm">{{ $message }}</span>
@@ -306,11 +306,11 @@
                             <div class="mt-4">
                                 <label for="privacy_status" class="block text-sm font-medium mb-2">Privacy:</label>
                                 <select id="privacy_status" name="privacy_status" class="select select-bordered w-full" required>
-                                    <option value="unlisted" {{ old('privacy_status') == 'unlisted' ? 'selected' : '' }}>
-                                        Unlisted (anyone with the link can view)
-                                    </option>
                                     <option value="public" {{ old('privacy_status') == 'public' ? 'selected' : '' }}>
                                         Public (visible to everyone)
+                                    </option>
+                                    <option value="unlisted" {{ old('privacy_status') == 'unlisted' ? 'selected' : '' }}>
+                                        Unlisted (anyone with the link can view)
                                     </option>
                                     <option value="private" {{ old('privacy_status') == 'private' ? 'selected' : '' }}>
                                         Private (only you can view)

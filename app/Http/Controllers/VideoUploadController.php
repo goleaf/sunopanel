@@ -59,22 +59,32 @@ class VideoUploadController extends Controller
             
             // Upload to YouTube directly
             $uploader = new SimpleYouTubeUploader();
-            $videoId = $uploader->upload(
-                $fullVideoPath,
+            
+            // Create a temporary Track object
+            $track = new Track();
+            $track->title = $validated['title'];
+            $track->description = $validated['description'] ?? '';
+            $track->mp4_path = 'temp/' . $videoFileName;
+            
+            // Save track to get an ID
+            $track->save();
+            
+            $videoId = $uploader->uploadTrack(
+                $track,
                 $validated['title'],
                 $validated['description'] ?? '',
-                $tags,
-                $validated['privacy_status']
+                $validated['privacy_status'],
+                true, // add to playlist
+                false, // not a short
+                false  // not made for kids
             );
             
             if (!$videoId) {
                 throw new \Exception('Failed to upload video to YouTube');
             }
             
-            // Create a record in the database for tracking
-            $track = Track::create([
-                'title' => $validated['title'],
-                'description' => $validated['description'] ?? '',
+            // Update the track record
+            $track->update([
                 'status' => 'completed',
                 'youtube_video_id' => $videoId,
                 'youtube_uploaded_at' => now(),

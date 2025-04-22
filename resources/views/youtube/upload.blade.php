@@ -72,6 +72,30 @@
                             
                             <div class="mt-4">
                                 <label class="cursor-pointer label">
+                                    <span class="label-text">Not made for kids</span> 
+                                    <input type="checkbox" name="not_for_kids" value="1" checked class="checkbox checkbox-primary" />
+                                </label>
+                                <p class="text-xs text-base-content/70 mt-1">Mark content as "Not Made for Kids" to avoid YouTube Kids restrictions</p>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <label class="cursor-pointer label flex justify-between">
+                                    <span class="label-text">Upload as regular video</span> 
+                                    <input type="checkbox" name="is_regular_video" value="1" checked class="checkbox checkbox-primary" />
+                                </label>
+                                <p class="text-xs text-base-content/70 mt-1">Upload to your regular YouTube channel</p>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <label class="cursor-pointer label flex justify-between">
+                                    <span class="label-text">Upload as YouTube Short</span> 
+                                    <input type="checkbox" name="is_short" value="1" checked class="checkbox checkbox-primary" />
+                                </label>
+                                <p class="text-xs text-base-content/70 mt-1">Upload as a YouTube Short for better visibility in Shorts feed</p>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <label class="cursor-pointer label">
                                     <span class="label-text">Add to playlist based on genre</span> 
                                     <input type="checkbox" name="add_to_playlist" value="1" checked class="checkbox checkbox-primary" />
                                 </label>

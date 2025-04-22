@@ -43,6 +43,8 @@ class SimpleYouTubeUploader
      * @param string|null $description Custom description
      * @param string $privacy Video privacy setting (public, unlisted, private)
      * @param bool $addToPlaylist Whether to add to playlist
+     * @param bool $isShort Whether to upload as a YouTube Short
+     * @param bool $madeForKids Whether the content is made for kids
      * @return string|null The YouTube video ID if successful
      * @throws Exception If upload fails
      */
@@ -51,7 +53,9 @@ class SimpleYouTubeUploader
         ?string $title = null,
         ?string $description = null,
         string $privacy = 'public',
-        bool $addToPlaylist = true
+        bool $addToPlaylist = true,
+        bool $isShort = false,
+        bool $madeForKids = false
     ): ?string {
         // Check if the YouTube service is authenticated
         if (!$this->isAuthenticated()) {
@@ -73,12 +77,12 @@ class SimpleYouTubeUploader
         $title = $title ?? $track->title;
         $description = $description ?? $track->title;
         
-        // Prepare tags
+        // Prepare tags - Remove sunopanel references
         $tags = [];
         if (!empty($track->genres_string)) {
             $tags = array_map('trim', explode(',', $track->genres_string));
         }
-        $tags = array_merge($tags, ['sunopanel', 'ai music', 'ai generated']);
+        $tags = array_merge($tags, ['ai music', 'ai generated']);
         
         // Upload the video
         try {
@@ -88,8 +92,8 @@ class SimpleYouTubeUploader
                 $description,
                 $tags,
                 $privacy,
-                false, // Not made for kids
-                false  // Not a Short video
+                $madeForKids,
+                $isShort
             );
             
             if (!$videoId) {
@@ -101,13 +105,15 @@ class SimpleYouTubeUploader
             $track->youtube_uploaded_at = now();
             $track->save();
             
-            // Add to genre-based playlists if requested
-            if ($addToPlaylist && !empty($track->genres_string)) {
+            // Add to genre-based playlists if requested and not a Short
+            // (Shorts typically don't go into playlists)
+            if ($addToPlaylist && !$isShort && !empty($track->genres_string)) {
                 $genres = explode(',', $track->genres_string);
                 foreach ($genres as $genre) {
                     $genre = trim($genre);
                     if (!empty($genre)) {
-                        $playlistName = "SunoPanel - {$genre}";
+                        // Removed "SunoPanel" from playlist name
+                        $playlistName = $genre;
                         $this->addToPlaylist($videoId, $playlistName, $track);
                     }
                 }
@@ -137,7 +143,7 @@ class SimpleYouTubeUploader
         try {
             $playlistId = $this->youtubeService->findOrCreatePlaylist(
                 $playlistName,
-                "SunoPanel playlist - {$playlistName}",
+                "AI Generated Music - {$playlistName}", // Removed SunoPanel reference
                 'public'
             );
             

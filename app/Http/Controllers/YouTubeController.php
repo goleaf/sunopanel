@@ -161,9 +161,11 @@ class YouTubeController extends Controller
             'track_id' => 'required|exists:tracks,id',
             'title' => 'required|string|max:100',
             'description' => 'nullable|string',
-            'privacy' => 'required|in:public,unlisted,private',
-            'playlist' => 'nullable|string',
+            'privacy_status' => 'required|in:public,unlisted,private',
+            'not_for_kids' => 'nullable|boolean',
             'is_short' => 'nullable|boolean',
+            'is_regular_video' => 'nullable|boolean',
+            'add_to_playlist' => 'nullable|boolean',
         ]);
         
         try {
@@ -173,44 +175,89 @@ class YouTubeController extends Controller
             
             $track = \App\Models\Track::findOrFail($validated['track_id']);
             
+            // Check if the track has a video file
+            if (empty($track->mp4_path)) {
+                return back()->with('error', 'Track does not have a video file.');
+            }
+            
             // Use SimpleYouTubeUploader for direct upload
             $uploader = app(\App\Services\SimpleYouTubeUploader::class);
             
-            // Add to playlist if specified
-            $addToPlaylist = !empty($validated['playlist']);
+            // Set default values
+            $notForKids = $validated['not_for_kids'] ?? true;
+            $isShort = $validated['is_short'] ?? true;
+            $isRegularVideo = $validated['is_regular_video'] ?? true;
+            $addToPlaylist = $validated['add_to_playlist'] ?? true;
             
-            // Determine if it should be uploaded as a Short
-            $isShort = (bool)$validated['is_short'] ?? false;
+            $successMessages = [];
+            $videoIds = [];
             
-            // Upload the track
-            $videoId = $uploader->uploadTrack(
-                $track,
-                $validated['title'],
-                $validated['description'] ?? $track->title,
-                $validated['privacy'],
-                $addToPlaylist,
-                $isShort
-            );
-            
-            // Add to custom playlist if specified
-            if ($addToPlaylist && !$isShort) {
-                $playlistId = $this->youtubeService->findOrCreatePlaylist(
-                    $validated['playlist'],
-                    "AI Music - {$validated['playlist']}",
-                    'public'
+            // Upload as regular video if selected
+            if ($isRegularVideo) {
+                // Upload the track as regular video
+                $videoId = $uploader->uploadTrack(
+                    $track,
+                    $validated['title'],
+                    $validated['description'] ?? $track->title,
+                    $validated['privacy_status'],
+                    $addToPlaylist,
+                    false, // Not a short
+                    !$notForKids // Inverse of "not for kids" is "made for kids"
                 );
                 
-                if ($playlistId) {
-                    $this->youtubeService->addVideoToPlaylist($videoId, $playlistId);
-                    $track->youtube_playlist_id = $playlistId;
-                    $track->save();
+                $videoIds[] = $videoId;
+                $successMessages[] = "Track uploaded successfully to YouTube!";
+                
+                // Add to genre-based playlists if requested
+                if ($addToPlaylist && !empty($track->genres_string)) {
+                    $genres = array_map('trim', explode(',', $track->genres_string));
+                    
+                    foreach ($genres as $genre) {
+                        if (!empty($genre)) {
+                            $playlistId = $this->youtubeService->findOrCreatePlaylist(
+                                $genre,
+                                "AI Music - {$genre}",
+                                $validated['privacy_status']
+                            );
+                            
+                            if ($playlistId) {
+                                $this->youtubeService->addVideoToPlaylist($videoId, $playlistId);
+                                $successMessages[] = "Added to '{$genre}' playlist.";
+                            }
+                        }
+                    }
                 }
             }
             
-            $videoType = $isShort ? 'YouTube Shorts' : 'YouTube';
+            // Upload as Short if selected
+            if ($isShort) {
+                // Create a shorts-specific title (optional)
+                $shortsTitle = $validated['title'] . " #Shorts";
+                
+                // Upload the track as a Short
+                $shortsVideoId = $uploader->uploadTrack(
+                    $track,
+                    $shortsTitle,
+                    $validated['description'] ?? $track->title,
+                    $validated['privacy_status'],
+                    false, // Don't add Shorts to playlists
+                    true,  // Is a Short
+                    !$notForKids // Inverse of "not for kids" is "made for kids"
+                );
+                
+                $videoIds[] = $shortsVideoId;
+                $successMessages[] = "Track uploaded successfully to YouTube Shorts!";
+            }
+            
+            // Create success message
+            $message = implode(' ', $successMessages);
+            if (count($videoIds) > 0) {
+                $message .= " Video ID(s): " . implode(', ', $videoIds);
+            }
             
             return redirect()->route('youtube.uploads')
-                ->with('success', "Track uploaded successfully to {$videoType}!");
+                ->with('success', $message);
+                
         } catch (\Exception $e) {
             Log::error('YouTube upload failed', [
                 'track_id' => $validated['track_id'],

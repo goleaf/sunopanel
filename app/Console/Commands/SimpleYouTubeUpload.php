@@ -17,7 +17,8 @@ class SimpleYouTubeUpload extends Command
     protected $signature = 'youtube:simple-upload 
                           {track_id? : ID of track to upload}
                           {--all : Upload all eligible tracks}
-                          {--privacy=public : Privacy setting (public, unlisted, private)}';
+                          {--privacy=public : Privacy setting (public, unlisted, private)}
+                          {--shorts : Upload as YouTube Shorts}';
 
     /**
      * The console command description.
@@ -41,15 +42,22 @@ class SimpleYouTubeUpload extends Command
         
         // Get privacy setting
         $privacy = $this->option('privacy');
+        $isShort = $this->option('shorts');
+        
+        if ($isShort) {
+            $this->info('Videos will be uploaded as YouTube Shorts');
+        } else {
+            $this->info('Videos will be uploaded as standard YouTube videos');
+        }
         
         // Check what mode we're running in
         $uploadAll = $this->option('all');
         $trackId = $this->argument('track_id');
         
         if ($uploadAll) {
-            return $this->uploadAllTracks($uploader, $privacy);
+            return $this->uploadAllTracks($uploader, $privacy, $isShort);
         } elseif ($trackId) {
-            return $this->uploadSingleTrack($uploader, $trackId, $privacy);
+            return $this->uploadSingleTrack($uploader, $trackId, $privacy, $isShort);
         } else {
             $this->error('Please specify a track ID or use --all option.');
             return 1;
@@ -59,12 +67,13 @@ class SimpleYouTubeUpload extends Command
     /**
      * Upload a single track
      */
-    protected function uploadSingleTrack(SimpleYouTubeUploader $uploader, int $trackId, string $privacy)
+    protected function uploadSingleTrack(SimpleYouTubeUploader $uploader, int $trackId, string $privacy, bool $isShort)
     {
         try {
             $track = Track::findOrFail($trackId);
             
-            $this->info("Uploading track: {$track->title} (ID: {$trackId})");
+            $videoType = $isShort ? 'YouTube Shorts' : 'YouTube video';
+            $this->info("Uploading track: {$track->title} (ID: {$trackId}) as {$videoType}");
             
             if ($track->status !== 'completed') {
                 $this->error("Track is not completed (status: {$track->status})");
@@ -79,12 +88,14 @@ class SimpleYouTubeUpload extends Command
             // Upload the track
             $videoId = $uploader->uploadTrack(
                 $track,
-                null, // Use default title
-                null, // Use default description
-                $privacy
+                null,    // Use default title
+                null,    // Use default description
+                $privacy,
+                true,    // Add to playlists
+                $isShort // Upload as Short if requested
             );
             
-            $this->info("Track uploaded successfully!");
+            $this->info("Track uploaded successfully to {$videoType}!");
             $this->info("YouTube URL: https://www.youtube.com/watch?v={$videoId}");
             
             return 0;
@@ -100,7 +111,7 @@ class SimpleYouTubeUpload extends Command
     /**
      * Upload all eligible tracks
      */
-    protected function uploadAllTracks(SimpleYouTubeUploader $uploader, string $privacy)
+    protected function uploadAllTracks(SimpleYouTubeUploader $uploader, string $privacy, bool $isShort)
     {
         // Get all eligible tracks
         $tracks = Track::where('status', 'completed')
@@ -115,7 +126,8 @@ class SimpleYouTubeUpload extends Command
             return 0;
         }
         
-        $this->info("Found {$total} eligible tracks for upload.");
+        $videoType = $isShort ? 'YouTube Shorts' : 'YouTube videos';
+        $this->info("Found {$total} eligible tracks for upload as {$videoType}.");
         
         $successCount = 0;
         $failedTracks = [];
@@ -128,9 +140,11 @@ class SimpleYouTubeUpload extends Command
             try {
                 $videoId = $uploader->uploadTrack(
                     $track,
-                    null, // Use default title
-                    null, // Use default description
-                    $privacy
+                    null,    // Use default title
+                    null,    // Use default description
+                    $privacy,
+                    true,    // Add to playlists if not a Short
+                    $isShort // Upload as Short if requested
                 );
                 
                 if ($videoId) {
