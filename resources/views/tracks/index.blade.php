@@ -6,41 +6,115 @@
 
 @section('content')
 <div class="container mx-auto px-4 py-6">
-    <!-- Section header with stats -->
-    <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
-        <div class="w-full md:w-auto">
-            <div class="stats shadow mb-4">
-                <div class="stat">
-                    <div class="stat-title">Total</div>
-                    <div class="stat-value" data-count="total">{{ $totalTracks }}</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-title">Processing</div>
-                    <div class="stat-value text-warning" data-count="processing">{{ $processingTracks }}</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-title">Pending</div>
-                    <div class="stat-value text-info" data-count="pending">{{ $pendingTracks }}</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-title">Completed</div>
-                    <div class="stat-value text-success" data-count="completed">{{ $completedTracks }}</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-title">Failed</div>
-                    <div class="stat-value text-error" data-count="failed">{{ $failedTracks }}</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-title">Stopped</div>
-                    <div class="stat-value text-warning" data-count="stopped">{{ $stoppedTracks }}</div>
+    <!-- Page header -->
+    <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-6">
+        <div>
+            <h1 class="text-2xl font-bold flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-primary mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                </svg>
+                Music Tracks
+            </h1>
+            <p class="text-sm text-base-content/70 mt-1">Manage and monitor your AI-generated music tracks</p>
+        </div>
+        <div class="flex space-x-2 mt-4 md:mt-0">
+            <a href="{{ route('home.index') }}" class="btn btn-primary btn-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                Add New Track
+            </a>
+            <button id="refresh-now" class="btn btn-outline btn-sm" title="Refresh Now">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Messages -->
+    @if(session('success'))
+    <div class="alert alert-success mb-6">
+        {{ session('success') }}
+    </div>
+    @endif
+
+    @if(session('info'))
+    <div class="alert alert-info mb-6">
+        {{ session('info') }}
+    </div>
+    @endif
+
+    <!-- Stats cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+        <!-- Total -->
+        <div class="card bg-base-100 shadow hover:shadow-md transition-shadow duration-300">
+            <div class="card-body p-4">
+                <div class="stat p-0">
+                    <div class="stat-title text-xs">Total</div>
+                    <div class="stat-value text-base-content text-2xl" data-count="total">{{ $totalTracks }}</div>
                 </div>
             </div>
+        </div>
+        
+        <!-- Processing -->
+        <div class="card bg-base-100 shadow hover:shadow-md transition-shadow duration-300">
+            <div class="card-body p-4">
+                <div class="stat p-0">
+                    <div class="stat-title text-xs">Processing</div>
+                    <div class="stat-value text-warning text-2xl" data-count="processing">{{ $processingTracks }}</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Pending -->
+        <div class="card bg-base-100 shadow hover:shadow-md transition-shadow duration-300">
+            <div class="card-body p-4">
+                <div class="stat p-0">
+                    <div class="stat-title text-xs">Pending</div>
+                    <div class="stat-value text-info text-2xl" data-count="pending">{{ $pendingTracks }}</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Completed -->
+        <div class="card bg-base-100 shadow hover:shadow-md transition-shadow duration-300">
+            <div class="card-body p-4">
+                <div class="stat p-0">
+                    <div class="stat-title text-xs">Completed</div>
+                    <div class="stat-value text-success text-2xl" data-count="completed">{{ $completedTracks }}</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Failed -->
+        <div class="card bg-base-100 shadow hover:shadow-md transition-shadow duration-300">
+            <div class="card-body p-4">
+                <div class="stat p-0">
+                    <div class="stat-title text-xs">Failed</div>
+                    <div class="stat-value text-error text-2xl" data-count="failed">{{ $failedTracks }}</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Stopped -->
+        <div class="card bg-base-100 shadow hover:shadow-md transition-shadow duration-300">
+            <div class="card-body p-4">
+                <div class="stat p-0">
+                    <div class="stat-title text-xs">Stopped</div>
+                    <div class="stat-value text-warning text-2xl" data-count="stopped">{{ $stoppedTracks }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-            <!-- search bar and filter buttons -->
-            <div class="flex flex-wrap gap-2 mb-4">
-                <form action="{{ route('tracks.index') }}" method="GET" class="w-full md:w-auto flex gap-2 flex-wrap items-center">
-                    <div class="input-group">
-                        <input type="text" name="search" value="{{ request('search') }}" placeholder="Search tracks..." class="input input-bordered w-full max-w-xs">
+    <!-- Search and filters -->
+    <div class="card bg-base-100 shadow-md mb-6">
+        <div class="card-body p-4">
+            <div class="flex flex-wrap gap-4">
+                <form action="{{ route('tracks.index') }}" method="GET" class="flex-1 flex gap-2 flex-wrap items-center">
+                    <div class="input-group flex-1 max-w-md">
+                        <input type="text" name="search" value="{{ request('search') }}" placeholder="Search tracks..." class="input input-bordered w-full">
                         <button type="submit" class="btn btn-primary">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -53,67 +127,59 @@
                     <input type="hidden" name="genre" value="{{ request('genre') }}">
                     @endif
                     
-                    <div class="join">
-                        <button type="submit" name="status" value="" class="btn join-item {{ !request('status') ? 'btn-primary' : 'btn-outline' }}">All</button>
-                        <button type="submit" name="status" value="processing" class="btn join-item {{ request('status') == 'processing' ? 'btn-primary' : 'btn-outline' }}">Processing</button>
-                        <button type="submit" name="status" value="pending" class="btn join-item {{ request('status') == 'pending' ? 'btn-primary' : 'btn-outline' }}">Pending</button>
-                        <button type="submit" name="status" value="completed" class="btn join-item {{ request('status') == 'completed' ? 'btn-primary' : 'btn-outline' }}">Completed</button>
-                        <button type="submit" name="status" value="failed" class="btn join-item {{ request('status') == 'failed' ? 'btn-primary' : 'btn-outline' }}">Failed</button>
-                        <button type="submit" name="status" value="stopped" class="btn join-item {{ request('status') == 'stopped' ? 'btn-primary' : 'btn-outline' }}">Stopped</button>
+                    <div class="flex-1 flex flex-wrap gap-1">
+                        <button type="submit" name="status" value="" class="btn btn-sm {{ !request('status') ? 'btn-primary' : 'btn-outline' }}">All</button>
+                        <button type="submit" name="status" value="processing" class="btn btn-sm {{ request('status') == 'processing' ? 'btn-primary' : 'btn-outline' }}">Processing</button>
+                        <button type="submit" name="status" value="pending" class="btn btn-sm {{ request('status') == 'pending' ? 'btn-primary' : 'btn-outline' }}">Pending</button>
+                        <button type="submit" name="status" value="completed" class="btn btn-sm {{ request('status') == 'completed' ? 'btn-primary' : 'btn-outline' }}">Completed</button>
+                        <button type="submit" name="status" value="failed" class="btn btn-sm {{ request('status') == 'failed' ? 'btn-primary' : 'btn-outline' }}">Failed</button>
+                        <button type="submit" name="status" value="stopped" class="btn btn-sm {{ request('status') == 'stopped' ? 'btn-primary' : 'btn-outline' }}">Stopped</button>
                     </div>
                 </form>
-            </div>
-
-            <!-- Bulk action buttons -->
-            <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
-                <div class="flex flex-wrap gap-2">
-                    <button id="start-all-tracks" class="btn btn-success btn-sm action-btn">
-                        <span class="mr-1">▶</span> Start All
-                    </button>
-                    <button id="stop-all-tracks" class="btn btn-error btn-sm action-btn">
-                        <span class="mr-1">■</span> Stop All
-                    </button>
-                    @if($failedTracks > 0)
-                    <button id="retry-all-tracks" class="btn btn-warning btn-sm action-btn">
-                        <span class="mr-1">↻</span> Retry Failed
-                    </button>
-                    @endif
-                </div>
-                
-                <div class="flex flex-wrap gap-2">
-                    <div class="form-control">
-                        <label class="cursor-pointer label flex justify-start gap-2 p-0">
-                            <span class="label-text">Show Completed</span> 
-                            <input type="checkbox" id="toggle-completed" class="toggle toggle-sm toggle-success" checked />
-                        </label>
-                    </div>
-                    <div class="form-control">
-                        <label class="cursor-pointer label flex justify-start gap-2 p-0">
-                            <span class="label-text">Auto-Refresh</span> 
-                            <input type="checkbox" id="toggle-auto-refresh" class="toggle toggle-sm toggle-info" checked />
-                        </label>
-                    </div>
-                    <button id="refresh-now" class="btn btn-outline btn-sm action-btn" title="Refresh Now">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                        </svg>
-                    </button>
-                </div>
             </div>
         </div>
     </div>
 
-    @if(session('success'))
-    <div class="alert alert-success mb-6">
-        {{ session('success') }}
+    <!-- Action Buttons Bar -->
+    <div class="flex flex-wrap justify-between items-center mb-6 gap-4">
+        <div class="flex flex-wrap gap-2">
+            <button id="start-all-tracks" class="btn btn-success btn-sm action-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                </svg>
+                Start All
+            </button>
+            <button id="stop-all-tracks" class="btn btn-error btn-sm action-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18h12a1 1 0 001-1V7a1 1 0 00-1-1H6a1 1 0 00-1 1v10a1 1 0 001 1z" />
+                </svg>
+                Stop All
+            </button>
+            @if($failedTracks > 0)
+            <button id="retry-all-tracks" class="btn btn-warning btn-sm action-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Retry Failed
+            </button>
+            @endif
+        </div>
+        
+        <div class="flex flex-wrap gap-3 items-center">
+            <div class="form-control">
+                <label class="cursor-pointer label flex justify-start gap-2 p-0">
+                    <span class="label-text">Show Completed</span> 
+                    <input type="checkbox" id="toggle-completed" class="toggle toggle-sm toggle-success" checked />
+                </label>
+            </div>
+            <div class="form-control">
+                <label class="cursor-pointer label flex justify-start gap-2 p-0">
+                    <span class="label-text">Auto-Refresh</span> 
+                    <input type="checkbox" id="toggle-auto-refresh" class="toggle toggle-sm toggle-info" checked />
+                </label>
+            </div>
+        </div>
     </div>
-    @endif
-
-    @if(session('info'))
-    <div class="alert alert-info mb-6">
-        {{ session('info') }}
-    </div>
-    @endif
 
     <!-- Tracks table -->
     <div class="overflow-x-auto bg-base-100 rounded-lg shadow">
