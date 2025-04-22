@@ -164,6 +164,7 @@
                                             </a>
                                         </div>
                                     </th>
+                                    <th>Genre ID</th>
                                     <th>
                                         <div class="flex items-center">
                                             Tracks
@@ -208,6 +209,7 @@
                                                 {{ $genre->name }}
                                             </a>
                                         </td>
+                                        <td>{{ $genre->genre_id ?? 'N/A' }}</td>
                                         <td>{{ $genre->tracks_count ?? 0 }}</td>
                                         <td>{{ $genre->created_at->format('Y-m-d') }}</td>
                                         <td class="flex space-x-2">

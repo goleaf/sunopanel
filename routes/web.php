@@ -110,8 +110,3 @@ Route::prefix('youtube')->name('youtube.')->group(function () {
 
 // Special route for YouTube OAuth callback
 Route::get('/youtube-auth', [\App\Http\Controllers\YouTubeAuthController::class, 'callback'])->name('youtube.auth.callback');
-
-// Suno Style route - redirects to API
-Route::get('/style/{style}', function ($style) {
-    return redirect()->route('api.suno.style', ['style' => $style]);
-})->name('suno.style');

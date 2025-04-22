@@ -18,7 +18,7 @@ class ImportSunoPlaylist extends Command
      *
      * @var string
      */
-    protected $signature = 'import:suno-playlist {url : URL of the Suno playlist API endpoint}';
+    protected $signature = 'import:suno-playlist {url? : URL of the Suno playlist API endpoint}';
 
     /**
      * The console command description.
@@ -33,6 +33,16 @@ class ImportSunoPlaylist extends Command
     public function handle()
     {
         $url = $this->argument('url');
+        
+        if (empty($url)) {
+            $url = $this->ask('Enter URL of the Suno playlist API endpoint:');
+            
+            if (empty($url)) {
+                $this->error('URL is required.');
+                return 1;
+            }
+        }
+        
         $this->info("Fetching data from: {$url}");
 
         try {
@@ -128,6 +138,12 @@ class ImportSunoPlaylist extends Command
         $mp3Url = $clip['audio_url'] ?? null;
         $imageUrl = $clip['image_url'] ?? null;
         $tagsString = isset($clip['metadata']['tags']) ? $clip['metadata']['tags'] : '';
+        
+        // Extract metadata for genres
+        $genreData = [];
+        if (isset($clip['metadata']['genres']) && is_array($clip['metadata']['genres'])) {
+            $genreData = $clip['metadata']['genres'];
+        }
 
         if (empty($mp3Url)) {
             throw new Exception("MP3 URL is missing for track: {$title}");
@@ -180,7 +196,7 @@ class ImportSunoPlaylist extends Command
         // Process genres
         $this->comment("Processing genres...");
         if (!empty($tagsString)) {
-            $this->processGenres($track, $tagsString);
+            $this->processGenres($track, $tagsString, $genreData);
         }
 
         // Update track status to completed
@@ -351,9 +367,10 @@ class ImportSunoPlaylist extends Command
      *
      * @param Track $track
      * @param string $genresString
+     * @param array $genreData
      * @return void
      */
-    protected function processGenres(Track $track, string $genresString): void
+    protected function processGenres(Track $track, string $genresString, array $genreData = []): void
     {
         if (empty($genresString)) {
             return;
@@ -375,18 +392,35 @@ class ImportSunoPlaylist extends Command
                 $normalizedName = ucwords(strtolower($genreName));
                 $slug = Str::slug($normalizedName);
                 
+                // Look for genre_id in the genre data
+                $genre_id = null;
+                foreach ($genreData as $genreItem) {
+                    if (isset($genreItem['name']) && strtolower($genreItem['name']) === strtolower($genreName)) {
+                        $genre_id = $genreItem['id'] ?? null;
+                        break;
+                    }
+                }
+                
                 // First try to find existing genre by slug
                 $genre = Genre::firstWhere('slug', $slug);
                 
                 // If not found, create a new one
                 if (!$genre) {
+                    // Create the genre
                     $genre = Genre::create([
                         'name' => $normalizedName,
-                        'slug' => $slug
+                        'slug' => $slug,
+                        'genre_id' => $genre_id,
                     ]);
-                    $this->comment("Created new genre: {$normalizedName}");
+                    $this->comment("Created new genre: {$normalizedName}" . ($genre_id ? " with ID: {$genre_id}" : ""));
                 } else {
-                    $this->comment("Found existing genre: {$normalizedName}");
+                    // Update the genre_id if we have one from metadata and the existing genre doesn't have it
+                    if ($genre_id && empty($genre->genre_id)) {
+                        $genre->update(['genre_id' => $genre_id]);
+                        $this->comment("Updated existing genre: {$normalizedName} with ID: {$genre_id}");
+                    } else {
+                        $this->comment("Found existing genre: {$normalizedName}" . ($genre->genre_id ? " with ID: {$genre->genre_id}" : ""));
+                    }
                 }
                 
                 $genreIds[] = $genre->id;

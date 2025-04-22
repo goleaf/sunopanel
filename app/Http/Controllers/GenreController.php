@@ -59,11 +59,13 @@ class GenreController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:genres',
+            'genre_id' => 'nullable|string|max:36',
         ]);
 
         Genre::create([
             'name' => $validated['name'],
             'slug' => Str::slug($validated['name']),
+            'genre_id' => $validated['genre_id'] ?? null,
         ]);
 
         return redirect()->route('genres.index')->with('success', 'Genre created successfully');
@@ -94,11 +96,13 @@ class GenreController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:genres,name,' . $genre->id,
+            'genre_id' => 'nullable|string|max:36',
         ]);
 
         $genre->update([
             'name' => $validated['name'],
             'slug' => Str::slug($validated['name']),
+            'genre_id' => $validated['genre_id'] ?? null,
         ]);
 
         return redirect()->route('genres.index')->with('success', 'Genre updated successfully');

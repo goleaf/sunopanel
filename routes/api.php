@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\Api\SunoController;
 use App\Http\Controllers\Api\TrackController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -41,12 +40,6 @@ Route::prefix('tracks')->middleware(\App\Http\Middleware\JsonMiddleware::class)-
     Route::post('/status-bulk', [TrackController::class, 'statusBulk']);
     Route::post('/bulk-action', [TrackController::class, 'bulkAction']);
 }); 
-
-// Suno API Routes
-Route::prefix('suno')->middleware(\App\Http\Middleware\JsonMiddleware::class)->group(function() {
-    // Get tracks by style
-    Route::get('/style/{style}', [SunoController::class, 'getTracksByStyle'])->name('api.suno.style');
-});
 
 // YouTube routes
 Route::prefix('youtube')->group(function () {
