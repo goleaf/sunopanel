@@ -1,9 +1,9 @@
 <?php
 
+use App\Http\Controllers\Api\SunoController;
 use App\Http\Controllers\Api\TrackController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\SunoController;
 
 /*
 |--------------------------------------------------------------------------
@@ -20,9 +20,6 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-// Suno API routes
-Route::get('/suno/tracks', [SunoController::class, 'getTracksByStyle']);
-
 // Track API Routes
 Route::prefix('tracks')->middleware(\App\Http\Middleware\JsonMiddleware::class)->group(function() {
     // Get track status
@@ -32,7 +29,7 @@ Route::prefix('tracks')->middleware(\App\Http\Middleware\JsonMiddleware::class)-
     Route::post('/{track}/start', [TrackController::class, 'start']);
     
     // Stop processing a track
-    Route::post('/{track}/stop', [TrackController::class, 'stop']);
+    Route::post('/{trackId}/stop', [TrackController::class, 'stop']);
     
     // Retry processing a track
     Route::post('/{track}/retry', [TrackController::class, 'retry']);
@@ -45,22 +42,28 @@ Route::prefix('tracks')->middleware(\App\Http\Middleware\JsonMiddleware::class)-
     Route::post('/bulk-action', [TrackController::class, 'bulkAction']);
 }); 
 
-// YouTube routes - commented out as they were using deleted controllers
-// Route::prefix('youtube')->group(function () {
-//     Route::post('/upload/{id}', [App\Http\Controllers\Api\YouTubeController::class, 'uploadVideo']);
-//     Route::post('/upload-all', [App\Http\Controllers\Api\YouTubeController::class, 'uploadAll']);
-// });
+// Suno API Routes
+Route::prefix('suno')->middleware(\App\Http\Middleware\JsonMiddleware::class)->group(function() {
+    // Get tracks by style
+    Route::get('/style/{style}', [SunoController::class, 'getTracksByStyle'])->name('api.suno.style');
+});
+
+// YouTube routes
+Route::prefix('youtube')->group(function () {
+    // These routes were using a now-deleted controller
+    // Route::post('/upload/{id}', [App\Http\Controllers\Api\YouTubeController::class, 'uploadVideo']);
+    // Route::post('/upload-all', [App\Http\Controllers\Api\YouTubeController::class, 'uploadAll']);
+});
 
 // YouTube upload routes are now removed, as they used a deleted controller
 // Route::post('/youtube/upload/{id}', [App\Http\Controllers\Api\YouTubeController::class, 'uploadVideo']);
 // Route::post('/youtube/upload-all', [App\Http\Controllers\Api\YouTubeController::class, 'uploadAll']);
 
-// Authenticated routes
 Route::middleware('auth:sanctum')->group(function () {
-    // YouTube upload routes were using deleted controllers
+    // YouTube upload routes were using a now-deleted controller
     // Route::prefix('youtube')->group(function () {
     //     Route::get('/status', [App\Http\Controllers\Api\YouTubeUploadController::class, 'getUploadStatus']);
     //     Route::post('/upload/track/{trackId}', [App\Http\Controllers\Api\YouTubeUploadController::class, 'uploadTrack']);
     //     Route::post('/upload/all', [App\Http\Controllers\Api\YouTubeUploadController::class, 'uploadAllTracks']);
     // });
-});
+}); 

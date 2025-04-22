@@ -1,10 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Services\SunoClient;
-use Exception;
+use App\Services\SunoService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -12,43 +13,48 @@ use Illuminate\Support\Facades\Log;
 class SunoController extends Controller
 {
     /**
-     * Get tracks by style/genre
-     * 
+     * @var SunoService
+     */
+    protected SunoService $sunoService;
+
+    /**
+     * Constructor
+     *
+     * @param SunoService $sunoService
+     */
+    public function __construct(SunoService $sunoService)
+    {
+        $this->sunoService = $sunoService;
+    }
+
+    /**
+     * Get tracks by music style
+     *
      * @param Request $request
+     * @param string $style The music style to fetch tracks for
      * @return JsonResponse
      */
-    public function getTracksByStyle(Request $request): JsonResponse
+    public function getTracksByStyle(Request $request, string $style): JsonResponse
     {
         try {
-            $request->validate([
-                'style' => 'required|string',
-            ]);
-            
-            $style = $request->input('style');
-            $cookie = $request->input('cookie') ?? env('SUNO_COOKIE');
-            
-            if (empty($cookie)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No Suno authentication cookie provided. Please provide a cookie parameter or set the SUNO_COOKIE environment variable.',
-                ], 400);
-            }
-            
-            $sunoClient = new SunoClient($cookie);
-            $tracks = $sunoClient->getTracksByStyle($style);
+            $tracks = $this->sunoService->getTracksByStyle($style);
             
             return response()->json([
                 'success' => true,
                 'style' => $style,
-                'count' => count($tracks),
                 'tracks' => $tracks,
+                'count' => count($tracks),
             ]);
-        } catch (Exception $e) {
-            Log::error("Suno API error: {$e->getMessage()}");
+        } catch (\Exception $e) {
+            Log::error('Error in SunoController::getTracksByStyle', [
+                'style' => $style,
+                'error' => $e->getMessage(),
+            ]);
             
             return response()->json([
                 'success' => false,
-                'message' => "Failed to fetch tracks: {$e->getMessage()}",
+                'style' => $style,
+                'message' => 'Failed to fetch tracks: ' . $e->getMessage(),
             ], 500);
         }
     }

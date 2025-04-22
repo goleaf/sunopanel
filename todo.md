@@ -8,6 +8,7 @@
 ## Ongoing Tasks
 - Continue enhancing UI components for better user experience
 - Implement any additional requested features
+- Create API endpoint to fetch Suno.com tracks by music style
 
 ## Future Tasks
 - Add more advanced filtering options
