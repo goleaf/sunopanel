@@ -4,10 +4,10 @@
 - Updated Tracks page with search functionality, sorting controls, and statistics
 - Updated Genres index page with search functionality, sorting controls, and statistics
 - Improved Genre show page with better view toggle functionality
+- Created Suno playlist import command
+- Tested and finalized Suno playlist import functionality
 
 ## Ongoing Tasks
-- Create Suno playlist import command
-- Test and finalize Suno playlist import functionality
 - Continue enhancing UI components for better user experience
 - Implement any additional requested features
 
