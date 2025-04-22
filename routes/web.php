@@ -85,16 +85,26 @@ Route::get('/test-track-stop/{id}', function($id) {
 // YouTube routes
 Route::prefix('youtube')->name('youtube.')->group(function () {
     Route::get('/status', [YouTubeController::class, 'status'])->name('status');
-    Route::get('/upload', [YouTubeController::class, 'showUploadForm'])->name('upload');
-    Route::post('/upload', [YouTubeController::class, 'uploadTrack'])->name('upload.store');
+    Route::get('/upload', [YouTubeController::class, 'showUploadForm'])->name('upload.form');
+    
+    // Add route aliases to support multiple names for the same endpoint
+    Route::post('/upload', [YouTubeController::class, 'uploadTrack'])->name('upload');
+    Route::post('/upload-store', [YouTubeController::class, 'uploadTrack'])->name('upload.store');
+    
     Route::get('/uploads', [YouTubeController::class, 'uploads'])->name('uploads');
-    Route::post('/uploads/sync', [YouTubeController::class, 'syncUploads'])->name('uploads.sync');
+    Route::post('/uploads/sync', [YouTubeController::class, 'syncUploads'])->name('sync');
     Route::post('/uploads/refresh-stats', [YouTubeController::class, 'refreshVideoStats'])->name('uploads.refresh-stats');
     Route::post('/toggle-enabled', [YouTubeController::class, 'toggleYoutubeEnabled'])->name('toggle-enabled');
     
     // Video statistics routes
     Route::get('/video/{videoId}/stats', [YouTubeController::class, 'videoStats'])->name('video.stats');
     Route::post('/video/{videoId}/refresh-stats', [YouTubeController::class, 'refreshVideoStats'])->name('video.refresh-stats');
+    
+    // YouTube Auth routes
+    Route::prefix('auth')->name('auth.')->group(function () {
+        Route::get('/login', [YouTubeController::class, 'showLoginForm'])->name('login_form');
+        Route::get('/redirect', [YouTubeController::class, 'redirectToProvider'])->name('redirect');
+    });
 });
 
 // Special route for YouTube OAuth callback
