@@ -94,6 +94,7 @@ Route::prefix('youtube')->name('youtube.')->group(function () {
     Route::get('/uploads', [YouTubeController::class, 'uploads'])->name('uploads');
     Route::post('/uploads/sync', [YouTubeController::class, 'syncUploads'])->name('sync');
     Route::post('/uploads/refresh-stats', [YouTubeController::class, 'refreshVideoStats'])->name('uploads.refresh-stats');
+    Route::post('/refresh-stats', [YouTubeController::class, 'refreshVideoStats'])->name('refresh-stats');
     Route::post('/toggle-enabled', [YouTubeController::class, 'toggleYoutubeEnabled'])->name('toggle-enabled');
     
     // Video statistics routes
