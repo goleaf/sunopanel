@@ -217,3 +217,58 @@ If you encounter issues with YouTube uploads:
 5. Use the `php artisan youtube:test-upload` command to test the upload process
 
 For more information, see the [YouTube Data API documentation](https://developers.google.com/youtube/v3/getting-started).
+
+# YouTube Uploads
+
+SunoPanel now supports direct YouTube uploads using browser automation. This approach uses Selenium to control a browser and upload videos directly to YouTube using your username and password.
+
+## Installation
+
+1. Make sure you have Python 3 and pip installed
+2. Run the installation command:
+   ```bash
+   php artisan youtube:install
+   ```
+3. Set your YouTube credentials in the `.env` file:
+   ```
+   YOUTUBE_EMAIL=your.email@gmail.com
+   YOUTUBE_PASSWORD=your_password
+   ```
+
+## Testing the Uploader
+
+To test if everything is set up correctly, run:
+```bash
+php artisan youtube:diagnostics
+```
+
+To upload a test video:
+```bash
+php artisan youtube:test-upload
+```
+
+## Troubleshooting
+
+If you encounter issues with YouTube uploads:
+
+1. Run the diagnostics command to check your configuration:
+   ```bash
+   php artisan youtube:diagnostics
+   ```
+
+2. Make sure the browser automation dependencies are installed:
+   ```bash
+   pip3 install selenium webdriver-manager pyvirtualdisplay
+   ```
+
+3. Check that you have Chrome or Firefox installed on your server
+
+4. For headless servers, you may need to install:
+   ```bash
+   apt-get install xvfb
+   ```
+
+5. View upload errors in the logs:
+   ```bash
+   php artisan youtube:errors
+   ```

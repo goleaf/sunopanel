@@ -3,16 +3,11 @@
 namespace App\Console\Commands;
 
 use App\Services\SimpleYouTubeUploader;
-use App\Services\YouTubeUploader;
-use App\Jobs\UploadTrackToYouTube;
 use Exception;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Str;
-use Symfony\Component\Process\Process;
 use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\Storage;
 
 class TestYouTubeUpload extends Command
 {
@@ -27,31 +22,27 @@ class TestYouTubeUpload extends Command
                             {--description= : Video description}
                             {--tags= : Comma-separated list of tags}
                             {--privacy=unlisted : Privacy status (public, unlisted, private)}
-                            {--category=Music : Video category}
-                            {--oauth : Force using OAuth uploader}
-                            {--simple : Force using simple uploader}';
+                            {--category=Music : Video category}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Test uploading a video to YouTube';
+    protected $description = 'Test uploading a video to YouTube with username/password';
 
     /**
-     * The YouTube uploader instances.
+     * The YouTube uploader instance.
      */
-    private SimpleYouTubeUploader $simpleUploader;
-    private YouTubeUploader $oauthUploader;
+    private SimpleYouTubeUploader $uploader;
 
     /**
      * Create a new command instance.
      */
-    public function __construct(SimpleYouTubeUploader $simpleUploader, YouTubeUploader $oauthUploader)
+    public function __construct(SimpleYouTubeUploader $uploader)
     {
         parent::__construct();
-        $this->simpleUploader = $simpleUploader;
-        $this->oauthUploader = $oauthUploader;
+        $this->uploader = $uploader;
     }
 
     /**
@@ -60,9 +51,16 @@ class TestYouTubeUpload extends Command
     public function handle()
     {
         $file = $this->option('file');
+        
+        // Get a test file if not provided
         if (empty($file)) {
-            $this->error('Video file path is required.');
-            return 1;
+            $this->info('No video file specified, using a test video...');
+            $file = $this->getTestVideo();
+            
+            if (!$file) {
+                $this->error('Failed to create test video. Please specify a file with --file option.');
+                return 1;
+            }
         }
 
         // Check if file exists
@@ -73,11 +71,22 @@ class TestYouTubeUpload extends Command
 
         // Get upload options
         $title = $this->option('title') ?? 'Test Upload ' . date('Y-m-d H:i:s');
-        $description = $this->option('description') ?? 'This is a test upload from the SunoPanel YouTube uploader.';
+        $description = $this->option('description') ?? 'This is a test upload from the SunoPanel direct YouTube uploader.';
         $tags = $this->option('tags') ? explode(',', $this->option('tags')) : ['test', 'sunopanel'];
         $privacy = $this->option('privacy');
         $category = $this->option('category');
 
+        // Check credentials
+        $email = Config::get('youtube.email');
+        $password = Config::get('youtube.password');
+        
+        if (empty($email) || empty($password)) {
+            $this->error('YouTube email or password not configured! Please set the following in your .env file:');
+            $this->line('YOUTUBE_EMAIL=youremail@example.com');
+            $this->line('YOUTUBE_PASSWORD=yourpassword');
+            return 1;
+        }
+        
         // Display upload settings
         $this->info('Video Upload Configuration:');
         $this->line("File:        {$file}");
@@ -86,48 +95,59 @@ class TestYouTubeUpload extends Command
         $this->line("Tags:        " . implode(', ', $tags));
         $this->line("Privacy:     {$privacy}");
         $this->line("Category:    {$category}");
+        $this->line("Email:       {$email}");
+        $this->line("Password:    " . str_repeat('*', strlen($password)));
+        
+        // Check uploader script
+        $scriptPath = '/usr/local/bin/youtube-direct-upload';
+        if (!file_exists($scriptPath)) {
+            $scriptPath = storage_path('app/scripts/youtube-direct-upload');
+            if (!file_exists($scriptPath)) {
+                $this->error("YouTube uploader script not found at:");
+                $this->line("- /usr/local/bin/youtube-direct-upload");
+                $this->line("- " . storage_path('app/scripts/youtube-direct-upload'));
+                return 1;
+            }
+        }
+        
+        $this->info("Using uploader script: {$scriptPath}");
+        
+        // Check Python and Selenium
+        $this->info("Checking dependencies...");
+        $pythonCheck = shell_exec('which python3 2>&1');
+        if (empty($pythonCheck)) {
+            $this->error("Python 3 is not installed or not in the PATH. Please install Python 3.");
+            return 1;
+        }
+        
+        $this->info("Python 3 found: " . trim($pythonCheck));
+        
+        // Prompt for confirmation
+        if (!$this->confirm('Ready to start the upload. Continue?', true)) {
+            $this->info('Upload cancelled.');
+            return 0;
+        }
 
         try {
-            // Determine which uploader to use
-            if ($this->option('oauth')) {
-                $this->info('Using OAuth YouTubeUploader...');
-                
-                // Check if authenticated
-                if (!$this->oauthUploader->isAuthenticated()) {
-                    $authUrl = $this->oauthUploader->getAuthUrl();
-                    $this->warn('Not authenticated. Please visit this URL to authenticate:');
-                    $this->line($authUrl);
-                    $this->warn('Then add the received credentials to your .env file:');
-                    $this->line('YOUTUBE_ACCESS_TOKEN=your_access_token');
-                    $this->line('YOUTUBE_REFRESH_TOKEN=your_refresh_token');
-                    $this->line('YOUTUBE_TOKEN_EXPIRES_AT=expiry_timestamp');
-                    return 1;
-                }
-                
-                $videoId = $this->oauthUploader->upload(
-                    $file,
-                    $title,
-                    $description,
-                    $tags,
-                    $privacy,
-                    is_numeric($category) ? $category : null
-                );
-            } else {
-                $this->info('Using SimpleYouTubeUploader...');
-                $videoId = $this->simpleUploader->upload(
-                    $file,
-                    $title,
-                    $description,
-                    $tags,
-                    $privacy,
-                    $category
-                );
-            }
+            $this->info('Starting YouTube upload...');
+            $videoId = $this->uploader->upload(
+                $file,
+                $title,
+                $description,
+                $tags,
+                $privacy,
+                $category
+            );
 
             if ($videoId) {
                 $this->info('Upload successful!');
                 $this->info("Video ID: {$videoId}");
-                $this->info("Video URL: https://www.youtube.com/watch?v={$videoId}");
+                if ($videoId !== 'UPLOAD_COMPLETED_BUT_ID_UNKNOWN') {
+                    $this->info("Video URL: https://www.youtube.com/watch?v={$videoId}");
+                } else {
+                    $this->warn("Video was uploaded successfully but ID could not be automatically extracted.");
+                    $this->warn("Please check your YouTube Studio: https://studio.youtube.com");
+                }
                 return 0;
             } else {
                 $this->error('Upload failed: No video ID returned.');
@@ -136,6 +156,26 @@ class TestYouTubeUpload extends Command
         } catch (Exception $e) {
             $this->error('Upload failed: ' . $e->getMessage());
             Log::error('YouTube upload test failed: ' . $e->getMessage());
+            
+            // Check for common errors and provide helpful advice
+            $errorMsg = strtolower($e->getMessage());
+            
+            if (strpos($errorMsg, 'login') !== false || strpos($errorMsg, 'password') !== false) {
+                $this->line("\nTips for authentication issues:");
+                $this->line("1. Verify your email and password are correct in the .env file");
+                $this->line("2. Enable 'Less secure app access' in your Google account settings");
+                $this->line("3. Try using an App Password instead of your regular password");
+                $this->line("4. Check if you need to solve a CAPTCHA by logging in manually once");
+            } elseif (strpos($errorMsg, 'selenium') !== false || strpos($errorMsg, 'webdriver') !== false) {
+                $this->line("\nTips for Selenium issues:");
+                $this->line("1. Make sure Python and Selenium are installed:");
+                $this->line("   pip3 install selenium webdriver-manager");
+                $this->line("2. A compatible browser (Chrome or Firefox) must be installed");
+                $this->line("3. For headless servers, use a virtual display:");
+                $this->line("   sudo apt-get install xvfb");
+                $this->line("   pip3 install pyvirtualdisplay");
+            }
+            
             return 1;
         }
     }
@@ -160,104 +200,37 @@ class TestYouTubeUpload extends Command
         
         $this->info('Creating test video...');
         
-        // Check if ffmpeg is available
-        $process = Process::fromShellCommandline('which ffmpeg');
-        $process->run();
-        
-        if (!$process->isSuccessful()) {
-            $this->warn('ffmpeg not found. Trying to create a simple test file.');
-            
-            // Create a simple binary file if ffmpeg is not available
-            $data = str_repeat('0123456789ABCDEF', 1024 * 10); // ~160KB
-            File::put($testVideoPath, $data);
-            
-            $this->warn('Created a dummy file instead. This will not actually work as a video.');
+        // Try to find an existing video file in the storage
+        $videoFiles = glob(storage_path('app/public/videos/*.mp4'));
+        if (!empty($videoFiles)) {
+            $sourceVideo = $videoFiles[0];
+            $this->info("Using existing video as test: {$sourceVideo}");
+            File::copy($sourceVideo, $testVideoPath);
             return $testVideoPath;
         }
         
+        // Check if ffmpeg is available
+        $ffmpegCheck = shell_exec('which ffmpeg 2>&1');
+        if (empty($ffmpegCheck)) {
+            $this->warn('ffmpeg not found. Unable to create a test video.');
+            return null;
+        }
+        
         // Create a 5-second test video with ffmpeg
-        $process = Process::fromShellCommandline(
-            'ffmpeg -f lavfi -i color=c=blue:s=320x240:d=5 -vf "drawtext=text=\'Test Video\':fontcolor=white:fontsize=24:x=(w-text_w)/2:y=(h-text_h)/2" -c:v libx264 -tune stillimage -pix_fmt yuv420p ' . $testVideoPath
+        $command = sprintf(
+            'ffmpeg -f lavfi -i color=c=blue:s=320x240:d=5 -c:v libx264 -tune stillimage -pix_fmt yuv420p %s',
+            $testVideoPath
         );
         
-        $this->info('Running: ' . $process->getCommandLine());
+        $this->info("Running: {$command}");
+        exec($command, $output, $returnCode);
         
-        $process->run(function ($type, $buffer) {
-            if (Process::ERR === $type) {
-                $this->warn($buffer);
-            } else {
-                $this->line($buffer);
-            }
-        });
-        
-        if (!$process->isSuccessful()) {
+        if ($returnCode !== 0) {
             $this->error('Failed to create test video with ffmpeg.');
             return null;
         }
         
         $this->info('Test video created successfully.');
         return $testVideoPath;
-    }
-    
-    /**
-     * Check if the OAuth uploader has all requirements.
-     */
-    protected function checkOAuthUploaderRequirements()
-    {
-        $this->info('Checking OAuth uploader requirements...');
-        
-        // Check for client ID and client secret
-        $clientId = config('youtube.client_id');
-        $clientSecret = config('youtube.client_secret');
-        
-        if (empty($clientId) || empty($clientSecret)) {
-            $this->warn('OAuth client ID or client secret is not set in config/youtube.php');
-        } else {
-            $this->info('Client ID and secret are configured.');
-        }
-        
-        // Check for access token
-        $accessToken = config('youtube.access_token');
-        if (empty($accessToken)) {
-            $this->warn('No access token found. OAuth authentication may fail.');
-        } else {
-            $this->info('Access token is configured.');
-        }
-    }
-    
-    /**
-     * Check if the simple uploader has all requirements.
-     */
-    protected function checkSimpleUploaderRequirements()
-    {
-        $this->info('Checking simple uploader requirements...');
-        
-        // Check for email and password
-        $email = config('youtube.simple_uploader.email');
-        $password = config('youtube.simple_uploader.password');
-        
-        if (empty($email) || empty($password)) {
-            $this->warn('Simple uploader email or password is not set in config/youtube.php');
-        } else {
-            $this->info('Email and password are configured.');
-        }
-        
-        // Check for uploader script
-        $process = Process::fromShellCommandline('which youtube-direct-upload');
-        $process->run();
-        
-        if (!$process->isSuccessful()) {
-            $this->warn('youtube-direct-upload script not found in PATH.');
-            
-            // Check in vendor/bin
-            $vendorScript = base_path('vendor/bin/youtube-direct-upload');
-            if (File::exists($vendorScript)) {
-                $this->info('Found script at: ' . $vendorScript);
-            } else {
-                $this->warn('Could not find youtube-direct-upload script.');
-            }
-        } else {
-            $this->info('youtube-direct-upload script found at: ' . trim($process->getOutput()));
-        }
     }
 } 

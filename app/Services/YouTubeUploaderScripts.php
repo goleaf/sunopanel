@@ -16,7 +16,6 @@ class YouTubeUploaderScripts
     {
         try {
             self::installDirectUploader();
-            self::installClientSecrets();
             return true;
         } catch (\Exception $e) {
             Log::error('Failed to install YouTube uploader scripts: ' . $e->getMessage());
@@ -29,55 +28,42 @@ class YouTubeUploaderScripts
      */
     private static function installDirectUploader(): void
     {
+        // Destination in the storage/app/scripts directory
         $scriptPath = storage_path('app/scripts/youtube-direct-upload');
         File::ensureDirectoryExists(dirname($scriptPath));
         
-        // Copy the script from the existing file if it exists, otherwise use default content
-        if (file_exists(__DIR__ . '/../../storage/app/scripts/youtube-direct-upload')) {
-            $scriptContent = file_get_contents(__DIR__ . '/../../storage/app/scripts/youtube-direct-upload');
+        // Source path (assuming it's in /usr/local/bin)
+        $sourcePath = '/usr/local/bin/youtube-direct-upload';
+        
+        if (file_exists($sourcePath)) {
+            // Copy the script from the system-wide location
+            File::copy($sourcePath, $scriptPath);
+            Log::info("Copied YouTube direct upload script from {$sourcePath}");
         } else {
-            // Default script content
-            $scriptContent = "#!/usr/bin/env python3\n";
+            // Create a placeholder script with instructions
+            $scriptContent = "#!/usr/bin/env python3\n\n";
             $scriptContent .= "# YouTube Direct Upload Script\n";
-            $scriptContent .= "# Please install the script manually\n";
+            $scriptContent .= "# This is a placeholder. Please install the full script at:\n";
+            $scriptContent .= "# /usr/local/bin/youtube-direct-upload\n\n";
+            $scriptContent .= "import sys\n";
+            $scriptContent .= "print('YouTube uploader script not properly installed.')\n";
+            $scriptContent .= "print('Please run: php artisan youtube:install')\n";
+            $scriptContent .= "sys.exit(1)\n";
+            
+            File::put($scriptPath, $scriptContent);
+            Log::warning("Created placeholder YouTube direct upload script. Full script needs to be installed.");
         }
         
-        File::put($scriptPath, $scriptContent);
+        // Make it executable
         chmod($scriptPath, 0755);
         
         // Create symlink in vendor/bin for backward compatibility
         $vendorBinPath = base_path('vendor/bin/youtube-direct-upload');
         if (!file_exists($vendorBinPath) && is_dir(dirname($vendorBinPath))) {
-            symlink($scriptPath, $vendorBinPath);
-        }
-    }
-    
-    /**
-     * Install the client secrets script
-     */
-    private static function installClientSecrets(): void
-    {
-        $scriptPath = storage_path('app/scripts/youtube-client-secrets');
-        File::ensureDirectoryExists(dirname($scriptPath));
-        
-        // Copy the script from the existing file if it exists, otherwise use default content
-        if (file_exists(__DIR__ . '/../../storage/app/scripts/youtube-client-secrets')) {
-            $scriptContent = file_get_contents(__DIR__ . '/../../storage/app/scripts/youtube-client-secrets');
-        } else {
-            // Default script content
-            $scriptContent = "#!/usr/bin/env php\n";
-            $scriptContent .= "<?php\n";
-            $scriptContent .= "# YouTube Client Secrets Script\n";
-            $scriptContent .= "# Please install the script manually\n";
-        }
-        
-        File::put($scriptPath, $scriptContent);
-        chmod($scriptPath, 0755);
-        
-        // Create symlink in vendor/bin for backward compatibility
-        $vendorBinPath = base_path('vendor/bin/youtube-client-secrets');
-        if (!file_exists($vendorBinPath) && is_dir(dirname($vendorBinPath))) {
-            symlink($scriptPath, $vendorBinPath);
+            if (file_exists($scriptPath)) {
+                symlink($scriptPath, $vendorBinPath);
+                Log::info("Created symlink at {$vendorBinPath}");
+            }
         }
     }
 } 

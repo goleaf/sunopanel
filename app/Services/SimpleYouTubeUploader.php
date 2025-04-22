@@ -9,15 +9,8 @@ use Exception;
 
 final class SimpleYouTubeUploader
 {
-    private ?YouTubeUploader $oauthUploader = null;
-    
-    public function __construct(YouTubeUploader $youtubeUploader = null)
-    {
-        $this->oauthUploader = $youtubeUploader;
-    }
-    
     /**
-     * Upload a video to YouTube using either OAuth or the command-line script
+     * Upload a video to YouTube using direct username/password authentication
      *
      * @param string $videoPath Path to the video file
      * @param string $title Video title
@@ -35,99 +28,77 @@ final class SimpleYouTubeUploader
         string $privacyStatus = 'unlisted',
         string $category = 'Music'
     ): ?string {
-        // Try to use OAuth-based uploader if available and configured
-        $useOAuth = Config::get('youtube.use_oauth', false) && 
-                   Config::get('youtube.access_token') && 
-                   Config::get('youtube.refresh_token');
-        
-        if ($useOAuth && $this->oauthUploader) {
-            Log::info('Using OAuth-based YouTube uploader');
-            
-            // Map category name to ID if needed
-            $categoryId = is_numeric($category) ? $category : $this->getCategoryId($category);
-            
-            return $this->oauthUploader->upload(
-                $videoPath,
-                $title,
-                $description,
-                $tags,
-                $privacyStatus,
-                $categoryId
-            );
-        }
-        
-        // Fall back to command-line script if it exists
-        $scriptPath = storage_path('app/scripts/youtube-direct-upload');
-        if (!file_exists($scriptPath)) {
-            Log::error("YouTube upload script not found: {$scriptPath}");
-            
-            // If OAuth uploader is available but not configured, use it as fallback
-            if ($this->oauthUploader) {
-                Log::info('Falling back to OAuth uploader without tokens');
-                $authUrl = $this->oauthUploader->getAuthUrl();
-                Log::info("Authentication URL: {$authUrl}");
-                throw new Exception('YouTube upload script not found. Please authenticate using OAuth first at: ' . $authUrl);
-            }
-            
-            throw new Exception('YouTube upload script not found and OAuth not available. Please set up YouTube authentication.');
-        }
-        
-        Log::info('Using command-line YouTube uploader');
-        
-        // Try to generate client secrets for the upload
-        try {
-            $this->generateClientSecrets();
-        } catch (Exception $e) {
-            Log::error('Failed to generate client secrets: ' . $e->getMessage());
-            
-            // If OAuth uploader is available, use it as fallback
-            if ($this->oauthUploader) {
-                Log::info('Falling back to OAuth uploader due to client secrets failure');
-                $authUrl = $this->oauthUploader->getAuthUrl();
-                Log::info("Authentication URL: {$authUrl}");
-                throw new Exception('Failed to generate client secrets. Please authenticate using OAuth first at: ' . $authUrl);
-            }
-            
-            throw $e;
-        }
+        Log::info('Using direct YouTube uploader with browser automation', [
+            'video' => $videoPath,
+            'title' => $title,
+            'privacy' => $privacyStatus
+        ]);
         
         // Check if the video file exists
         if (!file_exists($videoPath)) {
             Log::error("Video file not found: {$videoPath}");
-            return null;
+            throw new Exception("Video file not found: {$videoPath}");
         }
         
-        // Set up environment variables for the script to use
-        putenv('YOUTUBE_CLIENT_ID=' . Config::get('youtube.client_id'));
-        putenv('YOUTUBE_CLIENT_SECRET=' . Config::get('youtube.client_secret'));
+        // Get YouTube credentials from config
+        $email = Config::get('youtube.email');
+        $password = Config::get('youtube.password');
+        
+        // Validate credentials
+        if (empty($email) || empty($password)) {
+            Log::error('YouTube email or password not configured');
+            throw new Exception('YouTube credentials not configured. Please set YOUTUBE_EMAIL and YOUTUBE_PASSWORD in your .env file.');
+        }
         
         // Convert tags array to comma-separated string
         $tagsString = implode(',', $tags);
         
+        // Get the path to the upload script
+        $scriptPath = '/usr/local/bin/youtube-direct-upload';
+        if (!file_exists($scriptPath)) {
+            // Fallback to storage directory
+            $scriptPath = storage_path('app/scripts/youtube-direct-upload');
+            if (!file_exists($scriptPath)) {
+                Log::error("YouTube upload script not found at: {$scriptPath}");
+                throw new Exception("YouTube upload script not found. Please run the installation command.");
+            }
+        }
+        
         // Prepare the upload command
         $command = [
             $scriptPath,
-            '--email', Config::get('youtube.email', ''),
-            '--password', Config::get('youtube.password', ''),
+            '--email', $email,
+            '--password', $password,
             '--title', $title,
             '--description', $description,
             '--tags', $tagsString,
             '--privacy', $privacyStatus,
             '--category', $category,
+            '--headless',
             $videoPath
         ];
         
-        // Execute the command
+        // Execute the command with longer timeout
         $process = new Process($command);
         $process->setTimeout(3600); // 1 hour timeout for large uploads
-        $process->run();
+        $process->setIdleTimeout(600); // 10 minutes idle timeout
+        
+        // Set up process callback to stream logs in real-time
+        $process->run(function ($type, $buffer) {
+            if (Process::ERR === $type) {
+                Log::warning("YouTube upload error output: {$buffer}");
+            } else {
+                Log::info("YouTube upload output: {$buffer}");
+            }
+        });
         
         // Get output and error
         $output = $process->getOutput();
         $errorOutput = $process->getErrorOutput();
         
         // Log the process output
-        Log::info('YouTube upload output', [
+        Log::info('YouTube upload completed', [
+            'exit_code' => $process->getExitCode(),
             'output' => $output,
             'error' => $errorOutput
         ]);
@@ -139,19 +110,7 @@ final class SimpleYouTubeUploader
                 'error' => $errorOutput
             ]);
             
-            // Check if it's an authentication error
-            if (strpos($errorOutput, 'Authentication required') !== false || 
-                strpos($output, 'Authentication required') !== false) {
-                
-                // If OAuth uploader is available, suggest using it
-                if ($this->oauthUploader) {
-                    $authUrl = $this->oauthUploader->getAuthUrl();
-                    Log::info("Authentication URL: {$authUrl}");
-                    throw new Exception('YouTube upload failed due to authentication issues. Please authenticate using OAuth first at: ' . $authUrl);
-                }
-            }
-            
-            return null;
+            throw new Exception("YouTube upload failed: " . ($errorOutput ?: 'Unknown error'));
         }
         
         // Extract video ID if available
@@ -162,12 +121,19 @@ final class SimpleYouTubeUploader
             return $videoId;
         }
         
-        Log::warning('Upload completed but could not extract video ID');
+        // Check if upload successful but ID couldn't be extracted
+        if (strpos($output, 'Upload completed successfully') !== false || 
+            strpos($output, 'UPLOAD_COMPLETED_BUT_ID_UNKNOWN') !== false) {
+            Log::warning('Upload completed but could not extract video ID');
+            return 'UPLOAD_COMPLETED_BUT_ID_UNKNOWN';
+        }
+        
+        Log::warning('Upload process finished but no success confirmation found');
         return null;
     }
     
     /**
-     * Add a video to a YouTube playlist
+     * Add a video to a YouTube playlist - Not implemented for direct upload
      *
      * @param string $videoId YouTube video ID
      * @param string $playlistId Playlist ID
@@ -175,26 +141,7 @@ final class SimpleYouTubeUploader
      */
     public function addToPlaylist(string $videoId, string $playlistId): ?string
     {
-        // Try to use OAuth-based uploader if available and configured
-        $useOAuth = Config::get('youtube.use_oauth', false) && 
-                   Config::get('youtube.access_token') && 
-                   Config::get('youtube.refresh_token');
-        
-        if ($useOAuth && $this->oauthUploader) {
-            Log::info('Using OAuth-based YouTube uploader for playlist');
-            return $this->oauthUploader->addToPlaylist($videoId, $playlistId);
-        }
-        
-        // Not implemented in direct upload script
-        Log::warning('Adding to playlist not supported in direct upload mode');
-        
-        // If OAuth uploader is available but not configured, suggest it
-        if ($this->oauthUploader) {
-            $authUrl = $this->oauthUploader->getAuthUrl();
-            Log::info("Authentication URL for playlist support: {$authUrl}");
-            throw new Exception('Playlist support requires OAuth authentication. Please authenticate at: ' . $authUrl);
-        }
-        
+        Log::warning('Playlist functionality is not supported in the direct uploader');
         return null;
     }
     
@@ -241,29 +188,5 @@ final class SimpleYouTubeUploader
         ];
         
         return $categories[$categoryName] ?? '10'; // Default to Music (10)
-    }
-    
-    /**
-     * Generate client secrets JSON file from environment variables
-     *
-     * @return string Path to the generated file
-     * @throws Exception If client secrets script is not found
-     */
-    private function generateClientSecrets(): string
-    {
-        $scriptPath = storage_path('app/scripts/youtube-client-secrets');
-        
-        if (!file_exists($scriptPath)) {
-            throw new Exception("Client secrets generation script not found: {$scriptPath}");
-        }
-        
-        $process = new Process([$scriptPath]);
-        $process->run();
-        
-        if (!$process->isSuccessful()) {
-            throw new Exception('Failed to generate client secrets: ' . $process->getErrorOutput());
-        }
-        
-        return '/tmp/client_secrets.json';
     }
 } 
