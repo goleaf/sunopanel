@@ -120,6 +120,7 @@
                     <th>Genres</th>
                     <th>Status</th>
                     <th>Progress</th>
+                    <th class="w-24">YouTube</th>
                     <th class="text-right">Actions</th>
                 </tr>
             </thead>
@@ -193,6 +194,17 @@
                         </div>
                         @endif
                     </td>
+                    <td class="w-24">
+                        @if($track->youtube_uploaded)
+                            <a href="{{ $track->youtube_video_url }}" target="_blank" class="flex items-center justify-center tooltip" data-tip="View on YouTube">
+                                <span class="badge badge-sm badge-success">Uploaded</span>
+                            </a>
+                        @else
+                            <span class="flex items-center justify-center">
+                                <span class="badge badge-sm badge-ghost">Not uploaded</span>
+                            </span>
+                        @endif
+                    </td>
                     <td class="text-right">
                         <div class="flex space-x-1 justify-end">
                             <a href="{{ route('tracks.show', $track) }}" class="btn btn-sm btn-circle btn-ghost" title="View Details">
@@ -248,7 +260,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="5" class="text-center py-4">
+                    <td colspan="6" class="text-center py-4">
                         <div class="flex flex-col items-center justify-center p-4">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />

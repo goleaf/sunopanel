@@ -146,4 +146,22 @@ class Track extends Model
     {
         return $this->youtube_video_id !== null;
     }
+
+    /**
+     * Check if the track was uploaded to YouTube.
+     */
+    public function getYoutubeUploadedAttribute(): bool
+    {
+        return !empty($this->youtube_video_id);
+    }
+
+    /**
+     * Get the YouTube video URL.
+     */
+    public function getYoutubeVideoUrlAttribute(): ?string
+    {
+        return $this->youtube_video_id 
+            ? "https://www.youtube.com/watch?v={$this->youtube_video_id}" 
+            : null;
+    }
 }

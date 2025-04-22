@@ -54,16 +54,25 @@ class TrackController extends Controller
                 WHEN status = 'completed' THEN 5
                 ELSE 6 END")
             ->orderBy('created_at', 'desc')
-            ->paginate(15)
+            ->paginate(100)
             ->withQueryString(); // Keep the query string for pagination
         
-        // Get track counts for stats display
-        $totalTracks = Track::count();
-        $processingTracks = Track::where('status', 'processing')->count();
-        $pendingTracks = Track::where('status', 'pending')->count();
-        $completedTracks = Track::where('status', 'completed')->count();
-        $failedTracks = Track::where('status', 'failed')->count();
-        $stoppedTracks = Track::where('status', 'stopped')->count();
+        // Get track counts for stats display - use a single query with raw counts for better performance
+        $stats = Track::selectRaw('
+            COUNT(*) as total,
+            SUM(CASE WHEN status = "processing" THEN 1 ELSE 0 END) as processing,
+            SUM(CASE WHEN status = "pending" THEN 1 ELSE 0 END) as pending,
+            SUM(CASE WHEN status = "completed" THEN 1 ELSE 0 END) as completed,
+            SUM(CASE WHEN status = "failed" THEN 1 ELSE 0 END) as failed,
+            SUM(CASE WHEN status = "stopped" THEN 1 ELSE 0 END) as stopped
+        ')->first();
+        
+        $totalTracks = $stats->total;
+        $processingTracks = $stats->processing;
+        $pendingTracks = $stats->pending;
+        $completedTracks = $stats->completed;
+        $failedTracks = $stats->failed;
+        $stoppedTracks = $stats->stopped;
         
         // Add processing + pending count for the UI
         $activeTracksCount = $processingTracks + $pendingTracks;
@@ -197,6 +206,7 @@ class TrackController extends Controller
             'title' => 'required|string|max:100',
             'description' => 'nullable|string',
             'privacy_status' => 'required|in:public,unlisted,private',
+            'is_short' => 'nullable|boolean',
         ]);
 
         try {
@@ -213,15 +223,24 @@ class TrackController extends Controller
                     ->with('warning', 'YouTube authentication required. Please authenticate first.');
             }
             
+            // Determine if it should be uploaded as a Short
+            $isShort = (bool)$request->input('is_short', false);
+            
             // Directly upload the track
             $videoId = $uploader->uploadTrack(
                 $track,
                 $request->title,
                 $request->description,
-                $request->privacy_status
+                $request->privacy_status,
+                true, // Add to playlists
+                $isShort // Upload as Short if requested
             );
             
-            return back()->with('success', 'Track uploaded successfully to YouTube! Video ID: ' . $videoId);
+            $message = $isShort 
+                ? 'Track uploaded successfully to YouTube Shorts!' 
+                : 'Track uploaded successfully to YouTube!';
+                
+            return back()->with('success', $message . ' Video ID: ' . $videoId);
         } catch (\Exception $e) {
             \Log::error('YouTube upload failed', [
                 'track_id' => $track->id,
@@ -256,6 +275,7 @@ class TrackController extends Controller
         
         // Use the privacy status from the form or default to 'public'
         $privacyStatus = $request->input('privacy_status', 'public');
+        $isShort = (bool)$request->input('is_short', false);
         
         // Get uploader service
         $uploader = app(\App\Services\SimpleYouTubeUploader::class);
@@ -276,7 +296,9 @@ class TrackController extends Controller
                     $track,
                     null, // Default title
                     null, // Default description (just track title)
-                    $privacyStatus
+                    $privacyStatus,
+                    true, // Add to playlists
+                    $isShort // Upload as Short if requested
                 );
                 
                 if ($videoId) {
@@ -294,12 +316,14 @@ class TrackController extends Controller
             }
         }
         
+        $videoType = $isShort ? 'YouTube Shorts' : 'YouTube videos';
+        
         if (count($failedTracks) > 0) {
-            $message = "{$successCount} of {$count} tracks uploaded successfully. Failed tracks: " . implode(', ', $failedTracks);
+            $message = "{$successCount} of {$count} tracks uploaded successfully as {$videoType}. Failed tracks: " . implode(', ', $failedTracks);
             return redirect()->route('tracks.index')->with('warning', $message);
         } else {
             return redirect()->route('tracks.index')
-                ->with('success', "All {$count} tracks have been uploaded to YouTube successfully.");
+                ->with('success', "All {$count} tracks have been uploaded as {$videoType} successfully.");
         }
     }
 }
