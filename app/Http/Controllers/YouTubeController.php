@@ -26,7 +26,7 @@ class YouTubeController extends Controller
         $isAuthenticated = $this->youtubeService->isAuthenticated();
         $authUrl = $isAuthenticated ? null : $this->youtubeService->getAuthUrl();
         
-        $tracks = Track::whereNotNull('youtube_video_id')
+        $tracks = \App\Models\Track::whereNotNull('youtube_video_id')
             ->orderBy('youtube_uploaded_at', 'desc')
             ->get();
         
@@ -463,7 +463,7 @@ class YouTubeController extends Controller
     {
         try {
             // Get all tracks with YouTube video IDs
-            $tracks = Track::whereNotNull('youtube_video_id')->get();
+            $tracks = \App\Models\Track::whereNotNull('youtube_video_id')->get();
             
             if ($tracks->isEmpty()) {
                 if ($request->expectsJson()) {
