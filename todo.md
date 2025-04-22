@@ -4,6 +4,7 @@
 - Updated Tracks page with search functionality, sorting controls, and statistics
 - Updated Genres index page with search functionality, sorting controls, and statistics
 - Improved Genre show page with better view toggle functionality
+- Modified SunoTest command to use predefined track list instead of web scraping
 
 ## Ongoing Tasks
 - Continue enhancing UI components for better user experience
@@ -25,10 +26,22 @@
 - [x] Update command to simulate browsing to style page instead of just API search
 - [x] Implement song details extraction and display
 - [x] Reimplement using Selenium for browser automation with all headers
+- [x] Create alternative implementation using predefined track list
 
 ## Usage
 
 To run the command:
+
+```bash
+# List predefined Suno tracks
+php artisan suno:list
+```
+
+This command will display a list of predefined Suno tracks with their details.
+
+## Previous Approach (Selenium)
+
+The original approach used Selenium to browse the Suno website:
 
 ```bash
 # Run with browser UI visible
@@ -38,9 +51,7 @@ php artisan suno:test
 php artisan suno:test --headless
 ```
 
-This command will launch a Selenium-controlled Chrome browser that navigates to Suno's style page for "dark trap metalcore", extracts song information from the page, and displays it in the console.
-
-## Requirements
+Requirements for the Selenium approach:
 
 - Selenium WebDriver server running on localhost:4444
 - Chrome browser installed on the system
