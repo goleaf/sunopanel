@@ -5,33 +5,43 @@
  * and efficiently updating track statuses on different pages.
  */
 
-export default class TrackStatusAPI {
+// Class definition for track status API client
+class TrackStatusAPI {
     /**
      * Initialize the track status updater
      * 
      * @param {Object} options - Configuration options
-     * @param {Number} options.interval - Update interval in ms (default: 3000)
+     * @param {Number} options.interval - Update interval in ms (default: 500ms)
      * @param {Function} options.onUpdate - Callback when status is updated (optional)
      * @param {Boolean} options.useBulk - Whether to use bulk API for multiple tracks (default: true)
      * @param {Boolean} options.autoReload - Auto-reload the page after a certain time
      * @param {Number} options.reloadInterval - How often to reload the page (30 seconds)
      * @param {Boolean} options.hideCompleted - Hide completed tracks
+     * @param {Number} options.timeout - Request timeout in milliseconds (default: 10000)
+     * @param {Number} options.maxRetries - Maximum number of retries for failed requests (default: 3)
+     * @param {Boolean} options.debug - Enable debug logging
      */
     constructor(options = {}) {
-        this.options = {
-            interval: 500,
+        this.options = Object.assign({
+            interval: 500, // default to 500ms for active checks
+            timeout: 10000, // request timeout in milliseconds
+            maxRetries: 3, // maximum number of retries for failed requests
+            debug: false, // enable debug logging
             useBulk: true,
             autoReload: true,          // Auto-reload the page after a certain time
-            reloadInterval: 30000,     // How often to reload the page (30 seconds)
+            reloadInterval: 3000,     // How often to reload the page (30 seconds)
             hideCompleted: false,      // Hide completed tracks
-            ...options
-        };
+        }, options);
         
-        this.tracks = new Map();
+        this.tracksToWatch = {};
         this.updateTimer = null;
-        this.reloadTimer = null;
         this.isUpdating = false;
-        this.lastReloadTime = new Date().getTime();
+        this.retryCount = 0;
+        this.csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        
+        // Track data storage
+        this.lastResponse = null;
+        this.lastStatusData = {};
         
         // Add support for track visibility filters
         this.visibilityFilters = {
@@ -248,7 +258,7 @@ export default class TrackStatusAPI {
      */
     countTracksByStatus() {
         const counts = {
-            total: 0,
+            total: Object.keys(this.tracksToWatch).length,
             completed: 0,
             processing: 0,
             pending: 0,
@@ -256,10 +266,11 @@ export default class TrackStatusAPI {
             stopped: 0
         };
         
-        for (const [_, track] of this.tracks) {
-            counts.total++;
-            if (track.status) {
-                counts[track.status] = (counts[track.status] || 0) + 1;
+        // Count based on last status data
+        for (const trackId in this.lastStatusData) {
+            const status = this.lastStatusData[trackId].status;
+            if (counts[status] !== undefined) {
+                counts[status]++;
             }
         }
         
@@ -267,747 +278,222 @@ export default class TrackStatusAPI {
     }
     
     /**
-     * Register a track to be watched for status updates
-     * 
-     * @param {Number} trackId - The track ID
-     * @param {Object} elements - DOM elements to update
-     * @param {HTMLElement} elements.status - Element for status display
-     * @param {HTMLElement} elements.progress - Element for progress display
-     * @param {Boolean} elements.reload - Whether to reload page on completion (default: false)
-     * @returns {TrackStatusAPI} - Returns this for method chaining
-     */
-    watchTrack(trackId, elements) {
-        this.tracks.set(trackId.toString(), {
-            id: trackId,
-            elements,
-            status: elements.status?.dataset?.status || null,
-            progress: elements.progress?.dataset?.progress || 0,
-        });
-        
-        // Add track-row class to the track row for animation targeting
-        const row = document.querySelector(`[data-track-id="${trackId}"]`);
-        if (row) {
-            row.classList.add('track-row');
-        }
-        
-        return this;
-    }
-    
-    /**
-     * Start watching all registered tracks
-     * 
-     * @returns {TrackStatusAPI} - Returns this for method chaining
+     * Start the status updater
      */
     start() {
-        if (this.tracks.size === 0) {
-            console.warn('No tracks registered for status updates');
-            return this;
+        if (this.updateTimer) {
+            this.stop(); // Clear existing timer to avoid duplicates
         }
         
-        // Do an immediate update
-        this.updateTrackStatus();
+        this.log('Starting track status updater with interval:', this.options.interval);
         
-        // Set up interval for future updates
+        // Immediately fetch first update
+        this.updateTrackStatuses();
+        
+        // Then set interval for subsequent updates
         this.updateTimer = setInterval(() => {
-            this.updateTrackStatus();
+            this.updateTrackStatuses();
         }, this.options.interval);
-        
-        // Set up auto-reload if enabled
-        if (this.options.autoReload) {
-            console.log(`Auto-reload enabled, will refresh every ${this.options.reloadInterval/1000} seconds`);
-            this.reloadTimer = setInterval(() => {
-                // Only reload if we have completed or failed tracks or if it's been more than 2 minutes
-                const needsReload = this.checkIfReloadNeeded();
-                if (needsReload) {
-                    console.log('Auto-reloading page to refresh tracks list');
-                    window.location.reload();
-                }
-            }, this.options.reloadInterval);
-        }
         
         return this;
     }
     
     /**
-     * Stop watching all tracks
-     * 
-     * @returns {TrackStatusAPI} - Returns this for method chaining
+     * Stop the status updater
      */
     stop() {
         if (this.updateTimer) {
+            this.log('Stopping track status updater');
             clearInterval(this.updateTimer);
             this.updateTimer = null;
         }
-        
-        if (this.reloadTimer) {
-            clearInterval(this.reloadTimer);
-            this.reloadTimer = null;
-        }
-        
         return this;
     }
     
     /**
-     * Check if the page needs to be reloaded
+     * Register a track to watch for status updates
      * 
-     * @returns {boolean} - Whether a reload is needed
+     * @param {string|number} trackId - The ID of the track
+     * @param {Object} elements - The elements to update
+     * @param {HTMLElement} elements.status - The element to update with status
+     * @param {HTMLElement} elements.progress - The element to update with progress
      */
-    checkIfReloadNeeded() {
-        // Check if any tracks have completed, failed, or are in process
-        let needsReload = false;
-        let hasProcessing = false;
-        let activeCount = 0;
-        
-        for (const [_, track] of this.tracks) {
-            if (['completed', 'failed'].includes(track.status)) {
-                needsReload = true;
-            }
-            
-            if (['processing', 'pending'].includes(track.status)) {
-                hasProcessing = true;
-                activeCount++;
-            }
+    watchTrack(trackId, elements) {
+        if (!trackId) {
+            console.error('TrackStatusAPI: watchTrack called without trackId');
+            return this;
         }
-        
-        // If we have processing tracks but not too many, don't reload yet
-        if (hasProcessing && activeCount < 5 && !needsReload) {
-            return false;
+
+        if (!elements || !elements.status) {
+            console.error(`TrackStatusAPI: watchTrack for track ${trackId} called without required elements`);
+            return this;
         }
-        
-        // Also reload if it's been more than 60 seconds since the last reload
-        const currentTime = new Date().getTime();
-        const timeSinceLastReload = currentTime - this.lastReloadTime;
-        const forceReload = timeSinceLastReload > 60000; // 1 minute (reduced from 2 minutes)
-        
-        console.log(`Check if reload needed: hasCompleted=${needsReload}, hasProcessing=${hasProcessing}, activeCount=${activeCount}, timeSince=${Math.round(timeSinceLastReload/1000)}s, forceReload=${forceReload}`);
-        
-        return needsReload || forceReload;
+
+        this.tracksToWatch[trackId] = elements;
+        this.log(`Registered track ${trackId} for status updates`);
+        return this;
     }
-    
+
     /**
-     * Update track status for all watched tracks
+     * Remove a track from the watch list
      * 
-     * @private
+     * @param {string|number} trackId - The ID of the track
      */
-    async updateTrackStatus() {
-        if (this.isUpdating || this.tracks.size === 0) return;
-        
-        this.isUpdating = true;
-        
-        try {
-            // Force update interval to be no less than 1 second
-            const startTime = new Date().getTime();
+    unwatchTrack(trackId) {
+        if (this.tracksToWatch[trackId]) {
+            delete this.tracksToWatch[trackId];
+            this.log(`Unregistered track ${trackId} from status updates`);
+        }
+        return this;
+    }
+
+    /**
+     * Update the status of all watched tracks
+     */
+    async updateTrackStatuses() {
+        if (this.isUpdating) {
+            this.log('Update already in progress, skipping');
+                return;
+            }
             
-            if (this.options.useBulk && this.tracks.size > 1) {
-                // Use bulk API for multiple tracks
-                await this.updateTracksBulk();
-            } else {
-                // Update tracks individually
-                for (const [_, track] of this.tracks) {
-                    // Update all tracks regardless of status
-                    await this.updateSingleTrack(track);
+        const trackIds = Object.keys(this.tracksToWatch);
+        if (trackIds.length === 0) {
+            this.log('No tracks to update');
+                return;
+            }
+            
+        this.isUpdating = true;
+        this.log(`Updating status for ${trackIds.length} tracks...`);
+            
+        try {
+            const response = await fetch('/api/tracks/status', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': this.csrfToken
+                },
+                body: JSON.stringify({ trackIds }),
+                signal: AbortSignal.timeout(this.options.timeout)
+            });
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Server responded with ${response.status}: ${errorText}`);
+            }
+            
+            const data = await response.json();
+            this.lastResponse = data;
+            this.retryCount = 0; // Reset retry counter on success
+
+            // Extract active track statuses
+            if (data.tracks) {
+                const updatedTracks = [];
+                
+                for (const [trackId, trackData] of Object.entries(data.tracks)) {
+                    // Store the latest status data
+                    this.lastStatusData[trackId] = trackData;
+                    updatedTracks.push(trackData);
+                }
+                
+                // Trigger the onUpdate callback with all track data
+                if (typeof this.options.onUpdate === 'function') {
+                    this.options.onUpdate(updatedTracks, this);
                 }
             }
-            
-            // Call the onUpdate callback if provided
-            if (typeof this.options.onUpdate === 'function') {
-                this.options.onUpdate(Array.from(this.tracks.values()));
-            }
-            
-            // Ensure minimum update interval to prevent too frequent updates
-            const elapsedTime = new Date().getTime() - startTime;
-            if (elapsedTime < 1000) {
-                await new Promise(resolve => setTimeout(resolve, 1000 - elapsedTime));
-            }
         } catch (error) {
-            console.error('Error updating track status:', error);
+            this.retryCount++;
+            console.error('Error updating track statuses:', error);
+            
+            if (this.retryCount <= this.options.maxRetries) {
+                console.log(`Retry ${this.retryCount}/${this.options.maxRetries} in ${this.options.interval}ms`);
+            } else {
+                console.error(`Maximum retries (${this.options.maxRetries}) reached. Stopping updater.`);
+                this.stop();
+            }
         } finally {
             this.isUpdating = false;
         }
     }
     
     /**
-     * Update a single track's status
+     * Get the latest status for a specific track
      * 
-     * @private
-     * @param {Object} track - Track to update
+     * @param {string|number} trackId 
+     * @returns {Object|null} The track status data or null if not found
      */
-    async updateSingleTrack(track) {
-        try {
-            const response = await fetch(`/api/tracks/${track.id}/status`);
-            
-            if (!response.ok) {
-                throw new Error(`Error fetching track status: ${response.statusText}`);
-            }
-            
-            const data = await response.json();
-            console.log(`Single track update for ${track.id}: ${JSON.stringify(data)}`);
-            this.updateTrackUI(track, data);
-        } catch (error) {
-            console.error(`Error updating track ${track.id}:`, error);
-        }
+    getTrackStatus(trackId) {
+        return this.lastStatusData[trackId] || null;
+    }
+
+    /**
+     * Check if there are any active tracks (processing or pending)
+     * 
+     * @returns {boolean} True if there are active tracks
+     */
+    hasActiveTracks() {
+        if (!this.lastStatusData) return false;
+        
+        return Object.values(this.lastStatusData).some(track => 
+            track.status === 'processing' || track.status === 'pending'
+        );
     }
     
     /**
-     * Update multiple tracks at once using the bulk API
+     * Check if there are any failed tracks
      * 
-     * @private
+     * @returns {boolean} True if there are failed tracks
      */
-    async updateTracksBulk() {
-        try {
-            // Get IDs of all tracks, not just processing or pending
-            const trackIds = Array.from(this.tracks.values())
-                .map(track => track.id);
-            
-            console.log(`Bulk update for ${trackIds.length} tracks: ${trackIds.join(', ')}`);
-            
-            if (trackIds.length === 0) {
-                console.log('No tracks to update');
-                return;
-            }
-            
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-            if (!csrfToken) {
-                console.error('CSRF token not found');
-                return;
-            }
-            
-            const response = await fetch('/api/tracks/status-bulk', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken
-                },
-                body: JSON.stringify({ ids: trackIds })
-            });
-            
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error('Bulk status response error:', response.status, errorText);
-                throw new Error(`Error fetching bulk track status: ${response.statusText}`);
-            }
-            
-            const data = await response.json();
-            
-            if (data.tracks && Array.isArray(data.tracks)) {
-                console.log(`Received status for ${data.tracks.length} tracks`);
-                
-                // Update each track with its new status
-                data.tracks.forEach(trackData => {
-                    const track = this.tracks.get(trackData.id.toString());
-                    if (track) {
-                        this.updateTrackUI(track, trackData);
-                    } else {
-                        console.warn(`Track ${trackData.id} not found in watched tracks`);
-                    }
-                });
-            } else {
-                console.error('Invalid response format:', data);
-            }
-        } catch (error) {
-            console.error('Error updating tracks in bulk:', error);
+    hasFailedTracks() {
+        if (!this.lastStatusData) return false;
+        
+        return Object.values(this.lastStatusData).some(track => 
+            track.status === 'failed'
+        );
+    }
+
+    /**
+     * Utility for debug logging
+     */
+    log(...args) {
+        if (this.options.debug) {
+            console.log('[TrackStatusAPI]', ...args);
         }
     }
+
+    // Static API methods for track actions
     
     /**
-     * Update a track's UI elements based on status data
+     * Start track processing
      * 
-     * @private
-     * @param {Object} track - Track object with elements
-     * @param {Object} data - Status data from API
+     * @param {string|number} trackId - The track ID
+     * @param {boolean} forceRedownload - Whether to force redownload
+     * @returns {Promise<Object>} API response
      */
-    updateTrackUI(track, data) {
-        // Log current status vs new status for debugging
-        console.log(`Track ${data.id} update: ${track.status} → ${data.status} (${track.progress}% → ${data.progress}%)`);
-        
-        // Always update - don't skip even if status appears the same
-        // This ensures any missed UI updates get applied
-        
-        // Find the row element
-        const row = document.querySelector(`[data-track-id="${data.id}"]`);
-        if (!row) {
-            console.error(`Row for track ${data.id} not found`);
-            return;
-        }
-        
-        // Format the progress as a whole number
-        const currentProgress = parseInt(track.progress || 0);
-        const newProgress = parseInt(data.progress || 0);
-        
-        // Check if status or progress actually changed
-        const statusChanged = track.status !== data.status;
-        const progressChanged = currentProgress !== newProgress;
-        
-        // Update internal state
-        track.status = data.status;
-        track.progress = data.progress;
-        
-        // Update row status classes
-        row.classList.remove('status-completed', 'status-failed', 'status-processing', 'status-pending', 'status-stopped');
-        row.classList.add(`status-${data.status}`);
-        
-        // Apply visibility filters
-        if (!this.visibilityFilters[data.status]) {
-            row.style.display = 'none';
-        } else {
-            row.style.display = '';
-        }
-        
-        // Add update animation to the row if something changed
-        if (statusChanged || progressChanged) {
-            // Mark the row as having updates
-            row.classList.remove('row-updated');
-            // Force a reflow to restart the animation
-            void row.offsetWidth;
-            row.classList.add('row-updated');
-            // Remove it after the animation completes
-            setTimeout(() => {
-                row.classList.remove('row-updated');
-            }, 1000);
-        }
-        
-        // Status element update
-        if (track.elements.status) {
-            track.elements.status.dataset.status = data.status;
-            
-            // Generate status HTML based on the status
-            let statusHTML = '';
-            if (data.status === 'completed') {
-                statusHTML = `<span class="badge badge-sm badge-success">Completed</span>`;
-            } else if (data.status === 'processing') {
-                statusHTML = `<span class="badge badge-sm badge-warning">Processing</span>`;
-            } else if (data.status === 'failed') {
-                statusHTML = `<span class="badge badge-sm badge-error">Failed</span>`;
-            } else if (data.status === 'stopped') {
-                statusHTML = `<span class="badge badge-sm badge-warning">Stopped</span>`;
-            } else {
-                statusHTML = `<span class="badge badge-sm badge-info">Pending</span>`;
-            }
-            
-            // Force update of status element
-            track.elements.status.innerHTML = statusHTML;
-            
-            // Add blinking effect to indicate update if status changed
-            if (statusChanged) {
-                track.elements.status.classList.remove('status-updated');
-                // Force a reflow to restart the animation
-                void track.elements.status.offsetWidth;
-                track.elements.status.classList.add('status-updated');
-                setTimeout(() => {
-                    track.elements.status.classList.remove('status-updated');
-                }, 500);
-            }
-        }
-        
-        // Progress element update
-        if (track.elements.progress) {
-            track.elements.progress.dataset.progress = data.progress;
-            
-            // Generate progress HTML based on the status
-            let progressHTML = '';
-            if (data.status === 'processing') {
-                progressHTML = `
-                    <div class="flex items-center">
-                        <progress class="progress progress-xs progress-warning flex-grow mr-1" value="${newProgress}" max="100"></progress>
-                        <span class="text-xs progress-percentage">${newProgress}%</span>
-                    </div>
-                `;
-                
-                // Update the HTML first (if it doesn't exist yet)
-                const existingProgressBar = track.elements.progress.querySelector('progress');
-                if (!existingProgressBar) {
-                    track.elements.progress.innerHTML = progressHTML;
-                } else {
-                    // Update existing progress bar value
-                    existingProgressBar.value = newProgress;
-                    
-                    // Animate the percentage text if it changed significantly
-                    if (progressChanged && Math.abs(newProgress - currentProgress) >= 1) {
-                        const percentEl = track.elements.progress.querySelector('.progress-percentage');
-                        if (percentEl && window.trackAnimations) {
-                            window.trackAnimations.animateNumber(percentEl, currentProgress, newProgress);
-                        } else {
-                            // Fallback if animation helper not available
-                            percentEl.textContent = `${newProgress}%`;
-                            percentEl.classList.add('percentage-updated');
-                            setTimeout(() => {
-                                percentEl.classList.remove('percentage-updated');
-                            }, 800);
-                        }
-                    }
-                }
-            } else if (data.status === 'completed') {
-                progressHTML = `
-                    <div class="flex items-center">
-                        <progress class="progress progress-xs progress-success flex-grow mr-1" value="100" max="100"></progress>
-                        <span class="text-xs progress-percentage">100%</span>
-                    </div>
-                `;
-                track.elements.progress.innerHTML = progressHTML;
-            } else if (data.status === 'failed') {
-                progressHTML = `
-                    <div class="tooltip w-full" data-tip="${data.error_message || 'Unknown error'}">
-                        <progress class="progress progress-xs progress-error w-full" value="100" max="100"></progress>
-                    </div>
-                `;
-                track.elements.progress.innerHTML = progressHTML;
-            } else if (data.status === 'stopped') {
-                progressHTML = `
-                    <div class="tooltip w-full" data-tip="Processing was manually stopped">
-                        <progress class="progress progress-xs progress-warning w-full" value="${newProgress}" max="100"></progress>
-                    </div>
-                `;
-                track.elements.progress.innerHTML = progressHTML;
-            } else {
-                progressHTML = `
-                    <div class="flex items-center">
-                        <progress class="progress progress-xs progress-info flex-grow mr-1" value="0" max="100"></progress>
-                        <span class="text-xs progress-percentage">0%</span>
-                    </div>
-                `;
-                track.elements.progress.innerHTML = progressHTML;
-            }
-        }
-        
-        // Update the action buttons based on new status
-        try {
-            this.updateTrackActionButtons(row, data.status);
-        } catch(err) {
-            console.error('Error updating action buttons:', err);
-        }
-    }
-    
-    /**
-     * Update the action buttons for a track based on status
-     * 
-     * @param {HTMLElement} row - The track row element
-     * @param {string} newStatus - The new status
-     */
-    updateTrackActionButtons(row, newStatus) {
-        const actionsCell = row.querySelector('td:last-child > div');
-        if (!actionsCell) {
-            console.error('Actions cell not found');
-            return;
-        }
-        
-        const trackId = row.getAttribute('data-track-id');
-        
-        // Clear existing action buttons (except View and Delete)
-        const buttons = actionsCell.querySelectorAll('button:not([type="submit"])');
-        buttons.forEach(button => button.remove());
-        
-        // Add the appropriate buttons based on the new status
-        if (['failed', 'stopped'].includes(newStatus)) {
-            // Add start button
-            const startButton = document.createElement('button');
-            startButton.className = 'btn btn-sm btn-circle btn-success start-track';
-            startButton.setAttribute('data-track-id', trackId);
-            startButton.setAttribute('title', 'Start Processing');
-            startButton.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                </svg>
-            `;
-            
-            // Insert after view button
-            const viewButton = actionsCell.querySelector('a');
-            if (viewButton) {
-                viewButton.after(startButton);
-                
-                // Add event listener
-                startButton.addEventListener('click', this.handleStartClick.bind(this));
-            }
-            
-            // Add retry button if failed
-            if (newStatus === 'failed') {
-                const retryButton = document.createElement('button');
-                retryButton.className = 'btn btn-sm btn-circle btn-warning retry-track';
-                retryButton.setAttribute('data-track-id', trackId);
-                retryButton.setAttribute('title', 'Retry Processing');
-                retryButton.innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                `;
-                startButton.after(retryButton);
-                
-                // Add event listener
-                retryButton.addEventListener('click', this.handleRetryClick.bind(this));
-            }
-        } else if (['processing', 'pending'].includes(newStatus)) {
-            // Add stop button
-            const stopButton = document.createElement('button');
-            stopButton.className = 'btn btn-sm btn-circle btn-error stop-track';
-            stopButton.setAttribute('data-track-id', trackId);
-            stopButton.setAttribute('title', 'Stop Processing');
-            stopButton.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18h12a1 1 0 001-1V7a1 1 0 00-1-1H6a1 1 0 00-1 1v10a1 1 0 001 1z" />
-                </svg>
-            `;
-            
-            // Insert after view button
-            const viewButton = actionsCell.querySelector('a');
-            if (viewButton) {
-                viewButton.after(stopButton);
-                
-                // Add event listener
-                stopButton.addEventListener('click', this.handleStopClick.bind(this));
-            }
-        } else if (newStatus === 'completed') {
-            // Add redownload button for completed tracks
-            const redownloadButton = document.createElement('button');
-            redownloadButton.className = 'btn btn-sm btn-circle btn-warning redownload-track';
-            redownloadButton.setAttribute('data-track-id', trackId);
-            redownloadButton.setAttribute('title', 'Redownload and Process Again');
-            redownloadButton.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                </svg>
-            `;
-            
-            // Insert after view button
-            const viewButton = actionsCell.querySelector('a');
-            if (viewButton) {
-                viewButton.after(redownloadButton);
-                
-                // Add event listener
-                redownloadButton.addEventListener('click', this.handleRedownloadClick.bind(this));
-            }
-        }
-    }
-    
-    /**
-     * Handle start button click
-     * 
-     * @param {Event} event
-     */
-    async handleStartClick(event) {
-        const button = event.currentTarget;
-        const trackId = button.getAttribute('data-track-id');
-        
-        try {
-            button.classList.add('loading');
-            const result = await TrackStatusAPI.startTrack(trackId);
-            
-            if (result.success) {
-                const row = document.querySelector(`[data-track-id="${trackId}"]`);
-                const statusCell = row.querySelector('.track-status');
-                const progressCell = row.querySelector('.track-progress');
-                
-                statusCell.innerHTML = '<span class="badge badge-sm badge-info">Pending</span>';
-                progressCell.innerHTML = `
-                    <div class="flex items-center">
-                        <progress class="progress progress-xs progress-info flex-grow mr-1" value="0" max="100"></progress>
-                        <span class="text-xs progress-percentage">0%</span>
-                    </div>
-                `;
-                
-                // Update buttons
-                this.updateTrackActionButtons(row, 'pending');
-                
-                if (window.showToast) {
-                    window.showToast('Track processing started', 'success');
-                }
-            }
-        } catch (error) {
-            console.error('Failed to start processing:', error);
-            if (window.showToast) {
-                window.showToast('Failed to start processing: ' + error.message, 'error');
-            }
-        } finally {
-            button.classList.remove('loading');
-        }
-    }
-    
-    /**
-     * Handle stop button click
-     * 
-     * @param {Event} event
-     */
-    async handleStopClick(event) {
-        const button = event.currentTarget;
-        const trackId = button.getAttribute('data-track-id');
-        
-        try {
-            button.classList.add('loading');
-            const result = await TrackStatusAPI.stopTrack(trackId);
-            
-            if (result.success) {
-                const row = document.querySelector(`[data-track-id="${trackId}"]`);
-                const statusCell = row.querySelector('.track-status');
-                const progressCell = row.querySelector('.track-progress');
-                const currentProgress = progressCell.dataset.progress || 0;
-                
-                statusCell.innerHTML = '<span class="badge badge-sm badge-warning">Stopped</span>';
-                progressCell.innerHTML = `
-                    <div class="tooltip w-full" data-tip="Processing was manually stopped">
-                        <progress class="progress progress-xs progress-warning w-full" value="${currentProgress}" max="100"></progress>
-                    </div>
-                `;
-                
-                // Update buttons
-                this.updateTrackActionButtons(row, 'stopped');
-                
-                if (window.showToast) {
-                    window.showToast('Track processing stopped', 'warning');
-                }
-            }
-        } catch (error) {
-            console.error('Failed to stop processing:', error);
-            if (window.showToast) {
-                window.showToast('Failed to stop processing: ' + error.message, 'error');
-            }
-        } finally {
-            button.classList.remove('loading');
-        }
-    }
-    
-    /**
-     * Handle retry button click
-     * 
-     * @param {Event} event
-     */
-    async handleRetryClick(event) {
-        const button = event.currentTarget;
-        const trackId = button.getAttribute('data-track-id');
-        
-        try {
-            button.classList.add('loading');
-            const result = await TrackStatusAPI.retryTrack(trackId);
-            
-            if (result.success) {
-                const row = document.querySelector(`[data-track-id="${trackId}"]`);
-                const statusCell = row.querySelector('.track-status');
-                const progressCell = row.querySelector('.track-progress');
-                
-                statusCell.innerHTML = '<span class="badge badge-sm badge-info">Pending</span>';
-                progressCell.innerHTML = `
-                    <div class="flex items-center">
-                        <progress class="progress progress-xs progress-info flex-grow mr-1" value="0" max="100"></progress>
-                        <span class="text-xs progress-percentage">0%</span>
-                    </div>
-                `;
-                
-                // Update buttons
-                this.updateTrackActionButtons(row, 'pending');
-                
-                if (window.showToast) {
-                    window.showToast('Track processing retried', 'success');
-                }
-            }
-        } catch (error) {
-            console.error('Failed to retry processing:', error);
-            if (window.showToast) {
-                window.showToast('Failed to retry processing: ' + error.message, 'error');
-            }
-        } finally {
-            button.classList.remove('loading');
-        }
-    }
-    
-    /**
-     * Handle redownload button click
-     * 
-     * @param {Event} event
-     */
-    async handleRedownloadClick(event) {
-        const button = event.currentTarget;
-        const trackId = button.getAttribute('data-track-id');
-        
-        try {
-            button.classList.add('loading');
-            
-            // Confirm action
-            if (!confirm("This will redownload the track's files and process it again. Continue?")) {
-                button.classList.remove('loading');
-                return;
-            }
-            
-            // Call the start route which will handle redownload
+    static async startTrack(trackId, forceRedownload = false) {
             const response = await fetch(`/api/tracks/${trackId}/start`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
                 },
-                // Send force_redownload flag
-                body: JSON.stringify({ force_redownload: true })
+            body: JSON.stringify({ force_redownload: forceRedownload })
             });
             
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Failed to redownload track');
-            }
-            
-            const result = await response.json();
-            
-            if (result.success) {
-                const row = document.querySelector(`[data-track-id="${trackId}"]`);
-                const statusCell = row.querySelector('.track-status');
-                const progressCell = row.querySelector('.track-progress');
-                
-                statusCell.innerHTML = '<span class="badge badge-sm badge-info">Pending</span>';
-                progressCell.innerHTML = `
-                    <div class="flex items-center">
-                        <progress class="progress progress-xs progress-info flex-grow mr-1" value="0" max="100"></progress>
-                        <span class="text-xs progress-percentage">0%</span>
-                    </div>
-                `;
-                
-                // Update buttons
-                this.updateTrackActionButtons(row, 'pending');
-                
-                if (window.showToast) {
-                    window.showToast('Track redownload started', 'success');
-                }
-            }
-        } catch (error) {
-            console.error('Failed to redownload track:', error);
-            if (window.showToast) {
-                window.showToast('Failed to redownload track: ' + error.message, 'error');
-            }
-        } finally {
-            button.classList.remove('loading');
-        }
-    }
-    
-    /**
-     * Start processing a track
-     * 
-     * @param {Number} trackId - The track ID
-     * @returns {Promise} - Promise resolving to API response
-     */
-    static async startTrack(trackId) {
-        try {
-            const response = await fetch(`/api/tracks/${trackId}/start`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                }
-            });
-            
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Failed to start track processing');
+            const error = await response.json();
+            throw new Error(error.message || `Failed to start track: ${response.statusText}`);
             }
             
             return await response.json();
-        } catch (error) {
-            console.error('Error starting track processing:', error);
-            throw error;
-        }
     }
     
     /**
-     * Stop processing a track
+     * Stop track processing
      * 
-     * @param {Number} trackId - The track ID
-     * @returns {Promise} - Promise resolving to API response
+     * @param {string|number} trackId - The track ID
+     * @returns {Promise<Object>} API response
      */
     static async stopTrack(trackId) {
-        try {
             const response = await fetch(`/api/tracks/${trackId}/stop`, {
                 method: 'POST',
                 headers: {
@@ -1017,80 +503,21 @@ export default class TrackStatusAPI {
             });
             
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Failed to stop track processing');
+            const error = await response.json();
+            throw new Error(error.message || `Failed to stop track: ${response.statusText}`);
             }
             
             return await response.json();
-        } catch (error) {
-            console.error('Error stopping track processing:', error);
-            throw error;
-        }
     }
     
     /**
-     * Start processing all tracks
+     * Retry failed track
      * 
-     * @returns {Promise} - Promise resolving to API response
-     */
-    static async startAllTracks() {
-        try {
-            const response = await fetch('/api/tracks/start-all', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                }
-            });
-            
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Failed to start all tracks');
-            }
-            
-            return await response.json();
-        } catch (error) {
-            console.error('Error starting all tracks:', error);
-            throw error;
-        }
-    }
-    
-    /**
-     * Stop processing all tracks
-     * 
-     * @returns {Promise} - Promise resolving to API response
-     */
-    static async stopAllTracks() {
-        try {
-            const response = await fetch('/api/tracks/stop-all', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                }
-            });
-            
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Failed to stop all tracks');
-            }
-            
-            return await response.json();
-        } catch (error) {
-            console.error('Error stopping all tracks:', error);
-            throw error;
-        }
-    }
-    
-    /**
-     * Retry processing a failed track
-     * 
-     * @param {Number} trackId - The track ID 
-     * @returns {Promise} - Promise resolving to API response
+     * @param {string|number} trackId - The track ID
+     * @returns {Promise<Object>} API response
      */
     static async retryTrack(trackId) {
-        try {
-            const response = await fetch(`/api/tracks/${trackId}/retry`, {
+        const response = await fetch(`/api/tracks/${trackId}/retry`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1099,253 +526,85 @@ export default class TrackStatusAPI {
             });
             
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Failed to retry track');
+            const error = await response.json();
+            throw new Error(error.message || `Failed to retry track: ${response.statusText}`);
             }
             
             return await response.json();
-        } catch (error) {
-            console.error('Error retrying track:', error);
-            throw error;
-        }
     }
     
     /**
-     * Retry all failed tracks
+     * Start all tracks (with optional filtering)
      * 
-     * @returns {Promise} - Promise resolving to API response
+     * @param {Object} filters - Optional filters
+     * @returns {Promise<Object>} API response
      */
-    static async retryAllFailed() {
-        try {
+    static async startAllTracks(filters = {}) {
+        const response = await fetch('/api/tracks/start-all', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+            },
+            body: JSON.stringify(filters)
+            });
+            
+            if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || `Failed to start all tracks: ${response.statusText}`);
+            }
+            
+            return await response.json();
+    }
+    
+    /**
+     * Stop all tracks (with optional filtering)
+     * 
+     * @param {Object} filters - Optional filters
+     * @returns {Promise<Object>} API response
+     */
+    static async stopAllTracks(filters = {}) {
+        const response = await fetch('/api/tracks/stop-all', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+            },
+            body: JSON.stringify(filters)
+            });
+            
+            if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || `Failed to stop all tracks: ${response.statusText}`);
+            }
+            
+            return await response.json();
+    }
+    
+    /**
+     * Retry all failed tracks (with optional filtering)
+     * 
+     * @param {Object} filters - Optional filters
+     * @returns {Promise<Object>} API response
+     */
+    static async retryAllTracks(filters = {}) {
             const response = await fetch('/api/tracks/retry-all', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                }
+            },
+            body: JSON.stringify(filters)
             });
             
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Failed to retry all tracks');
+            const error = await response.json();
+            throw new Error(error.message || `Failed to retry all tracks: ${response.statusText}`);
             }
             
             return await response.json();
-        } catch (error) {
-            console.error('Error retrying all tracks:', error);
-            throw error;
-        }
     }
-    
-    /**
-     * Handle start all tracks button click
-     * 
-     * @private
-     * @param {Event} event
-     */
-    async handleStartAllClick(event) {
-        const button = event.currentTarget;
-        
-        try {
-            // Confirm action
-            if (!confirm('Start processing all pending and failed tracks?')) {
-                return;
-            }
-            
-            button.classList.add('loading');
-            const result = await TrackStatusAPI.startAllTracks();
-            
-            if (result.success) {
-                // Update UI for all affected tracks
-                if (result.affected_ids && Array.isArray(result.affected_ids)) {
-                    result.affected_ids.forEach(trackId => {
-                        const row = document.querySelector(`[data-track-id="${trackId}"]`);
-                        if (row) {
-                            const statusCell = row.querySelector('.track-status');
-                            const progressCell = row.querySelector('.track-progress');
-                            
-                            if (statusCell) {
-                                statusCell.innerHTML = '<span class="badge badge-sm badge-info">Pending</span>';
-                                statusCell.dataset.status = 'pending';
-                            }
-                            
-                            if (progressCell) {
-                                progressCell.innerHTML = `
-                                    <div class="flex items-center">
-                                        <progress class="progress progress-xs progress-info flex-grow mr-1" value="0" max="100"></progress>
-                                        <span class="text-xs progress-percentage">0%</span>
-                                    </div>
-                                `;
-                                progressCell.dataset.progress = 0;
-                            }
-                            
-                            // Update the row classes
-                            row.classList.remove('status-completed', 'status-failed', 'status-processing', 'status-stopped');
-                            row.classList.add('status-pending');
-                            
-                            // Update buttons
-                            this.updateTrackActionButtons(row, 'pending');
-                            
-                            // Add animation
-                            row.classList.remove('row-updated');
-                            void row.offsetWidth;
-                            row.classList.add('row-updated');
-                        }
-                    });
-                }
-                
-                if (window.showToast) {
-                    window.showToast(`Started processing ${result.count || 0} tracks`, 'success');
-                }
-            }
-        } catch (error) {
-            console.error('Failed to start all tracks:', error);
-            if (window.showToast) {
-                window.showToast('Failed to start all tracks: ' + error.message, 'error');
-            }
-        } finally {
-            button.classList.remove('loading');
-        }
-    }
-    
-    /**
-     * Handle stop all tracks button click
-     * 
-     * @private
-     * @param {Event} event
-     */
-    async handleStopAllClick(event) {
-        const button = event.currentTarget;
-        
-        try {
-            // Confirm action
-            if (!confirm('Stop processing all active tracks?')) {
-                return;
-            }
-            
-            button.classList.add('loading');
-            const result = await TrackStatusAPI.stopAllTracks();
-            
-            if (result.success) {
-                // Update UI for all affected tracks
-                if (result.affected_ids && Array.isArray(result.affected_ids)) {
-                    result.affected_ids.forEach(trackId => {
-                        const row = document.querySelector(`[data-track-id="${trackId}"]`);
-                        if (row) {
-                            const statusCell = row.querySelector('.track-status');
-                            const progressCell = row.querySelector('.track-progress');
-                            const currentProgress = progressCell?.dataset?.progress || 0;
-                            
-                            if (statusCell) {
-                                statusCell.innerHTML = '<span class="badge badge-sm badge-warning">Stopped</span>';
-                                statusCell.dataset.status = 'stopped';
-                            }
-                            
-                            if (progressCell) {
-                                progressCell.innerHTML = `
-                                    <div class="tooltip w-full" data-tip="Processing was manually stopped">
-                                        <progress class="progress progress-xs progress-warning w-full" value="${currentProgress}" max="100"></progress>
-                                    </div>
-                                `;
-                            }
-                            
-                            // Update the row classes
-                            row.classList.remove('status-completed', 'status-failed', 'status-processing', 'status-pending');
-                            row.classList.add('status-stopped');
-                            
-                            // Update buttons
-                            this.updateTrackActionButtons(row, 'stopped');
-                            
-                            // Add animation
-                            row.classList.remove('row-updated');
-                            void row.offsetWidth;
-                            row.classList.add('row-updated');
-                        }
-                    });
-                }
-                
-                if (window.showToast) {
-                    window.showToast(`Stopped processing ${result.count || 0} tracks`, 'warning');
-                }
-            }
-        } catch (error) {
-            console.error('Failed to stop all tracks:', error);
-            if (window.showToast) {
-                window.showToast('Failed to stop all tracks: ' + error.message, 'error');
-            }
-        } finally {
-            button.classList.remove('loading');
-        }
-    }
-    
-    /**
-     * Handle retry all failed tracks button click
-     * 
-     * @private
-     * @param {Event} event
-     */
-    async handleRetryAllClick(event) {
-        const button = event.currentTarget;
-        
-        try {
-            // Confirm action
-            if (!confirm('Retry all failed tracks?')) {
-                return;
-            }
-            
-            button.classList.add('loading');
-            const result = await TrackStatusAPI.retryAllFailed();
-            
-            if (result.success) {
-                // Update UI for all affected tracks
-                if (result.affected_ids && Array.isArray(result.affected_ids)) {
-                    result.affected_ids.forEach(trackId => {
-                        const row = document.querySelector(`[data-track-id="${trackId}"]`);
-                        if (row) {
-                            const statusCell = row.querySelector('.track-status');
-                            const progressCell = row.querySelector('.track-progress');
-                            
-                            if (statusCell) {
-                                statusCell.innerHTML = '<span class="badge badge-sm badge-info">Pending</span>';
-                                statusCell.dataset.status = 'pending';
-                            }
-                            
-                            if (progressCell) {
-                                progressCell.innerHTML = `
-                                    <div class="flex items-center">
-                                        <progress class="progress progress-xs progress-info flex-grow mr-1" value="0" max="100"></progress>
-                                        <span class="text-xs progress-percentage">0%</span>
-                                    </div>
-                                `;
-                                progressCell.dataset.progress = 0;
-                            }
-                            
-                            // Update the row classes
-                            row.classList.remove('status-completed', 'status-failed', 'status-processing', 'status-stopped');
-                            row.classList.add('status-pending');
-                            
-                            // Update buttons
-                            this.updateTrackActionButtons(row, 'pending');
-                            
-                            // Add animation
-                            row.classList.remove('row-updated');
-                            void row.offsetWidth;
-                            row.classList.add('row-updated');
-                        }
-                    });
-                }
-                
-                if (window.showToast) {
-                    window.showToast(`Retried ${result.count || 0} failed tracks`, 'success');
-                }
-            }
-        } catch (error) {
-            console.error('Failed to retry all failed tracks:', error);
-            if (window.showToast) {
-                window.showToast('Failed to retry all failed tracks: ' + error.message, 'error');
-            }
-        } finally {
-            button.classList.remove('loading');
-        }
-    }
-} 
+}
+
+// Export for ES modules
+export default TrackStatusAPI;

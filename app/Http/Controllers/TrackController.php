@@ -15,6 +15,14 @@ use App\Services\YouTubeService;
 class TrackController extends Controller
 {
     /**
+     * Create a new controller instance.
+     */
+    public function __construct()
+    {
+        // No middleware in constructor for Laravel 12
+    }
+
+    /**
      * Display a listing of the tracks.
      */
     public function index(Request $request): View
@@ -325,5 +333,57 @@ class TrackController extends Controller
             return redirect()->route('tracks.index')
                 ->with('success', "All {$count} tracks have been uploaded as {$videoType} successfully.");
         }
+    }
+    
+    /**
+     * Manually toggle YouTube upload status for a track
+     * 
+     * @param Request $request
+     * @param Track $track
+     * @return \Illuminate\Http\Response
+     */
+    public function toggleYoutubeStatus(Request $request, Track $track)
+    {
+        $request->validate([
+            'youtube_video_id' => 'nullable|string|max:100',
+            'youtube_playlist_id' => 'nullable|string|max:100',
+        ]);
+        
+        $message = '';
+        
+        if ($track->youtube_video_id) {
+            // If marked as uploaded, unmark it
+            $track->update([
+                'youtube_video_id' => null,
+                'youtube_playlist_id' => null,
+                'youtube_uploaded_at' => null
+            ]);
+            
+            $message = 'Track has been marked as not uploaded to YouTube.';
+        } else {
+            // Mark as uploaded manually
+            $track->update([
+                'youtube_video_id' => $request->youtube_video_id ?? 'manual_' . time(),
+                'youtube_playlist_id' => $request->youtube_playlist_id,
+                'youtube_uploaded_at' => now()
+            ]);
+            
+            $message = 'Track has been marked as uploaded to YouTube.';
+        }
+        
+        // For AJAX requests, return JSON response
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'youtube_uploaded' => (bool)$track->youtube_video_id,
+                'youtube_url' => $track->youtube_url,
+                'youtube_video_id' => $track->youtube_video_id,
+                'youtube_playlist_id' => $track->youtube_playlist_id
+            ]);
+        }
+        
+        // For regular requests, redirect back with message
+        return back()->with('success', $message);
     }
 }

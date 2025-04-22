@@ -26,10 +26,25 @@ class YouTubeController extends Controller
         $isAuthenticated = $this->youtubeService->isAuthenticated();
         $authUrl = $isAuthenticated ? null : $this->youtubeService->getAuthUrl();
         
+        $tracks = Track::whereNotNull('youtube_video_id')
+            ->orderBy('youtube_uploaded_at', 'desc')
+            ->get();
+        
+        // Extract all YouTube video IDs from the tracks
+        $videoIds = $tracks->pluck('youtube_video_id')->filter()->toArray();
+        
+        // Get YouTube statistics if we have video IDs and the service is available
+        $videoStats = [];
+        if (!empty($videoIds) && $this->youtubeService->isAuthenticated()) {
+            $videoStats = $this->youtubeService->getVideoStatistics($videoIds);
+        }
+        
         return view('youtube.index', [
             'credential' => $credential,
             'isAuthenticated' => $isAuthenticated,
             'authUrl' => $authUrl,
+            'tracks' => $tracks,
+            'videoStats' => $videoStats
         ]);
     }
     
@@ -133,7 +148,43 @@ class YouTubeController extends Controller
             ->orderBy('youtube_uploaded_at', 'desc')
             ->paginate(15);
             
-        return view('youtube.uploads', compact('tracks'));
+        // Count total tracks with YouTube videos
+        $totalYoutubeUploads = \App\Models\Track::whereNotNull('youtube_video_id')->count();
+        
+        // Count total tracks with MP4 files that could be uploaded
+        $uploadableTracksCount = \App\Models\Track::where('status', 'completed')
+            ->whereNotNull('mp4_path')
+            ->whereNull('youtube_video_id')
+            ->count();
+        
+        // Get statistics for the videos if we have any tracks
+        $videoStats = [];
+        $totalViews = 0;
+        
+        if ($tracks->isNotEmpty() && $this->youtubeService->isAuthenticated()) {
+            try {
+                // Extract all video IDs
+                $videoIds = $tracks->pluck('youtube_video_id')->filter()->toArray();
+                
+                // Get statistics for all videos in one API call
+                $videoStats = $this->youtubeService->getVideoStatistics($videoIds);
+                
+                // Calculate total views
+                foreach ($videoStats as $stat) {
+                    $totalViews += (int)$stat['viewCount'];
+                }
+            } catch (\Exception $e) {
+                Log::warning('Failed to fetch YouTube statistics: ' . $e->getMessage());
+            }
+        }
+            
+        return view('youtube.uploads', compact(
+            'tracks', 
+            'totalYoutubeUploads', 
+            'uploadableTracksCount',
+            'videoStats',
+            'totalViews'
+        ));
     }
     
     /**
@@ -322,6 +373,181 @@ class YouTubeController extends Controller
             
             return redirect()->route('youtube.status')
                 ->with('error', 'Test upload failed: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Synchronize YouTube uploads with the database
+     * 
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function syncUploads()
+    {
+        if (!$this->youtubeService->isAuthenticated()) {
+            return redirect()->route('youtube.status')
+                ->with('error', 'YouTube authentication required. Please authenticate first.');
+        }
+        
+        try {
+            // Get all uploaded videos from YouTube
+            $videos = $this->youtubeService->listUploadedVideos();
+            
+            if (empty($videos)) {
+                return redirect()->route('youtube.uploads')
+                    ->with('info', 'No videos found on your YouTube channel.');
+            }
+            
+            $syncCount = 0;
+            $newCount = 0;
+            $allVideoIds = [];
+            
+            foreach ($videos as $video) {
+                $videoId = $video['id'];
+                $title = $video['title'];
+                $publishedAt = $video['publishedAt'];
+                $allVideoIds[] = $videoId;
+                
+                // Check if track exists with this video ID
+                $track = \App\Models\Track::where('youtube_video_id', $videoId)->first();
+                
+                if ($track) {
+                    // Update existing track's YouTube data
+                    $track->youtube_uploaded_at = date('Y-m-d H:i:s', strtotime($publishedAt));
+                    $track->save();
+                    $syncCount++;
+                } else {
+                    // Try to match by title
+                    $possibleMatch = \App\Models\Track::where('title', 'like', "%{$title}%")
+                        ->whereNull('youtube_video_id')
+                        ->first();
+                    
+                    if ($possibleMatch) {
+                        $possibleMatch->youtube_video_id = $videoId;
+                        $possibleMatch->youtube_uploaded_at = date('Y-m-d H:i:s', strtotime($publishedAt));
+                        $possibleMatch->save();
+                        $newCount++;
+                    }
+                }
+            }
+            
+            // Get statistics for synchronized videos
+            $totalViews = 0;
+            $videoStats = $this->youtubeService->getVideoStatistics($allVideoIds);
+            
+            foreach ($videoStats as $stat) {
+                $totalViews += (int)$stat['viewCount'];
+            }
+            
+            $viewsFormatted = number_format($totalViews);
+            
+            return redirect()->route('youtube.uploads')
+                ->with('success', "YouTube synchronization completed. Updated {$syncCount} existing tracks and matched {$newCount} new tracks. Total views: {$viewsFormatted}");
+                
+        } catch (\Exception $e) {
+            Log::error('YouTube sync failed: ' . $e->getMessage(), [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return redirect()->route('youtube.uploads')
+                ->with('error', 'Failed to sync with YouTube: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Refresh video statistics from YouTube
+     *
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function refreshVideoStats(Request $request)
+    {
+        try {
+            // Get all tracks with YouTube video IDs
+            $tracks = Track::whereNotNull('youtube_video_id')->get();
+            
+            if ($tracks->isEmpty()) {
+                if ($request->expectsJson()) {
+                    return response()->json([
+                        'message' => 'No YouTube videos found to refresh statistics.',
+                        'videoStats' => []
+                    ]);
+                }
+                
+                return redirect()->route('youtube.uploads')
+                    ->with('info', 'No YouTube videos found to refresh statistics.');
+            }
+            
+            // Get video IDs
+            $videoIds = $tracks->pluck('youtube_video_id')->filter()->toArray();
+            
+            // Get stats from YouTube
+            $videoStats = $this->youtubeService->getVideoStatistics($videoIds);
+            
+            // Calculate total views
+            $totalViews = 0;
+            foreach ($videoStats as $stat) {
+                $totalViews += (int)($stat['viewCount'] ?? 0);
+            }
+            
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'Video statistics refreshed successfully.',
+                    'videoStats' => $videoStats,
+                    'totalViews' => $totalViews
+                ]);
+            }
+            
+            // Store stats in session for display
+            session(['youtube_video_stats' => $videoStats]);
+            session(['youtube_total_views' => $totalViews]);
+            
+            return redirect()->route('youtube.uploads')
+                ->with('success', 'Video statistics refreshed successfully.');
+        } catch (\Exception $e) {
+            \Log::error('Failed to refresh YouTube video statistics: ' . $e->getMessage());
+            
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'Failed to refresh video statistics: ' . $e->getMessage()
+                ], 500);
+            }
+            
+            return redirect()->route('youtube.uploads')
+                ->with('error', 'Failed to refresh video statistics: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Toggle YouTube enabled status for a track
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function toggleYoutubeEnabled(Request $request)
+    {
+        $validated = $request->validate([
+            'track_id' => 'required|exists:tracks,id',
+        ]);
+        
+        try {
+            $track = \App\Models\Track::findOrFail($validated['track_id']);
+            $success = $track->toggleYoutubeEnabled();
+            
+            return response()->json([
+                'success' => $success,
+                'enabled' => $track->youtube_enabled,
+                'message' => 'YouTube upload status ' . ($track->youtube_enabled ? 'enabled' : 'disabled') . ' for this track.'
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to toggle YouTube enabled status', [
+                'track_id' => $validated['track_id'],
+                'error' => $e->getMessage()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to toggle YouTube status: ' . $e->getMessage()
+            ], 500);
         }
     }
 }

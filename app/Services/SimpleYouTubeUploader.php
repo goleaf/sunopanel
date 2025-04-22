@@ -170,4 +170,24 @@ class SimpleYouTubeUploader
             return false;
         }
     }
+
+    /**
+     * Set a custom YouTube service instance
+     * 
+     * @param \Google_Service_YouTube|YouTubeService $service
+     * @return void
+     */
+    public function setYoutubeService($service): void
+    {
+        if ($service instanceof \Google_Service_YouTube) {
+            // If using the Google API client directly, wrap it in our service
+            if ($this->youtubeService instanceof YouTubeService) {
+                $this->youtubeService->setGoogleService($service);
+            }
+        } elseif ($service instanceof YouTubeService) {
+            $this->youtubeService = $service;
+        } else {
+            throw new \InvalidArgumentException('Invalid YouTube service type');
+        }
+    }
 } 

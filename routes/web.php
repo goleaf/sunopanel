@@ -27,10 +27,15 @@ Route::post('/process-immediate', [HomeController::class, 'processImmediate'])->
 Route::get('/tracks', [TrackController::class, 'index'])->name('tracks.index');
 Route::get('/tracks/{track}', [TrackController::class, 'show'])->name('tracks.show');
 Route::delete('/tracks/{track}', [TrackController::class, 'destroy'])->name('tracks.destroy');
-Route::get('/tracks/{track}/status', [TrackController::class, 'status'])->name('tracks.status');
+Route::get('/tracks/{track}/status', [TrackController::class, 'status'])
+    ->middleware(\App\Http\Middleware\JsonMiddleware::class)
+    ->name('tracks.status');
 Route::post('/tracks/{track}/retry', [TrackController::class, 'retry'])->name('tracks.retry');
 Route::post('/tracks/retry-all', [TrackController::class, 'retryAll'])->name('tracks.retry-all');
 Route::post('/tracks/{track}/upload-to-youtube', [TrackController::class, 'uploadToYoutube'])->name('tracks.upload-to-youtube');
+Route::post('/tracks/{track}/toggle-youtube-status', [TrackController::class, 'toggleYoutubeStatus'])
+    ->middleware(\App\Http\Middleware\JsonMiddleware::class)
+    ->name('tracks.toggle-youtube-status');
 
 // Genre routes
 Route::resource('genres', GenreController::class);
@@ -77,25 +82,18 @@ Route::get('/test-track-stop/{id}', function($id) {
     }
 });
 
-// YouTube Integration
-Route::prefix('youtube')->name('youtube.')->group(function () {
-    // Main routes
-    Route::get('/', [YouTubeController::class, 'index'])->name('index');
-    Route::get('/status', [YouTubeController::class, 'status'])->name('status');
-    
-    // Authentication
-    Route::get('/auth', [YouTubeController::class, 'redirectToProvider'])->name('auth');
-    Route::get('/auth/redirect', [YouTubeController::class, 'redirectToProvider'])->name('auth.redirect');
-    Route::post('/credentials', [YouTubeController::class, 'saveCredentials'])->name('save.credentials');
-    Route::get('/login', [YouTubeController::class, 'showLoginForm'])->name('auth.login_form');
-    
-    // Upload
-    Route::get('/upload', [YouTubeController::class, 'showUploadForm'])->name('upload.form');
-    Route::post('/upload', [YouTubeController::class, 'uploadTrack'])->name('upload.process');
+// YouTube routes
+Route::prefix('youtube')->name('youtube.')->middleware(['auth'])->group(function () {
+    Route::get('/upload', [YouTubeController::class, 'showUploadForm'])->name('upload');
+    Route::post('/upload', [YouTubeController::class, 'uploadTrack'])->name('upload.store');
     Route::get('/uploads', [YouTubeController::class, 'uploads'])->name('uploads');
+    Route::post('/uploads/sync', [YouTubeController::class, 'syncUploads'])->name('uploads.sync');
+    Route::post('/uploads/refresh-stats', [YouTubeController::class, 'refreshVideoStats'])->name('uploads.refresh-stats');
+    Route::post('/toggle-enabled', [YouTubeController::class, 'toggleYoutubeEnabled'])->name('toggle-enabled');
     
-    // Test
-    Route::post('/test', [YouTubeController::class, 'testUpload'])->name('test');
+    // Video statistics routes
+    Route::get('/video/{videoId}/stats', [YouTubeController::class, 'videoStats'])->name('video.stats');
+    Route::post('/video/{videoId}/refresh-stats', [YouTubeController::class, 'refreshVideoStats'])->name('video.refresh-stats');
 });
 
 // Special route for YouTube OAuth callback

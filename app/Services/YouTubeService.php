@@ -37,6 +37,11 @@ class YouTubeService
     protected $credential;
 
     /**
+     * @var string|null
+     */
+    protected $apiKey = null;
+
+    /**
      * Create a new YouTube Service instance.
      */
     public function __construct()
@@ -57,6 +62,21 @@ class YouTubeService
     }
 
     /**
+     * Set the API key for authentication
+     *
+     * @param string $apiKey
+     * @return void
+     */
+    public function setApiKey(string $apiKey): void
+    {
+        $this->apiKey = $apiKey;
+        $this->client->setDeveloperKey($apiKey);
+        $this->youtube = new Google_Service_YouTube($this->client);
+        
+        Log::info('YouTube API key set');
+    }
+
+    /**
      * Get configured Google Client.
      *
      * @return Google_Client
@@ -69,6 +89,12 @@ class YouTubeService
             'https://www.googleapis.com/auth/youtube.upload',
             'https://www.googleapis.com/auth/youtube',
         ]);
+        
+        // Use API key if provided
+        if ($this->apiKey) {
+            $client->setDeveloperKey($this->apiKey);
+            return $client;
+        }
         
         if (!$this->credential) {
             Log::warning('No YouTube credentials found in database');
@@ -207,6 +233,11 @@ class YouTubeService
      */
     public function isAuthenticated(): bool
     {
+        // If an API key is set, consider it authenticated for read operations only
+        if ($this->apiKey) {
+            return true; // Note: API keys can only be used for read operations, not uploads
+        }
+        
         return $this->client->getAccessToken() !== null && !$this->client->isAccessTokenExpired();
     }
     
@@ -480,6 +511,134 @@ class YouTubeService
             
         } catch (Exception $e) {
             Log::error('Failed to get playlists: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Set a Google_Service_YouTube instance directly
+     *
+     * @param Google_Service_YouTube $service
+     * @return void
+     */
+    public function setGoogleService(Google_Service_YouTube $service): void
+    {
+        $this->youtube = $service;
+    }
+
+    /**
+     * List videos uploaded by the authenticated user
+     *
+     * @param int $maxResults Maximum number of results to return
+     * @return array Array of video data
+     */
+    public function listUploadedVideos(int $maxResults = 50): array
+    {
+        if (!$this->isAuthenticated()) {
+            Log::error('YouTube API not authenticated. Please authenticate first.');
+            return [];
+        }
+        
+        try {
+            // First, get the channel ID for the authenticated user
+            $channelsResponse = $this->youtube->channels->listChannels('contentDetails', [
+                'mine' => true,
+            ]);
+            
+            if (empty($channelsResponse->getItems())) {
+                Log::warning('No channel found for authenticated user');
+                return [];
+            }
+            
+            $channel = $channelsResponse->getItems()[0];
+            $uploadsPlaylistId = $channel->getContentDetails()->getRelatedPlaylists()->getUploads();
+            
+            if (empty($uploadsPlaylistId)) {
+                Log::warning('No uploads playlist found for authenticated user');
+                return [];
+            }
+            
+            Log::info("Found uploads playlist ID: {$uploadsPlaylistId}");
+            
+            // Get videos from the uploads playlist
+            $playlistItemsResponse = $this->youtube->playlistItems->listPlaylistItems('snippet,contentDetails', [
+                'maxResults' => $maxResults,
+                'playlistId' => $uploadsPlaylistId,
+            ]);
+            
+            $videos = [];
+            
+            foreach ($playlistItemsResponse->getItems() as $item) {
+                $snippet = $item->getSnippet();
+                $contentDetails = $item->getContentDetails();
+                
+                // Skip items that don't have a video ID
+                if (!$contentDetails || !$contentDetails->getVideoId()) {
+                    continue;
+                }
+                
+                $videoId = $contentDetails->getVideoId();
+                $title = $snippet->getTitle();
+                $description = $snippet->getDescription();
+                $thumbnails = $snippet->getThumbnails();
+                $publishedAt = $snippet->getPublishedAt();
+                
+                $videos[] = [
+                    'id' => $videoId,
+                    'title' => $title,
+                    'description' => $description,
+                    'thumbnail' => $thumbnails->getHigh()->getUrl(),
+                    'publishedAt' => $publishedAt,
+                ];
+            }
+            
+            Log::info("Retrieved {$playlistItemsResponse->getPageInfo()->getTotalResults()} videos from YouTube");
+            
+            return $videos;
+            
+        } catch (Exception $e) {
+            Log::error('Failed to list uploaded videos: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Get video statistics for a list of video IDs
+     *
+     * @param array $videoIds Array of YouTube video IDs
+     * @return array Array of video statistics indexed by video ID
+     */
+    public function getVideoStatistics(array $videoIds)
+    {
+        if (empty($videoIds)) {
+            return [];
+        }
+
+        try {
+            $youtube = $this->getYouTubeClient();
+            
+            // YouTube API allows a maximum of 50 videos per request
+            $chunks = array_chunk($videoIds, 50);
+            $statistics = [];
+            
+            foreach ($chunks as $chunk) {
+                $response = $youtube->videos->listVideos(
+                    'statistics', 
+                    ['id' => implode(',', $chunk)]
+                );
+                
+                foreach ($response->items as $item) {
+                    $statistics[$item->id] = [
+                        'viewCount' => $item->statistics->viewCount ?? 0,
+                        'likeCount' => $item->statistics->likeCount ?? 0,
+                        'commentCount' => $item->statistics->commentCount ?? 0
+                    ];
+                }
+            }
+            
+            return $statistics;
+        } catch (\Exception $e) {
+            \Log::error('YouTube API error: ' . $e->getMessage());
             return [];
         }
     }

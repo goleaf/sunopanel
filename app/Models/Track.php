@@ -32,6 +32,9 @@ class Track extends Model
         'youtube_video_id',
         'youtube_playlist_id',
         'youtube_uploaded_at',
+        'youtube_views',
+        'youtube_stats_updated_at',
+        'youtube_enabled',
     ];
 
     /**
@@ -42,6 +45,9 @@ class Track extends Model
     protected $casts = [
         'progress' => 'integer',
         'youtube_uploaded_at' => 'datetime',
+        'youtube_stats_updated_at' => 'datetime',
+        'youtube_views' => 'integer',
+        'youtube_enabled' => 'boolean',
     ];
 
     /**
@@ -163,5 +169,14 @@ class Track extends Model
         return $this->youtube_video_id 
             ? "https://www.youtube.com/watch?v={$this->youtube_video_id}" 
             : null;
+    }
+
+    /**
+     * Toggle the YouTube enabled status for this track.
+     */
+    public function toggleYoutubeEnabled(): bool
+    {
+        $this->youtube_enabled = !$this->youtube_enabled;
+        return $this->save();
     }
 }

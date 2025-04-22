@@ -20,7 +20,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 // Track API Routes
-Route::prefix('tracks')->group(function() {
+Route::prefix('tracks')->middleware(\App\Http\Middleware\JsonMiddleware::class)->group(function() {
     // Get track status
     Route::get('/{track}/status', [TrackController::class, 'status']);
     

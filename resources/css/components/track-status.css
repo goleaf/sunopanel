@@ -1,0 +1,115 @@
+/**
+ * Track Status Component Styles
+ * Contains all styles for track status displays, progress bars, and animations
+ */
+
+/* Animation Keyframes */
+@keyframes progress-flash {
+    0% { background-color: transparent; }
+    25% { background-color: rgba(255, 153, 0, 0.2); }
+    100% { background-color: transparent; }
+}
+
+@keyframes status-update-flash {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+@keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Track Row Styles */
+.track-row.row-updated {
+    animation: progress-flash 1s ease-out;
+}
+
+/* Status Badge Styles */
+.track-status .badge {
+    transition: all 0.2s ease-in-out;
+}
+
+.track-status.status-updated .badge {
+    animation: status-update-flash 0.5s ease-in-out;
+}
+
+/* Progress Display Styles */
+.track-progress progress {
+    transition: width 0.3s ease-in-out;
+}
+
+/* Percentage Display Styles */
+.progress-percentage {
+    transition: color 0.2s ease-in-out;
+}
+
+.progress-percentage.updating {
+    position: relative;
+    font-weight: bold;
+    color: #ff9900;
+}
+
+/* Toast Notification Styles */
+#toast {
+    z-index: 9999;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+#toast.translate-y-0 {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+#toast.translate-y-full {
+    transform: translateY(100%);
+    opacity: 0;
+}
+
+/* Action Button Styles */
+.action-btn {
+    transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+    transform: scale(1.05);
+}
+
+.action-btn.loading {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+/* Status Filter Toggle Styles */
+.status-filter-toggle {
+    transition: background-color 0.3s ease;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+}
+
+.status-filter-toggle.active {
+    background-color: rgba(59, 130, 246, 0.1);
+}
+
+/* Status Colors - for theming consistency */
+.status-completed {
+    --status-color: #10b981; /* green-500 */
+}
+
+.status-processing {
+    --status-color: #f59e0b; /* amber-500 */
+}
+
+.status-pending {
+    --status-color: #3b82f6; /* blue-500 */
+}
+
+.status-failed {
+    --status-color: #ef4444; /* red-500 */
+}
+
+.status-stopped {
+    --status-color: #f97316; /* orange-500 */
+} 

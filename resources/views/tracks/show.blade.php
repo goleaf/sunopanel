@@ -355,6 +355,70 @@
         </div>
     </div>
 
+    <!-- YouTube Status Controls -->
+    <div class="card bg-base-100 shadow-xl mb-6">
+        <div class="card-body">
+            <h2 class="card-title flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                YouTube Upload Status
+            </h2>
+
+            <div class="mt-4 track-youtube" data-track-id="{{ $track->id }}">
+                @if ($track->youtube_video_id)
+                    <div class="alert alert-success mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        <span>This track is marked as uploaded to YouTube. Video ID: {{ $track->youtube_video_id }}</span>
+                    </div>
+                    
+                    <button type="button" class="btn btn-error btn-sm toggle-youtube-status">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        Mark as Not Uploaded
+                    </button>
+                    
+                    @if($track->youtube_url)
+                    <a href="{{ $track->youtube_url }}" target="_blank" class="btn btn-primary btn-sm ml-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                        View on YouTube
+                    </a>
+                    @endif
+                @else
+                    <div class="alert alert-warning mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                        <span>This track is not marked as uploaded to YouTube.</span>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label for="youtube_video_id" class="block text-sm font-medium mb-2">YouTube Video ID (Optional):</label>
+                            <input type="text" id="youtube_video_id" name="youtube_video_id" class="input input-bordered w-full" 
+                                    placeholder="e.g. dQw4w9WgXcQ">
+                            <p class="text-xs text-base-content/70 mt-1">If left empty, a placeholder ID will be used</p>
+                        </div>
+                        
+                        <div>
+                            <label for="youtube_playlist_id" class="block text-sm font-medium mb-2">YouTube Playlist ID (Optional):</label>
+                            <input type="text" id="youtube_playlist_id" name="youtube_playlist_id" class="input input-bordered w-full" 
+                                    placeholder="e.g. PLFgquLnL59alGJcdc0BEZJb2p7IgkL0Oe">
+                        </div>
+                        
+                        <button type="button" class="btn btn-primary btn-sm toggle-youtube-status">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            Mark as Uploaded
+                        </button>
+                    </div>
+                @endif
+            </div>
+        </div>
+    </div>
+
     <!-- MP4 Video Section (if available) -->
     @if(($track->status === 'completed' || $track->status === 'processing') && $track->mp4_path)
     <div class="card bg-base-100 shadow-xl mb-6">
@@ -487,77 +551,67 @@ document.addEventListener('DOMContentLoaded', function() {
         statusUpdater.watchTrack(trackId, {
             status: statusEl,
             progress: progressEl,
-            reload: true
         });
         
-        // Start the status updater
+        // Start the updater
         statusUpdater.start();
     }
     
-    // Setup action buttons
-    
-    // Start processing button
-    const startButton = document.getElementById('start-processing');
-    if (startButton) {
-        startButton.addEventListener('click', async function() {
+    // Handle YouTube toggle button clicks
+    const youtubeToggleButtons = document.querySelectorAll('.toggle-youtube-status');
+    youtubeToggleButtons.forEach(button => {
+        button.addEventListener('click', async () => {
+            // Disable button and show loading state
+            button.disabled = true;
+            button.classList.add('loading');
+            
             try {
-                this.classList.add('loading');
-                const result = await TrackStatusAPI.startTrack(trackId);
+                // Get input values if they exist
+                let data = {};
+                const videoIdInput = document.getElementById('youtube_video_id');
+                const playlistIdInput = document.getElementById('youtube_playlist_id');
                 
-                if (result.success) {
-                    window.showToast('Track processing started', 'success');
-                    setTimeout(() => window.location.reload(), 1000);
+                if (videoIdInput && videoIdInput.value) {
+                    data.youtube_video_id = videoIdInput.value;
                 }
+                
+                if (playlistIdInput && playlistIdInput.value) {
+                    data.youtube_playlist_id = playlistIdInput.value;
+                }
+                
+                // Get the CSRF token from meta tag
+                const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                
+                // Send request to toggle YouTube status
+                const response = await fetch(`/tracks/${trackId}/toggle-youtube-status`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json'
+                    },
+                    body: Object.keys(data).length ? JSON.stringify(data) : null
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                // Reload the page to show updated status
+                window.location.reload();
+                
             } catch (error) {
-                console.error('Failed to start processing:', error);
-                window.showToast('Failed to start processing: ' + error.message, 'error');
-            } finally {
-                this.classList.remove('loading');
+                console.error('Error toggling YouTube status:', error);
+                showToast('Failed to update YouTube status: ' + error.message, 'error');
+                
+                // Reset button state
+                button.disabled = false;
+                button.classList.remove('loading');
             }
         });
-    }
-    
-    // Stop processing button
-    const stopButton = document.getElementById('stop-processing');
-    if (stopButton) {
-        stopButton.addEventListener('click', async function() {
-            try {
-                this.classList.add('loading');
-                const result = await TrackStatusAPI.stopTrack(trackId);
-                
-                if (result.success) {
-                    window.showToast('Track processing stopped', 'warning');
-                    setTimeout(() => window.location.reload(), 1000);
-                }
-            } catch (error) {
-                console.error('Failed to stop processing:', error);
-                window.showToast('Failed to stop processing: ' + error.message, 'error');
-            } finally {
-                this.classList.remove('loading');
-            }
-        });
-    }
-    
-    // Retry processing button
-    const retryButton = document.getElementById('retry-processing');
-    if (retryButton) {
-        retryButton.addEventListener('click', async function() {
-            try {
-                this.classList.add('loading');
-                const result = await TrackStatusAPI.retryTrack(trackId);
-                
-                if (result.success) {
-                    window.showToast('Track processing retried', 'success');
-                    setTimeout(() => window.location.reload(), 1000);
-                }
-            } catch (error) {
-                console.error('Failed to retry processing:', error);
-                window.showToast('Failed to retry processing: ' + error.message, 'error');
-            } finally {
-                this.classList.remove('loading');
-            }
-        });
-    }
+    });
 });
 </script>
 @endsection 
