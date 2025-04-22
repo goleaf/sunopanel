@@ -35,12 +35,8 @@ class ImportSunoPlaylist extends Command
         $url = $this->argument('url');
         
         if (empty($url)) {
-            $url = $this->ask('Enter URL of the Suno playlist API endpoint:');
-            
-            if (empty($url)) {
-                $this->error('URL is required.');
-                return 1;
-            }
+            $this->error('URL is required.');
+            return 1;
         }
         
         $this->info("Fetching data from: {$url}");
