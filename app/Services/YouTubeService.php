@@ -232,6 +232,12 @@ class YouTubeService
     ): ?string {
         if (!$this->isAuthenticated()) {
             Log::error('YouTube API not authenticated. Please authenticate first.');
+            Log::error('Authentication details:', [
+                'has_credential' => !is_null($this->credential),
+                'client_id_set' => !is_null($this->credential?->client_id),
+                'has_access_token' => !is_null($this->client->getAccessToken()),
+                'token_expired' => $this->client->isAccessTokenExpired(),
+            ]);
             throw new Exception('YouTube API not authenticated. Please authenticate first.');
         }
         
@@ -241,6 +247,12 @@ class YouTubeService
         }
         
         try {
+            $fileSize = filesize($videoPath);
+            Log::info("Starting YouTube upload for file: {$videoPath}");
+            Log::info("File size: {$fileSize} bytes");
+            Log::info("Title: {$title}");
+            Log::info("Privacy status: {$privacyStatus}");
+            
             // Create a snippet with title, description, tags, and category ID
             $snippet = new Google_Service_YouTube_VideoSnippet();
             $snippet->setTitle($title);
@@ -280,7 +292,6 @@ class YouTubeService
             );
             
             // Set the file size
-            $fileSize = filesize($videoPath);
             $media->setFileSize($fileSize);
             
             // Log the start of the upload
@@ -290,9 +301,31 @@ class YouTubeService
             $status = false;
             $handle = fopen($videoPath, 'rb');
             
+            if (!$handle) {
+                Log::error("Failed to open the file for reading: {$videoPath}");
+                throw new Exception("Failed to open the file for reading: {$videoPath}");
+            }
+            
+            $chunkNumber = 0;
+            $uploadedBytes = 0;
+            
             while (!$status && !feof($handle)) {
                 $chunk = fread($handle, $chunkSize);
-                $status = $media->nextChunk($chunk);
+                $chunkNumber++;
+                $uploadedBytes += strlen($chunk);
+                
+                // Log progress periodically
+                if ($chunkNumber % 10 === 0) {
+                    $progress = ($uploadedBytes / $fileSize) * 100;
+                    Log::info("Upload progress: " . number_format($progress, 2) . "% ({$uploadedBytes} / {$fileSize} bytes)");
+                }
+                
+                try {
+                    $status = $media->nextChunk($chunk);
+                } catch (\Exception $e) {
+                    Log::error("Error during chunk upload (chunk #{$chunkNumber}): " . $e->getMessage());
+                    throw $e;
+                }
             }
             
             fclose($handle);
@@ -310,6 +343,11 @@ class YouTubeService
             
         } catch (Exception $e) {
             Log::error('Exception during YouTube upload: ' . $e->getMessage());
+            Log::error('Exception details: ', [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
             throw $e;
         }
     }

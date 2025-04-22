@@ -98,13 +98,19 @@ class UploadTrackToYouTube extends Command
         try {
             $track = Track::findOrFail($trackId);
             
-            // Get the video path
-            $videoPath = storage_path('app/public/videos/' . $track->mp4_file);
+            // Get the video path - directly use the mp4_path field for better reliability
+            $videoPath = storage_path('app/public/' . $track->mp4_path);
+            
+            // Log the path being used
+            $this->info("Looking for video file at: {$videoPath}");
             
             if (!File::exists($videoPath)) {
                 $this->error("Video file not found for track #{$trackId}: {$videoPath}");
                 return 1;
             }
+            
+            // Log file existence
+            $this->info("Video file found, size: " . File::size($videoPath) . " bytes");
             
             // Prepare title and description
             $title = $this->option('title') ?: $track->title;

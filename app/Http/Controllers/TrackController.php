@@ -10,6 +10,7 @@ use Illuminate\View\View;
 use App\Services\YoutubeThumbnailGenerator;
 use App\Services\TrackProcessor;
 use Illuminate\Support\Facades\Artisan;
+use App\Services\YouTubeService;
 
 class TrackController extends Controller
 {
@@ -195,7 +196,7 @@ class TrackController extends Controller
         $request->validate([
             'title' => 'required|string|max:100',
             'description' => 'nullable|string',
-            'privacy' => 'required|in:public,unlisted,private',
+            'privacy_status' => 'required|in:public,unlisted,private',
         ]);
 
         try {
@@ -204,12 +205,31 @@ class TrackController extends Controller
                 return back()->with('error', 'Track must be completed and have a video file to upload to YouTube.');
             }
             
+            // Check YouTube authentication
+            $youtubeService = app(YouTubeService::class);
+            if (!$youtubeService->isAuthenticated()) {
+                return redirect()->route('youtube.auth.redirect')
+                    ->with('warning', 'YouTube authentication required. Please authenticate first.');
+            }
+            
+            // Check if the file exists before attempting upload
+            $videoPath = storage_path('app/public/' . $track->mp4_path);
+            if (!file_exists($videoPath)) {
+                \Log::error('MP4 file not found for track', [
+                    'track_id' => $track->id,
+                    'mp4_path' => $track->mp4_path,
+                    'expected_path' => $videoPath
+                ]);
+                
+                return back()->with('error', 'MP4 file not found. Please contact administrator.');
+            }
+            
             // Run the Artisan command to upload to YouTube
             $exitCode = Artisan::call('youtube:upload', [
                 '--track_id' => $track->id,
                 '--title' => $request->title,
                 '--description' => $request->description ?? '',
-                '--privacy' => $request->privacy,
+                '--privacy' => $request->privacy_status, // Changed to match form field name
             ]);
             
             if ($exitCode !== 0) {
@@ -226,6 +246,7 @@ class TrackController extends Controller
             \Log::error('YouTube upload failed', [
                 'track_id' => $track->id,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
             
             return back()->with('error', 'Failed to upload track to YouTube: ' . $e->getMessage());
