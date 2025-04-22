@@ -110,8 +110,44 @@ class SunoService
         // Convert style to lowercase for easier comparison
         $lowerStyle = strtolower($style);
         
-        // If looking for "pop" style
-        if (strpos($lowerStyle, 'pop') !== false) {
+        // If looking for "city pop" style
+        if (strpos($lowerStyle, 'city pop') !== false) {
+            return [
+                [
+                    'id' => 'citypop001',
+                    'title' => 'Fleeting Love',
+                    'artist' => 'Suno AI',
+                    'style' => 'city pop',
+                    'duration' => '4:10',
+                    'url' => 'https://cdn1.suno.ai/69c0d3c4-a06f-471e-a396-4cb09c9ec2b6.mp3',
+                    'cover' => 'https://cdn2.suno.ai/image_a07fbe33-8ee5-4f91-bb8d-180cbb49e5fe.jpeg',
+                    'created_at' => '2023-07-18',
+                ],
+                [
+                    'id' => 'citypop002',
+                    'title' => 'Palakpakan',
+                    'artist' => 'Suno AI',
+                    'style' => 'city pop',
+                    'duration' => '3:58',
+                    'url' => 'https://cdn1.suno.ai/9a00dc20-9640-4150-9804-d8a179ce860c.mp3',
+                    'cover' => 'https://cdn2.suno.ai/image_9a00dc20-9640-4150-9804-d8a179ce860c.jpeg',
+                    'created_at' => '2023-08-05',
+                ],
+                [
+                    'id' => 'citypop003',
+                    'title' => 'ジャカジャカ',
+                    'artist' => 'Suno AI',
+                    'style' => 'city pop',
+                    'duration' => '4:22',
+                    'url' => 'https://cdn1.suno.ai/837cd038-c104-405b-b1d5-bafa924a277f.mp3',
+                    'cover' => 'https://cdn2.suno.ai/image_837cd038-c104-405b-b1d5-bafa924a277f.jpeg',
+                    'created_at' => '2023-09-30',
+                ],
+            ];
+        }
+        
+        // If looking for "pop" style (but not city pop)
+        if (strpos($lowerStyle, 'pop') !== false && strpos($lowerStyle, 'city pop') === false) {
             return [
                 [
                     'id' => 'pop001',
@@ -152,42 +188,6 @@ class SunoService
                     'url' => 'https://cdn1.suno.ai/a5fb3403-74fd-4819-9417-409af40e603c.mp3',
                     'cover' => 'https://cdn2.suno.ai/a5fb3403-74fd-4819-9417-409af40e603c_2c38cfb6.jpeg',
                     'created_at' => '2023-11-12',
-                ],
-            ];
-        }
-        
-        // If looking for "city pop" style
-        if (strpos($lowerStyle, 'city pop') !== false) {
-            return [
-                [
-                    'id' => 'citypop001',
-                    'title' => 'Fleeting Love',
-                    'artist' => 'Suno AI',
-                    'style' => 'city pop',
-                    'duration' => '4:10',
-                    'url' => 'https://cdn1.suno.ai/69c0d3c4-a06f-471e-a396-4cb09c9ec2b6.mp3',
-                    'cover' => 'https://cdn2.suno.ai/image_a07fbe33-8ee5-4f91-bb8d-180cbb49e5fe.jpeg',
-                    'created_at' => '2023-07-18',
-                ],
-                [
-                    'id' => 'citypop002',
-                    'title' => 'Palakpakan',
-                    'artist' => 'Suno AI',
-                    'style' => 'city pop',
-                    'duration' => '3:58',
-                    'url' => 'https://cdn1.suno.ai/9a00dc20-9640-4150-9804-d8a179ce860c.mp3',
-                    'cover' => 'https://cdn2.suno.ai/image_9a00dc20-9640-4150-9804-d8a179ce860c.jpeg',
-                    'created_at' => '2023-08-05',
-                ],
-                [
-                    'id' => 'citypop003',
-                    'title' => 'ジャカジャカ',
-                    'artist' => 'Suno AI',
-                    'style' => 'city pop',
-                    'duration' => '4:22',
-                    'url' => 'https://cdn1.suno.ai/837cd038-c104-405b-b1d5-bafa924a277f.mp3',
-                    'cover' => 'https://cdn2.suno.ai/image_837cd038-c104-405b-b1d5-bafa924a277f.jpeg',
-                    'created_at' => '2023-09-30',
                 ],
             ];
         }
