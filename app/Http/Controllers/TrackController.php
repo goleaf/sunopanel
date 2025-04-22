@@ -49,7 +49,7 @@ class TrackController extends Controller
         if ($request->filled('genre')) {
             $genre = $request->input('genre');
             $query->whereHas('genres', function($q) use ($genre) {
-                $q->where('slug', $genre);
+                $q->where('id', $genre);
             });
         }
         
