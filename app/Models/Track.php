@@ -125,6 +125,30 @@ final class Track extends Model
     {
         return $this->mp4_path ? Storage::disk('public')->url($this->mp4_path) : null;
     }
+
+    /**
+     * Get the full file path for the MP3 file.
+     */
+    public function getMp3FilePathAttribute(): ?string
+    {
+        return $this->mp3_path ? storage_path('app/public/' . $this->mp3_path) : null;
+    }
+
+    /**
+     * Get the full file path for the image file.
+     */
+    public function getImageFilePathAttribute(): ?string
+    {
+        return $this->image_path ? storage_path('app/public/' . $this->image_path) : null;
+    }
+
+    /**
+     * Get the full file path for the MP4 file.
+     */
+    public function getMp4FilePathAttribute(): ?string
+    {
+        return $this->mp4_path ? storage_path('app/public/' . $this->mp4_path) : null;
+    }
     
     /**
      * Get the YouTube video URL.

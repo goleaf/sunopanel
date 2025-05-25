@@ -42,6 +42,12 @@
 
 ## 🔥 Critical Priority Tasks
 
+### 0. Fix Vite Manifest Error for Queue Dashboard (URGENT)
+- [ ] Add queue-dashboard.js to Vite configuration input array
+- [ ] Rebuild assets with npm run build
+- [ ] Test queue dashboard page to ensure it loads properly
+- [ ] Remove unused JavaScript files if any
+
 ### 0. Fix YouTubeAccount getDisplayName Method (URGENT) ✅ COMPLETED
 - [x] Add missing getDisplayName() method to YouTubeAccount model
 - [x] Fix BadMethodCallException in YouTubeAuthController

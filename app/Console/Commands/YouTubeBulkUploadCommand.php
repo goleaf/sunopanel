@@ -97,10 +97,10 @@ final class YouTubeBulkUploadCommand extends Command
         // Prepare video data for bulk upload
         $videos = [];
         foreach ($tracks as $track) {
-            $filePath = storage_path('app/public/' . $track->file_path);
+            $filePath = $track->mp4_file_path;
             
-            if (!file_exists($filePath)) {
-                $this->warn("File not found for track {$track->id}: {$filePath}");
+            if (!$filePath || !file_exists($filePath)) {
+                $this->warn("File not found for track {$track->id}: " . ($filePath ?? 'Track has no mp4_path'));
                 continue;
             }
 

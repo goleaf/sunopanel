@@ -77,10 +77,10 @@ class SimpleYouTubeUploader
             throw new Exception('Track does not have an MP4 file');
         }
         
-        // Get the path to the MP4 file
-        $videoPath = storage_path('app/public/' . $track->mp4_path);
-        if (!file_exists($videoPath)) {
-            throw new Exception("Video file not found: {$videoPath}");
+        // Get the path to the MP4 file using the accessor
+        $videoPath = $track->mp4_file_path;
+        if (!$videoPath || !file_exists($videoPath)) {
+            throw new Exception("Video file not found: " . ($videoPath ?? 'null path'));
         }
         
         // Set defaults - simplified as requested

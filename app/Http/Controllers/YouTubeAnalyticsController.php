@@ -28,8 +28,7 @@ class YouTubeAnalyticsController extends Controller
             $tracks = Track::uploadedToYoutube()
                           ->withAnalytics()
                           ->orderByViews()
-                          ->take(20)
-                          ->get();
+                          ->paginate(20);
             
             // Get tracks that need analytics updates
             $staleTracksCount = Track::uploadedToYoutube()
@@ -39,7 +38,11 @@ class YouTubeAnalyticsController extends Controller
                                    })
                                    ->count();
             
-            return view('youtube.analytics', compact('summary', 'tracks', 'staleTracksCount'));
+            return view('youtube.analytics', [
+                'summary' => $summary,
+                'tracks' => $tracks,
+                'staleTracksCount' => $staleTracksCount,
+            ]);
             
         } catch (\Exception $e) {
             Log::error('Failed to load analytics dashboard', [

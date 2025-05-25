@@ -12,6 +12,8 @@ export default defineConfig({
                 'resources/js/track-status.js',
                 'resources/js/youtube-stats.js',
                 'resources/js/youtube-toggle.js',
+                'resources/js/queue-dashboard.js',
+                'resources/js/youtube-analytics.js',
                 'resources/js/modules/trackStatusManager.js'
             ],
             refresh: true,

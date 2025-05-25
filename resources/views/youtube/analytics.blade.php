@@ -20,7 +20,7 @@
                 </div>
                 <div class="ml-4">
                     <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Videos</p>
-                    <p class="text-2xl font-semibold text-gray-900 dark:text-white">{{ $summary['total_videos'] ?? 0 }}</p>
+                                         <p class="text-2xl font-semibold text-gray-900 dark:text-white">{{ $summary['total_tracks'] ?? 0 }}</p>
                 </div>
             </div>
         </div>
