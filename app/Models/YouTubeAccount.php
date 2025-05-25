@@ -32,6 +32,7 @@ final class YouTubeAccount extends Model
         'access_token',
         'refresh_token',
         'token_expires_at',
+        'last_used_at',
         'account_info',
         'is_active',
     ];
@@ -43,6 +44,7 @@ final class YouTubeAccount extends Model
      */
     protected $casts = [
         'token_expires_at' => 'datetime',
+        'last_used_at' => 'datetime',
         'account_info' => 'array',
         'is_active' => 'boolean',
     ];
