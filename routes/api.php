@@ -48,11 +48,5 @@ Route::prefix('youtube')->group(function () {
 // Route::post('/youtube/upload/{id}', [App\Http\Controllers\Api\YouTubeController::class, 'uploadVideo']);
 // Route::post('/youtube/upload-all', [App\Http\Controllers\Api\YouTubeController::class, 'uploadAll']);
 
-Route::middleware('auth:sanctum')->group(function () {
-    // YouTube upload routes were using a now-deleted controller
-    // Route::prefix('youtube')->group(function () {
-    //     Route::get('/status', [App\Http\Controllers\Api\YouTubeUploadController::class, 'getUploadStatus']);
-    //     Route::post('/upload/track/{trackId}', [App\Http\Controllers\Api\YouTubeUploadController::class, 'uploadTrack']);
-    //     Route::post('/upload/all', [App\Http\Controllers\Api\YouTubeUploadController::class, 'uploadAllTracks']);
-    // });
-}); 
+// Authentication middleware removed as this application does not use user authentication
+// All routes are now public as per requirements
