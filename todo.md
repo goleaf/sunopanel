@@ -3,6 +3,15 @@
 ## ✅ Completed Tasks
 - [x] Fix YouTube API error: Call to a member function getViewCount() on null
   - Fixed by adding 'statistics' to the API request parts and adding null checks
+- [x] Create global settings system for YouTube upload visibility
+  - [x] Create settings migration and model with caching
+  - [x] Create settings controller and routes
+  - [x] Create settings page UI with radio buttons and toggles
+  - [x] Implement global filtering logic in all track listings
+  - [x] Update all views to respect global settings
+  - [x] Add settings link to navigation menu
+  - [x] Global filter options: all, uploaded only, not uploaded only
+  - [x] YouTube column visibility can be controlled globally
 
 ## 🔥 Critical Priority Tasks
 
@@ -131,8 +140,8 @@
 - [ ] Add data synchronization features
 
 ### 17. Settings & Configuration
-- [ ] Implement global settings system
-- [ ] Add YouTube upload visibility controls
+- [x] Implement global settings system
+- [x] Add YouTube upload visibility controls
 - [ ] Implement proper configuration management
 - [ ] Add feature toggle system
 - [ ] Implement proper environment-based configuration
