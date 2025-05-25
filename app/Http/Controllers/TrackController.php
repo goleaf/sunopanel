@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Models\Track;
@@ -7,28 +9,26 @@ use App\Models\Genre;
 use App\Models\Setting;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 use App\Services\YoutubeThumbnailGenerator;
 use App\Services\TrackProcessor;
-use Illuminate\Support\Facades\Artisan;
 use App\Services\YouTubeService;
+use App\Services\SimpleYouTubeUploader;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 
-class TrackController extends Controller
+final class TrackController extends Controller
 {
-    /**
-     * The YouTube service instance.
-     *
-     * @var \App\Services\YouTubeService
-     */
-    protected YouTubeService $youtubeService;
-
     /**
      * Create a new controller instance.
      */
-    public function __construct(YouTubeService $youtubeService)
-    {
+    public function __construct(
+        private readonly YouTubeService $youtubeService,
+        private readonly SimpleYouTubeUploader $youtubeUploader
+    ) {
         // No middleware in constructor for Laravel 12
-        $this->youtubeService = $youtubeService;
     }
 
     /**
@@ -40,11 +40,11 @@ class TrackController extends Controller
         
         // Apply global YouTube visibility filter
         $youtubeVisibilityFilter = Setting::get('youtube_visibility_filter', 'all');
-        if ($youtubeVisibilityFilter === 'uploaded') {
-            $query->whereNotNull('youtube_video_id');
-        } elseif ($youtubeVisibilityFilter === 'not_uploaded') {
-            $query->whereNull('youtube_video_id');
-        }
+        match ($youtubeVisibilityFilter) {
+            'uploaded' => $query->uploadedToYoutube(),
+            'not_uploaded' => $query->notUploadedToYoutube(),
+            default => null,
+        };
         
         // Apply search filter
         if ($request->filled('search')) {
@@ -56,21 +56,17 @@ class TrackController extends Controller
         }
         
         // Filter by status
-        $validStatuses = ['pending', 'processing', 'completed', 'failed', 'stopped'];
-        if ($request->filled('status') && in_array($request->input('status'), $validStatuses)) {
-            $status = $request->input('status');
-            $query->where('status', $status);
+        if ($request->filled('status') && in_array($request->input('status'), Track::$statuses)) {
+            $query->withStatus($request->input('status'));
         }
         
         // Filter by genre
         if ($request->filled('genre')) {
             $genre = $request->input('genre');
-            $query->whereHas('genres', function($q) use ($genre) {
-                $q->where('id', $genre);
-            });
+            $query->whereHas('genres', fn($q) => $q->where('id', $genre));
         }
         
-        // Sort by status (processing first) then by created_at
+        // Sort by status priority then by created_at
         $tracks = $query->orderByRaw("CASE 
                 WHEN status = 'processing' THEN 1 
                 WHEN status = 'pending' THEN 2
@@ -80,17 +76,17 @@ class TrackController extends Controller
                 ELSE 6 END")
             ->orderBy('created_at', 'desc')
             ->paginate(100)
-            ->withQueryString(); // Keep the query string for pagination
+            ->withQueryString();
         
-        // Get track counts for stats display - use a single query with raw counts for better performance
+        // Get track counts for stats display
         $statsQuery = Track::query();
         
         // Apply the same YouTube visibility filter to stats
-        if ($youtubeVisibilityFilter === 'uploaded') {
-            $statsQuery->whereNotNull('youtube_video_id');
-        } elseif ($youtubeVisibilityFilter === 'not_uploaded') {
-            $statsQuery->whereNull('youtube_video_id');
-        }
+        match ($youtubeVisibilityFilter) {
+            'uploaded' => $statsQuery->uploadedToYoutube(),
+            'not_uploaded' => $statsQuery->notUploadedToYoutube(),
+            default => null,
+        };
         
         $stats = $statsQuery->selectRaw('
             COUNT(*) as total,
@@ -140,27 +136,27 @@ class TrackController extends Controller
     /**
      * Remove the specified track from storage.
      */
-    public function destroy(Track $track)
+    public function destroy(Track $track): RedirectResponse
     {
-        // Delete associated files
-        if ($track->mp3_path) {
-            \Storage::disk('public')->delete($track->mp3_path);
+        try {
+            // Delete associated files
+            $this->deleteTrackFiles($track);
+            
+            // Delete record
+            $track->genres()->detach();
+            $track->delete();
+            
+            return redirect()->route('tracks.index')
+                ->with('success', "Track '{$track->title}' has been deleted.");
+        } catch (\Exception $e) {
+            Log::error('Failed to delete track', [
+                'track_id' => $track->id,
+                'error' => $e->getMessage(),
+            ]);
+            
+            return redirect()->route('tracks.index')
+                ->with('error', 'Failed to delete track. Please try again.');
         }
-        
-        if ($track->image_path) {
-            \Storage::disk('public')->delete($track->image_path);
-        }
-        
-        if ($track->mp4_path) {
-            \Storage::disk('public')->delete($track->mp4_path);
-        }
-        
-        // Delete record
-        $track->genres()->detach();
-        $track->delete();
-        
-        return redirect()->route('tracks.index')
-            ->with('success', "Track '{$track->title}' has been deleted.");
     }
 
     /**
@@ -181,110 +177,134 @@ class TrackController extends Controller
     /**
      * Retry processing a failed track.
      */
-    public function retry(Request $request, Track $track)
+    public function retry(Request $request, Track $track): RedirectResponse|JsonResponse
     {
-        // Reset track status
-        $track->update([
-            'status' => 'pending',
-            'progress' => 0,
-            'error_message' => null,
-        ]);
-        
-        // Dispatch the job
-        \App\Jobs\ProcessTrack::dispatch($track);
-        
-        // Check if we should redirect back
-        if ($request->has('redirect_back')) {
-            return back()->with('success', "Track '{$track->title}' has been requeued for processing.");
-        }
-        
-        // Default behavior is to redirect to the tracks index
-        return redirect()->route('tracks.index')
-            ->with('success', "Track '{$track->title}' has been requeued for processing.");
-    }
-
-    /**
-     * Retry processing all failed tracks.
-     */
-    public function retryAll(Request $request)
-    {
-        // Get all failed tracks
-        $failedTracks = Track::where('status', 'failed')->get();
-        $count = $failedTracks->count();
-        
-        if ($count === 0) {
-            return redirect()->route('tracks.index')
-                ->with('info', 'No failed tracks to retry.');
-        }
-        
-        // Reset status and dispatch jobs for all failed tracks
-        foreach ($failedTracks as $track) {
+        try {
+            // Reset track status
             $track->update([
                 'status' => 'pending',
                 'progress' => 0,
                 'error_message' => null,
             ]);
             
+            // Dispatch the job
             \App\Jobs\ProcessTrack::dispatch($track);
+            
+            $message = "Track '{$track->title}' has been requeued for processing.";
+            
+            // Check if we should redirect back
+            if ($request->has('redirect_back')) {
+                return back()->with('success', $message);
+            }
+            
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'track' => [
+                    'id' => $track->id,
+                    'status' => $track->status,
+                    'progress' => $track->progress,
+                ]
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to retry track processing', [
+                'track_id' => $track->id,
+                'error' => $e->getMessage(),
+            ]);
+            
+            if ($request->has('redirect_back')) {
+                return back()->with('error', 'Failed to retry track processing.');
+            }
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retry track processing.',
+            ], 500);
         }
-        
-        return redirect()->route('tracks.index')
-            ->with('success', "{$count} failed tracks have been requeued for processing.");
+    }
+    
+    /**
+     * Retry all failed tracks.
+     */
+    public function retryAll(Request $request): RedirectResponse|JsonResponse
+    {
+        try {
+            $failedTracks = Track::where('status', 'failed')->get();
+            
+            if ($failedTracks->isEmpty()) {
+                $message = 'No failed tracks to retry.';
+                
+                if ($request->expectsJson()) {
+                    return response()->json(['success' => false, 'message' => $message]);
+                }
+                
+                return back()->with('info', $message);
+            }
+            
+            foreach ($failedTracks as $track) {
+                $track->update([
+                    'status' => 'pending',
+                    'progress' => 0,
+                    'error_message' => null,
+                ]);
+                
+                \App\Jobs\ProcessTrack::dispatch($track);
+            }
+            
+            $message = "Retrying {$failedTracks->count()} failed tracks.";
+            
+            if ($request->expectsJson()) {
+                return response()->json(['success' => true, 'message' => $message]);
+            }
+            
+            return back()->with('success', $message);
+        } catch (\Exception $e) {
+            Log::error('Failed to retry all tracks', ['error' => $e->getMessage()]);
+            
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => 'Failed to retry tracks.'], 500);
+            }
+            
+            return back()->with('error', 'Failed to retry tracks.');
+        }
     }
 
     /**
      * Upload a track to YouTube.
-     *
-     * @param \Illuminate\Http\Request $request
-     * @param \App\Models\Track $track
-     * @return \Illuminate\Http\Response
      */
-    public function uploadToYoutube(Request $request, Track $track)
+    public function uploadToYoutube(Request $request, Track $track): RedirectResponse
     {
-        $request->validate([
-            'title' => 'required|string|max:100',
-            'description' => 'nullable|string',
-            'privacy_status' => 'required|in:public,unlisted,private',
-            'is_short' => 'nullable|boolean',
-        ]);
-
         try {
-            // Check if track is completed and has an MP4 file
-            if ($track->status !== 'completed' || empty($track->mp4_path)) {
-                return back()->with('error', 'Track must be completed and have a video file to upload to YouTube.');
-            }
-            
-            // Use SimpleYouTubeUploader for direct and simple upload
-            $uploader = app(\App\Services\SimpleYouTubeUploader::class);
-            
-            if (!$uploader->isAuthenticated()) {
+            if (!$this->youtubeUploader->isAuthenticated()) {
                 return redirect()->route('youtube.auth.redirect')
                     ->with('warning', 'YouTube authentication required. Please authenticate first.');
             }
+
+            if ($track->status !== 'completed') {
+                return back()->with('error', 'Track must be completed before uploading to YouTube.');
+            }
+
+            if ($track->youtube_video_id) {
+                return back()->with('info', 'Track is already uploaded to YouTube.');
+            }
+
+            // Upload to YouTube
+            $videoId = $this->youtubeUploader->uploadTrack($track);
             
-            // Determine if it should be uploaded as a Short
-            $isShort = (bool)$request->input('is_short', false);
-            
-            // Directly upload the track
-            $videoId = $uploader->uploadTrack(
-                $track,
-                $request->title,
-                $request->description,
-                $request->privacy_status,
-                true, // Add to playlists
-                $isShort // Upload as Short if requested
-            );
-            
-            $message = $isShort 
-                ? 'Track uploaded successfully to YouTube Shorts!' 
-                : 'Track uploaded successfully to YouTube!';
+            if ($videoId) {
+                $track->update([
+                    'youtube_video_id' => $videoId,
+                    'youtube_uploaded_at' => now(),
+                ]);
                 
-            return back()->with('success', $message . ' Video ID: ' . $videoId);
+                return back()->with('success', "Track '{$track->title}' uploaded to YouTube successfully!");
+            }
+            
+            return back()->with('error', 'Failed to upload track to YouTube.');
         } catch (\Exception $e) {
-            \Log::error('YouTube upload failed', [
+            Log::error('Failed to upload track to YouTube', [
                 'track_id' => $track->id,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
             ]);
             
             return back()->with('error', 'Failed to upload track to YouTube: ' . $e->getMessage());
@@ -292,154 +312,92 @@ class TrackController extends Controller
     }
 
     /**
-     * Upload all completed tracks to YouTube.
+     * Toggle YouTube status for a track.
      */
-    public function uploadAllToYoutube(Request $request)
+    public function toggleYoutubeStatus(Request $request, Track $track): JsonResponse
     {
-        // Get all completed tracks that have an MP4 file and haven't been uploaded to YouTube yet
-        $tracks = Track::where('status', 'completed')
-            ->whereNotNull('mp4_path')
-            ->where(function($query) {
-                $query->whereNull('youtube_video_id')
-                    ->orWhere('youtube_video_id', '');
-            })
-            ->get();
-        
-        $count = $tracks->count();
-        
-        if ($count === 0) {
-            return redirect()->route('tracks.index')
-                ->with('info', 'No eligible tracks found for YouTube upload.');
-        }
-        
-        // Use the privacy status from the form or default to 'public'
-        $privacyStatus = $request->input('privacy_status', 'public');
-        $isShort = (bool)$request->input('is_short', false);
-        
-        // Get uploader service
-        $uploader = app(\App\Services\SimpleYouTubeUploader::class);
-        
-        if (!$uploader->isAuthenticated()) {
-            return redirect()->route('youtube.auth.redirect')
-                ->with('warning', 'YouTube authentication required. Please authenticate first.');
-        }
-        
-        $successCount = 0;
-        $failedTracks = [];
-        
-        // Process each track
-        foreach ($tracks as $track) {
-            try {
-                // Use simple uploader to directly upload the track
-                $videoId = $uploader->uploadTrack(
-                    $track,
-                    null, // Default title
-                    null, // Default description (just track title)
-                    $privacyStatus,
-                    true, // Add to playlists
-                    $isShort // Upload as Short if requested
-                );
-                
-                if ($videoId) {
-                    $successCount++;
-                }
-                
-                // Small delay to avoid rate limits
-                usleep(500000); // 0.5 second delay
-            } catch (\Exception $e) {
-                \Log::error('YouTube bulk upload failed for track', [
-                    'track_id' => $track->id,
-                    'error' => $e->getMessage()
-                ]);
-                $failedTracks[] = $track->id;
-            }
-        }
-        
-        $videoType = $isShort ? 'YouTube Shorts' : 'YouTube videos';
-        
-        if (count($failedTracks) > 0) {
-            $message = "{$successCount} of {$count} tracks uploaded successfully as {$videoType}. Failed tracks: " . implode(', ', $failedTracks);
-            return redirect()->route('tracks.index')->with('warning', $message);
-        } else {
-            return redirect()->route('tracks.index')
-                ->with('success', "All {$count} tracks have been uploaded as {$videoType} successfully.");
-        }
-    }
-    
-    /**
-     * Manually toggle YouTube upload status for a track
-     * 
-     * @param Request $request
-     * @param Track $track
-     * @return \Illuminate\Http\Response
-     */
-    public function toggleYoutubeStatus(Request $request, Track $track)
-    {
-        $request->validate([
-            'youtube_video_id' => 'nullable|string|max:100',
-            'youtube_playlist_id' => 'nullable|string|max:100',
-        ]);
-        
-        $message = '';
-        
-        if ($track->youtube_video_id) {
-            // If marked as uploaded, unmark it
-            $track->update([
-                'youtube_video_id' => null,
-                'youtube_playlist_id' => null,
-                'youtube_uploaded_at' => null
-            ]);
+        try {
+            $track->toggleYoutubeEnabled();
             
-            $message = 'Track has been marked as not uploaded to YouTube.';
-        } else {
-            // Mark as uploaded manually
-            $track->update([
-                'youtube_video_id' => $request->youtube_video_id ?? 'manual_' . time(),
-                'youtube_playlist_id' => $request->youtube_playlist_id,
-                'youtube_uploaded_at' => now()
-            ]);
-            
-            $message = 'Track has been marked as uploaded to YouTube.';
-        }
-        
-        // For AJAX requests, return JSON response
-        if ($request->expectsJson() || $request->ajax()) {
             return response()->json([
                 'success' => true,
-                'message' => $message,
-                'youtube_uploaded' => (bool)$track->youtube_video_id,
-                'youtube_url' => $track->youtube_url,
-                'youtube_video_id' => $track->youtube_video_id,
-                'youtube_playlist_id' => $track->youtube_playlist_id
+                'youtube_enabled' => $track->youtube_enabled,
+                'message' => $track->youtube_enabled 
+                    ? 'Track enabled for YouTube upload' 
+                    : 'Track disabled for YouTube upload'
             ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to toggle YouTube status', [
+                'track_id' => $track->id,
+                'error' => $e->getMessage(),
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update YouTube status',
+            ], 500);
         }
-        
-        // For regular requests, redirect back with message
-        return back()->with('success', $message);
     }
 
     /**
-     * Find a random track and redirect to its YouTube upload form.
-     * 
-     * This method selects a random completed track with MP4 file that hasn't been uploaded to YouTube yet
-     * and redirects to the track page with a trigger to open the YouTube upload modal.
+     * Upload a random track to YouTube.
      */
-    public function randomYoutubeUpload()
+    public function randomYoutubeUpload(): RedirectResponse
     {
-        // Get a random track that is completed, has mp4 file, and hasn't been uploaded to YouTube yet
-        $track = Track::where('status', 'completed')
-            ->whereNotNull('mp4_path')
-            ->whereNull('youtube_video_id')
-            ->inRandomOrder()
-            ->first();
-        
-        if (!$track) {
-            return redirect()->route('tracks.index')
-                ->with('info', 'No eligible tracks found for YouTube upload. All tracks may already be uploaded or not processed yet.');
+        try {
+            if (!$this->youtubeUploader->isAuthenticated()) {
+                return redirect()->route('youtube.auth.redirect')
+                    ->with('warning', 'YouTube authentication required. Please authenticate first.');
+            }
+
+            // Find a random completed track that hasn't been uploaded to YouTube
+            $track = Track::completed()
+                ->notUploadedToYoutube()
+                ->where('youtube_enabled', true)
+                ->inRandomOrder()
+                ->first();
+
+            if (!$track) {
+                return back()->with('info', 'No eligible tracks found for YouTube upload.');
+            }
+
+            // Upload to YouTube
+            $videoId = $this->youtubeUploader->uploadTrack($track);
+            
+            if ($videoId) {
+                $track->update([
+                    'youtube_video_id' => $videoId,
+                    'youtube_uploaded_at' => now(),
+                ]);
+                
+                return back()->with('success', "Random track '{$track->title}' uploaded to YouTube successfully!");
+            }
+            
+            return back()->with('error', 'Failed to upload random track to YouTube.');
+        } catch (\Exception $e) {
+            Log::error('Failed to upload random track to YouTube', [
+                'error' => $e->getMessage(),
+            ]);
+            
+            return back()->with('error', 'Failed to upload random track to YouTube: ' . $e->getMessage());
         }
-        
-        // Redirect to the track page with a flag to open the YouTube upload modal
-        return redirect()->route('tracks.show', $track)
-            ->with('open_youtube_modal', true);
+    }
+
+    /**
+     * Delete track files from storage.
+     */
+    private function deleteTrackFiles(Track $track): void
+    {
+        $files = array_filter([
+            $track->mp3_path,
+            $track->image_path,
+            $track->mp4_path,
+        ]);
+
+        foreach ($files as $file) {
+            if (Storage::disk('public')->exists($file)) {
+                Storage::disk('public')->delete($file);
+            }
+        }
     }
 }

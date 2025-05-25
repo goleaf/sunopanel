@@ -1,14 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Jobs\ProcessTrack;
 use App\Models\Track;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
-class HomeController extends Controller
+final class HomeController extends Controller
 {
     /**
      * Show the add tracks form.
@@ -21,7 +24,7 @@ class HomeController extends Controller
     /**
      * Process the submitted tracks.
      */
-    public function process(Request $request)
+    public function process(Request $request): RedirectResponse
     {
         $request->validate([
             'tracks_input' => 'required|string|min:10',
@@ -40,40 +43,14 @@ class HomeController extends Controller
             }
             
             try {
-                // Parse the line
-                $parts = explode('|', $line);
-                
-                if (count($parts) < 3) {
-                    Log::warning("Invalid track format: {$line}");
-                    continue;
+                $track = $this->parseAndCreateTrack($line);
+                if ($track) {
+                    // Dispatch the processing job
+                    ProcessTrack::dispatch($track);
+                    $createdTracks[] = $track;
+                    
+                    Log::info("Track queued for processing: {$track->title}");
                 }
-                
-                $fileName = trim($parts[0]);
-                $mp3Url = trim($parts[1]);
-                $imageUrl = trim($parts[2]);
-                $genresString = isset($parts[3]) ? trim($parts[3]) : '';
-                
-                // Clean up title (remove .mp3 extension)
-                $title = str_replace('.mp3', '', $fileName);
-                
-                // Create/update the track
-                $track = Track::updateOrCreate(
-                    ['title' => $title],
-                    [
-                        'mp3_url' => $mp3Url,
-                        'image_url' => $imageUrl,
-                        'genres_string' => $genresString,
-                        'status' => 'pending',
-                        'progress' => 0,
-                    ]
-                );
-                
-                // Dispatch the processing job
-                ProcessTrack::dispatch($track);
-                
-                $createdTracks[] = $track;
-                
-                Log::info("Track queued for processing: {$track->title}");
             } catch (\Exception $e) {
                 Log::error("Failed to process track: {$e->getMessage()}", [
                     'line' => $line,
@@ -91,7 +68,7 @@ class HomeController extends Controller
     /**
      * Process the submitted tracks immediately and check for failures.
      */
-    public function processImmediate(Request $request)
+    public function processImmediate(Request $request): RedirectResponse
     {
         $request->validate([
             'tracks_input' => 'required|string|min:10',
@@ -111,54 +88,29 @@ class HomeController extends Controller
             }
             
             try {
-                // Parse the line
-                $parts = explode('|', $line);
-                
-                if (count($parts) < 3) {
-                    Log::warning("Invalid track format: {$line}");
-                    continue;
-                }
-                
-                $fileName = trim($parts[0]);
-                $mp3Url = trim($parts[1]);
-                $imageUrl = trim($parts[2]);
-                $genresString = isset($parts[3]) ? trim($parts[3]) : '';
-                
-                // Clean up title (remove .mp3 extension)
-                $title = str_replace('.mp3', '', $fileName);
-                
-                // Create/update the track
-                $track = Track::updateOrCreate(
-                    ['title' => $title],
-                    [
-                        'mp3_url' => $mp3Url,
-                        'image_url' => $imageUrl,
-                        'genres_string' => $genresString,
-                        'status' => 'pending',
-                        'progress' => 0,
-                    ]
-                );
-                
-                $createdTracks[] = $track;
-                
-                Log::info("Starting immediate processing: {$track->title}");
-                
-                // Process the track immediately instead of dispatching
-                try {
-                    $job = new ProcessTrack($track);
-                    $job->handle();
-                    Log::info("Immediate processing completed: {$track->title}");
-                } catch (\Exception $e) {
-                    Log::error("Failed to process track immediately: {$e->getMessage()}", [
-                        'track_id' => $track->id,
-                        'title' => $track->title,
-                        'error' => $e->getMessage(),
-                    ]);
+                $track = $this->parseAndCreateTrack($line);
+                if ($track) {
+                    $createdTracks[] = $track;
                     
-                    $failedTracks[] = [
-                        'track' => $track,
-                        'error' => $e->getMessage()
-                    ];
+                    Log::info("Starting immediate processing: {$track->title}");
+                    
+                    // Process the track immediately instead of dispatching
+                    try {
+                        $job = new ProcessTrack($track);
+                        $job->handle();
+                        Log::info("Immediate processing completed: {$track->title}");
+                    } catch (\Exception $e) {
+                        Log::error("Failed to process track immediately: {$e->getMessage()}", [
+                            'track_id' => $track->id,
+                            'title' => $track->title,
+                            'error' => $e->getMessage(),
+                        ]);
+                        
+                        $failedTracks[] = [
+                            'track' => $track,
+                            'error' => $e->getMessage()
+                        ];
+                    }
                 }
             } catch (\Exception $e) {
                 Log::error("Failed to create track: {$e->getMessage()}", [
@@ -180,5 +132,39 @@ class HomeController extends Controller
         
         return redirect()->route('genres.index')
             ->with('success', "All {$successCount} tracks were processed successfully!");
+    }
+
+    /**
+     * Parse a track line and create a Track model.
+     */
+    private function parseAndCreateTrack(string $line): ?Track
+    {
+        // Parse the line
+        $parts = explode('|', $line);
+        
+        if (count($parts) < 3) {
+            Log::warning("Invalid track format: {$line}");
+            return null;
+        }
+        
+        $fileName = trim($parts[0]);
+        $mp3Url = trim($parts[1]);
+        $imageUrl = trim($parts[2]);
+        $genresString = isset($parts[3]) ? trim($parts[3]) : '';
+        
+        // Clean up title (remove .mp3 extension)
+        $title = str_replace('.mp3', '', $fileName);
+        
+        // Create/update the track
+        return Track::updateOrCreate(
+            ['title' => $title],
+            [
+                'mp3_url' => $mp3Url,
+                'image_url' => $imageUrl,
+                'genres_string' => $genresString,
+                'status' => 'pending',
+                'progress' => 0,
+            ]
+        );
     }
 }

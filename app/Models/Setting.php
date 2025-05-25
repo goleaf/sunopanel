@@ -111,7 +111,7 @@ final class Setting extends Model
      */
     public static function clearCache(): void
     {
-        $settings = self::all();
+        $settings = self::query()->get();
         foreach ($settings as $setting) {
             Cache::forget(self::CACHE_PREFIX . $setting->key);
         }
@@ -137,7 +137,7 @@ final class Setting extends Model
     /**
      * Get all settings as key-value pairs
      */
-    public static function all(): array
+    public static function getAllSettings(): array
     {
         return Cache::remember('all_settings', 3600, function () {
             $settings = static::query()->get();

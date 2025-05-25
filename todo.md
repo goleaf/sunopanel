@@ -15,6 +15,11 @@
 
 ## 🔥 Critical Priority Tasks
 
+### 0. Fix Setting Model Method Conflict (URGENT)
+- [ ] Fix Setting::all() method conflict with Laravel's Model::all() method
+- [ ] Rename custom all() method to avoid signature incompatibility
+- [ ] Test the fix to ensure settings functionality works properly
+
 ### 1. Remove User System & Authentication (Per Requirements)
 - [ ] Remove User model and related files
 - [ ] Remove authentication middleware and routes

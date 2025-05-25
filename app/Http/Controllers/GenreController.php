@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Models\Genre;
@@ -9,8 +11,9 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Log;
 
-class GenreController extends Controller
+final class GenreController extends Controller
 {
     /**
      * Display a listing of the genres.
@@ -79,18 +82,29 @@ class GenreController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
+        $request->validate([
             'name' => 'required|string|max:255|unique:genres',
-            'genre_id' => 'nullable|string|max:36',
+            'genre_id' => 'nullable|string|max:255',
         ]);
 
-        Genre::create([
-            'name' => $validated['name'],
-            'slug' => Str::slug($validated['name']),
-            'genre_id' => $validated['genre_id'] ?? null,
-        ]);
+        try {
+            Genre::create([
+                'name' => $request->input('name'),
+                'genre_id' => $request->input('genre_id'),
+            ]);
 
-        return redirect()->route('genres.index')->with('success', 'Genre created successfully');
+            return redirect()->route('genres.index')
+                ->with('success', 'Genre created successfully.');
+        } catch (\Exception $e) {
+            Log::error('Failed to create genre', [
+                'name' => $request->input('name'),
+                'error' => $e->getMessage(),
+            ]);
+
+            return back()
+                ->withInput()
+                ->with('error', 'Failed to create genre. Please try again.');
+        }
     }
 
     /**
@@ -129,18 +143,30 @@ class GenreController extends Controller
      */
     public function update(Request $request, Genre $genre): RedirectResponse
     {
-        $validated = $request->validate([
+        $request->validate([
             'name' => 'required|string|max:255|unique:genres,name,' . $genre->id,
-            'genre_id' => 'nullable|string|max:36',
+            'genre_id' => 'nullable|string|max:255',
         ]);
 
-        $genre->update([
-            'name' => $validated['name'],
-            'slug' => Str::slug($validated['name']),
-            'genre_id' => $validated['genre_id'] ?? null,
-        ]);
+        try {
+            $genre->update([
+                'name' => $request->input('name'),
+                'genre_id' => $request->input('genre_id'),
+            ]);
 
-        return redirect()->route('genres.index')->with('success', 'Genre updated successfully');
+            return redirect()->route('genres.index')
+                ->with('success', 'Genre updated successfully.');
+        } catch (\Exception $e) {
+            Log::error('Failed to update genre', [
+                'genre_id' => $genre->id,
+                'name' => $request->input('name'),
+                'error' => $e->getMessage(),
+            ]);
+
+            return back()
+                ->withInput()
+                ->with('error', 'Failed to update genre. Please try again.');
+        }
     }
 
     /**
@@ -148,8 +174,24 @@ class GenreController extends Controller
      */
     public function destroy(Genre $genre): RedirectResponse
     {
-        $genre->delete();
+        try {
+            // Check if genre has tracks
+            if ($genre->tracks()->count() > 0) {
+                return back()->with('error', 'Cannot delete genre that has associated tracks.');
+            }
 
-        return redirect()->route('genres.index')->with('success', 'Genre deleted successfully');
+            $genreName = $genre->name;
+            $genre->delete();
+
+            return redirect()->route('genres.index')
+                ->with('success', "Genre '{$genreName}' deleted successfully.");
+        } catch (\Exception $e) {
+            Log::error('Failed to delete genre', [
+                'genre_id' => $genre->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return back()->with('error', 'Failed to delete genre. Please try again.');
+        }
     }
 }
