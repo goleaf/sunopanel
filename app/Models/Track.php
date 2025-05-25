@@ -37,6 +37,19 @@ final class Track extends Model
         'youtube_views',
         'youtube_stats_updated_at',
         'youtube_enabled',
+        // YouTube Analytics Fields
+        'youtube_view_count',
+        'youtube_like_count',
+        'youtube_dislike_count',
+        'youtube_comment_count',
+        'youtube_favorite_count',
+        'youtube_duration',
+        'youtube_definition',
+        'youtube_caption',
+        'youtube_licensed_content',
+        'youtube_privacy_status',
+        'youtube_published_at',
+        'youtube_analytics_updated_at',
     ];
 
     /**

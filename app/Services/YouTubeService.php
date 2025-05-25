@@ -379,6 +379,81 @@ class YouTubeService
         // For OAuth, ensure we have a valid token
         return $this->ensureValidToken();
     }
+
+    /**
+     * Check if the YouTube account is in good standing and can upload videos
+     *
+     * @return array Status information with 'can_upload' boolean and 'reason' if not
+     */
+    public function checkAccountStatus(): array
+    {
+        if (!$this->isAuthenticated()) {
+            return [
+                'can_upload' => false,
+                'reason' => 'Not authenticated',
+                'error_type' => 'authentication'
+            ];
+        }
+
+        try {
+            // Try to get channel info to check if account is suspended
+            $channels = $this->youtube->channels->listChannels('snippet,status', [
+                'mine' => true,
+            ]);
+
+            if (empty($channels->getItems())) {
+                return [
+                    'can_upload' => false,
+                    'reason' => 'No YouTube channel found for this account',
+                    'error_type' => 'no_channel'
+                ];
+            }
+
+            $channel = $channels->getItems()[0];
+            $status = $channel->getStatus();
+
+            if ($status && !$status->getIsLinked()) {
+                return [
+                    'can_upload' => false,
+                    'reason' => 'YouTube channel is not linked properly',
+                    'error_type' => 'not_linked'
+                ];
+            }
+
+            return [
+                'can_upload' => true,
+                'reason' => 'Account is in good standing',
+                'channel_title' => $channel->getSnippet()->getTitle(),
+                'channel_id' => $channel->getId()
+            ];
+
+        } catch (\Exception $e) {
+            $errorMessage = $e->getMessage();
+            
+            if (str_contains($errorMessage, 'suspended') || str_contains($errorMessage, 'authenticatedUserAccountSuspended')) {
+                return [
+                    'can_upload' => false,
+                    'reason' => 'YouTube account is suspended',
+                    'error_type' => 'account_suspended',
+                    'original_error' => $errorMessage
+                ];
+            } elseif (str_contains($errorMessage, '403') || str_contains($errorMessage, 'forbidden')) {
+                return [
+                    'can_upload' => false,
+                    'reason' => 'Access forbidden - insufficient permissions',
+                    'error_type' => 'permission_denied',
+                    'original_error' => $errorMessage
+                ];
+            } else {
+                return [
+                    'can_upload' => false,
+                    'reason' => 'Unknown error checking account status: ' . $errorMessage,
+                    'error_type' => 'unknown',
+                    'original_error' => $errorMessage
+                ];
+            }
+        }
+    }
     
     /**
      * Upload a video to YouTube
@@ -414,6 +489,28 @@ class YouTubeService
             ]);
             throw YouTubeException::authentication('YouTube API not authenticated. Please authenticate first.');
         }
+
+        // Check account status before attempting upload
+        $accountStatus = $this->checkAccountStatus();
+        if (!$accountStatus['can_upload']) {
+            Log::error('YouTube account cannot upload videos', $accountStatus);
+            
+            switch ($accountStatus['error_type']) {
+                case 'account_suspended':
+                    throw YouTubeException::permissionDenied($accountStatus['reason'], $accountStatus);
+                case 'permission_denied':
+                    throw YouTubeException::permissionDenied($accountStatus['reason'], $accountStatus);
+                case 'no_channel':
+                    throw YouTubeException::authentication($accountStatus['reason'], $accountStatus);
+                default:
+                    throw YouTubeException::upload($accountStatus['reason'], $accountStatus);
+            }
+        }
+
+        Log::info('YouTube account status check passed', [
+            'channel_title' => $accountStatus['channel_title'] ?? 'Unknown',
+            'channel_id' => $accountStatus['channel_id'] ?? 'Unknown'
+        ]);
         
         if (!file_exists($videoPath)) {
             Log::error("Video file not found: {$videoPath}");
@@ -507,7 +604,17 @@ class YouTubeService
                     
                     // Determine error type based on exception message
                     $errorMessage = $e->getMessage();
-                    if (str_contains($errorMessage, 'quota') || str_contains($errorMessage, 'limit')) {
+                    
+                    // Check for specific YouTube API errors
+                    if (str_contains($errorMessage, 'suspended') || str_contains($errorMessage, 'authenticatedUserAccountSuspended')) {
+                        throw YouTubeException::permissionDenied("YouTube account is suspended. Please check your account status and try again with a different account.", [
+                            'chunk_number' => $chunkNumber,
+                            'uploaded_bytes' => $uploadedBytes,
+                            'total_bytes' => $fileSize,
+                            'original_error' => $errorMessage,
+                            'error_type' => 'account_suspended'
+                        ]);
+                    } elseif (str_contains($errorMessage, 'quota') || str_contains($errorMessage, 'limit')) {
                         throw YouTubeException::apiQuota("Upload quota exceeded during chunk upload", [
                             'chunk_number' => $chunkNumber,
                             'uploaded_bytes' => $uploadedBytes,
@@ -518,6 +625,13 @@ class YouTubeService
                         throw YouTubeException::network("Network error during chunk upload", [
                             'chunk_number' => $chunkNumber,
                             'uploaded_bytes' => $uploadedBytes,
+                            'original_error' => $errorMessage
+                        ]);
+                    } elseif (str_contains($errorMessage, '403') || str_contains($errorMessage, 'forbidden')) {
+                        throw YouTubeException::permissionDenied("Access forbidden. Please check your YouTube account permissions.", [
+                            'chunk_number' => $chunkNumber,
+                            'uploaded_bytes' => $uploadedBytes,
+                            'total_bytes' => $fileSize,
                             'original_error' => $errorMessage
                         ]);
                     } else {
