@@ -157,3 +157,23 @@ Route::get('/youtube-auth', [\App\Http\Controllers\YouTubeAuthController::class,
 Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
 Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
 Route::post('/settings/reset', [SettingsController::class, 'reset'])->name('settings.reset');
+
+// Queue Management routes
+Route::prefix('queue')->name('queue.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\QueueController::class, 'index'])->name('index');
+    Route::get('/statistics', [\App\Http\Controllers\QueueController::class, 'statistics'])->name('statistics');
+    Route::get('/health', [\App\Http\Controllers\QueueController::class, 'health'])->name('health');
+    Route::get('/batches', [\App\Http\Controllers\QueueController::class, 'batches'])->name('batches');
+    
+    // Batch management
+    Route::post('/batches/{batchId}/cancel', [\App\Http\Controllers\QueueController::class, 'cancelBatch'])->name('batches.cancel');
+    Route::post('/batches/{batchId}/retry', [\App\Http\Controllers\QueueController::class, 'retryBatch'])->name('batches.retry');
+    
+    // Failed jobs management
+    Route::post('/failed-jobs/clear', [\App\Http\Controllers\QueueController::class, 'clearFailedJobs'])->name('failed-jobs.clear');
+    Route::post('/failed-jobs/retry', [\App\Http\Controllers\QueueController::class, 'retryFailedJobs'])->name('failed-jobs.retry');
+    
+    // Queue control
+    Route::post('/pause/{queueName}', [\App\Http\Controllers\QueueController::class, 'pauseQueue'])->name('pause');
+    Route::post('/resume/{queueName}', [\App\Http\Controllers\QueueController::class, 'resumeQueue'])->name('resume');
+});
