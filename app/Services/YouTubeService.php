@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\YouTubeCredential;
+use App\Models\YouTubeAccount;
 use Exception;
 use Google_Client;
 use Google_Service_YouTube;
@@ -47,17 +48,44 @@ class YouTubeService
     public function __construct()
     {
         try {
-            $this->credential = YouTubeCredential::getLatest();
+            // Initialize client first to ensure it's always available
+            $this->client = $this->getClient();
+            
+            // Try to load the active account
+            $activeAccount = \App\Models\YouTubeAccount::getActive();
+            
+            if ($activeAccount) {
+                // Set the active account
+                $this->setAccount($activeAccount);
+            } else {
+                // For backward compatibility, try legacy credentials
+                try {
+                    $this->credential = YouTubeCredential::getLatest();
+                    // Re-initialize client with credentials
+                    $this->client = $this->getClient();
+                } catch (\Exception $e) {
+                    // Table might not exist yet
+                    $this->credential = null;
+                    \Log::warning('YouTube credentials table does not exist or has an error: ' . $e->getMessage());
+                }
+            }
+            
+            // Initialize YouTube service if we have a valid token
+            if ($this->client && $this->client->getAccessToken() && !$this->client->isAccessTokenExpired()) {
+                $this->youtube = new Google_Service_YouTube($this->client);
+            }
         } catch (\Exception $e) {
-            // Table might not exist yet
-            $this->credential = null;
-            \Log::warning('YouTube credentials table does not exist or has an error: ' . $e->getMessage());
-        }
-        
-        $this->client = $this->getClient();
-        
-        if ($this->client->getAccessToken()) {
-            $this->youtube = new Google_Service_YouTube($this->client);
+            \Log::error('Error initializing YouTube service: ' . $e->getMessage());
+            // Ensure we always have a client, even if there's an error
+            if (!$this->client) {
+                try {
+                    $this->client = new \Google_Client();
+                    $this->client->setApplicationName('SunoPanel YouTube Uploader');
+                    $this->client->setRedirectUri(url('/youtube-auth'));
+                } catch (\Exception $clientError) {
+                    \Log::error('Failed to create fallback Google Client: ' . $clientError->getMessage());
+                }
+            }
         }
     }
 
@@ -83,31 +111,56 @@ class YouTubeService
      */
     protected function getClient(): Google_Client
     {
-        $client = new Google_Client();
-        $client->setApplicationName('SunoPanel YouTube Uploader');
-        $client->setScopes([
-            'https://www.googleapis.com/auth/youtube.upload',
-            'https://www.googleapis.com/auth/youtube',
-        ]);
-        
-        // Use API key if provided
-        if ($this->apiKey) {
-            $client->setDeveloperKey($this->apiKey);
-            return $client;
-        }
-        
-        if (!$this->credential) {
-            Log::warning('No YouTube credentials found in database');
-            return $client;
-        }
-        
-        // Set OAuth credentials
-        $client->setClientId($this->credential->client_id);
-        $client->setClientSecret($this->credential->client_secret);
-        $client->setRedirectUri($this->credential->redirect_uri);
-        $client->setAccessType('offline');
-        $client->setPrompt('consent'); // Force to ask for consent to get refresh token
-        $client->setIncludeGrantedScopes(true);
+        try {
+            $client = new Google_Client();
+            $client->setApplicationName('SunoPanel YouTube Uploader');
+            $client->setScopes([
+                'https://www.googleapis.com/auth/youtube.upload',
+                'https://www.googleapis.com/auth/youtube',
+            ]);
+            
+            // Use API key if provided
+            if ($this->apiKey) {
+                $client->setDeveloperKey($this->apiKey);
+                return $client;
+            }
+            
+            // Try to get credentials from database
+            if (!$this->credential) {
+                try {
+                    $this->credential = YouTubeCredential::getLatest();
+                } catch (\Exception $e) {
+                    Log::warning('Failed to load YouTube credentials: ' . $e->getMessage());
+                }
+            }
+            
+            if (!$this->credential) {
+                Log::warning('No YouTube credentials found in database');
+                // Set a default redirect URI to prevent the error
+                $client->setRedirectUri(url('/youtube-auth'));
+                return $client;
+            }
+            
+            // Validate that we have the required OAuth credentials
+            if (!$this->credential->hasValidAuthData()) {
+                Log::error('YouTube credentials are incomplete', [
+                    'has_client_id' => !empty($this->credential->client_id),
+                    'has_client_secret' => !empty($this->credential->client_secret),
+                    'has_redirect_uri' => !empty($this->credential->redirect_uri),
+                    'use_oauth' => $this->credential->use_oauth,
+                ]);
+                // Set a default redirect URI to prevent the error
+                $client->setRedirectUri(url('/youtube-auth'));
+                return $client;
+            }
+            
+            // Set OAuth credentials
+            $client->setClientId($this->credential->client_id);
+            $client->setClientSecret($this->credential->client_secret);
+            $client->setRedirectUri($this->credential->redirect_uri);
+            $client->setAccessType('offline');
+            $client->setPrompt('consent'); // Force to ask for consent to get refresh token
+            $client->setIncludeGrantedScopes(true);
         
         // Check for stored access token
         if ($this->credential->access_token) {
@@ -140,6 +193,14 @@ class YouTubeService
         }
         
         return $client;
+        } catch (\Exception $e) {
+            Log::error('Error creating Google Client: ' . $e->getMessage());
+            // Return a basic client as fallback
+            $client = new Google_Client();
+            $client->setApplicationName('SunoPanel YouTube Uploader');
+            $client->setRedirectUri(url('/youtube-auth'));
+            return $client;
+        }
     }
     
     /**
@@ -202,6 +263,11 @@ class YouTubeService
      */
     public function getAuthUrl(): string
     {
+        // Ensure we have a redirect URI set
+        if (!$this->client->getRedirectUri()) {
+            $this->client->setRedirectUri(url('/youtube-auth'));
+        }
+        
         return $this->client->createAuthUrl();
     }
     
@@ -218,11 +284,27 @@ class YouTubeService
             $this->client->setAccessToken($accessToken);
             $this->saveAccessToken($accessToken);
             $this->youtube = new Google_Service_YouTube($this->client);
-            
             return $accessToken;
         } catch (Exception $e) {
-            Log::error('Failed to fetch access token: ' . $e->getMessage());
+            Log::error('Error fetching YouTube access token: ' . $e->getMessage());
             throw $e;
+        }
+    }
+    
+    /**
+     * Handle the authorization callback and save the token
+     *
+     * @param string $code The authorization code from callback
+     * @return bool Whether authentication was successful
+     */
+    public function handleAuthCallback(string $code): bool
+    {
+        try {
+            $this->fetchAccessTokenWithAuthCode($code);
+            return true;
+        } catch (Exception $e) {
+            Log::error('Failed to handle YouTube auth callback: ' . $e->getMessage());
+            return false;
         }
     }
     
@@ -640,6 +722,170 @@ class YouTubeService
             return $statistics;
         } catch (\Exception $e) {
             \Log::error('YouTube API error: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Set the current YouTube account
+     *
+     * @param YouTubeAccount $account
+     * @return bool
+     */
+    public function setAccount(YouTubeAccount $account): bool
+    {
+        try {
+            // Check if the account has access tokens
+            if (empty($account->access_token)) {
+                Log::error('Account has no access token', ['account_id' => $account->id]);
+                return false;
+            }
+            
+            Log::info('Setting YouTube account', [
+                'account_id' => $account->id,
+                'name' => $account->name,
+                'has_token' => !empty($account->access_token),
+                'is_active' => $account->is_active,
+            ]);
+            
+            // Ensure client is initialized
+            if (!$this->client) {
+                $this->client = $this->getClient();
+            }
+            
+            // Set the access token on the client
+            $accessToken = [
+                'access_token' => $account->access_token,
+                'refresh_token' => $account->refresh_token,
+                'expires_in' => $account->token_expires_at ? $account->token_expires_at->diffInSeconds(now()) : 0,
+            ];
+            
+            $this->client->setAccessToken($accessToken);
+            
+            // If token is expired and we have a refresh token, refresh it
+            if ($this->client->isAccessTokenExpired() && !empty($account->refresh_token)) {
+                Log::info('Refreshing expired token for account', ['account_id' => $account->id]);
+                $this->client->fetchAccessTokenWithRefreshToken($account->refresh_token);
+                
+                // Update the account with the new token
+                $newAccessToken = $this->client->getAccessToken();
+                $account->access_token = $newAccessToken['access_token'];
+                $account->token_expires_at = now()->addSeconds($newAccessToken['expires_in']);
+                $account->save();
+            }
+            
+            // Initialize YouTube service with the current client
+            $this->youtube = new Google_Service_YouTube($this->client);
+            
+            // Mark this account as active
+            Log::info('Marking account as active', ['account_id' => $account->id]);
+            $account->markAsActive();
+            
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Failed to set YouTube account', [
+                'account_id' => $account->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * Get the currently active account
+     *
+     * @return \App\Models\YouTubeAccount|null
+     */
+    public function getActiveAccount(): ?\App\Models\YouTubeAccount
+    {
+        return \App\Models\YouTubeAccount::getActive();
+    }
+
+    /**
+     * Handle the authorization callback and save as a new account
+     *
+     * @param string $code The authorization code from callback
+     * @param string $accountName Optional name for the account
+     * @return \App\Models\YouTubeAccount|null
+     */
+    public function handleAuthCallbackAndSaveAccount(string $code, ?string $accountName = null): ?\App\Models\YouTubeAccount
+    {
+        try {
+            // Get the access token
+            $accessToken = $this->fetchAccessTokenWithAuthCode($code);
+            
+            if (!$accessToken) {
+                return null;
+            }
+            
+            // Set up the YouTube service with this token
+            $this->client->setAccessToken($accessToken);
+            $this->youtube = new Google_Service_YouTube($this->client);
+            
+            // Get channel info
+            $channelInfo = $this->getChannelInfo();
+            
+            // Create or update account
+            $account = new \App\Models\YouTubeAccount();
+            $account->name = $accountName ?: ($channelInfo['title'] ?? 'YouTube Account');
+            $account->email = $channelInfo['email'] ?? null;
+            $account->channel_id = $channelInfo['id'] ?? null;
+            $account->channel_name = $channelInfo['title'] ?? null;
+            $account->access_token = $accessToken['access_token'];
+            $account->refresh_token = $accessToken['refresh_token'] ?? null;
+            $account->token_expires_at = now()->addSeconds($accessToken['expires_in'] ?? 3600);
+            $account->account_info = $channelInfo;
+            $account->save();
+            
+            // Mark this account as active
+            $account->markAsActive();
+            
+            return $account;
+        } catch (\Exception $e) {
+            Log::error('Failed to create YouTube account from auth callback', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return null;
+        }
+    }
+
+    /**
+     * Get channel information for the authenticated user
+     * 
+     * @return array
+     */
+    public function getChannelInfo(): array
+    {
+        try {
+            $channelResponse = $this->youtube->channels->listChannels('snippet,contentDetails,statistics', [
+                'mine' => true
+            ]);
+            
+            if (empty($channelResponse->getItems())) {
+                return [];
+            }
+            
+            $channel = $channelResponse->getItems()[0];
+            $snippet = $channel->getSnippet();
+            $statistics = $channel->getStatistics();
+            
+            return [
+                'id' => $channel->getId(),
+                'title' => $snippet->getTitle(),
+                'description' => $snippet->getDescription(),
+                'thumbnails' => $snippet->getThumbnails(),
+                'publishedAt' => $snippet->getPublishedAt(),
+                'country' => $snippet->getCountry(),
+                'viewCount' => $statistics ? $statistics->getViewCount() : 0,
+                'subscriberCount' => $statistics ? $statistics->getSubscriberCount() : 0,
+                'videoCount' => $statistics ? $statistics->getVideoCount() : 0,
+            ];
+        } catch (\Exception $e) {
+            Log::error('Failed to get channel info', [
+                'error' => $e->getMessage()
+            ]);
             return [];
         }
     }

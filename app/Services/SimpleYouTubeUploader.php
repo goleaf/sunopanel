@@ -36,6 +36,16 @@ class SimpleYouTubeUploader
     }
     
     /**
+     * Get the active YouTube account
+     * 
+     * @return \App\Models\YouTubeAccount|null
+     */
+    public function getActiveAccount(): ?\App\Models\YouTubeAccount
+    {
+        return $this->youtubeService->getActiveAccount();
+    }
+    
+    /**
      * Upload a track to YouTube
      * 
      * @param Track $track Track to upload

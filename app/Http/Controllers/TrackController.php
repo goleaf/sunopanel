@@ -15,11 +15,19 @@ use App\Services\YouTubeService;
 class TrackController extends Controller
 {
     /**
+     * The YouTube service instance.
+     *
+     * @var \App\Services\YouTubeService
+     */
+    protected YouTubeService $youtubeService;
+
+    /**
      * Create a new controller instance.
      */
-    public function __construct()
+    public function __construct(YouTubeService $youtubeService)
     {
         // No middleware in constructor for Laravel 12
+        $this->youtubeService = $youtubeService;
     }
 
     /**
@@ -385,5 +393,30 @@ class TrackController extends Controller
         
         // For regular requests, redirect back with message
         return back()->with('success', $message);
+    }
+
+    /**
+     * Find a random track and redirect to its YouTube upload form.
+     * 
+     * This method selects a random completed track with MP4 file that hasn't been uploaded to YouTube yet
+     * and redirects to the track page with a trigger to open the YouTube upload modal.
+     */
+    public function randomYoutubeUpload()
+    {
+        // Get a random track that is completed, has mp4 file, and hasn't been uploaded to YouTube yet
+        $track = Track::where('status', 'completed')
+            ->whereNotNull('mp4_path')
+            ->whereNull('youtube_video_id')
+            ->inRandomOrder()
+            ->first();
+        
+        if (!$track) {
+            return redirect()->route('tracks.index')
+                ->with('info', 'No eligible tracks found for YouTube upload. All tracks may already be uploaded or not processed yet.');
+        }
+        
+        // Redirect to the track page with a flag to open the YouTube upload modal
+        return redirect()->route('tracks.show', $track)
+            ->with('open_youtube_modal', true);
     }
 }

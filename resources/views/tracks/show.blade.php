@@ -12,11 +12,7 @@
         </a>
     </div>
 
-    @if(session('success'))
-    <div class="alert alert-success mb-6">
-        {{ session('success') }}
-    </div>
-    @endif
+
 
     <!-- Track Header -->
     <div class="card bg-base-100 shadow-xl mb-6 overflow-hidden">
@@ -506,6 +502,25 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 300);
         }, 3000);
     };
+    
+    // Auto-submit YouTube upload form if needed
+    @if(session('open_youtube_modal') && $track->status === 'completed' && $track->mp4_path && !$track->youtube_video_id)
+        const youtubeUploadForm = document.querySelector('form[action="{{ route('tracks.upload-to-youtube', $track) }}"]');
+        if (youtubeUploadForm) {
+            // Set default values for form fields
+            document.getElementById('title').value = '{{ $track->title }}';
+            document.getElementById('description').value = 'Track: {{ $track->title }}\nGenres: {{ $track->genres_string }}';
+            document.getElementById('privacy_status').value = 'public';
+            
+            // Submit the form
+            youtubeUploadForm.submit();
+            
+            // Show a loading message
+            showToast('Uploading track to YouTube...', 'info');
+        } else {
+            showToast('Track is ready to upload to YouTube. Please use the upload form below.', 'info');
+        }
+    @endif
     
     // Initialize track status updater if track is processing or pending
     if (['processing', 'pending'].includes(currentStatus)) {

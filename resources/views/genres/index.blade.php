@@ -98,11 +98,7 @@
             </div>
         </div>
 
-        @if(session('success'))
-            <div class="alert alert-success mb-6">
-                {{ session('success') }}
-            </div>
-        @endif
+
 
         <div class="card bg-base-100 shadow-xl">
             <div class="card-body">

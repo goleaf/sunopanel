@@ -102,6 +102,20 @@
                                     @endif
                                 </div>
                                 
+                                <!-- YouTube Status -->
+                                <div class="mt-2 mb-2">
+                                    @if($track->youtube_video_id)
+                                        <a href="{{ $track->youtube_url }}" target="_blank" class="btn btn-xs btn-success gap-1">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                            </svg>
+                                            YouTube Enabled
+                                        </a>
+                                    @else
+                                        <span class="text-xs text-gray-500">Not uploaded to YouTube</span>
+                                    @endif
+                                </div>
+                                
                                 <!-- Actions -->
                                 <div class="card-actions justify-end mt-2">
                                     <a href="{{ route('tracks.show', $track) }}" class="btn btn-xs btn-outline">
@@ -144,6 +158,7 @@
                                     <th>Genres</th>
                                     <th class="w-24">Status</th>
                                     <th class="w-32">Progress</th>
+                                    <th class="w-24">YouTube</th>
                                     <th class="w-36 text-right">Actions</th>
                                 </tr>
                             </thead>
@@ -205,6 +220,18 @@
                                             <span class="text-xs text-right">0%</span>
                                             @endif
                                         </div>
+                                    </td>
+                                    <td>
+                                        @if($track->youtube_video_id)
+                                            <a href="{{ $track->youtube_url }}" target="_blank" class="btn btn-xs btn-success gap-1">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                                </svg>
+                                                Enabled
+                                            </a>
+                                        @else
+                                            <span class="text-xs text-gray-500">YouTube</span>
+                                        @endif
                                     </td>
                                     <td class="text-right">
                                         <div class="flex space-x-1 justify-end">

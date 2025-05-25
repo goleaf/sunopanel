@@ -9,39 +9,109 @@
             <div class="card-body">
                 <h2 class="card-title mb-4">Authentication Status</h2>
                 
-                @if (session('success'))
-                    <div class="alert alert-success mb-4">
-                        {{ session('success') }}
-                    </div>
-                @endif
-                
-                @if (session('error'))
-                    <div class="alert alert-error mb-4">
-                        {{ session('error') }}
-                    </div>
-                @endif
+
                 
                 <div class="mb-6">
                     @if ($isAuthenticated)
-                        <div class="alert alert-success">
+                        <div class="alert alert-success mb-4">
                             <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                            @if ($useSimple)
-                                <span>You are logged in to YouTube with your account credentials.</span>
-                            @else
-                                <span>You are authenticated with YouTube API.</span>
-                            @endif
+                            <span>You are authenticated with YouTube API.</span>
                         </div>
+                        
+                        <!-- Active Account Information -->
+                        @if($activeAccount)
+                        <div class="bg-base-200 p-4 rounded-lg mb-6">
+                            <h3 class="text-lg font-semibold mb-2">Active YouTube Account</h3>
+                            <div class="flex items-start gap-4">
+                                @if(isset($channelInfo['thumbnails']['default']['url']))
+                                    <img src="{{ $channelInfo['thumbnails']['default']['url'] }}" 
+                                         alt="{{ $activeAccount->channel_name }}" 
+                                         class="w-16 h-16 rounded-full">
+                                @else
+                                    <div class="w-16 h-16 rounded-full bg-red-600 flex items-center justify-center text-white text-2xl">
+                                        <span>YT</span>
+                                    </div>
+                                @endif
+                                <div>
+                                    <p class="font-bold">{{ $activeAccount->getDisplayName() }}</p>
+                                    @if($activeAccount->channel_name && $activeAccount->channel_name !== $activeAccount->name)
+                                        <p class="text-sm opacity-70">Channel: {{ $activeAccount->channel_name }}</p>
+                                    @endif
+                                    @if($activeAccount->email)
+                                        <p class="text-sm opacity-70">{{ $activeAccount->email }}</p>
+                                    @endif
+                                    @if(isset($channelInfo['subscriberCount']))
+                                        <div class="badge badge-primary mt-2">{{ number_format($channelInfo['subscriberCount']) }} subscribers</div>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                        @endif
                     @else
                         <div class="alert alert-warning">
                             <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                            @if ($useSimple)
-                                <span>You need to provide your YouTube account credentials.</span>
-                            @else
-                                <span>You are not authenticated with YouTube API.</span>
-                            @endif
+                            <span>You are not authenticated with YouTube API. Add an account to get started.</span>
                         </div>
                     @endif
                 </div>
+                
+                <!-- Accounts List -->
+                @if(count($accounts) > 0)
+                <div class="mb-6">
+                    <h3 class="font-semibold text-lg mb-3">Your YouTube Accounts</h3>
+                    <div class="overflow-x-auto">
+                        <table class="table table-zebra w-full">
+                            <thead>
+                                <tr>
+                                    <th>Status</th>
+                                    <th>Account Name</th>
+                                    <th>Channel</th>
+                                    <th>Last Used</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($accounts as $account)
+                                <tr class="{{ $account->is_active ? 'bg-primary/10' : '' }}">
+                                    <td>
+                                        @if($account->is_active)
+                                            <div class="badge badge-primary">Active</div>
+                                        @endif
+                                    </td>
+                                    <td>{{ $account->name }}</td>
+                                    <td>{{ $account->channel_name }}</td>
+                                    <td>
+                                        @if($account->last_used_at)
+                                            {{ $account->last_used_at->diffForHumans() }}
+                                        @else
+                                            Never
+                                        @endif
+                                    </td>
+                                    <td class="flex gap-2">
+                                        @if(!$account->is_active)
+                                        <form action="{{ route('youtube.auth.set-active') }}" method="POST">
+                                            @csrf
+                                            <input type="hidden" name="account_id" value="{{ $account->id }}">
+                                            <button type="submit" class="btn btn-sm btn-primary">
+                                                Activate
+                                            </button>
+                                        </form>
+                                        @endif
+                                        <form action="{{ route('youtube.auth.delete-account') }}" method="POST" onsubmit="return confirm('Are you sure you want to remove this account?');">
+                                            @csrf
+                                            <input type="hidden" name="account_id" value="{{ $account->id }}">
+                                            <button type="submit" class="btn btn-sm btn-error">
+                                                Remove
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                @endif
                 
                 <div class="card-actions">
                     @if ($isAuthenticated)
@@ -60,37 +130,29 @@
                             </svg>
                             View Uploaded Videos
                         </a>
-                        
-                        @if ($useSimple)
-                            <a href="{{ route('youtube.auth.login_form') }}" class="btn btn-outline">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                </svg>
-                                Update Credentials
-                            </a>
-                        @endif
-                    @else
-                        @if ($useSimple)
-                            <a href="{{ route('youtube.auth.login_form') }}" class="btn btn-primary">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
-                                    <polyline points="10 17 15 12 10 7"></polyline>
-                                    <line x1="15" y1="12" x2="3" y2="12"></line>
-                                </svg>
-                                Login with YouTube Account
-                            </a>
-                        @else
-                            <a href="{{ route('youtube.auth.redirect') }}" class="btn btn-primary">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M10 16L14 12L10 8"></path>
-                                    <path d="M14 12H3"></path>
-                                    <path d="M15 4H18C19.1046 4 20 4.89543 20 6V18C20 19.1046 19.1046 20 18 20H15"></path>
-                                </svg>
-                                Authenticate with YouTube API
-                            </a>
-                        @endif
                     @endif
+                    
+                    <!-- Add Account Button -->
+                    <a href="{{ route('youtube.auth.redirect') }}" class="btn btn-accent">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="8.5" cy="7" r="4"></circle>
+                            <line x1="20" y1="8" x2="20" y2="14"></line>
+                            <line x1="23" y1="11" x2="17" y2="11"></line>
+                        </svg>
+                        Add YouTube Account
+                    </a>
+
+                    <!-- Add Account With Name Form -->
+                    <button onclick="document.getElementById('addAccountModal').showModal()" class="btn btn-outline">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="8.5" cy="7" r="4"></circle>
+                            <line x1="20" y1="8" x2="20" y2="14"></line>
+                            <line x1="23" y1="11" x2="17" y2="11"></line>
+                        </svg>
+                        Add Named Account
+                    </button>
                 </div>
             </div>
         </div>
@@ -107,33 +169,40 @@
                     <li>Automatically create playlists based on track genres</li>
                     <li>Add tracks to existing playlists</li>
                     <li>Control privacy settings (public, unlisted, private)</li>
+                    <li>Manage multiple YouTube accounts and switch between them</li>
                 </ul>
                 
-                @if ($useSimple)
-                    <div class="alert alert-info mt-4 mb-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                        <span>
-                            You're using the simple YouTube uploader with direct account login.
-                            <br>This requires the youtube-upload CLI tool to be installed on your server.
-                        </span>
-                    </div>
-                    
-                    <p class="mb-2 text-warning"><strong>Important notes:</strong></p>
-                    <ul class="list-disc list-inside ml-4">
-                        <li>Use an app password instead of your main password for better security</li>
-                        <li>YouTube may limit upload frequency on your account</li>
-                        <li>Videos will be uploaded in the background via queue jobs</li>
-                    </ul>
-                @else
-                    <p class="mb-2 text-warning"><strong>Important things to know:</strong></p>
-                    <ul class="list-disc list-inside ml-4">
-                        <li>YouTube API quotas may limit the number of uploads per day</li>
-                        <li>Videos will be uploaded in the background via queue jobs</li>
-                        <li>Authentication tokens expire periodically and may need renewal</li>
-                    </ul>
-                @endif
+                <p class="mb-2 text-warning"><strong>Important things to know:</strong></p>
+                <ul class="list-disc list-inside ml-4">
+                    <li>YouTube API quotas may limit the number of uploads per day</li>
+                    <li>Videos will be uploaded in the background via queue jobs</li>
+                    <li>Authentication tokens expire periodically and may need renewal</li>
+                    <li>Each account has its own upload quota and playlists</li>
+                </ul>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Add Account Modal -->
+<dialog id="addAccountModal" class="modal">
+    <div class="modal-box">
+        <form method="dialog">
+            <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+        </form>
+        <h3 class="font-bold text-lg mb-4">Add New YouTube Account</h3>
+        <form action="{{ route('youtube.auth.redirect') }}" method="GET">
+            <div class="form-control mb-4">
+                <label class="label">
+                    <span class="label-text">Account Name (optional)</span>
+                </label>
+                <input type="text" name="account_name" placeholder="Enter a name for this account" class="input input-bordered">
+                <span class="label-text-alt mt-1">This helps you identify the account in the list</span>
+            </div>
+            <div class="modal-action">
+                <button type="submit" class="btn btn-primary">Proceed to YouTube Authorization</button>
+            </div>
+        </form>
+    </div>
+</dialog>
 @endsection 

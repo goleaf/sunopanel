@@ -33,17 +33,7 @@
     </div>
 
     <!-- Messages -->
-    @if(session('success'))
-    <div class="alert alert-success mb-6">
-        {{ session('success') }}
-    </div>
-    @endif
 
-    @if(session('info'))
-    <div class="alert alert-info mb-6">
-        {{ session('info') }}
-    </div>
-    @endif
 
     <!-- Stats cards -->
     <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">

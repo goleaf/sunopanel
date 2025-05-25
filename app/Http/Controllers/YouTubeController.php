@@ -53,14 +53,31 @@ class YouTubeController extends Controller
      */
     public function status()
     {
-        $credential = YouTubeCredential::getLatest();
+        // Get all accounts
+        $accounts = \App\Models\YouTubeAccount::orderBy('is_active', 'desc')
+            ->orderBy('last_used_at', 'desc')
+            ->get();
+        
+        $activeAccount = $accounts->where('is_active', true)->first();
         $isAuthenticated = $this->youtubeService->isAuthenticated();
         
+        // Get channel info if authenticated
+        $channelInfo = null;
+        if ($isAuthenticated && $activeAccount) {
+            try {
+                $channelInfo = $this->youtubeService->getChannelInfo();
+            } catch (\Exception $e) {
+                Log::error('Failed to get channel info: ' . $e->getMessage());
+            }
+        }
+        
         return view('youtube.status', [
-            'credential' => $credential,
+            'accounts' => $accounts,
+            'activeAccount' => $activeAccount,
             'isAuthenticated' => $isAuthenticated,
-            'useOAuth' => $credential ? $credential->use_oauth : false,
-            'useSimple' => $credential ? !$credential->use_oauth : true,
+            'channelInfo' => $channelInfo,
+            'useOAuth' => true,
+            'useSimple' => false,
         ]);
     }
     

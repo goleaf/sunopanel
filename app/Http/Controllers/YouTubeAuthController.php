@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\YouTubeAccount;
 use App\Services\YouTubeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -18,11 +19,17 @@ class YouTubeAuthController extends Controller
     /**
      * Redirect to YouTube OAuth
      */
-    public function redirect()
+    public function redirect(Request $request)
     {
         // If using simple uploader, redirect to login form instead
         if (config('youtube.use_simple_uploader')) {
             return redirect()->route('youtube.auth.login_form');
+        }
+        
+        // Optionally pass an account name to use
+        $accountName = $request->input('account_name');
+        if ($accountName) {
+            session(['pending_youtube_account_name' => $accountName]);
         }
         
         $authUrl = $this->youtubeService->getAuthUrl();
@@ -41,13 +48,64 @@ class YouTubeAuthController extends Controller
             return redirect()->route('youtube.status')->with('error', 'Authorization failed: No code provided');
         }
         
-        $success = $this->youtubeService->handleAuthCallback($code);
+        // Check if we have a pending account name
+        $accountName = session('pending_youtube_account_name');
         
-        if (!$success) {
-            return redirect()->route('youtube.status')->with('error', 'Authorization failed: Could not retrieve access token');
+        // Handle the callback and save as a new account
+        $account = $this->youtubeService->handleAuthCallbackAndSaveAccount($code, $accountName);
+        
+        if (!$account) {
+            return redirect()->route('youtube.status')->with('error', 'Authorization failed: Could not create account');
         }
         
-        return redirect()->route('youtube.status')->with('success', 'Successfully authenticated with YouTube');
+        // Clear the pending account name
+        session()->forget('pending_youtube_account_name');
+        
+        return redirect()->route('youtube.status')->with('success', 'Successfully added YouTube account: ' . $account->getDisplayName());
+    }
+    
+    /**
+     * Set the active YouTube account
+     */
+    public function setActiveAccount(Request $request)
+    {
+        $validated = $request->validate([
+            'account_id' => 'required|exists:youtube_accounts,id',
+        ]);
+        
+        $account = YouTubeAccount::findOrFail($validated['account_id']);
+        $success = $this->youtubeService->setAccount($account);
+        
+        if (!$success) {
+            return back()->with('error', 'Failed to set active account. The token may have expired.');
+        }
+        
+        return back()->with('success', 'Successfully switched to YouTube account: ' . $account->getDisplayName());
+    }
+    
+    /**
+     * Delete a YouTube account
+     */
+    public function deleteAccount(Request $request)
+    {
+        $validated = $request->validate([
+            'account_id' => 'required|exists:youtube_accounts,id',
+        ]);
+        
+        $account = YouTubeAccount::findOrFail($validated['account_id']);
+        $displayName = $account->getDisplayName();
+        
+        // If this is the active account, try to activate another one
+        if ($account->is_active) {
+            $anotherAccount = YouTubeAccount::where('id', '!=', $account->id)->first();
+            if ($anotherAccount) {
+                $this->youtubeService->setAccount($anotherAccount);
+            }
+        }
+        
+        $account->delete();
+        
+        return back()->with('success', 'Successfully removed YouTube account: ' . $displayName);
     }
     
     /**
@@ -55,18 +113,20 @@ class YouTubeAuthController extends Controller
      */
     public function status()
     {
-        $isAuthenticated = false;
+        // Get all accounts
+        $accounts = YouTubeAccount::orderBy('is_active', 'desc')
+            ->orderBy('last_used_at', 'desc')
+            ->get();
         
-        if (config('youtube.use_simple_uploader')) {
-            // Check if credentials are set
-            $isAuthenticated = !empty(config('youtube.email')) && !empty(config('youtube.password'));
-        } else {
-            $isAuthenticated = $this->youtubeService->isAuthenticated();
-        }
+        $activeAccount = $accounts->where('is_active', true)->first();
+        $isAuthenticated = $activeAccount !== null;
         
         return view('youtube.status', [
+            'accounts' => $accounts,
+            'activeAccount' => $activeAccount,
             'isAuthenticated' => $isAuthenticated,
-            'useSimpleUploader' => config('youtube.use_simple_uploader'),
+            'useOAuth' => true,
+            'useSimple' => false,
         ]);
     }
     

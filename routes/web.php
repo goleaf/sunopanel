@@ -37,6 +37,23 @@ Route::post('/tracks/{track}/toggle-youtube-status', [TrackController::class, 't
     ->middleware(\App\Http\Middleware\JsonMiddleware::class)
     ->name('tracks.toggle-youtube-status');
 
+// Random track upload route
+Route::get('/random-youtube-upload', [TrackController::class, 'randomYoutubeUpload'])->name('tracks.random-youtube-upload');
+
+// Cron-friendly route for random YouTube uploads with API key protection
+Route::get('/cron/youtube-upload/{apiKey}', function($apiKey) {
+    // Check if the API key is valid (should match the one in environment variables)
+    if ($apiKey !== env('CRON_API_KEY', 'changeme')) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Invalid API key',
+        ], 403);
+    }
+    
+    // Just redirect to the random upload endpoint
+    return redirect()->route('tracks.random-youtube-upload');
+})->name('cron.youtube-upload');
+
 // Genre routes
 Route::resource('genres', GenreController::class);
 
@@ -105,8 +122,21 @@ Route::prefix('youtube')->name('youtube.')->group(function () {
     Route::prefix('auth')->name('auth.')->group(function () {
         Route::get('/login', [\App\Http\Controllers\YouTubeAuthController::class, 'showLoginForm'])->name('login_form');
         Route::get('/redirect', [\App\Http\Controllers\YouTubeAuthController::class, 'redirect'])->name('redirect');
+        Route::get('/status', [\App\Http\Controllers\YouTubeAuthController::class, 'status'])->name('status');
+        
+        // Account management routes
+        Route::post('/set-active', [\App\Http\Controllers\YouTubeAuthController::class, 'setActiveAccount'])->name('set-active');
+        Route::post('/delete-account', [\App\Http\Controllers\YouTubeAuthController::class, 'deleteAccount'])->name('delete-account');
     });
 });
+
+// Simple route for YouTube reauthorization
+Route::get('/youtube/auth', function() {
+    return redirect()->route('youtube.auth.redirect');
+})->name('youtube.reauth');
+
+// Direct YouTube auth route
+Route::get('/youtube-reauth', [\App\Http\Controllers\YouTubeAuthController::class, 'redirect'])->name('youtube.direct.reauth');
 
 // Special route for YouTube OAuth callback
 Route::get('/youtube-auth', [\App\Http\Controllers\YouTubeAuthController::class, 'callback'])->name('youtube.auth.callback');

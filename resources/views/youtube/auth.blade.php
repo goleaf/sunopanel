@@ -12,17 +12,7 @@
         </div>
     </div>
 
-    @if(session('success'))
-        <div class="alert alert-success mb-4">
-            {{ session('success') }}
-        </div>
-    @endif
 
-    @if(session('error'))
-        <div class="alert alert-error mb-4">
-            {{ session('error') }}
-        </div>
-    @endif
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
         <!-- OAuth Authentication -->
