@@ -46,6 +46,9 @@
 - [x] Fix Setting::all() method conflict with Laravel's Model::all() method
 - [x] Rename custom all() method to avoid signature incompatibility
 - [x] Test the fix to ensure settings functionality works properly
+- [x] Fix Vite manifest error for track-status.css component
+- [x] Import track-status.css into main app.css bundle
+- [x] Remove separate CSS imports from views
 
 ### 5. Database & Models Optimization
 - [x] Add proper Eloquent relationships and scopes
