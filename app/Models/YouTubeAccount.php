@@ -1,11 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Log;
 
-class YouTubeAccount extends Model
+final class YouTubeAccount extends Model
 {
     use HasFactory;
 
@@ -31,7 +34,6 @@ class YouTubeAccount extends Model
         'token_expires_at',
         'account_info',
         'is_active',
-        'last_used_at',
     ];
 
     /**
@@ -40,68 +42,23 @@ class YouTubeAccount extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        'is_active' => 'boolean',
         'token_expires_at' => 'datetime',
-        'last_used_at' => 'datetime',
         'account_info' => 'array',
+        'is_active' => 'boolean',
     ];
 
     /**
-     * Check if the account's token is expired
+     * The attributes that should be hidden for serialization.
      *
-     * @return bool
+     * @var array<int, string>
      */
-    public function isTokenExpired(): bool
-    {
-        if (!$this->token_expires_at) {
-            return true;
-        }
-
-        return $this->token_expires_at->isPast();
-    }
+    protected $hidden = [
+        'access_token',
+        'refresh_token',
+    ];
 
     /**
-     * Mark this account as the active account
-     *
-     * @return bool
-     */
-    public function markAsActive(): bool
-    {
-        // First deactivate all accounts
-        try {
-            \Illuminate\Support\Facades\Log::info('Deactivating all YouTube accounts');
-            self::query()->update(['is_active' => false]);
-            
-            // Then activate this one
-            \Illuminate\Support\Facades\Log::info('Activating account', ['id' => $this->id, 'name' => $this->name]);
-            $this->is_active = true;
-            $this->last_used_at = now();
-            $saved = $this->save();
-            
-            \Illuminate\Support\Facades\Log::info('Account activation result', [
-                'id' => $this->id, 
-                'name' => $this->name,
-                'is_active' => $this->is_active,
-                'saved' => $saved,
-                'last_used_at' => $this->last_used_at
-            ]);
-            
-            return $saved;
-        } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Failed to mark account as active', [
-                'id' => $this->id,
-                'name' => $this->name,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            return false;
-        }
-    }
-
-    /**
-     * Get the active account
-     *
-     * @return self|null
+     * Get the currently active YouTube account.
      */
     public static function getActive(): ?self
     {
@@ -109,34 +66,92 @@ class YouTubeAccount extends Model
     }
 
     /**
-     * Get the human-readable display name for this account
-     *
-     * @return string
+     * Mark this account as active and deactivate all others.
      */
-    public function getDisplayName(): string
+    public function markAsActive(): bool
     {
-        if ($this->name) {
-            return $this->name;
+        try {
+            // Deactivate all other accounts
+            self::where('id', '!=', $this->id)->update(['is_active' => false]);
+            
+            // Activate this account
+            $this->is_active = true;
+            $result = $this->save();
+            
+            Log::info('YouTube account marked as active', [
+                'account_id' => $this->id,
+                'name' => $this->name,
+                'channel_id' => $this->channel_id,
+            ]);
+            
+            return $result;
+        } catch (\Exception $e) {
+            Log::error('Failed to mark YouTube account as active', [
+                'account_id' => $this->id,
+                'error' => $e->getMessage(),
+            ]);
+            return false;
         }
-        
-        if ($this->channel_name) {
-            return $this->channel_name;
-        }
-        
-        if ($this->email) {
-            return $this->email;
-        }
-        
-        return 'YouTube Account #' . $this->id;
     }
 
     /**
-     * Flush the cache for this model.
-     * 
-     * @return void
+     * Check if the access token is expired.
      */
-    public function flushCache(): void
+    public function isTokenExpired(): bool
     {
-        // No actual cache to flush, but useful for forcing model refreshes
+        return $this->token_expires_at && $this->token_expires_at->isPast();
+    }
+
+    /**
+     * Check if the account has valid tokens.
+     */
+    public function hasValidTokens(): bool
+    {
+        return !empty($this->access_token) && !$this->isTokenExpired();
+    }
+
+    /**
+     * Get the channel URL.
+     */
+    public function getChannelUrlAttribute(): ?string
+    {
+        return $this->channel_id 
+            ? "https://www.youtube.com/channel/{$this->channel_id}" 
+            : null;
+    }
+
+    /**
+     * Scope a query to only include active accounts.
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+
+    /**
+     * Scope a query to only include accounts with valid tokens.
+     */
+    public function scopeWithValidTokens($query)
+    {
+        return $query->whereNotNull('access_token')
+                    ->where(function ($q) {
+                        $q->whereNull('token_expires_at')
+                          ->orWhere('token_expires_at', '>', now());
+                    });
+    }
+
+    /**
+     * Boot the model.
+     */
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        // Ensure only one account can be active at a time
+        static::saving(function (YouTubeAccount $account) {
+            if ($account->is_active && $account->isDirty('is_active')) {
+                self::where('id', '!=', $account->id)->update(['is_active' => false]);
+            }
+        });
     }
 }

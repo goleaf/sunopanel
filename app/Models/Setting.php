@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -10,6 +12,11 @@ final class Setting extends Model
 {
     use HasFactory;
 
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
     protected $fillable = [
         'key',
         'value',
@@ -17,47 +24,131 @@ final class Setting extends Model
         'description',
     ];
 
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
     protected $casts = [
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'value' => 'string',
     ];
 
     /**
-     * Get a setting value by key
+     * Cache key prefix for settings.
+     */
+    private const CACHE_PREFIX = 'setting:';
+
+    /**
+     * Cache TTL for settings (24 hours).
+     */
+    private const CACHE_TTL = 86400;
+
+    /**
+     * Get a setting value by key with caching.
      */
     public static function get(string $key, mixed $default = null): mixed
     {
-        $cacheKey = "setting_{$key}";
+        $cacheKey = self::CACHE_PREFIX . $key;
         
-        return Cache::remember($cacheKey, 3600, function () use ($key, $default) {
-            $setting = static::where('key', $key)->first();
+        return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($key, $default) {
+            $setting = self::where('key', $key)->first();
             
             if (!$setting) {
                 return $default;
             }
             
-            return static::castValue($setting->value, $setting->type);
+            return match ($setting->type) {
+                'boolean' => filter_var($setting->value, FILTER_VALIDATE_BOOLEAN),
+                'integer' => (int) $setting->value,
+                'float' => (float) $setting->value,
+                'array', 'json' => json_decode($setting->value, true),
+                default => $setting->value,
+            };
         });
     }
 
     /**
-     * Set a setting value by key
+     * Set a setting value by key and clear cache.
      */
-    public static function set(string $key, mixed $value, string $type = 'string', ?string $description = null): void
+    public static function set(string $key, mixed $value, string $type = 'string', ?string $description = null): bool
     {
-        $stringValue = static::valueToString($value, $type);
-        
-        static::updateOrCreate(
+        $processedValue = match ($type) {
+            'boolean' => $value ? '1' : '0',
+            'array', 'json' => json_encode($value),
+            default => (string) $value,
+        };
+
+        $setting = self::updateOrCreate(
             ['key' => $key],
             [
-                'value' => $stringValue,
+                'value' => $processedValue,
                 'type' => $type,
                 'description' => $description,
             ]
         );
-        
+
         // Clear cache
-        Cache::forget("setting_{$key}");
+        Cache::forget(self::CACHE_PREFIX . $key);
+
+        return $setting->wasRecentlyCreated || $setting->wasChanged();
+    }
+
+    /**
+     * Remove a setting and clear cache.
+     */
+    public static function remove(string $key): bool
+    {
+        $deleted = self::where('key', $key)->delete();
+        Cache::forget(self::CACHE_PREFIX . $key);
+        
+        return $deleted > 0;
+    }
+
+    /**
+     * Clear all settings cache.
+     */
+    public static function clearCache(): void
+    {
+        $settings = self::all();
+        foreach ($settings as $setting) {
+            Cache::forget(self::CACHE_PREFIX . $setting->key);
+        }
+    }
+
+    /**
+     * Boot the model.
+     */
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        // Clear cache when settings are updated or deleted
+        static::saved(function (Setting $setting) {
+            Cache::forget(self::CACHE_PREFIX . $setting->key);
+        });
+
+        static::deleted(function (Setting $setting) {
+            Cache::forget(self::CACHE_PREFIX . $setting->key);
+        });
+    }
+
+    /**
+     * Get all settings as key-value pairs
+     */
+    public static function all(): array
+    {
+        return Cache::remember('all_settings', 3600, function () {
+            $settings = static::query()->get();
+            $result = [];
+            
+            foreach ($settings as $setting) {
+                $result[$setting->key] = static::castValue($setting->value, $setting->type);
+            }
+            
+            return $result;
+        });
     }
 
     /**
@@ -84,35 +175,5 @@ final class Setting extends Model
             'json' => json_encode($value),
             default => (string) $value,
         };
-    }
-
-    /**
-     * Get all settings as key-value pairs
-     */
-    public static function all(): array
-    {
-        return Cache::remember('all_settings', 3600, function () {
-            $settings = static::query()->get();
-            $result = [];
-            
-            foreach ($settings as $setting) {
-                $result[$setting->key] = static::castValue($setting->value, $setting->type);
-            }
-            
-            return $result;
-        });
-    }
-
-    /**
-     * Clear all settings cache
-     */
-    public static function clearCache(): void
-    {
-        Cache::forget('all_settings');
-        
-        $keys = static::pluck('key');
-        foreach ($keys as $key) {
-            Cache::forget("setting_{$key}");
-        }
     }
 }

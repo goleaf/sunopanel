@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -7,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Str;
 
-class Genre extends Model
+final class Genre extends Model
 {
     use HasFactory;
 
@@ -40,5 +42,21 @@ class Genre extends Model
     public function tracks(): BelongsToMany
     {
         return $this->belongsToMany(Track::class);
+    }
+
+    /**
+     * Scope a query to only include genres with tracks.
+     */
+    public function scopeWithTracks($query)
+    {
+        return $query->has('tracks');
+    }
+
+    /**
+     * Scope a query to order genres by name.
+     */
+    public function scopeOrderByName($query)
+    {
+        return $query->orderBy('name');
     }
 }

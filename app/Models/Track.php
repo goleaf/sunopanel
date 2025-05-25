@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -8,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
-class Track extends Model
+final class Track extends Model
 {
     use HasFactory;
 
@@ -55,7 +57,7 @@ class Track extends Model
      *
      * @var array<int, string>
      */
-    public static $statuses = [
+    public static array $statuses = [
         'pending',     // Waiting to be processed
         'processing',  // Currently being processed
         'completed',   // Successfully processed
@@ -166,5 +168,37 @@ class Track extends Model
     {
         $this->youtube_enabled = !$this->youtube_enabled;
         return $this->save();
+    }
+
+    /**
+     * Scope a query to only include tracks with specific status.
+     */
+    public function scopeWithStatus($query, string $status)
+    {
+        return $query->where('status', $status);
+    }
+
+    /**
+     * Scope a query to only include completed tracks.
+     */
+    public function scopeCompleted($query)
+    {
+        return $query->where('status', 'completed');
+    }
+
+    /**
+     * Scope a query to only include tracks uploaded to YouTube.
+     */
+    public function scopeUploadedToYoutube($query)
+    {
+        return $query->whereNotNull('youtube_video_id');
+    }
+
+    /**
+     * Scope a query to only include tracks not uploaded to YouTube.
+     */
+    public function scopeNotUploadedToYoutube($query)
+    {
+        return $query->whereNull('youtube_video_id');
     }
 }
