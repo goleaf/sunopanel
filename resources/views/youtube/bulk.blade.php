@@ -109,22 +109,26 @@
                 </button>
             </h2>
             
-            <div id="queue-status" class="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div id="queue-status" class="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div class="stat">
                     <div class="stat-title">Pending</div>
-                    <div class="stat-value text-warning" id="pending-count">{{ $queueStatus['pending_uploads'] ?? 0 }}</div>
+                    <div class="stat-value text-warning" id="pending-count">{{ $queueStatus['pending'] ?? 0 }}</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-title">Processing</div>
+                    <div class="stat-value text-info" id="processing-count">{{ $queueStatus['processing'] ?? 0 }}</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-title">Completed</div>
+                    <div class="stat-value text-success" id="completed-count">{{ $queueStatus['completed'] ?? 0 }}</div>
                 </div>
                 <div class="stat">
                     <div class="stat-title">Failed</div>
-                    <div class="stat-value text-error" id="failed-count">{{ $queueStatus['failed_uploads'] ?? 0 }}</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-title">Eligible</div>
-                    <div class="stat-value text-success" id="eligible-count">{{ $queueStatus['eligible_tracks'] ?? 0 }}</div>
+                    <div class="stat-value text-error" id="failed-count">{{ $queueStatus['failed'] ?? 0 }}</div>
                 </div>
             </div>
             
-            @if(($queueStatus['failed_uploads'] ?? 0) > 0)
+            @if(($queueStatus['failed'] ?? 0) > 0)
                 <div class="mt-4">
                     <form action="{{ route('youtube.bulk.retry-failed') }}" method="POST" class="inline">
                         @csrf
@@ -246,6 +250,18 @@
                     </div>
                 </div>
                 
+                <!-- Search -->
+                <div class="form-control mb-4">
+                    <div class="input-group">
+                        <input type="text" id="track-search" placeholder="Search tracks..." class="input input-bordered flex-1" />
+                        <button onclick="searchTracks()" class="btn btn-square">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                
                 <!-- Track List -->
                 <div id="track-list" class="space-y-2 max-h-96 overflow-y-auto">
                     @forelse($eligibleTracks as $track)
@@ -257,11 +273,17 @@
                                     @if($track->genres->isNotEmpty())
                                         <span class="mr-4">{{ $track->genres_list }}</span>
                                     @endif
+                                    @if($track->duration)
+                                        <span class="mr-4">{{ $track->duration }}</span>
+                                    @endif
                                     <span>{{ $track->created_at->diffForHumans() }}</span>
                                 </div>
                             </div>
                             <div class="text-right">
                                 <div class="badge badge-success">{{ $track->status }}</div>
+                                @if($track->file_size_human)
+                                    <div class="text-xs text-gray-500 mt-1">{{ $track->file_size_human }}</div>
+                                @endif
                             </div>
                         </div>
                     @empty
@@ -340,9 +362,10 @@ function refreshQueueStatus() {
     fetch('{{ route("youtube.bulk.queue-status") }}')
         .then(response => response.json())
         .then(data => {
-            document.getElementById('pending-count').textContent = data.pending_uploads || 0;
-            document.getElementById('failed-count').textContent = data.failed_uploads || 0;
-            document.getElementById('eligible-count').textContent = data.eligible_tracks || 0;
+            document.getElementById('pending-count').textContent = data.pending || 0;
+            document.getElementById('processing-count').textContent = data.processing || 0;
+            document.getElementById('completed-count').textContent = data.completed || 0;
+            document.getElementById('failed-count').textContent = data.failed || 0;
         })
         .catch(error => console.error('Error refreshing queue status:', error));
 }

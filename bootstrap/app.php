@@ -11,7 +11,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        //
+        // Register API rate limiting middleware
+        $middleware->alias([
+            'api.rate_limit' => \App\Http\Middleware\ApiRateLimitMiddleware::class,
+            'json' => \App\Http\Middleware\JsonMiddleware::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
