@@ -250,6 +250,51 @@ class YouTubeAnalyticsController extends Controller
     }
 
     /**
+     * Get tracks with stale analytics data.
+     */
+    public function staleAnalytics(Request $request): JsonResponse
+    {
+        try {
+            $tracks = Track::uploadedToYoutube()
+                          ->where(function ($q) {
+                              $q->whereNull('youtube_analytics_updated_at')
+                                ->orWhere('youtube_analytics_updated_at', '<', now()->subHour());
+                          })
+                          ->orderBy('youtube_analytics_updated_at', 'asc')
+                          ->get()
+                          ->map(function ($track) {
+                              return [
+                                  'id' => $track->id,
+                                  'title' => $track->title,
+                                  'youtube_video_id' => $track->youtube_video_id,
+                                  'view_count' => $track->youtube_view_count,
+                                  'like_count' => $track->youtube_like_count,
+                                  'comment_count' => $track->youtube_comment_count,
+                                  'uploaded_at' => $track->youtube_uploaded_at?->toISOString(),
+                                  'analytics_updated_at' => $track->youtube_analytics_updated_at?->toISOString(),
+                                  'image_path' => $track->image_path,
+                                  'youtube_published_at' => $track->youtube_published_at?->toISOString(),
+                              ];
+                          });
+            
+            return response()->json([
+                'success' => true,
+                'tracks' => $tracks,
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Failed to get stale analytics', [
+                'error' => $e->getMessage(),
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to get stale analytics',
+            ], 500);
+        }
+    }
+
+    /**
      * Get top performing tracks.
      */
     public function topPerforming(Request $request): JsonResponse
@@ -283,12 +328,14 @@ class YouTubeAnalyticsController extends Controller
                     'comment_count' => $track->youtube_comment_count,
                     'uploaded_at' => $track->youtube_uploaded_at?->toISOString(),
                     'analytics_updated_at' => $track->youtube_analytics_updated_at?->toISOString(),
+                    'image_path' => $track->image_path,
+                    'youtube_published_at' => $track->youtube_published_at?->toISOString(),
                 ];
             });
             
             return response()->json([
                 'success' => true,
-                'data' => $tracks,
+                'tracks' => $tracks,
             ]);
             
         } catch (\Exception $e) {
