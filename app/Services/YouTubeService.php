@@ -3,9 +3,11 @@
 namespace App\Services;
 
 use App\Exceptions\YouTubeException;
+use App\Models\Track;
 use App\Models\YouTubeCredential;
 use App\Models\YouTubeAccount;
 use Exception;
+use Illuminate\Database\Eloquent\Collection;
 use Google_Client;
 use Google_Service_YouTube;
 use Google_Service_YouTube_Playlist;
@@ -1523,5 +1525,286 @@ class YouTubeService
         }
         
         return $results;
+    }
+
+    /**
+     * Get comprehensive video analytics for a single video.
+     */
+    public function getVideoAnalytics(string $videoId): ?array
+    {
+        try {
+            $response = $this->youtube->videos->listVideos(
+                'snippet,statistics,status,contentDetails',
+                ['id' => $videoId]
+            );
+
+            if (empty($response->items)) {
+                return null;
+            }
+
+            $video = $response->items[0];
+            $snippet = $video->getSnippet();
+            $statistics = $video->getStatistics();
+            $status = $video->getStatus();
+            $contentDetails = $video->getContentDetails();
+
+            return [
+                'video_id' => $videoId,
+                'title' => $snippet->getTitle(),
+                'description' => $snippet->getDescription(),
+                'published_at' => $snippet->getPublishedAt(),
+                'view_count' => (int) ($statistics->getViewCount() ?? 0),
+                'like_count' => (int) ($statistics->getLikeCount() ?? 0),
+                'dislike_count' => (int) ($statistics->getDislikeCount() ?? 0),
+                'comment_count' => (int) ($statistics->getCommentCount() ?? 0),
+                'favorite_count' => (int) ($statistics->getFavoriteCount() ?? 0),
+                'duration' => $contentDetails->getDuration(),
+                'definition' => $contentDetails->getDefinition(),
+                'caption' => $contentDetails->getCaption(),
+                'licensed_content' => $contentDetails->getLicensedContent(),
+                'privacy_status' => $status->getPrivacyStatus(),
+                'upload_status' => $status->getUploadStatus(),
+                'updated_at' => now(),
+            ];
+        } catch (\Exception $e) {
+            Log::error('Failed to get video analytics', [
+                'video_id' => $videoId,
+                'error' => $e->getMessage(),
+            ]);
+            return null;
+        }
+    }
+
+    /**
+     * Update analytics for a track from YouTube.
+     */
+    public function updateTrackAnalytics(Track $track): bool
+    {
+        if (!$track->youtube_video_id) {
+            return false;
+        }
+
+        $analytics = $this->getVideoAnalytics($track->youtube_video_id);
+        
+        if (!$analytics) {
+            return false;
+        }
+
+        try {
+            $track->update([
+                'youtube_view_count' => $analytics['view_count'],
+                'youtube_like_count' => $analytics['like_count'],
+                'youtube_dislike_count' => $analytics['dislike_count'],
+                'youtube_comment_count' => $analytics['comment_count'],
+                'youtube_favorite_count' => $analytics['favorite_count'],
+                'youtube_duration' => $analytics['duration'],
+                'youtube_definition' => $analytics['definition'],
+                'youtube_caption' => $analytics['caption'],
+                'youtube_licensed_content' => $analytics['licensed_content'],
+                'youtube_privacy_status' => $analytics['privacy_status'],
+                'youtube_published_at' => $analytics['published_at'],
+                'youtube_analytics_updated_at' => now(),
+            ]);
+
+            Log::info('Updated track analytics', [
+                'track_id' => $track->id,
+                'video_id' => $track->youtube_video_id,
+                'view_count' => $analytics['view_count'],
+                'like_count' => $analytics['like_count'],
+            ]);
+
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Failed to update track analytics', [
+                'track_id' => $track->id,
+                'error' => $e->getMessage(),
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * Bulk update analytics for multiple tracks.
+     */
+    public function bulkUpdateAnalytics(Collection $tracks): array
+    {
+        $results = [
+            'updated' => 0,
+            'failed' => 0,
+            'skipped' => 0,
+        ];
+
+        $videoIds = $tracks->whereNotNull('youtube_video_id')
+                          ->pluck('youtube_video_id')
+                          ->toArray();
+
+        if (empty($videoIds)) {
+            $results['skipped'] = $tracks->count();
+            return $results;
+        }
+
+        try {
+            // Get analytics for all videos in batches
+            $chunks = array_chunk($videoIds, 50); // YouTube API limit
+            $allAnalytics = [];
+
+            foreach ($chunks as $chunk) {
+                $response = $this->youtube->videos->listVideos(
+                    'snippet,statistics,status,contentDetails',
+                    ['id' => implode(',', $chunk)]
+                );
+
+                foreach ($response->items as $video) {
+                    $snippet = $video->getSnippet();
+                    $statistics = $video->getStatistics();
+                    $status = $video->getStatus();
+                    $contentDetails = $video->getContentDetails();
+
+                    $allAnalytics[$video->getId()] = [
+                        'view_count' => (int) ($statistics->getViewCount() ?? 0),
+                        'like_count' => (int) ($statistics->getLikeCount() ?? 0),
+                        'dislike_count' => (int) ($statistics->getDislikeCount() ?? 0),
+                        'comment_count' => (int) ($statistics->getCommentCount() ?? 0),
+                        'favorite_count' => (int) ($statistics->getFavoriteCount() ?? 0),
+                        'duration' => $contentDetails->getDuration(),
+                        'definition' => $contentDetails->getDefinition(),
+                        'caption' => $contentDetails->getCaption(),
+                        'licensed_content' => $contentDetails->getLicensedContent(),
+                        'privacy_status' => $status->getPrivacyStatus(),
+                        'published_at' => $snippet->getPublishedAt(),
+                    ];
+                }
+            }
+
+            // Update each track with its analytics
+            foreach ($tracks as $track) {
+                if (!$track->youtube_video_id) {
+                    $results['skipped']++;
+                    continue;
+                }
+
+                $analytics = $allAnalytics[$track->youtube_video_id] ?? null;
+                
+                if (!$analytics) {
+                    $results['failed']++;
+                    continue;
+                }
+
+                try {
+                    $track->update([
+                        'youtube_view_count' => $analytics['view_count'],
+                        'youtube_like_count' => $analytics['like_count'],
+                        'youtube_dislike_count' => $analytics['dislike_count'],
+                        'youtube_comment_count' => $analytics['comment_count'],
+                        'youtube_favorite_count' => $analytics['favorite_count'],
+                        'youtube_duration' => $analytics['duration'],
+                        'youtube_definition' => $analytics['definition'],
+                        'youtube_caption' => $analytics['caption'],
+                        'youtube_licensed_content' => $analytics['licensed_content'],
+                        'youtube_privacy_status' => $analytics['privacy_status'],
+                        'youtube_published_at' => $analytics['published_at'],
+                        'youtube_analytics_updated_at' => now(),
+                    ]);
+
+                    $results['updated']++;
+                } catch (\Exception $e) {
+                    Log::error('Failed to update track analytics in bulk', [
+                        'track_id' => $track->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                    $results['failed']++;
+                }
+            }
+
+            Log::info('Bulk analytics update completed', $results);
+            return $results;
+
+        } catch (\Exception $e) {
+            Log::error('Failed to bulk update analytics', [
+                'error' => $e->getMessage(),
+                'track_count' => $tracks->count(),
+            ]);
+            
+            $results['failed'] = $tracks->count();
+            return $results;
+        }
+    }
+
+    /**
+     * Get analytics summary for all uploaded tracks.
+     */
+    public function getAnalyticsSummary(): array
+    {
+        try {
+            $tracks = Track::uploadedToYoutube()->withAnalytics()->get();
+            
+            if ($tracks->isEmpty()) {
+                return [
+                    'total_tracks' => 0,
+                    'total_views' => 0,
+                    'total_likes' => 0,
+                    'total_comments' => 0,
+                    'average_engagement_rate' => 0,
+                    'top_performing' => [],
+                    'recent_uploads' => [],
+                ];
+            }
+
+            $totalViews = $tracks->sum('youtube_view_count');
+            $totalLikes = $tracks->sum('youtube_like_count');
+            $totalComments = $tracks->sum('youtube_comment_count');
+            $averageEngagement = $tracks->avg('engagement_rate');
+
+            $topPerforming = $tracks->orderByViews()
+                                  ->take(5)
+                                  ->map(function ($track) {
+                                      return [
+                                          'id' => $track->id,
+                                          'title' => $track->title,
+                                          'views' => $track->youtube_view_count,
+                                          'likes' => $track->youtube_like_count,
+                                          'engagement_rate' => $track->engagement_rate,
+                                          'youtube_url' => $track->youtube_url,
+                                      ];
+                                  });
+
+            $recentUploads = $tracks->where('youtube_uploaded_at', '>=', now()->subDays(7))
+                                   ->sortByDesc('youtube_uploaded_at')
+                                   ->take(5)
+                                   ->map(function ($track) {
+                                       return [
+                                           'id' => $track->id,
+                                           'title' => $track->title,
+                                           'views' => $track->youtube_view_count,
+                                           'uploaded_at' => $track->youtube_uploaded_at,
+                                           'youtube_url' => $track->youtube_url,
+                                       ];
+                                   });
+
+            return [
+                'total_tracks' => $tracks->count(),
+                'total_views' => $totalViews,
+                'total_likes' => $totalLikes,
+                'total_comments' => $totalComments,
+                'average_engagement_rate' => round($averageEngagement, 2),
+                'top_performing' => $topPerforming->values(),
+                'recent_uploads' => $recentUploads->values(),
+            ];
+
+        } catch (\Exception $e) {
+            Log::error('Failed to get analytics summary', [
+                'error' => $e->getMessage(),
+            ]);
+            
+            return [
+                'total_tracks' => 0,
+                'total_views' => 0,
+                'total_likes' => 0,
+                'total_comments' => 0,
+                'average_engagement_rate' => 0,
+                'top_performing' => [],
+                'recent_uploads' => [],
+            ];
+        }
     }
 } 

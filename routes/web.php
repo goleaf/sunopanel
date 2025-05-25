@@ -7,6 +7,7 @@ use App\Http\Controllers\TrackController;
 use App\Http\Controllers\VideoUploadController;
 use App\Http\Controllers\YouTubeController;
 use App\Http\Controllers\YouTubeBulkController;
+use App\Http\Controllers\YouTubeAnalyticsController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -130,6 +131,16 @@ Route::prefix('youtube')->name('youtube.')->group(function () {
         Route::get('/eligible-tracks', [YouTubeBulkController::class, 'eligibleTracks'])->name('eligible-tracks');
     });
     
+    // YouTube Analytics routes
+    Route::prefix('analytics')->name('analytics.')->group(function () {
+        Route::get('/', [YouTubeAnalyticsController::class, 'index'])->name('index');
+        Route::get('/summary', [YouTubeAnalyticsController::class, 'summary'])->name('summary');
+        Route::get('/tracks/{track}', [YouTubeAnalyticsController::class, 'trackAnalytics'])->name('track');
+        Route::post('/tracks/{track}/update', [YouTubeAnalyticsController::class, 'updateTrackAnalytics'])->name('track.update');
+        Route::post('/bulk-update', [YouTubeAnalyticsController::class, 'bulkUpdateAnalytics'])->name('bulk-update');
+        Route::get('/top-performing', [YouTubeAnalyticsController::class, 'topPerforming'])->name('top-performing');
+    });
+    
     // YouTube Auth routes
     Route::prefix('auth')->name('auth.')->group(function () {
         Route::get('/login', [\App\Http\Controllers\YouTubeAuthController::class, 'showLoginForm'])->name('login_form');
@@ -139,6 +150,19 @@ Route::prefix('youtube')->name('youtube.')->group(function () {
         // Account management routes
         Route::post('/set-active', [\App\Http\Controllers\YouTubeAuthController::class, 'setActiveAccount'])->name('set-active');
         Route::post('/delete-account', [\App\Http\Controllers\YouTubeAuthController::class, 'deleteAccount'])->name('delete-account');
+    });
+    
+    // YouTube Analytics routes
+    Route::prefix('analytics')->name('analytics.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\YouTubeAnalyticsController::class, 'index'])->name('index');
+        Route::get('/summary', [\App\Http\Controllers\YouTubeAnalyticsController::class, 'summary'])->name('summary');
+        Route::get('/trends', [\App\Http\Controllers\YouTubeAnalyticsController::class, 'trends'])->name('trends');
+        Route::get('/top-performing', [\App\Http\Controllers\YouTubeAnalyticsController::class, 'topPerforming'])->name('top-performing');
+        Route::post('/bulk-update', [\App\Http\Controllers\YouTubeAnalyticsController::class, 'bulkUpdateAnalytics'])->name('bulk-update');
+        
+        // Track-specific analytics
+        Route::get('/tracks/{track}', [\App\Http\Controllers\YouTubeAnalyticsController::class, 'trackAnalytics'])->name('tracks.show');
+        Route::post('/tracks/{track}/update', [\App\Http\Controllers\YouTubeAnalyticsController::class, 'updateTrackAnalytics'])->name('tracks.update');
     });
 });
 

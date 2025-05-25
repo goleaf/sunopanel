@@ -15,6 +15,18 @@ class Kernel extends ConsoleKernel
         // Schedule random YouTube upload once per day
         $schedule->command('youtube:upload-random')->daily();
         
+        // Schedule YouTube analytics updates
+        $schedule->command('youtube:update-analytics --limit=100')
+                 ->hourly()
+                 ->withoutOverlapping()
+                 ->runInBackground();
+        
+        // Schedule full analytics refresh twice daily
+        $schedule->command('youtube:update-analytics --force --limit=500')
+                 ->twiceDaily(6, 18)
+                 ->withoutOverlapping()
+                 ->runInBackground();
+        
         // You can uncomment one of these for more frequent uploads
         // $schedule->command('youtube:upload-random')->hourly();
         // $schedule->command('youtube:upload-random')->everyFourHours();

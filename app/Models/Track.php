@@ -63,6 +63,14 @@ final class Track extends Model
         'youtube_stats_updated_at' => 'datetime',
         'youtube_views' => 'integer',
         'youtube_enabled' => 'boolean',
+        // YouTube Analytics Casts
+        'youtube_view_count' => 'integer',
+        'youtube_like_count' => 'integer',
+        'youtube_dislike_count' => 'integer',
+        'youtube_comment_count' => 'integer',
+        'youtube_favorite_count' => 'integer',
+        'youtube_published_at' => 'datetime',
+        'youtube_analytics_updated_at' => 'datetime',
     ];
 
     /**
@@ -213,5 +221,94 @@ final class Track extends Model
     public function scopeNotUploadedToYoutube($query)
     {
         return $query->whereNull('youtube_video_id');
+    }
+
+    /**
+     * Scope a query to only include tracks with analytics data.
+     */
+    public function scopeWithAnalytics($query)
+    {
+        return $query->whereNotNull('youtube_analytics_updated_at');
+    }
+
+    /**
+     * Scope a query to order by YouTube view count.
+     */
+    public function scopeOrderByViews($query, string $direction = 'desc')
+    {
+        return $query->orderBy('youtube_view_count', $direction);
+    }
+
+    /**
+     * Scope a query to order by YouTube like count.
+     */
+    public function scopeOrderByLikes($query, string $direction = 'desc')
+    {
+        return $query->orderBy('youtube_like_count', $direction);
+    }
+
+    /**
+     * Get formatted view count.
+     */
+    public function getFormattedViewCountAttribute(): string
+    {
+        if (!$this->youtube_view_count) {
+            return '0';
+        }
+
+        if ($this->youtube_view_count >= 1000000) {
+            return number_format($this->youtube_view_count / 1000000, 1) . 'M';
+        }
+
+        if ($this->youtube_view_count >= 1000) {
+            return number_format($this->youtube_view_count / 1000, 1) . 'K';
+        }
+
+        return number_format($this->youtube_view_count);
+    }
+
+    /**
+     * Get formatted like count.
+     */
+    public function getFormattedLikeCountAttribute(): string
+    {
+        if (!$this->youtube_like_count) {
+            return '0';
+        }
+
+        if ($this->youtube_like_count >= 1000000) {
+            return number_format($this->youtube_like_count / 1000000, 1) . 'M';
+        }
+
+        if ($this->youtube_like_count >= 1000) {
+            return number_format($this->youtube_like_count / 1000, 1) . 'K';
+        }
+
+        return number_format($this->youtube_like_count);
+    }
+
+    /**
+     * Check if analytics data is stale (older than 1 hour).
+     */
+    public function hasStaleAnalytics(): bool
+    {
+        if (!$this->youtube_analytics_updated_at) {
+            return true;
+        }
+
+        return $this->youtube_analytics_updated_at->lt(now()->subHour());
+    }
+
+    /**
+     * Get engagement rate (likes / views * 100).
+     */
+    public function getEngagementRateAttribute(): float
+    {
+        if (!$this->youtube_view_count || $this->youtube_view_count === 0) {
+            return 0.0;
+        }
+
+        $totalEngagement = ($this->youtube_like_count ?? 0) + ($this->youtube_comment_count ?? 0);
+        return round(($totalEngagement / $this->youtube_view_count) * 100, 2);
     }
 }
