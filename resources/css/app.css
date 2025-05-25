@@ -18,3 +18,4 @@
 
 /* Import track status CSS */
 @import './status-updates.css';
+@import './components/track-status.css';

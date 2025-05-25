@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('head')
-    @vite(['resources/css/components/track-status.css', 'resources/js/tracks.js'])
+    @vite(['resources/js/tracks.js'])
 @endsection
 
 @section('content')
