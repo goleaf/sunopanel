@@ -109,26 +109,22 @@
                 </button>
             </h2>
             
-            <div id="queue-status" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div id="queue-status" class="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <div class="stat">
                     <div class="stat-title">Pending</div>
-                    <div class="stat-value text-warning" id="pending-count">{{ $queueStatus['pending'] ?? 0 }}</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-title">Processing</div>
-                    <div class="stat-value text-info" id="processing-count">{{ $queueStatus['processing'] ?? 0 }}</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-title">Completed</div>
-                    <div class="stat-value text-success" id="completed-count">{{ $queueStatus['completed'] ?? 0 }}</div>
+                    <div class="stat-value text-warning" id="pending-count">{{ $queueStatus['pending_uploads'] ?? 0 }}</div>
                 </div>
                 <div class="stat">
                     <div class="stat-title">Failed</div>
-                    <div class="stat-value text-error" id="failed-count">{{ $queueStatus['failed'] ?? 0 }}</div>
+                    <div class="stat-value text-error" id="failed-count">{{ $queueStatus['failed_uploads'] ?? 0 }}</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-title">Eligible</div>
+                    <div class="stat-value text-success" id="eligible-count">{{ $queueStatus['eligible_tracks'] ?? 0 }}</div>
                 </div>
             </div>
             
-            @if(($queueStatus['failed'] ?? 0) > 0)
+            @if(($queueStatus['failed_uploads'] ?? 0) > 0)
                 <div class="mt-4">
                     <form action="{{ route('youtube.bulk.retry-failed') }}" method="POST" class="inline">
                         @csrf
@@ -250,18 +246,6 @@
                     </div>
                 </div>
                 
-                <!-- Search -->
-                <div class="form-control mb-4">
-                    <div class="input-group">
-                        <input type="text" id="track-search" placeholder="Search tracks..." class="input input-bordered flex-1" />
-                        <button onclick="searchTracks()" class="btn btn-square">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-                
                 <!-- Track List -->
                 <div id="track-list" class="space-y-2 max-h-96 overflow-y-auto">
                     @forelse($eligibleTracks as $track)
@@ -273,17 +257,11 @@
                                     @if($track->genres->isNotEmpty())
                                         <span class="mr-4">{{ $track->genres_list }}</span>
                                     @endif
-                                    @if($track->duration)
-                                        <span class="mr-4">{{ $track->duration }}</span>
-                                    @endif
                                     <span>{{ $track->created_at->diffForHumans() }}</span>
                                 </div>
                             </div>
                             <div class="text-right">
                                 <div class="badge badge-success">{{ $track->status }}</div>
-                                @if($track->file_size_human)
-                                    <div class="text-xs text-gray-500 mt-1">{{ $track->file_size_human }}</div>
-                                @endif
                             </div>
                         </div>
                     @empty
@@ -362,10 +340,9 @@ function refreshQueueStatus() {
     fetch('{{ route("youtube.bulk.queue-status") }}')
         .then(response => response.json())
         .then(data => {
-            document.getElementById('pending-count').textContent = data.pending || 0;
-            document.getElementById('processing-count').textContent = data.processing || 0;
-            document.getElementById('completed-count').textContent = data.completed || 0;
-            document.getElementById('failed-count').textContent = data.failed || 0;
+            document.getElementById('pending-count').textContent = data.pending_uploads || 0;
+            document.getElementById('failed-count').textContent = data.failed_uploads || 0;
+            document.getElementById('eligible-count').textContent = data.eligible_tracks || 0;
         })
         .catch(error => console.error('Error refreshing queue status:', error));
 }
@@ -429,310 +406,4 @@ function uploadNow() {
 // Initialize
 updateSelectedCount();
 </script>
-@endsection 
-
-@section('title', 'YouTube Bulk Upload')
-
-@section('content')
-<div class="container mx-auto px-4 py-8">
-    <div class="max-w-7xl mx-auto">
-        <!-- Header -->
-        <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-900 dark:text-white">YouTube Bulk Upload</h1>
-            <p class="mt-2 text-gray-600 dark:text-gray-400">Upload multiple tracks to YouTube at once</p>
-        </div>
-
-        <!-- Queue Status Card -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 mb-6">
-            <div class="p-6">
-                <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Upload Queue Status</h2>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
-                        <div class="text-2xl font-bold text-blue-600 dark:text-blue-400" id="pending-count">
-                            {{ $queueStatus['pending_uploads'] }}
-                        </div>
-                        <div class="text-sm text-blue-600 dark:text-blue-400">Pending Uploads</div>
-                    </div>
-                    <div class="bg-red-50 dark:bg-red-900/20 rounded-lg p-4">
-                        <div class="text-2xl font-bold text-red-600 dark:text-red-400" id="failed-count">
-                            {{ $queueStatus['failed_uploads'] }}
-                        </div>
-                        <div class="text-sm text-red-600 dark:text-red-400">Failed Uploads</div>
-                    </div>
-                    <div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
-                        <div class="text-2xl font-bold text-green-600 dark:text-green-400" id="eligible-count">
-                            {{ $queueStatus['eligible_tracks'] }}
-                        </div>
-                        <div class="text-sm text-green-600 dark:text-green-400">Eligible Tracks</div>
-                    </div>
-                </div>
-                
-                @if($queueStatus['failed_uploads'] > 0)
-                <div class="mt-4">
-                    <form action="{{ route('youtube.bulk.retry-failed') }}" method="POST" class="inline">
-                        @csrf
-                        <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                            Retry Failed Uploads
-                        </button>
-                    </form>
-                </div>
-                @endif
-            </div>
-        </div>
-
-        <!-- Account Selection -->
-        @if($accounts->count() > 1)
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 mb-6">
-            <div class="p-6">
-                <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">YouTube Account</h2>
-                <div class="space-y-2">
-                    @foreach($accounts as $account)
-                    <label class="flex items-center p-3 border border-gray-200 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700">
-                        <input type="radio" name="account_id" value="{{ $account->id }}" 
-                               class="text-blue-600 focus:ring-blue-500" 
-                               {{ $account->is_active ? 'checked' : '' }}>
-                        <div class="ml-3 flex-1">
-                            <div class="font-medium text-gray-900 dark:text-white">{{ $account->channel_title }}</div>
-                            <div class="text-sm text-gray-500 dark:text-gray-400">
-                                {{ $account->channel_id }} • Last used {{ $account->last_used_at?->diffForHumans() ?? 'Never' }}
-                            </div>
-                        </div>
-                        @if($account->is_active)
-                        <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full dark:bg-green-900 dark:text-green-300">
-                            Active
-                        </span>
-                        @endif
-                    </label>
-                    @endforeach
-                </div>
-            </div>
-        </div>
-        @endif
-
-        <!-- Upload Options -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 mb-6">
-            <div class="p-6">
-                <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Upload Settings</h2>
-                <form id="bulk-upload-form">
-                    @csrf
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Privacy Status</label>
-                            <select name="privacy_status" class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                <option value="unlisted">Unlisted</option>
-                                <option value="private">Private</option>
-                                <option value="public">Public</option>
-                            </select>
-                        </div>
-                        
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Category</label>
-                            <select name="category_id" class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                <option value="10">Music</option>
-                                <option value="1">Film & Animation</option>
-                                <option value="2">Autos & Vehicles</option>
-                                <option value="15">Pets & Animals</option>
-                                <option value="17">Sports</option>
-                                <option value="19">Travel & Events</option>
-                                <option value="20">Gaming</option>
-                                <option value="22">People & Blogs</option>
-                                <option value="23">Comedy</option>
-                                <option value="24">Entertainment</option>
-                                <option value="25">News & Politics</option>
-                                <option value="26">Howto & Style</option>
-                                <option value="27">Education</option>
-                                <option value="28">Science & Technology</option>
-                            </select>
-                        </div>
-                        
-                        <div class="flex items-center">
-                            <label class="flex items-center cursor-pointer">
-                                <input type="checkbox" name="made_for_kids" class="text-blue-600 focus:ring-blue-500 rounded">
-                                <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Made for Kids</span>
-                            </label>
-                        </div>
-                        
-                        <div class="flex items-center">
-                            <label class="flex items-center cursor-pointer">
-                                <input type="checkbox" name="is_short" class="text-blue-600 focus:ring-blue-500 rounded">
-                                <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">YouTube Short</span>
-                            </label>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- Track Selection -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-            <div class="p-6">
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Select Tracks to Upload</h2>
-                    <div class="flex items-center space-x-2">
-                        <button type="button" id="select-all" class="text-blue-600 hover:text-blue-700 text-sm font-medium">
-                            Select All
-                        </button>
-                        <span class="text-gray-300">|</span>
-                        <button type="button" id="select-none" class="text-blue-600 hover:text-blue-700 text-sm font-medium">
-                            Select None
-                        </button>
-                    </div>
-                </div>
-
-                @if($eligibleTracks->count() > 0)
-                <div class="space-y-2 mb-6 max-h-96 overflow-y-auto">
-                    @foreach($eligibleTracks as $track)
-                    <label class="flex items-center p-3 border border-gray-200 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700">
-                        <input type="checkbox" name="track_ids[]" value="{{ $track->id }}" 
-                               class="text-blue-600 focus:ring-blue-500 track-checkbox">
-                        <div class="ml-3 flex-1">
-                            <div class="font-medium text-gray-900 dark:text-white">{{ $track->title }}</div>
-                            <div class="text-sm text-gray-500 dark:text-gray-400">
-                                {{ $track->genres_list }} • Created {{ $track->created_at->diffForHumans() }}
-                            </div>
-                        </div>
-                        <div class="text-sm text-gray-500 dark:text-gray-400">
-                            {{ $track->status }}
-                        </div>
-                    </label>
-                    @endforeach
-                </div>
-
-                <!-- Action Buttons -->
-                <div class="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-600">
-                    <div class="text-sm text-gray-500 dark:text-gray-400">
-                        <span id="selected-count">0</span> tracks selected
-                    </div>
-                    <div class="flex space-x-3">
-                        <button type="button" id="queue-upload" 
-                                class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                            Queue for Upload
-                        </button>
-                        <button type="button" id="upload-now" 
-                                class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                            Upload Now (Max 10)
-                        </button>
-                    </div>
-                </div>
-                @else
-                <div class="text-center py-8">
-                    <div class="text-gray-500 dark:text-gray-400">
-                        <svg class="mx-auto h-12 w-12 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2h4a1 1 0 110 2h-1v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6H3a1 1 0 110-2h4z" />
-                        </svg>
-                        <p class="text-lg font-medium">No tracks available for upload</p>
-                        <p class="text-sm">Complete some tracks with MP4 files to see them here.</p>
-                    </div>
-                </div>
-                @endif
-            </div>
-        </div>
-    </div>
-</div>
-
-@push('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const form = document.getElementById('bulk-upload-form');
-    const checkboxes = document.querySelectorAll('.track-checkbox');
-    const selectedCountEl = document.getElementById('selected-count');
-    const selectAllBtn = document.getElementById('select-all');
-    const selectNoneBtn = document.getElementById('select-none');
-    const queueBtn = document.getElementById('queue-upload');
-    const uploadNowBtn = document.getElementById('upload-now');
-
-    function updateSelectedCount() {
-        const selected = document.querySelectorAll('.track-checkbox:checked');
-        const count = selected.length;
-        selectedCountEl.textContent = count;
-        
-        queueBtn.disabled = count === 0;
-        uploadNowBtn.disabled = count === 0 || count > 10;
-    }
-
-    function updateQueueStatus() {
-        fetch('{{ route("youtube.bulk.queue-status") }}')
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('pending-count').textContent = data.pending_uploads;
-                document.getElementById('failed-count').textContent = data.failed_uploads;
-                document.getElementById('eligible-count').textContent = data.eligible_tracks;
-            })
-            .catch(error => console.error('Error fetching queue status:', error));
-    }
-
-    // Event listeners
-    checkboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', updateSelectedCount);
-    });
-
-    selectAllBtn.addEventListener('click', function() {
-        checkboxes.forEach(checkbox => checkbox.checked = true);
-        updateSelectedCount();
-    });
-
-    selectNoneBtn.addEventListener('click', function() {
-        checkboxes.forEach(checkbox => checkbox.checked = false);
-        updateSelectedCount();
-    });
-
-    queueBtn.addEventListener('click', function() {
-        submitForm('{{ route("youtube.bulk.queue") }}');
-    });
-
-    uploadNowBtn.addEventListener('click', function() {
-        submitForm('{{ route("youtube.bulk.upload-now") }}');
-    });
-
-    function submitForm(action) {
-        const formData = new FormData(form);
-        const selectedTracks = Array.from(document.querySelectorAll('.track-checkbox:checked'))
-            .map(cb => cb.value);
-        
-        if (selectedTracks.length === 0) {
-            alert('Please select at least one track to upload.');
-            return;
-        }
-
-        selectedTracks.forEach(trackId => {
-            formData.append('track_ids[]', trackId);
-        });
-
-        // Add account selection if multiple accounts
-        const selectedAccount = document.querySelector('input[name="account_id"]:checked');
-        if (selectedAccount) {
-            formData.append('account_id', selectedAccount.value);
-        }
-
-        fetch(action, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert(data.message || 'Upload initiated successfully!');
-                // Refresh the page to update the queue status
-                window.location.reload();
-            } else {
-                alert(data.message || 'Upload failed. Please try again.');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred. Please try again.');
-        });
-    }
-
-    // Initial count update
-    updateSelectedCount();
-
-    // Update queue status every 30 seconds
-    setInterval(updateQueueStatus, 30000);
-});
-</script>
-@endpush
 @endsection 

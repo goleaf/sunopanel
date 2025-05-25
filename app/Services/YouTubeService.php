@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Exceptions\YouTubeException;
 use App\Models\YouTubeCredential;
 use App\Models\YouTubeAccount;
 use Exception;
@@ -280,13 +281,68 @@ class YouTubeService
     public function fetchAccessTokenWithAuthCode(string $code): array
     {
         try {
+            Log::info('Fetching access token with auth code', [
+                'code_length' => strlen($code),
+                'client_configured' => !empty($this->client->getClientId()),
+            ]);
+
+            // Ensure client is properly configured
+            if (!$this->client->getClientId() || !$this->client->getClientSecret()) {
+                throw new \Exception('OAuth client not properly configured');
+            }
+
+            // Fetch the access token
             $accessToken = $this->client->fetchAccessTokenWithAuthCode($code);
+            
+            // Check for errors in the response
+            if (isset($accessToken['error'])) {
+                $errorMsg = $accessToken['error_description'] ?? $accessToken['error'];
+                Log::error('OAuth token exchange failed', [
+                    'error' => $accessToken['error'],
+                    'error_description' => $accessToken['error_description'] ?? null,
+                ]);
+                throw new \Exception("OAuth error: {$errorMsg}");
+            }
+
+            // Validate required token fields
+            if (!isset($accessToken['access_token'])) {
+                Log::error('Access token missing from OAuth response', $accessToken);
+                throw new \Exception('Access token not received from OAuth provider');
+            }
+
+            // Log successful token exchange (without sensitive data)
+            Log::info('Access token fetched successfully', [
+                'has_access_token' => !empty($accessToken['access_token']),
+                'has_refresh_token' => !empty($accessToken['refresh_token']),
+                'expires_in' => $accessToken['expires_in'] ?? null,
+                'token_type' => $accessToken['token_type'] ?? null,
+                'scope' => $accessToken['scope'] ?? null,
+            ]);
+
+            // Set the token on the client
             $this->client->setAccessToken($accessToken);
+            
+            // Save the token to database
             $this->saveAccessToken($accessToken);
+            
+            // Initialize YouTube service with new token
             $this->youtube = new Google_Service_YouTube($this->client);
+            
             return $accessToken;
-        } catch (Exception $e) {
-            Log::error('Error fetching YouTube access token: ' . $e->getMessage());
+            
+        } catch (\Google_Service_Exception $e) {
+            Log::error('Google Service error during token exchange', [
+                'error' => $e->getMessage(),
+                'code' => $e->getCode(),
+                'errors' => $e->getErrors(),
+            ]);
+            throw new \Exception("Google API error: {$e->getMessage()}");
+            
+        } catch (\Exception $e) {
+            Log::error('Error fetching YouTube access token', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
             throw $e;
         }
     }
@@ -356,12 +412,12 @@ class YouTubeService
                 'has_access_token' => !is_null($this->client->getAccessToken()),
                 'token_expired' => $this->client->isAccessTokenExpired(),
             ]);
-            throw new Exception('YouTube API not authenticated. Please authenticate first.');
+            throw YouTubeException::authentication('YouTube API not authenticated. Please authenticate first.');
         }
         
         if (!file_exists($videoPath)) {
             Log::error("Video file not found: {$videoPath}");
-            throw new Exception("Video file not found: {$videoPath}");
+            throw YouTubeException::fileNotFound($videoPath);
         }
         
         try {
@@ -424,7 +480,10 @@ class YouTubeService
             
             if (!$handle) {
                 Log::error("Failed to open the file for reading: {$videoPath}");
-                throw new Exception("Failed to open the file for reading: {$videoPath}");
+                throw YouTubeException::upload("Failed to open the file for reading: {$videoPath}", [
+                    'file_path' => $videoPath,
+                    'file_size' => $fileSize
+                ]);
             }
             
             $chunkNumber = 0;
@@ -445,7 +504,29 @@ class YouTubeService
                     $status = $media->nextChunk($chunk);
                 } catch (\Exception $e) {
                     Log::error("Error during chunk upload (chunk #{$chunkNumber}): " . $e->getMessage());
-                    throw $e;
+                    
+                    // Determine error type based on exception message
+                    $errorMessage = $e->getMessage();
+                    if (str_contains($errorMessage, 'quota') || str_contains($errorMessage, 'limit')) {
+                        throw YouTubeException::apiQuota("Upload quota exceeded during chunk upload", [
+                            'chunk_number' => $chunkNumber,
+                            'uploaded_bytes' => $uploadedBytes,
+                            'total_bytes' => $fileSize,
+                            'original_error' => $errorMessage
+                        ]);
+                    } elseif (str_contains($errorMessage, 'network') || str_contains($errorMessage, 'timeout')) {
+                        throw YouTubeException::network("Network error during chunk upload", [
+                            'chunk_number' => $chunkNumber,
+                            'uploaded_bytes' => $uploadedBytes,
+                            'original_error' => $errorMessage
+                        ]);
+                    } else {
+                        throw YouTubeException::upload("Error during chunk upload", [
+                            'chunk_number' => $chunkNumber,
+                            'uploaded_bytes' => $uploadedBytes,
+                            'original_error' => $errorMessage
+                        ]);
+                    }
                 }
             }
             
@@ -890,57 +971,104 @@ class YouTubeService
             $account = $account ?: $this->getActiveAccount();
             
             if (!$account || !$account->refresh_token) {
-                Log::warning('No account or refresh token available for token refresh');
+                Log::warning('No account or refresh token available for token refresh', [
+                    'has_account' => !is_null($account),
+                    'has_refresh_token' => $account ? !empty($account->refresh_token) : false,
+                ]);
                 return false;
             }
 
-            Log::info('Refreshing access token for account', ['account_id' => $account->id]);
+            Log::info('Refreshing access token for account', [
+                'account_id' => $account->id,
+                'channel_title' => $account->channel_title,
+            ]);
 
             // Use the refresh token to get a new access token
             $this->client->fetchAccessTokenWithRefreshToken($account->refresh_token);
             $newAccessToken = $this->client->getAccessToken();
 
+            // Check for errors in the response
             if (!$newAccessToken || isset($newAccessToken['error'])) {
+                $error = $newAccessToken['error'] ?? 'Unknown error';
+                $errorDescription = $newAccessToken['error_description'] ?? '';
+                
                 Log::error('Failed to refresh access token', [
                     'account_id' => $account->id,
-                    'error' => $newAccessToken['error'] ?? 'Unknown error'
+                    'error' => $error,
+                    'error_description' => $errorDescription,
+                ]);
+                
+                // If refresh token is invalid, mark account as needing re-authentication
+                if (in_array($error, ['invalid_grant', 'invalid_request'])) {
+                    $account->update([
+                        'access_token' => null,
+                        'refresh_token' => null,
+                        'token_expires_at' => null,
+                        'is_active' => false,
+                    ]);
+                    Log::warning('Refresh token invalid, account marked for re-authentication', [
+                        'account_id' => $account->id,
+                    ]);
+                }
+                
+                return false;
+            }
+
+            // Validate the new access token
+            if (!isset($newAccessToken['access_token'])) {
+                Log::error('New access token missing from refresh response', [
+                    'account_id' => $account->id,
+                    'response_keys' => array_keys($newAccessToken),
                 ]);
                 return false;
             }
 
             // Update the account with the new token
-            $account->access_token = $newAccessToken['access_token'];
-            $account->token_expires_at = now()->addSeconds($newAccessToken['expires_in'] ?? 3600);
+            $updateData = [
+                'access_token' => $newAccessToken['access_token'],
+                'token_expires_at' => now()->addSeconds($newAccessToken['expires_in'] ?? 3600),
+                'last_used_at' => now(),
+            ];
             
             // Update refresh token if a new one was provided
             if (isset($newAccessToken['refresh_token'])) {
-                $account->refresh_token = $newAccessToken['refresh_token'];
+                $updateData['refresh_token'] = $newAccessToken['refresh_token'];
+                Log::info('New refresh token received and saved', ['account_id' => $account->id]);
             }
             
-            $account->last_used_at = now();
-            $account->save();
+            $account->update($updateData);
 
             // Update the legacy credential system for backward compatibility
             if ($this->credential) {
-                $this->credential->access_token = $newAccessToken['access_token'];
-                $this->credential->token_created_at = time();
-                $this->credential->token_expires_in = $newAccessToken['expires_in'] ?? 3600;
-                
-                if (isset($newAccessToken['refresh_token'])) {
-                    $this->credential->refresh_token = $newAccessToken['refresh_token'];
-                }
-                
-                $this->credential->save();
+                $this->credential->update([
+                    'access_token' => $newAccessToken['access_token'],
+                    'token_created_at' => time(),
+                    'token_expires_in' => $newAccessToken['expires_in'] ?? 3600,
+                    'refresh_token' => $newAccessToken['refresh_token'] ?? $this->credential->refresh_token,
+                ]);
             }
 
-            Log::info('Access token refreshed successfully', ['account_id' => $account->id]);
+            Log::info('Access token refreshed successfully', [
+                'account_id' => $account->id,
+                'expires_in' => $newAccessToken['expires_in'] ?? 3600,
+            ]);
+            
             return true;
 
+        } catch (\Google_Service_Exception $e) {
+            Log::error('Google Service error during token refresh', [
+                'account_id' => $account?->id,
+                'error' => $e->getMessage(),
+                'code' => $e->getCode(),
+                'errors' => $e->getErrors(),
+            ]);
+            return false;
+            
         } catch (\Exception $e) {
             Log::error('Failed to refresh access token', [
                 'account_id' => $account?->id,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
             return false;
         }
@@ -958,13 +1086,16 @@ class YouTubeService
             $account = $account ?: $this->getActiveAccount();
             
             if (!$account) {
-                Log::warning('No active YouTube account found');
+                Log::warning('No active YouTube account found for token validation');
                 return false;
             }
 
             // Check if we have an access token
             if (!$account->access_token) {
-                Log::warning('Account has no access token', ['account_id' => $account->id]);
+                Log::warning('Account has no access token', [
+                    'account_id' => $account->id,
+                    'channel_title' => $account->channel_title,
+                ]);
                 return false;
             }
 
@@ -972,27 +1103,42 @@ class YouTubeService
             $accessToken = [
                 'access_token' => $account->access_token,
                 'refresh_token' => $account->refresh_token,
-                'expires_in' => $account->token_expires_at ? $account->token_expires_at->diffInSeconds(now()) : 0,
+                'expires_in' => $account->token_expires_at ? max(0, $account->token_expires_at->diffInSeconds(now())) : 0,
             ];
             
             $this->client->setAccessToken($accessToken);
 
             // If token is expired, try to refresh it
             if ($this->client->isAccessTokenExpired()) {
-                Log::info('Token expired, attempting refresh', ['account_id' => $account->id]);
+                Log::info('Token expired, attempting refresh', [
+                    'account_id' => $account->id,
+                    'expires_at' => $account->token_expires_at?->toISOString(),
+                ]);
+                
+                if (!$account->refresh_token) {
+                    Log::error('Token expired but no refresh token available', [
+                        'account_id' => $account->id,
+                    ]);
+                    return false;
+                }
+                
                 return $this->refreshAccessToken($account);
             }
 
             // Update last used timestamp
-            $account->last_used_at = now();
-            $account->save();
+            $account->touch('last_used_at');
+
+            Log::debug('Token validation successful', [
+                'account_id' => $account->id,
+                'expires_at' => $account->token_expires_at?->toISOString(),
+            ]);
 
             return true;
 
         } catch (\Exception $e) {
             Log::error('Failed to ensure valid token', [
                 'account_id' => $account?->id,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
             return false;
         }
@@ -1008,8 +1154,14 @@ class YouTubeService
     {
         try {
             if (!$account->access_token) {
+                Log::info('Account already has no access token', ['account_id' => $account->id]);
                 return true; // Already revoked
             }
+
+            Log::info('Revoking access token for account', [
+                'account_id' => $account->id,
+                'channel_title' => $account->channel_title,
+            ]);
 
             // Set the token on the client
             $accessToken = [
@@ -1019,23 +1171,32 @@ class YouTubeService
             
             $this->client->setAccessToken($accessToken);
 
-            // Revoke the token
-            $this->client->revokeToken();
+            // Revoke the token with Google
+            try {
+                $this->client->revokeToken();
+                Log::info('Token revoked with Google successfully', ['account_id' => $account->id]);
+            } catch (\Exception $e) {
+                Log::warning('Failed to revoke token with Google, but will clear locally', [
+                    'account_id' => $account->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
 
             // Clear the tokens from the account
-            $account->access_token = null;
-            $account->refresh_token = null;
-            $account->token_expires_at = null;
-            $account->is_active = false;
-            $account->save();
+            $account->update([
+                'access_token' => null,
+                'refresh_token' => null,
+                'token_expires_at' => null,
+                'is_active' => false,
+            ]);
 
-            Log::info('Token revoked successfully', ['account_id' => $account->id]);
+            Log::info('Token revoked and account deactivated successfully', ['account_id' => $account->id]);
             return true;
 
         } catch (\Exception $e) {
             Log::error('Failed to revoke token', [
                 'account_id' => $account->id,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
             return false;
         }

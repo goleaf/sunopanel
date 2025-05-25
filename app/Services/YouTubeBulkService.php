@@ -10,7 +10,7 @@ use App\Jobs\YouTubeBulkUploadJob;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Queue;
-use Laravel\Pennant\Feature;
+// use Laravel\Pennant\Feature; // Removed for now
 
 final class YouTubeBulkService
 {
@@ -26,9 +26,7 @@ final class YouTubeBulkService
         ?YouTubeAccount $account = null,
         array $uploadOptions = []
     ): array {
-        if (!Feature::active('youtube-bulk-upload')) {
-            throw new \Exception('YouTube bulk upload feature is not enabled');
-        }
+        // Feature flag check removed for now - can be re-enabled when Pennant is configured
 
         $account = $account ?? YouTubeAccount::getActive();
         if (!$account) {
