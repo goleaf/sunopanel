@@ -8,6 +8,7 @@ use App\Models\Track;
 use App\Services\YouTubeService;
 use App\Services\CacheService;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 final class UpdateYouTubeAnalytics extends Command
@@ -139,7 +140,7 @@ final class UpdateYouTubeAnalytics extends Command
                 );
 
                 // Clear cache for this track
-                $this->cacheService->forget("youtube:analytics:track:{$track->id}");
+                Cache::forget("youtube:analytics:track:{$track->id}");
                 $this->clearAnalyticsCache();
 
                 return self::SUCCESS;
@@ -242,7 +243,7 @@ final class UpdateYouTubeAnalytics extends Command
         ];
 
         foreach ($cacheKeys as $key) {
-            $this->cacheService->forget($key);
+            Cache::forget($key);
         }
 
         // Clear trend caches
@@ -251,7 +252,7 @@ final class UpdateYouTubeAnalytics extends Command
 
         foreach ($periods as $period) {
             foreach ($metrics as $metric) {
-                $this->cacheService->forget("youtube:analytics:trends:{$period}:{$metric}");
+                Cache::forget("youtube:analytics:trends:{$period}:{$metric}");
             }
         }
 
@@ -259,7 +260,7 @@ final class UpdateYouTubeAnalytics extends Command
         foreach ($metrics as $metric) {
             foreach ($periods as $period) {
                 for ($limit = 5; $limit <= 50; $limit += 5) {
-                    $this->cacheService->forget("youtube:analytics:top_performing:{$metric}:{$limit}:{$period}");
+                    Cache::forget("youtube:analytics:top_performing:{$metric}:{$limit}:{$period}");
                 }
             }
         }

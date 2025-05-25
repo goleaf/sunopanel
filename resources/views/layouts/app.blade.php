@@ -9,6 +9,7 @@
 
     <!-- Scripts and Styles -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @yield('head')
 </head>
 <body class="min-h-screen bg-gray-100">
     <!-- Navigation -->
@@ -26,15 +27,10 @@
                         <li><a href="{{ route('tracks.index') }}">Songs</a></li>
                         <li><a href="{{ route('genres.index') }}">Genres</a></li>
                         <li><a href="{{ route('videos.upload') }}" class="{{ request()->routeIs('videos*') ? 'active' : '' }}">Upload Video</a></li>
-                        <li>
-                            <a href="{{ route('youtube.status') }}" class="{{ request()->routeIs('youtube.*') ? 'active' : '' }}">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"></path>
-                                    <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"></polygon>
-                                </svg>
-                                YouTube
-                            </a>
-                        </li>
+                        <li><a href="{{ route('youtube.status') }}" class="{{ request()->routeIs('youtube.status') ? 'active' : '' }}">YouTube Status</a></li>
+                        <li><a href="{{ route('youtube.analytics.index') }}" class="{{ request()->routeIs('youtube.analytics.*') ? 'active' : '' }}">YouTube Analytics</a></li>
+                        <li><a href="{{ route('youtube.bulk.index') }}" class="{{ request()->routeIs('youtube.bulk.*') ? 'active' : '' }}">YouTube Bulk</a></li>
+                        <li><a href="{{ route('queue.index') }}" class="{{ request()->routeIs('queue.*') ? 'active' : '' }}">Queue Monitor</a></li>
                         <li>
                             <a href="{{ route('settings.index') }}" class="{{ request()->routeIs('settings*') ? 'active' : '' }}">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -54,13 +50,22 @@
                         <li><a href="{{ route('genres.index') }}" class="{{ request()->routeIs('genres*') ? 'active' : '' }}">Genres</a></li>
                         <li><a href="{{ route('videos.upload') }}" class="{{ request()->routeIs('videos*') ? 'active' : '' }}">Upload Video</a></li>
                         <li>
-                            <a href="{{ route('youtube.status') }}" class="{{ request()->routeIs('youtube.*') ? 'active' : '' }}">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"></path>
-                                    <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"></polygon>
-                                </svg>
-                                YouTube
-                            </a>
+                            <details class="dropdown">
+                                <summary class="btn btn-ghost {{ request()->routeIs('youtube.*') || request()->routeIs('queue.*') ? 'active' : '' }}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"></path>
+                                        <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"></polygon>
+                                    </svg>
+                                    YouTube
+                                    <svg class="fill-current" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"/></svg>
+                                </summary>
+                                <ul class="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow">
+                                    <li><a href="{{ route('youtube.status') }}" class="{{ request()->routeIs('youtube.status') ? 'active' : '' }}">Status & Upload</a></li>
+                                    <li><a href="{{ route('youtube.analytics.index') }}" class="{{ request()->routeIs('youtube.analytics.*') ? 'active' : '' }}">Analytics</a></li>
+                                    <li><a href="{{ route('youtube.bulk.index') }}" class="{{ request()->routeIs('youtube.bulk.*') ? 'active' : '' }}">Bulk Upload</a></li>
+                                    <li><a href="{{ route('queue.index') }}" class="{{ request()->routeIs('queue.*') ? 'active' : '' }}">Queue Monitor</a></li>
+                                </ul>
+                            </details>
                         </li>
                         <li>
                             <a href="{{ route('settings.index') }}" class="{{ request()->routeIs('settings*') ? 'active' : '' }}">
