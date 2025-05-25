@@ -6,6 +6,7 @@ use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TrackController;
 use App\Http\Controllers\VideoUploadController;
 use App\Http\Controllers\YouTubeController;
+use App\Http\Controllers\YouTubeBulkController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -118,6 +119,16 @@ Route::prefix('youtube')->name('youtube.')->group(function () {
     // Video statistics routes
     Route::get('/video/{videoId}/stats', [YouTubeController::class, 'videoStats'])->name('video.stats');
     Route::post('/video/{videoId}/refresh-stats', [YouTubeController::class, 'refreshVideoStats'])->name('video.refresh-stats');
+    
+    // YouTube Bulk Upload routes
+    Route::prefix('bulk')->name('bulk.')->group(function () {
+        Route::get('/', [YouTubeBulkController::class, 'index'])->name('index');
+        Route::post('/queue', [YouTubeBulkController::class, 'queueUpload'])->name('queue');
+        Route::post('/upload-now', [YouTubeBulkController::class, 'uploadNow'])->name('upload-now');
+        Route::get('/queue-status', [YouTubeBulkController::class, 'queueStatus'])->name('queue-status');
+        Route::post('/retry-failed', [YouTubeBulkController::class, 'retryFailed'])->name('retry-failed');
+        Route::get('/eligible-tracks', [YouTubeBulkController::class, 'eligibleTracks'])->name('eligible-tracks');
+    });
     
     // YouTube Auth routes
     Route::prefix('auth')->name('auth.')->group(function () {

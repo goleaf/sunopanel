@@ -46,6 +46,9 @@
 - [x] Add missing getDisplayName() method to YouTubeAccount model
 - [x] Fix BadMethodCallException in YouTubeAuthController
 - [x] Test YouTube authentication flow to ensure it works properly
+- [x] Fix YouTubeAccount last_used_at casting error
+- [x] Add datetime cast for last_used_at field to prevent diffForHumans() error
+- [x] Add last_used_at to fillable attributes for proper mass assignment
 
 ### 1. Fix Setting Model Method Conflict (URGENT) ✅ COMPLETED
 - [x] Fix Setting::all() method conflict with Laravel's Model::all() method

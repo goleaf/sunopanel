@@ -320,7 +320,8 @@ class YouTubeService
             return true; // Note: API keys can only be used for read operations, not uploads
         }
         
-        return $this->client->getAccessToken() !== null && !$this->client->isAccessTokenExpired();
+        // For OAuth, ensure we have a valid token
+        return $this->ensureValidToken();
     }
     
     /**
@@ -735,12 +736,6 @@ class YouTubeService
     public function setAccount(YouTubeAccount $account): bool
     {
         try {
-            // Check if the account has access tokens
-            if (empty($account->access_token)) {
-                Log::error('Account has no access token', ['account_id' => $account->id]);
-                return false;
-            }
-            
             Log::info('Setting YouTube account', [
                 'account_id' => $account->id,
                 'name' => $account->name,
@@ -753,25 +748,10 @@ class YouTubeService
                 $this->client = $this->getClient();
             }
             
-            // Set the access token on the client
-            $accessToken = [
-                'access_token' => $account->access_token,
-                'refresh_token' => $account->refresh_token,
-                'expires_in' => $account->token_expires_at ? $account->token_expires_at->diffInSeconds(now()) : 0,
-            ];
-            
-            $this->client->setAccessToken($accessToken);
-            
-            // If token is expired and we have a refresh token, refresh it
-            if ($this->client->isAccessTokenExpired() && !empty($account->refresh_token)) {
-                Log::info('Refreshing expired token for account', ['account_id' => $account->id]);
-                $this->client->fetchAccessTokenWithRefreshToken($account->refresh_token);
-                
-                // Update the account with the new token
-                $newAccessToken = $this->client->getAccessToken();
-                $account->access_token = $newAccessToken['access_token'];
-                $account->token_expires_at = now()->addSeconds($newAccessToken['expires_in']);
-                $account->save();
+            // Validate and refresh token if needed
+            if (!$this->ensureValidToken($account)) {
+                Log::error('Failed to ensure valid token for account', ['account_id' => $account->id]);
+                return false;
             }
             
             // Initialize YouTube service with the current client
@@ -888,5 +868,385 @@ class YouTubeService
             ]);
             return [];
         }
+    }
+
+    /**
+     * Check if the access token is expired.
+     */
+    public function isTokenExpired(): bool
+    {
+        return $this->client->isAccessTokenExpired();
+    }
+
+    /**
+     * Refresh the access token using the refresh token
+     *
+     * @param YouTubeAccount|null $account
+     * @return bool
+     */
+    public function refreshAccessToken(?YouTubeAccount $account = null): bool
+    {
+        try {
+            $account = $account ?: $this->getActiveAccount();
+            
+            if (!$account || !$account->refresh_token) {
+                Log::warning('No account or refresh token available for token refresh');
+                return false;
+            }
+
+            Log::info('Refreshing access token for account', ['account_id' => $account->id]);
+
+            // Use the refresh token to get a new access token
+            $this->client->fetchAccessTokenWithRefreshToken($account->refresh_token);
+            $newAccessToken = $this->client->getAccessToken();
+
+            if (!$newAccessToken || isset($newAccessToken['error'])) {
+                Log::error('Failed to refresh access token', [
+                    'account_id' => $account->id,
+                    'error' => $newAccessToken['error'] ?? 'Unknown error'
+                ]);
+                return false;
+            }
+
+            // Update the account with the new token
+            $account->access_token = $newAccessToken['access_token'];
+            $account->token_expires_at = now()->addSeconds($newAccessToken['expires_in'] ?? 3600);
+            
+            // Update refresh token if a new one was provided
+            if (isset($newAccessToken['refresh_token'])) {
+                $account->refresh_token = $newAccessToken['refresh_token'];
+            }
+            
+            $account->last_used_at = now();
+            $account->save();
+
+            // Update the legacy credential system for backward compatibility
+            if ($this->credential) {
+                $this->credential->access_token = $newAccessToken['access_token'];
+                $this->credential->token_created_at = time();
+                $this->credential->token_expires_in = $newAccessToken['expires_in'] ?? 3600;
+                
+                if (isset($newAccessToken['refresh_token'])) {
+                    $this->credential->refresh_token = $newAccessToken['refresh_token'];
+                }
+                
+                $this->credential->save();
+            }
+
+            Log::info('Access token refreshed successfully', ['account_id' => $account->id]);
+            return true;
+
+        } catch (\Exception $e) {
+            Log::error('Failed to refresh access token', [
+                'account_id' => $account?->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * Validate and refresh token if needed
+     *
+     * @param YouTubeAccount|null $account
+     * @return bool
+     */
+    public function ensureValidToken(?YouTubeAccount $account = null): bool
+    {
+        try {
+            $account = $account ?: $this->getActiveAccount();
+            
+            if (!$account) {
+                Log::warning('No active YouTube account found');
+                return false;
+            }
+
+            // Check if we have an access token
+            if (!$account->access_token) {
+                Log::warning('Account has no access token', ['account_id' => $account->id]);
+                return false;
+            }
+
+            // Set the token on the client
+            $accessToken = [
+                'access_token' => $account->access_token,
+                'refresh_token' => $account->refresh_token,
+                'expires_in' => $account->token_expires_at ? $account->token_expires_at->diffInSeconds(now()) : 0,
+            ];
+            
+            $this->client->setAccessToken($accessToken);
+
+            // If token is expired, try to refresh it
+            if ($this->client->isAccessTokenExpired()) {
+                Log::info('Token expired, attempting refresh', ['account_id' => $account->id]);
+                return $this->refreshAccessToken($account);
+            }
+
+            // Update last used timestamp
+            $account->last_used_at = now();
+            $account->save();
+
+            return true;
+
+        } catch (\Exception $e) {
+            Log::error('Failed to ensure valid token', [
+                'account_id' => $account?->id,
+                'error' => $e->getMessage()
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * Revoke the access token for an account
+     *
+     * @param YouTubeAccount $account
+     * @return bool
+     */
+    public function revokeToken(YouTubeAccount $account): bool
+    {
+        try {
+            if (!$account->access_token) {
+                return true; // Already revoked
+            }
+
+            // Set the token on the client
+            $accessToken = [
+                'access_token' => $account->access_token,
+                'refresh_token' => $account->refresh_token,
+            ];
+            
+            $this->client->setAccessToken($accessToken);
+
+            // Revoke the token
+            $this->client->revokeToken();
+
+            // Clear the tokens from the account
+            $account->access_token = null;
+            $account->refresh_token = null;
+            $account->token_expires_at = null;
+            $account->is_active = false;
+            $account->save();
+
+            Log::info('Token revoked successfully', ['account_id' => $account->id]);
+            return true;
+
+        } catch (\Exception $e) {
+            Log::error('Failed to revoke token', [
+                'account_id' => $account->id,
+                'error' => $e->getMessage()
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * Upload multiple videos in batch
+     *
+     * @param array $videos Array of video data with keys: path, title, description, tags, privacyStatus, etc.
+     * @param callable|null $progressCallback Callback function to report progress
+     * @return array Results with success/failure status for each video
+     */
+    public function bulkUploadVideos(array $videos, ?callable $progressCallback = null): array
+    {
+        $results = [];
+        $totalVideos = count($videos);
+        
+        Log::info("Starting bulk upload of {$totalVideos} videos");
+        
+        if (!$this->isAuthenticated()) {
+            Log::error('YouTube API not authenticated for bulk upload');
+            return array_fill(0, $totalVideos, [
+                'success' => false,
+                'error' => 'YouTube API not authenticated',
+                'video_id' => null
+            ]);
+        }
+        
+        foreach ($videos as $index => $videoData) {
+            $videoNumber = $index + 1;
+            
+            try {
+                Log::info("Uploading video {$videoNumber}/{$totalVideos}: {$videoData['title']}");
+                
+                // Call progress callback if provided
+                if ($progressCallback) {
+                    $progressCallback($videoNumber, $totalVideos, 'uploading', $videoData['title']);
+                }
+                
+                $videoId = $this->uploadVideo(
+                    $videoData['path'],
+                    $videoData['title'],
+                    $videoData['description'] ?? '',
+                    $videoData['tags'] ?? [],
+                    $videoData['privacyStatus'] ?? 'unlisted',
+                    $videoData['madeForKids'] ?? false,
+                    $videoData['isShort'] ?? false,
+                    $videoData['categoryId'] ?? '10'
+                );
+                
+                if ($videoId) {
+                    $results[] = [
+                        'success' => true,
+                        'video_id' => $videoId,
+                        'title' => $videoData['title'],
+                        'error' => null
+                    ];
+                    
+                    Log::info("Successfully uploaded video {$videoNumber}/{$totalVideos}: {$videoId}");
+                    
+                    // Add to playlist if specified
+                    if (!empty($videoData['playlistId'])) {
+                        $this->addVideoToPlaylist($videoId, $videoData['playlistId']);
+                    }
+                    
+                } else {
+                    $results[] = [
+                        'success' => false,
+                        'video_id' => null,
+                        'title' => $videoData['title'],
+                        'error' => 'Upload failed - unknown error'
+                    ];
+                    
+                    Log::error("Failed to upload video {$videoNumber}/{$totalVideos}: {$videoData['title']}");
+                }
+                
+                // Call progress callback for completion
+                if ($progressCallback) {
+                    $progressCallback($videoNumber, $totalVideos, $videoId ? 'completed' : 'failed', $videoData['title']);
+                }
+                
+                // Add a small delay between uploads to avoid rate limiting
+                if ($videoNumber < $totalVideos) {
+                    sleep(2);
+                }
+                
+            } catch (\Exception $e) {
+                $results[] = [
+                    'success' => false,
+                    'video_id' => null,
+                    'title' => $videoData['title'] ?? 'Unknown',
+                    'error' => $e->getMessage()
+                ];
+                
+                Log::error("Exception during video upload {$videoNumber}/{$totalVideos}", [
+                    'title' => $videoData['title'] ?? 'Unknown',
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+                
+                // Call progress callback for error
+                if ($progressCallback) {
+                    $progressCallback($videoNumber, $totalVideos, 'error', $videoData['title'] ?? 'Unknown');
+                }
+            }
+        }
+        
+        $successCount = count(array_filter($results, fn($r) => $r['success']));
+        Log::info("Bulk upload completed: {$successCount}/{$totalVideos} videos uploaded successfully");
+        
+        return $results;
+    }
+
+    /**
+     * Get upload quota information
+     *
+     * @return array
+     */
+    public function getUploadQuota(): array
+    {
+        try {
+            // YouTube API doesn't provide direct quota information
+            // This is a placeholder for quota tracking implementation
+            return [
+                'daily_limit' => 10000, // Default daily quota units
+                'used_today' => 0, // Would need to track this
+                'remaining' => 10000,
+                'reset_time' => now()->addDay()->startOfDay(),
+            ];
+        } catch (\Exception $e) {
+            Log::error('Failed to get upload quota', ['error' => $e->getMessage()]);
+            return [
+                'daily_limit' => 0,
+                'used_today' => 0,
+                'remaining' => 0,
+                'reset_time' => now(),
+            ];
+        }
+    }
+
+    /**
+     * Retry failed uploads with exponential backoff
+     *
+     * @param array $failedUploads
+     * @param int $maxRetries
+     * @param callable|null $progressCallback
+     * @return array
+     */
+    public function retryFailedUploads(array $failedUploads, int $maxRetries = 3, ?callable $progressCallback = null): array
+    {
+        $results = [];
+        
+        foreach ($failedUploads as $upload) {
+            $retryCount = 0;
+            $success = false;
+            
+            while ($retryCount < $maxRetries && !$success) {
+                $retryCount++;
+                $waitTime = pow(2, $retryCount); // Exponential backoff: 2, 4, 8 seconds
+                
+                Log::info("Retrying upload (attempt {$retryCount}/{$maxRetries}): {$upload['title']}");
+                
+                if ($progressCallback) {
+                    $progressCallback($retryCount, $maxRetries, 'retrying', $upload['title']);
+                }
+                
+                sleep($waitTime);
+                
+                try {
+                    $videoId = $this->uploadVideo(
+                        $upload['path'],
+                        $upload['title'],
+                        $upload['description'] ?? '',
+                        $upload['tags'] ?? [],
+                        $upload['privacyStatus'] ?? 'unlisted',
+                        $upload['madeForKids'] ?? false,
+                        $upload['isShort'] ?? false,
+                        $upload['categoryId'] ?? '10'
+                    );
+                    
+                    if ($videoId) {
+                        $success = true;
+                        $results[] = [
+                            'success' => true,
+                            'video_id' => $videoId,
+                            'title' => $upload['title'],
+                            'retry_count' => $retryCount,
+                            'error' => null
+                        ];
+                        
+                        Log::info("Retry successful for: {$upload['title']} (attempt {$retryCount})");
+                    }
+                    
+                } catch (\Exception $e) {
+                    Log::warning("Retry attempt {$retryCount} failed for: {$upload['title']}", [
+                        'error' => $e->getMessage()
+                    ]);
+                    
+                    if ($retryCount >= $maxRetries) {
+                        $results[] = [
+                            'success' => false,
+                            'video_id' => null,
+                            'title' => $upload['title'],
+                            'retry_count' => $retryCount,
+                            'error' => $e->getMessage()
+                        ];
+                    }
+                }
+            }
+        }
+        
+        return $results;
     }
 } 
