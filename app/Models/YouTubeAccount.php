@@ -111,6 +111,27 @@ final class YouTubeAccount extends Model
     }
 
     /**
+     * Get a display name for the account.
+     */
+    public function getDisplayName(): string
+    {
+        // Priority: channel_name > name > email > fallback
+        if (!empty($this->channel_name)) {
+            return $this->channel_name;
+        }
+        
+        if (!empty($this->name)) {
+            return $this->name;
+        }
+        
+        if (!empty($this->email)) {
+            return $this->email;
+        }
+        
+        return 'YouTube Account #' . $this->id;
+    }
+
+    /**
      * Get the channel URL.
      */
     public function getChannelUrlAttribute(): ?string
