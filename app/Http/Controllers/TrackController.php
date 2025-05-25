@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Track;
 use App\Models\Genre;
+use App\Models\Setting;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -36,6 +37,14 @@ class TrackController extends Controller
     public function index(Request $request): View
     {
         $query = Track::with('genres');
+        
+        // Apply global YouTube visibility filter
+        $youtubeVisibilityFilter = Setting::get('youtube_visibility_filter', 'all');
+        if ($youtubeVisibilityFilter === 'uploaded') {
+            $query->whereNotNull('youtube_video_id');
+        } elseif ($youtubeVisibilityFilter === 'not_uploaded') {
+            $query->whereNull('youtube_video_id');
+        }
         
         // Apply search filter
         if ($request->filled('search')) {
@@ -74,7 +83,16 @@ class TrackController extends Controller
             ->withQueryString(); // Keep the query string for pagination
         
         // Get track counts for stats display - use a single query with raw counts for better performance
-        $stats = Track::selectRaw('
+        $statsQuery = Track::query();
+        
+        // Apply the same YouTube visibility filter to stats
+        if ($youtubeVisibilityFilter === 'uploaded') {
+            $statsQuery->whereNotNull('youtube_video_id');
+        } elseif ($youtubeVisibilityFilter === 'not_uploaded') {
+            $statsQuery->whereNull('youtube_video_id');
+        }
+        
+        $stats = $statsQuery->selectRaw('
             COUNT(*) as total,
             SUM(CASE WHEN status = "processing" THEN 1 ELSE 0 END) as processing,
             SUM(CASE WHEN status = "pending" THEN 1 ELSE 0 END) as pending,
@@ -92,6 +110,9 @@ class TrackController extends Controller
         
         // Add processing + pending count for the UI
         $activeTracksCount = $processingTracks + $pendingTracks;
+        
+        // Get global settings for the view
+        $showYoutubeColumn = Setting::get('show_youtube_column', true);
                         
         return view('tracks.index', compact(
             'tracks', 
@@ -101,7 +122,9 @@ class TrackController extends Controller
             'activeTracksCount',
             'completedTracks', 
             'failedTracks',
-            'stoppedTracks'
+            'stoppedTracks',
+            'showYoutubeColumn',
+            'youtubeVisibilityFilter'
         ));
     }
 

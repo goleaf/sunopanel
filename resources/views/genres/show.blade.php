@@ -3,7 +3,22 @@
 @section('content')
     <div class="container mx-auto px-4 py-8">
         <div class="flex justify-between items-center mb-6">
-            <h1 class="text-3xl font-bold text-gray-800">Genre: {{ $genre->name }}</h1>
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800 flex items-center">
+                    Genre: {{ $genre->name }}
+                    @if($youtubeVisibilityFilter !== 'all')
+                        <span class="badge badge-sm ml-2 {{ $youtubeVisibilityFilter === 'uploaded' ? 'badge-success' : 'badge-warning' }}">
+                            {{ $youtubeVisibilityFilter === 'uploaded' ? 'Uploaded Only' : 'Not Uploaded Only' }}
+                        </span>
+                    @endif
+                </h1>
+                @if($youtubeVisibilityFilter !== 'all')
+                    <p class="text-sm text-base-content/70 mt-1">
+                        Global filter active: showing {{ $youtubeVisibilityFilter === 'uploaded' ? 'uploaded' : 'not uploaded' }} tracks only
+                        <a href="{{ route('settings.index') }}" class="link link-primary">Change in Settings</a>
+                    </p>
+                @endif
+            </div>
             <div class="flex space-x-2">
                 <a href="{{ route('genres.edit', $genre) }}" class="btn btn-outline">Edit Genre</a>
                 <a href="{{ route('genres.index') }}" class="btn btn-ghost">Back to Genres</a>
@@ -158,7 +173,9 @@
                                     <th>Genres</th>
                                     <th class="w-24">Status</th>
                                     <th class="w-32">Progress</th>
+                                    @if($showYoutubeColumn)
                                     <th class="w-24">YouTube</th>
+                                    @endif
                                     <th class="w-36 text-right">Actions</th>
                                 </tr>
                             </thead>
@@ -221,6 +238,7 @@
                                             @endif
                                         </div>
                                     </td>
+                                    @if($showYoutubeColumn)
                                     <td>
                                         @if($track->youtube_video_id)
                                             <a href="{{ $track->youtube_url }}" target="_blank" class="btn btn-xs btn-success gap-1">
@@ -233,6 +251,7 @@
                                             <span class="text-xs text-gray-500">YouTube</span>
                                         @endif
                                     </td>
+                                    @endif
                                     <td class="text-right">
                                         <div class="flex space-x-1 justify-end">
                                             <a href="{{ route('tracks.show', $track) }}" class="btn btn-sm btn-outline">

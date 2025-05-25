@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Genre;
 use App\Models\Track;
+use App\Models\Setting;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -33,12 +34,33 @@ class GenreController extends Controller
         // Get the paginated results
         $genres = $query->paginate(15)->withQueryString();
         
-        // Get statistics for the view
+        // Get statistics for the view - apply global YouTube visibility filter
+        $youtubeVisibilityFilter = Setting::get('youtube_visibility_filter', 'all');
+        $trackQuery = Track::query();
+        
+        if ($youtubeVisibilityFilter === 'uploaded') {
+            $trackQuery->whereNotNull('youtube_video_id');
+        } elseif ($youtubeVisibilityFilter === 'not_uploaded') {
+            $trackQuery->whereNull('youtube_video_id');
+        }
+        
         $statistics = [
             'total_genres' => Genre::count(),
-            'total_tracks' => Track::count(),
-            'genres_with_tracks' => Genre::has('tracks')->count(),
-            'genres_without_tracks' => Genre::doesntHave('tracks')->count(),
+            'total_tracks' => $trackQuery->count(),
+            'genres_with_tracks' => Genre::whereHas('tracks', function($q) use ($youtubeVisibilityFilter) {
+                if ($youtubeVisibilityFilter === 'uploaded') {
+                    $q->whereNotNull('youtube_video_id');
+                } elseif ($youtubeVisibilityFilter === 'not_uploaded') {
+                    $q->whereNull('youtube_video_id');
+                }
+            })->count(),
+            'genres_without_tracks' => Genre::whereDoesntHave('tracks', function($q) use ($youtubeVisibilityFilter) {
+                if ($youtubeVisibilityFilter === 'uploaded') {
+                    $q->whereNotNull('youtube_video_id');
+                } elseif ($youtubeVisibilityFilter === 'not_uploaded') {
+                    $q->whereNull('youtube_video_id');
+                }
+            })->count(),
         ];
         
         return view('genres.index', compact('genres', 'statistics', 'sortField', 'sortDirection'));
@@ -76,9 +98,22 @@ class GenreController extends Controller
      */
     public function show(Request $request, Genre $genre): View
     {
-        $tracks = $genre->tracks()->paginate(15)->withQueryString();
+        // Apply global YouTube visibility filter to tracks
+        $youtubeVisibilityFilter = Setting::get('youtube_visibility_filter', 'all');
+        $tracksQuery = $genre->tracks();
         
-        return view('genres.show', compact('genre', 'tracks'));
+        if ($youtubeVisibilityFilter === 'uploaded') {
+            $tracksQuery->whereNotNull('youtube_video_id');
+        } elseif ($youtubeVisibilityFilter === 'not_uploaded') {
+            $tracksQuery->whereNull('youtube_video_id');
+        }
+        
+        $tracks = $tracksQuery->paginate(15)->withQueryString();
+        
+        // Get global settings for the view
+        $showYoutubeColumn = Setting::get('show_youtube_column', true);
+        
+        return view('genres.show', compact('genre', 'tracks', 'showYoutubeColumn', 'youtubeVisibilityFilter'));
     }
 
     /**

@@ -14,8 +14,21 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
                 </svg>
                 Music Tracks
+                @if($youtubeVisibilityFilter !== 'all')
+                    <span class="badge badge-sm ml-2 {{ $youtubeVisibilityFilter === 'uploaded' ? 'badge-success' : 'badge-warning' }}">
+                        {{ $youtubeVisibilityFilter === 'uploaded' ? 'Uploaded Only' : 'Not Uploaded Only' }}
+                    </span>
+                @endif
             </h1>
-            <p class="text-sm text-base-content/70 mt-1">Manage and monitor your AI-generated music tracks</p>
+            <p class="text-sm text-base-content/70 mt-1">
+                Manage and monitor your AI-generated music tracks
+                @if($youtubeVisibilityFilter !== 'all')
+                    <span class="text-xs">
+                        • Global filter active: showing {{ $youtubeVisibilityFilter === 'uploaded' ? 'uploaded' : 'not uploaded' }} tracks only
+                        <a href="{{ route('settings.index') }}" class="link link-primary">Change in Settings</a>
+                    </span>
+                @endif
+            </p>
         </div>
         <div class="flex space-x-2 mt-4 md:mt-0">
             <a href="{{ route('home.index') }}" class="btn btn-primary btn-sm">
@@ -169,7 +182,9 @@
                     <th>Genres</th>
                     <th>Status</th>
                     <th>Progress</th>
+                    @if($showYoutubeColumn)
                     <th class="w-24">YouTube</th>
+                    @endif
                     <th class="text-right">Actions</th>
                 </tr>
             </thead>
@@ -243,6 +258,7 @@
                         </div>
                         @endif
                     </td>
+                    @if($showYoutubeColumn)
                     <td class="w-24 track-youtube">
                         @if($track->youtube_uploaded)
                             <div class="flex items-center justify-center">
@@ -266,6 +282,7 @@
                             </button>
                         @endif
                     </td>
+                    @endif
                     <td class="text-right">
                         <div class="flex space-x-1 justify-end">
                             <a href="{{ route('tracks.show', $track) }}" class="btn btn-sm btn-circle btn-ghost" title="View Details">

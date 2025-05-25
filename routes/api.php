@@ -15,10 +15,6 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
-});
-
 // Track API Routes
 Route::prefix('tracks')->middleware(\App\Http\Middleware\JsonMiddleware::class)->group(function() {
     // Get track status

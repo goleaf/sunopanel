@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\GenreController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TrackController;
 use App\Http\Controllers\VideoUploadController;
 use App\Http\Controllers\YouTubeController;
@@ -140,3 +141,8 @@ Route::get('/youtube-reauth', [\App\Http\Controllers\YouTubeAuthController::clas
 
 // Special route for YouTube OAuth callback
 Route::get('/youtube-auth', [\App\Http\Controllers\YouTubeAuthController::class, 'callback'])->name('youtube.auth.callback');
+
+// Settings routes
+Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
+Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
+Route::post('/settings/reset', [SettingsController::class, 'reset'])->name('settings.reset');
