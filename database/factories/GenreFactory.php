@@ -71,7 +71,7 @@ final class GenreFactory extends Factory
      */
     public function definition(): array
     {
-        $name = $this->faker->unique()->randomElement(self::$genres);
+        $name = self::$genres[array_rand(self::$genres)];
         
         return [
             'name' => $name,

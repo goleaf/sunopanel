@@ -118,13 +118,7 @@ final class TrackFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'status' => 'failed',
             'progress' => $this->faker->numberBetween(0, 90),
-            'error_message' => $this->faker->randomElement([
-                'Download failed: Connection timeout',
-                'Invalid audio format',
-                'File size too large',
-                'Processing timeout',
-                'Network error occurred',
-            ]),
+            'error_message' => ['Download failed: Connection timeout', 'Invalid audio format', 'File size too large', 'Processing timeout', 'Network error occurred'][array_rand(['Download failed: Connection timeout', 'Invalid audio format', 'File size too large', 'Processing timeout', 'Network error occurred'])],
             'youtube_video_id' => null,
             'youtube_playlist_id' => null,
             'youtube_uploaded_at' => null,
