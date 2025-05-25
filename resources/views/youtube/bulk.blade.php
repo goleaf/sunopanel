@@ -3,7 +3,7 @@
 @section('title', 'YouTube Bulk Upload')
 
 @section('head')
-    @vite(['resources/js/youtube-bulk.js'])
+    {{-- JavaScript is included inline in this view --}}
 @endsection
 
 @section('content')

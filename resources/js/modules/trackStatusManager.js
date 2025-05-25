@@ -520,7 +520,7 @@ export default class TrackStatusManager {
                     break;
                     
                 case 'retryAll':
-                    result = await TrackStatusAPI.retryAllFailed();
+                    result = await TrackStatusAPI.retryAllTracks();
                     if (result.success) {
                         this.showToast(`Retried ${result.count || 0} failed tracks`, 'success');
                     }
