@@ -84,7 +84,8 @@ Route::prefix('tracks')->middleware([
     
     Route::post('/{track}/start', function (Request $request, $track) {
         return app(V1TrackController::class)->start(
-            \App\Models\Track::findOrFail($track)
+            \App\Models\Track::findOrFail($track),
+            $request
         );
     });
     

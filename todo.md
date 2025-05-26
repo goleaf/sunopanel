@@ -66,6 +66,12 @@
 - [x] Add getProcessingStats method for track statistics
 - [x] Test track stop functionality to ensure it works properly
 
+### 0. Fix API V1 TrackController Start Method Arguments Error (URGENT) ✅ COMPLETED
+- [x] Fix "Too few arguments to function start(), 1 passed and exactly 2 expected" error
+- [x] Update legacy API route to pass both Track model and Request to start() method
+- [x] Ensure force_redownload parameter is properly passed through API calls
+- [x] Test track start/retry functionality through API endpoints
+
 ### 0. Fix YouTube Analytics Routes Error (URGENT) ✅ COMPLETED
 - [x] Fix missing route 'youtube.analytics.update-all' not defined error
 - [x] Remove duplicate YouTube analytics route groups in web.php
