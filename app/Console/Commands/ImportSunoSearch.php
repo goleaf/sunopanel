@@ -21,7 +21,7 @@ class ImportSunoSearch extends Command
                             {--term= : Search term (empty for all public songs)}
                             {--size=20 : Number of tracks per request}
                             {--pages=1 : Number of pages to fetch}
-                            {--rank-by=most_relevant : Ranking method (most_relevant, newest, oldest, most_liked)}
+                            {--rank-by=most_relevant : Ranking method (upvote_count, play_count, dislike_count, trending, most_recent, most_relevant, by_hour, by_day, by_week, by_month, all_time, default)}
                             {--instrumental=false : Search for instrumental tracks only}
                             {--process : Automatically start processing imported tracks}
                             {--dry-run : Preview import without creating tracks}';
@@ -38,7 +38,7 @@ class ImportSunoSearch extends Command
      */
     private const API_BASE_URL = 'https://studio-api.prod.suno.com/api/search/';
     private const BEARER_TOKEN = 'eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18yT1o2eU1EZzhscWRKRWloMXJvemY4T3ptZG4iLCJ0eXAiOiJKV1QifQ.eyJhdWQiOiJzdW5vLWFwaSIsImF6cCI6Imh0dHBzOi8vc3Vuby5jb20iLCJleHAiOjE3NDgyMTk1NDQsImZ2YSI6WzUxMTQzLC0xXSwiaHR0cHM6Ly9zdW5vLmFpL2NsYWltcy9jbGVya19pZCI6InVzZXJfMmpUWW1MUnFWM0gwN1QxQng3RW9yMXFqTVdtIiwiaHR0cHM6Ly9zdW5vLmFpL2NsYWltcy9lbWFpbCI6ImdvbGVhZkBnbWFpbC5jb20iLCJodHRwczovL3N1bm8uYWkvY2xhaW1zL3Bob25lIjpudWxsLCJpYXQiOjE3NDgyMTk0ODQsImlzcyI6Imh0dHBzOi8vY2xlcmsuc3Vuby5jb20iLCJqdGkiOiI1NjA5MjNhY2MxYjM0NTRkN2MzMSIsIm5iZiI6MTc0ODIxOTQ3NCwic2lkIjoic2Vzc18ydnpiWElYaUdNV1c1RjJNU0FNaXlLRzFtZ2kiLCJzdWIiOiJ1c2VyXzJqVFltTFJxVjNIMDdUMUJ4N0VvcjFxak1XbSJ9.HWe9SkP_g7vW1EfibwrJ-83GdJg0Bpb6WnYjbHI9xNm7iG1GsHWEoosPxxbuoFDsm96mCpVCWHo7HfqAYQgxbLRfvLTiVrTeSVcGTURxaWmCJ0MQz7DviGzpZwf2c7XhbEKWq5NXP-0EthNO_zBWh61A-MKfrgyhvmlTsaDbJJP2E4MezDx-864NBeo36QrqxmWnZnALRBl89Y3Xf9l41i4_Ulv_4fl0Ttu7aupVh2dl22VCytYtfAUwwEjYp-u73IlVoBSbMRPY6LppZENPDJYyhYjNf-14WwBCPWCInI9J5REkSQm0lNJMnUmQU2m-bqnBKmv2z5v7eZrQ69tTFw';
-    private const BROWSER_TOKEN = '{"token":"eyJ0aW1lc3RhbXAiOjE3NDgyMjAwODY3OTN9"}';
+    private const BROWSER_TOKEN = '{"token":"eyJ0aW1lc3RhbXAiOjE3NDgyMTk0ODUwMzZ9"}';
     private const DEVICE_ID = '25b238d9-fc72-454e-bf39-31b22888b1df';
 
     /**
@@ -77,7 +77,7 @@ class ImportSunoSearch extends Command
                 $tracks = $this->fetchTracksFromAPI($term, $fromIndex, $size, $rankBy, $instrumental);
                 
                 if (empty($tracks)) {
-                    $this->warning("No tracks found on page {$page}");
+                    $this->warn("No tracks found on page {$page}");
                     continue;
                 }
 
@@ -319,10 +319,14 @@ class ImportSunoSearch extends Command
                 continue;
             }
 
-            // Create or find genre
+            // Normalize genre name and create slug
+            $normalizedName = ucwords(strtolower($genreName));
+            $slug = Str::slug($normalizedName);
+
+            // Create or find genre by slug (which is unique)
             $genre = Genre::firstOrCreate(
-                ['name' => $genreName],
-                ['slug' => Str::slug($genreName)]
+                ['slug' => $slug],
+                ['name' => $normalizedName]
             );
 
             $genreIds[] = $genre->id;

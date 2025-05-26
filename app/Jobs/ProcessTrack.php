@@ -218,15 +218,20 @@ class ProcessTrack implements ShouldQueue
      */
     protected function hasValidSunoUrls(): bool
     {
-        $sunoIdPattern = '/https:\/\/cdn[0-9]?\.suno\.ai\/([a-f0-9-]{36})\.(?:mp3|jpeg|jpg|png)/i';
+        // Updated pattern to handle various Suno URL formats:
+        // - Basic: https://cdn1.suno.ai/uuid.mp3
+        // - With prefix: https://cdn2.suno.ai/image_uuid.jpeg
+        // - With suffix: https://cdn2.suno.ai/uuid_suffix.jpeg
+        // - Video snapshots: https://cdn2.suno.ai/image_video_upload_uuid_snapshot_0s.jpeg
+        $sunoPattern = '/https:\/\/cdn[0-9]?\.suno\.ai\//i';
         
         // Check MP3 URL
-        if (!preg_match($sunoIdPattern, $this->track->mp3_url)) {
+        if (!preg_match($sunoPattern, $this->track->mp3_url)) {
             return false;
         }
         
         // Check image URL
-        if (!preg_match($sunoIdPattern, $this->track->image_url)) {
+        if (!preg_match($sunoPattern, $this->track->image_url)) {
             return false;
         }
         
@@ -244,8 +249,8 @@ class ProcessTrack implements ShouldQueue
     protected function downloadFile(string $url, string $directory): string
     {
         try {
-            // Check for Suno.ai unique ID in the URL
-            $sunoIdPattern = '/https:\/\/cdn[0-9]?\.suno\.ai\/([a-f0-9-]{36})\.(?:mp3|jpeg|jpg|png)/i';
+            // Check for Suno.ai unique ID in the URL - handle various formats
+            $sunoIdPattern = '/https:\/\/cdn[0-9]?\.suno\.ai\/(?:image_)?(?:video_upload_)?([a-f0-9-]{36})/i';
             if (preg_match($sunoIdPattern, $url, $matches)) {
                 $sunoId = $matches[1];
                 
@@ -509,16 +514,11 @@ class ProcessTrack implements ShouldQueue
                 $normalizedName = ucwords(strtolower($genreName));
                 $slug = Str::slug($normalizedName);
                 
-                // First try to find existing genre by slug
-                $genre = Genre::firstWhere('slug', $slug);
-                
-                // If not found, create a new one
-                if (!$genre) {
-                    $genre = Genre::create([
-                        'name' => $normalizedName,
-                        'slug' => $slug
-                    ]);
-                }
+                // Create or find genre by slug (which is unique)
+                $genre = Genre::firstOrCreate(
+                    ['slug' => $slug],
+                    ['name' => $normalizedName]
+                );
                 
                 Log::info("Genre found/created: {$normalizedName} with ID {$genre->id}");
                 $genreIds[] = $genre->id;

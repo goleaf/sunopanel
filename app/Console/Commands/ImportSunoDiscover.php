@@ -302,10 +302,14 @@ class ImportSunoDiscover extends Command
                 continue;
             }
 
-            // Create or find genre
+            // Normalize genre name and create slug
+            $normalizedName = ucwords(strtolower($genreName));
+            $slug = Str::slug($normalizedName);
+
+            // Create or find genre by slug (which is unique)
             $genre = Genre::firstOrCreate(
-                ['name' => $genreName],
-                ['slug' => Str::slug($genreName)]
+                ['slug' => $slug],
+                ['name' => $normalizedName]
             );
 
             $genreIds[] = $genre->id;
