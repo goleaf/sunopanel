@@ -384,4 +384,10 @@
 - [x] Test with provided music data
 - [x] Create ImportSunoDiscover command to fetch from Suno API
 - [x] Successfully imported 19 tracks from JSON file
-- [x] Successfully imported trending tracks from Suno discover API 
+- [x] Successfully imported trending tracks from Suno discover API
+- [x] Create ImportSunoSearch command to fetch from Suno search API
+- [x] Support search by term, ranking, instrumental filtering
+- [x] Successfully tested search API with public songs
+- [x] Create ImportSunoAll unified command for multiple sources
+- [x] Support importing from discover, search, and JSON sources simultaneously
+- [x] All commands support dry-run and automatic processing options 
