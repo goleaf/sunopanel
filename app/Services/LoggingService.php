@@ -287,8 +287,8 @@ final class LoggingService
     private function recordEventMetric(string $event, string $level): void
     {
         $key = "metrics:events:{$event}:{$level}";
-        Cache::increment($key, 1);
-        Cache::expire($key, 3600); // 1 hour TTL
+        $current = Cache::get($key, 0);
+        Cache::put($key, $current + 1, 3600); // 1 hour TTL
     }
 
     /**
@@ -318,8 +318,8 @@ final class LoggingService
     private function recordErrorMetric(string $exceptionClass): void
     {
         $key = "metrics:errors:{$exceptionClass}";
-        Cache::increment($key, 1);
-        Cache::expire($key, 3600);
+        $current = Cache::get($key, 0);
+        Cache::put($key, $current + 1, 3600);
     }
 
     /**
@@ -329,8 +329,8 @@ final class LoggingService
     {
         $status = $success ? 'success' : 'failure';
         $key = "metrics:youtube:{$operation}:{$status}";
-        Cache::increment($key, 1);
-        Cache::expire($key, 3600);
+        $current = Cache::get($key, 0);
+        Cache::put($key, $current + 1, 3600);
     }
 
     /**
@@ -339,8 +339,8 @@ final class LoggingService
     private function recordTrackProcessingMetric(string $status): void
     {
         $key = "metrics:tracks:{$status}";
-        Cache::increment($key, 1);
-        Cache::expire($key, 3600);
+        $current = Cache::get($key, 0);
+        Cache::put($key, $current + 1, 3600);
     }
 
     /**

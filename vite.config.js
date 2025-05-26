@@ -15,6 +15,7 @@ export default defineConfig({
                 'resources/js/queue-dashboard.js',
                 'resources/js/youtube-analytics.js',
                 'resources/js/import-dashboard.js',
+                'resources/js/monitoring-dashboard.js',
                 'resources/js/modules/trackStatusManager.js'
             ],
             refresh: true,

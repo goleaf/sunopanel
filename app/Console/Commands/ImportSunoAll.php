@@ -144,9 +144,10 @@ class ImportSunoAll extends Command
      *
      * @param bool $dryRun
      * @param bool $autoProcess
+     * @param string|null $sessionId
      * @return array
      */
-    protected function processDiscoverSource(bool $dryRun, bool $autoProcess): array
+    protected function processDiscoverSource(bool $dryRun, bool $autoProcess, ?string $sessionId = null): array
     {
         $pages = (int) $this->option('discover-pages');
         $size = (int) $this->option('discover-size');
@@ -162,6 +163,10 @@ class ImportSunoAll extends Command
 
         if ($autoProcess) {
             $command['--process'] = true;
+        }
+
+        if ($sessionId) {
+            $command['--session-id'] = $sessionId;
         }
 
         $exitCode = Artisan::call('import:suno-discover', $command);
@@ -191,9 +196,10 @@ class ImportSunoAll extends Command
      *
      * @param bool $dryRun
      * @param bool $autoProcess
+     * @param string|null $sessionId
      * @return array
      */
-    protected function processSearchSource(bool $dryRun, bool $autoProcess): array
+    protected function processSearchSource(bool $dryRun, bool $autoProcess, ?string $sessionId = null): array
     {
         $pages = (int) $this->option('search-pages');
         $size = (int) $this->option('search-size');
@@ -216,6 +222,10 @@ class ImportSunoAll extends Command
 
         if ($autoProcess) {
             $command['--process'] = true;
+        }
+
+        if ($sessionId) {
+            $command['--session-id'] = $sessionId;
         }
 
         $exitCode = Artisan::call('import:suno-search', $command);
@@ -245,9 +255,10 @@ class ImportSunoAll extends Command
      *
      * @param bool $dryRun
      * @param bool $autoProcess
+     * @param string|null $sessionId
      * @return array
      */
-    protected function processJsonSource(bool $dryRun, bool $autoProcess): array
+    protected function processJsonSource(bool $dryRun, bool $autoProcess, ?string $sessionId = null): array
     {
         $jsonFile = $this->option('json-file');
         $jsonUrl = $this->option('json-url');
@@ -273,6 +284,10 @@ class ImportSunoAll extends Command
 
         if ($autoProcess) {
             $command['--process'] = true;
+        }
+
+        if ($sessionId) {
+            $command['--session-id'] = $sessionId;
         }
 
         $exitCode = Artisan::call('import:json', $command);
