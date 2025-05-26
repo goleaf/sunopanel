@@ -12,15 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('tracks', function (Blueprint $table) {
-            // Composite indexes for common query patterns
-            $table->index(['status', 'created_at'], 'tracks_status_created_at_index');
-            $table->index(['status', 'updated_at'], 'tracks_status_updated_at_index');
-            $table->index(['youtube_video_id', 'status'], 'tracks_youtube_status_index');
+            // Add only missing indexes (check existing ones first)
             
-            // YouTube-related indexes
-            $table->index('youtube_uploaded_at', 'tracks_youtube_uploaded_at_index');
+            // Composite indexes for common query patterns (only if not exists)
+            $table->index(['status', 'updated_at'], 'tracks_status_updated_at_index');
+            
+            // YouTube-related indexes (only missing ones)
             $table->index('youtube_views', 'tracks_youtube_views_index');
-            $table->index('youtube_analytics_updated_at', 'tracks_youtube_analytics_updated_at_index');
             
             // Processing-related indexes
             $table->index('progress', 'tracks_progress_index');
@@ -30,9 +28,6 @@ return new class extends Migration
             $table->index('mp3_path', 'tracks_mp3_path_index');
             $table->index('mp4_path', 'tracks_mp4_path_index');
             $table->index('image_path', 'tracks_image_path_index');
-            
-            // Search optimization
-            $table->fullText('title', 'tracks_title_fulltext_index');
         });
     }
 
@@ -42,27 +37,14 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('tracks', function (Blueprint $table) {
-            // Drop composite indexes
-            $table->dropIndex('tracks_status_created_at_index');
+            // Drop the indexes we added
             $table->dropIndex('tracks_status_updated_at_index');
-            $table->dropIndex('tracks_youtube_status_index');
-            
-            // Drop YouTube-related indexes
-            $table->dropIndex('tracks_youtube_uploaded_at_index');
             $table->dropIndex('tracks_youtube_views_index');
-            $table->dropIndex('tracks_youtube_analytics_updated_at_index');
-            
-            // Drop processing-related indexes
             $table->dropIndex('tracks_progress_index');
             $table->dropIndex('tracks_status_progress_index');
-            
-            // Drop file path indexes
             $table->dropIndex('tracks_mp3_path_index');
             $table->dropIndex('tracks_mp4_path_index');
             $table->dropIndex('tracks_image_path_index');
-            
-            // Drop fulltext index
-            $table->dropFullText('tracks_title_fulltext_index');
         });
     }
 };
