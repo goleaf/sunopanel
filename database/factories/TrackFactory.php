@@ -31,8 +31,8 @@ final class TrackFactory extends Factory
         return [
             'title' => $this->faker->words(3, true),
             'suno_id' => $this->faker->uuid(),
-            'mp3_url' => $this->faker->url() . '.mp3',
-            'image_url' => $this->faker->imageUrl(640, 640, 'music'),
+            'mp3_url' => 'https://cdn1.suno.ai/' . $this->faker->uuid() . '.mp3',
+            'image_url' => 'https://cdn2.suno.ai/image_' . $this->faker->uuid() . '.jpeg',
             'mp3_path' => 'mp3/' . $this->faker->uuid() . '.mp3',
             'image_path' => 'images/' . $this->faker->uuid() . '.jpg',
             'mp4_path' => $this->faker->boolean(50) ? 'videos/' . $this->faker->uuid() . '.mp4' : null,

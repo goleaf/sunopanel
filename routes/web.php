@@ -5,6 +5,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TrackController;
 use App\Http\Controllers\VideoUploadController;
+use App\Http\Controllers\WebhookController;
 use App\Http\Controllers\YouTubeController;
 use App\Http\Controllers\YouTubeBulkController;
 use App\Http\Controllers\YouTubeAnalyticsController;
@@ -193,4 +194,12 @@ Route::prefix('queue')->name('queue.')->group(function () {
     // Queue control
     Route::post('/pause/{queueName}', [\App\Http\Controllers\QueueController::class, 'pauseQueue'])->name('pause');
     Route::post('/resume/{queueName}', [\App\Http\Controllers\QueueController::class, 'resumeQueue'])->name('resume');
+});
+
+// Webhook routes (no CSRF protection needed)
+Route::prefix('webhooks')->name('webhooks.')->withoutMiddleware(['web'])->group(function () {
+    Route::post('/youtube', [WebhookController::class, 'youtube'])->name('youtube');
+    Route::post('/suno', [WebhookController::class, 'suno'])->name('suno');
+    Route::post('/generic/{service}', [WebhookController::class, 'generic'])->name('generic');
+    Route::get('/status', [WebhookController::class, 'status'])->name('status');
 });

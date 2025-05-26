@@ -71,6 +71,19 @@ class ProcessTrack implements ShouldQueue
                 return;
             }
             
+            // Validate that the track has valid Suno.ai URLs
+            if (!$this->hasValidSunoUrls()) {
+                $errorMessage = "Track has invalid URLs - only Suno.ai URLs are supported. MP3: {$this->track->mp3_url}, Image: {$this->track->image_url}";
+                Log::error($errorMessage, ['track_id' => $this->track->id]);
+                
+                $this->track->update([
+                    'status' => 'failed',
+                    'error_message' => $errorMessage,
+                ]);
+                
+                throw new Exception($errorMessage);
+            }
+            
             // Update track status to processing
             $this->track->update([
                 'status' => 'processing',
@@ -196,6 +209,28 @@ class ProcessTrack implements ShouldQueue
     {
         $this->track->refresh();
         return $this->track->status === 'stopped';
+    }
+    
+    /**
+     * Check if the track has valid Suno.ai URLs.
+     *
+     * @return bool
+     */
+    protected function hasValidSunoUrls(): bool
+    {
+        $sunoIdPattern = '/https:\/\/cdn[0-9]?\.suno\.ai\/([a-f0-9-]{36})\.(?:mp3|jpeg|jpg|png)/i';
+        
+        // Check MP3 URL
+        if (!preg_match($sunoIdPattern, $this->track->mp3_url)) {
+            return false;
+        }
+        
+        // Check image URL
+        if (!preg_match($sunoIdPattern, $this->track->image_url)) {
+            return false;
+        }
+        
+        return true;
     }
 
     /**
