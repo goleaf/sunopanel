@@ -27,6 +27,7 @@
                         <li><a href="{{ route('tracks.index') }}">Songs</a></li>
                         <li><a href="{{ route('genres.index') }}">Genres</a></li>
                         <li><a href="{{ route('videos.upload') }}" class="{{ request()->routeIs('videos*') ? 'active' : '' }}">Upload Video</a></li>
+                        <li><a href="{{ route('import.index') }}" class="{{ request()->routeIs('import.*') ? 'active' : '' }}">Import Dashboard</a></li>
                         <li><a href="{{ route('youtube.status') }}" class="{{ request()->routeIs('youtube.status') ? 'active' : '' }}">YouTube Status</a></li>
                         <li><a href="{{ route('youtube.analytics.index') }}" class="{{ request()->routeIs('youtube.analytics.*') ? 'active' : '' }}">YouTube Analytics</a></li>
                         <li><a href="{{ route('youtube.bulk.index') }}" class="{{ request()->routeIs('youtube.bulk.*') ? 'active' : '' }}">YouTube Bulk</a></li>
@@ -49,6 +50,7 @@
                         <li><a href="{{ route('tracks.index') }}" class="{{ request()->routeIs('tracks*') ? 'active' : '' }}">Songs</a></li>
                         <li><a href="{{ route('genres.index') }}" class="{{ request()->routeIs('genres*') ? 'active' : '' }}">Genres</a></li>
                         <li><a href="{{ route('videos.upload') }}" class="{{ request()->routeIs('videos*') ? 'active' : '' }}">Upload Video</a></li>
+                        <li><a href="{{ route('import.index') }}" class="{{ request()->routeIs('import.*') ? 'active' : '' }}">Import Dashboard</a></li>
                         <li>
                             <details class="dropdown">
                                 <summary class="btn btn-ghost {{ request()->routeIs('youtube.*') || request()->routeIs('queue.*') ? 'active' : '' }}">

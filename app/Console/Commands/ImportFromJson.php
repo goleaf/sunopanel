@@ -8,6 +8,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Cache;
 use App\Models\Track;
 use App\Models\Genre;
 use App\Jobs\ProcessTrack;
@@ -24,7 +25,8 @@ final class ImportFromJson extends Command
                             {--dry-run : Preview import without creating tracks}
                             {--limit=0 : Limit number of tracks to import (0 = no limit)}
                             {--skip=0 : Skip first N tracks}
-                            {--process : Automatically start processing imported tracks}';
+                            {--process : Automatically start processing imported tracks}
+                            {--session-id= : Session ID for progress tracking}';
 
     /**
      * The console command description.
@@ -43,11 +45,17 @@ final class ImportFromJson extends Command
         $limit = (int) $this->option('limit');
         $skip = (int) $this->option('skip');
         $autoProcess = $this->option('process');
+        $sessionId = $this->option('session-id');
 
         $this->info("Starting JSON import from: {$source}");
         
         if ($dryRun) {
             $this->warn('DRY RUN MODE - No tracks will be created');
+        }
+
+        // Update progress if session ID provided
+        if ($sessionId) {
+            $this->updateProgress($sessionId, 10, 'Loading JSON data...');
         }
 
         try {
