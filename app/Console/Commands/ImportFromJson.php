@@ -63,14 +63,24 @@ final class ImportFromJson extends Command
             $jsonData = $this->loadJsonData($source);
             
             if (!$jsonData) {
+                if ($sessionId) {
+                    $this->updateProgress($sessionId, 100, 'Failed to load JSON data', 'failed');
+                }
                 $this->error('Failed to load JSON data');
                 return 1;
+            }
+
+            if ($sessionId) {
+                $this->updateProgress($sessionId, 20, 'Extracting track data...');
             }
 
             // Extract track data from JSON
             $trackData = $this->extractTrackData($jsonData, $field);
             
             if (empty($trackData)) {
+                if ($sessionId) {
+                    $this->updateProgress($sessionId, 100, 'No track data found in JSON', 'failed');
+                }
                 $this->error('No track data found in JSON');
                 return 1;
             }
@@ -88,8 +98,18 @@ final class ImportFromJson extends Command
                 $this->info("Limited to {$limit} tracks");
             }
 
+            if ($sessionId) {
+                $this->updateProgress($sessionId, 30, 'Starting track import...', 'running', 0, 0, count($trackData));
+            }
+
             // Parse and import tracks
-            $imported = $this->importTracks($trackData, $format, $dryRun, $autoProcess);
+            $imported = $this->importTracks($trackData, $format, $dryRun, $autoProcess, $sessionId);
+
+            if ($sessionId) {
+                $this->updateProgress($sessionId, 100, 
+                    $dryRun ? "DRY RUN: Would import {$imported} tracks" : "Successfully imported {$imported} tracks", 
+                    'completed', $imported, 0, count($trackData));
+            }
 
             if ($dryRun) {
                 $this->info("DRY RUN: Would import {$imported} tracks");
@@ -100,6 +120,10 @@ final class ImportFromJson extends Command
             return 0;
 
         } catch (\Exception $e) {
+            if ($sessionId) {
+                $this->updateProgress($sessionId, 100, 'Import failed: ' . $e->getMessage(), 'failed');
+            }
+            
             $this->error('Import failed: ' . $e->getMessage());
             Log::error('JSON import failed', [
                 'source' => $source,
@@ -206,10 +230,12 @@ final class ImportFromJson extends Command
     /**
      * Import tracks from parsed data.
      */
-    private function importTracks(array $trackData, string $format, bool $dryRun, bool $autoProcess): int
+    private function importTracks(array $trackData, string $format, bool $dryRun, bool $autoProcess, ?string $sessionId = null): int
     {
         $imported = 0;
-        $progressBar = $this->output->createProgressBar(count($trackData));
+        $failed = 0;
+        $total = count($trackData);
+        $progressBar = $this->output->createProgressBar($total);
         $progressBar->start();
 
         foreach ($trackData as $index => $data) {
@@ -219,7 +245,14 @@ final class ImportFromJson extends Command
                 if (!$trackInfo) {
                     $this->newLine();
                     $this->warn("Skipping invalid track at index {$index}");
+                    $failed++;
                     $progressBar->advance();
+                    
+                    // Update progress
+                    if ($sessionId) {
+                        $progress = 30 + (($index + 1) / $total) * 70;
+                        $this->updateProgress($sessionId, (int)$progress, "Processing track " . ($index + 1) . "/{$total}...", 'running', $imported, $failed, $total);
+                    }
                     continue;
                 }
 
@@ -236,10 +269,23 @@ final class ImportFromJson extends Command
                 $imported++;
                 $progressBar->advance();
 
+                // Update progress
+                if ($sessionId) {
+                    $progress = 30 + (($index + 1) / $total) * 70;
+                    $this->updateProgress($sessionId, (int)$progress, "Processing track " . ($index + 1) . "/{$total}...", 'running', $imported, $failed, $total);
+                }
+
             } catch (\Exception $e) {
                 $this->newLine();
                 $this->error("Failed to import track at index {$index}: " . $e->getMessage());
+                $failed++;
                 $progressBar->advance();
+                
+                // Update progress
+                if ($sessionId) {
+                    $progress = 30 + (($index + 1) / $total) * 70;
+                    $this->updateProgress($sessionId, (int)$progress, "Processing track " . ($index + 1) . "/{$total}...", 'running', $imported, $failed, $total);
+                }
             }
         }
 
@@ -442,5 +488,20 @@ final class ImportFromJson extends Command
         if (!empty($genreIds)) {
             $track->genres()->sync($genreIds);
         }
+    }
+
+    /**
+     * Update progress for session-based tracking.
+     */
+    private function updateProgress(string $sessionId, int $progress, string $message, string $status = 'running', int $imported = 0, int $failed = 0, int $total = 0): void
+    {
+        Cache::put("import_progress_{$sessionId}", [
+            'status' => $status,
+            'progress' => $progress,
+            'message' => $message,
+            'imported' => $imported,
+            'failed' => $failed,
+            'total' => $total,
+        ], 3600);
     }
 }

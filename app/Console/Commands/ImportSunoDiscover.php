@@ -8,6 +8,7 @@ use Exception;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class ImportSunoDiscover extends Command
@@ -23,7 +24,8 @@ class ImportSunoDiscover extends Command
                             {--pages=1 : Number of pages to fetch}
                             {--start-index=0 : Starting index for pagination}
                             {--process : Automatically start processing imported tracks}
-                            {--dry-run : Preview import without creating tracks}';
+                            {--dry-run : Preview import without creating tracks}
+                            {--session-id= : Session ID for progress tracking}';
 
     /**
      * The console command description.
@@ -51,6 +53,7 @@ class ImportSunoDiscover extends Command
         $startIndex = (int) $this->option('start-index');
         $autoProcess = $this->option('process');
         $dryRun = $this->option('dry-run');
+        $sessionId = $this->option('session-id');
 
         $this->info("Fetching tracks from Suno discover API");
         $this->info("Section: {$section}");
@@ -61,12 +64,21 @@ class ImportSunoDiscover extends Command
             $this->warn('DRY RUN MODE - No tracks will be created');
         }
 
+        if ($sessionId) {
+            $this->updateProgress($sessionId, 10, 'Starting Suno Discover import...');
+        }
+
         $totalImported = 0;
         $totalFailed = 0;
 
         try {
             for ($page = 1; $page <= $pages; $page++) {
                 $this->info("\nFetching page {$page}/{$pages}...");
+                
+                if ($sessionId) {
+                    $pageProgress = 10 + (($page - 1) / $pages) * 80;
+                    $this->updateProgress($sessionId, (int)$pageProgress, "Fetching page {$page}/{$pages}...", 'running', $totalImported, $totalFailed);
+                }
                 
                 $currentStartIndex = $startIndex + (($page - 1) * $pageSize);
                 
@@ -83,6 +95,7 @@ class ImportSunoDiscover extends Command
                     try {
                         if ($dryRun) {
                             $this->displayTrackPreview($trackData, $totalImported + $index + 1);
+                            $totalImported++;
                         } else {
                             $track = $this->processTrack($trackData);
                             
@@ -95,6 +108,12 @@ class ImportSunoDiscover extends Command
                                 }
                             }
                         }
+
+                        // Update progress within page
+                        if ($sessionId) {
+                            $trackProgress = $pageProgress + (($index + 1) / count($tracks)) * (80 / $pages);
+                            $this->updateProgress($sessionId, (int)$trackProgress, "Processing track " . ($totalImported) . "...", 'running', $totalImported, $totalFailed);
+                        }
                     } catch (Exception $e) {
                         $totalFailed++;
                         $this->error("Failed to process track: " . $e->getMessage());
@@ -102,6 +121,12 @@ class ImportSunoDiscover extends Command
                             'track_data' => $trackData,
                             'error' => $e->getMessage(),
                         ]);
+
+                        // Update progress with failure
+                        if ($sessionId) {
+                            $trackProgress = $pageProgress + (($index + 1) / count($tracks)) * (80 / $pages);
+                            $this->updateProgress($sessionId, (int)$trackProgress, "Processing track " . ($totalImported + $totalFailed) . "...", 'running', $totalImported, $totalFailed);
+                        }
                     }
                 }
                 
@@ -112,15 +137,21 @@ class ImportSunoDiscover extends Command
                 }
             }
 
-            $this->newLine();
-            if ($dryRun) {
-                $this->info("DRY RUN: Would import {$totalImported} tracks");
-            } else {
-                $this->info("Import finished. Imported: {$totalImported}, Failed: {$totalFailed}");
+            $message = $dryRun ? "DRY RUN: Would import {$totalImported} tracks" : "Import finished. Imported: {$totalImported}, Failed: {$totalFailed}";
+            
+            if ($sessionId) {
+                $this->updateProgress($sessionId, 100, $message, 'completed', $totalImported, $totalFailed);
             }
+
+            $this->newLine();
+            $this->info($message);
             
             return $totalFailed > 0 ? 1 : 0;
         } catch (Exception $e) {
+            if ($sessionId) {
+                $this->updateProgress($sessionId, 100, 'Import failed: ' . $e->getMessage(), 'failed', $totalImported, $totalFailed);
+            }
+            
             $this->error("Failed to import from Suno discover: " . $e->getMessage());
             Log::error("Failed to import from Suno discover", [
                 'section' => $section,
@@ -320,5 +351,20 @@ class ImportSunoDiscover extends Command
             $track->genres()->sync($genreIds);
             $this->comment("Attached " . count($genreIds) . " genres to track");
         }
+    }
+
+    /**
+     * Update progress for session-based tracking.
+     */
+    protected function updateProgress(string $sessionId, int $progress, string $message, string $status = 'running', int $imported = 0, int $failed = 0, int $total = 0): void
+    {
+        Cache::put("import_progress_{$sessionId}", [
+            'status' => $status,
+            'progress' => $progress,
+            'message' => $message,
+            'imported' => $imported,
+            'failed' => $failed,
+            'total' => $total,
+        ], 3600);
     }
 } 

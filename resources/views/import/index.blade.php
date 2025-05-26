@@ -321,6 +321,11 @@
 </div>
 
 @push('scripts')
-<script src="{{ asset('js/import-dashboard.js') }}"></script>
+@vite('resources/js/import-dashboard.js')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    new ImportDashboard();
+});
+</script>
 @endpush
 @endsection 
