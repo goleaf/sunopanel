@@ -461,7 +461,7 @@ export default class TrackStatusManager {
             }
             
             // Force immediate status update after action
-            this.statusUpdater.updateTrackStatus();
+            this.statusUpdater.updateTrackStatuses();
             
         } catch (error) {
             console.error(`Failed to ${action} track:`, error);
@@ -528,7 +528,7 @@ export default class TrackStatusManager {
             }
             
             // Force immediate status update after bulk action
-            this.statusUpdater.updateTrackStatus();
+            this.statusUpdater.updateTrackStatuses();
             
             // Refresh page after bulk actions to ensure consistent UI
             setTimeout(() => {

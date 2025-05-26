@@ -159,8 +159,8 @@ final class TrackController extends BaseApiController
         try {
             $track = Track::findOrFail($trackId);
 
-            if ($track->status !== 'processing') {
-                return $this->error('Track is not currently being processed', 409);
+            if (!in_array($track->status, ['processing', 'pending'])) {
+                return $this->error('Track is not currently being processed or pending', 409);
             }
 
             $result = $this->trackService->stopProcessing($track);
