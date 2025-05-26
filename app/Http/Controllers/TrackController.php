@@ -224,6 +224,148 @@ final class TrackController extends Controller
     }
     
     /**
+     * Start track processing.
+     */
+    public function start(Request $request, Track $track): RedirectResponse|JsonResponse
+    {
+        try {
+            // Check if track can be started
+            if (!in_array($track->status, ['pending', 'failed', 'stopped'])) {
+                $message = "Track '{$track->title}' cannot be started (current status: {$track->status}).";
+                
+                if ($request->expectsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $message,
+                    ], 422);
+                }
+                
+                return back()->with('error', $message);
+            }
+            
+            // Check for force redownload
+            $forceRedownload = $request->boolean('force_redownload', false);
+            
+            if ($forceRedownload) {
+                // Delete existing files if force redownload is requested
+                $this->deleteTrackFiles($track);
+                
+                // Reset track data
+                $track->update([
+                    'status' => 'pending',
+                    'progress' => 0,
+                    'error_message' => null,
+                    'mp3_path' => null,
+                    'image_path' => null,
+                    'mp4_path' => null,
+                ]);
+                
+                $message = "Track '{$track->title}' redownload and processing started successfully.";
+            } else {
+                // Regular start
+                $track->update([
+                    'status' => 'pending',
+                    'progress' => 0,
+                    'error_message' => null,
+                ]);
+                
+                $message = "Track '{$track->title}' processing started successfully.";
+            }
+            
+            // Dispatch the job
+            \App\Jobs\ProcessTrack::dispatch($track);
+            
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Track processing started',
+                    'data' => [
+                        'id' => $track->id,
+                        'status' => 'pending',
+                        'message' => $message,
+                    ],
+                    'timestamp' => now()->toISOString(),
+                ]);
+            }
+            
+            return back()->with('success', $message);
+        } catch (\Exception $e) {
+            Log::error('Failed to start track processing', [
+                'track_id' => $track->id,
+                'error' => $e->getMessage(),
+            ]);
+            
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to start track processing.',
+                ], 500);
+            }
+            
+            return back()->with('error', 'Failed to start track processing.');
+        }
+    }
+    
+    /**
+     * Stop track processing.
+     */
+    public function stop(Request $request, Track $track): RedirectResponse|JsonResponse
+    {
+        try {
+            // Check if track can be stopped
+            if (!in_array($track->status, ['processing', 'pending'])) {
+                $message = "Track '{$track->title}' cannot be stopped (current status: {$track->status}).";
+                
+                if ($request->expectsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $message,
+                    ], 422);
+                }
+                
+                return back()->with('error', $message);
+            }
+            
+            // Update track status to stopped
+            $track->update([
+                'status' => 'stopped',
+                'error_message' => 'Processing was manually stopped',
+            ]);
+            
+            $message = "Track '{$track->title}' processing has been stopped.";
+            
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Track processing stopped',
+                    'data' => [
+                        'id' => $track->id,
+                        'status' => 'stopped',
+                        'message' => $message,
+                    ],
+                    'timestamp' => now()->toISOString(),
+                ]);
+            }
+            
+            return back()->with('success', $message);
+        } catch (\Exception $e) {
+            Log::error('Failed to stop track processing', [
+                'track_id' => $track->id,
+                'error' => $e->getMessage(),
+            ]);
+            
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to stop track processing.',
+                ], 500);
+            }
+            
+            return back()->with('error', 'Failed to stop track processing.');
+        }
+    }
+    
+    /**
      * Retry all failed tracks.
      */
     public function retryAll(Request $request): RedirectResponse|JsonResponse

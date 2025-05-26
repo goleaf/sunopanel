@@ -435,21 +435,7 @@ export default class TrackStatusManager {
                         return;
                     }
                     
-                    const response = await fetch(`/api/tracks/${trackId}/start`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                        },
-                        body: JSON.stringify({ force_redownload: true })
-                    });
-                    
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(errorData.message || 'Failed to redownload track');
-                    }
-                    
-                    result = await response.json();
+                    result = await TrackStatusAPI.startTrack(trackId, true);
                     if (result.success) {
                         this.showToast('Track redownload started', 'success');
                     }

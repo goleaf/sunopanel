@@ -470,11 +470,12 @@ class TrackStatusAPI {
      * @returns {Promise<Object>} API response
      */
     static async startTrack(trackId, forceRedownload = false) {
-            const response = await fetch(`/api/tracks/${trackId}/start`, {
+            const response = await fetch(`/tracks/${trackId}/start`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
+                    'Accept': 'application/json'
                 },
             body: JSON.stringify({ force_redownload: forceRedownload })
             });
@@ -494,11 +495,12 @@ class TrackStatusAPI {
      * @returns {Promise<Object>} API response
      */
     static async stopTrack(trackId) {
-            const response = await fetch(`/api/tracks/${trackId}/stop`, {
+            const response = await fetch(`/tracks/${trackId}/stop`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
+                    'Accept': 'application/json'
                 }
             });
             
@@ -517,11 +519,12 @@ class TrackStatusAPI {
      * @returns {Promise<Object>} API response
      */
     static async retryTrack(trackId) {
-        const response = await fetch(`/api/tracks/${trackId}/retry`, {
+        const response = await fetch(`/tracks/${trackId}/retry`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
+                    'Accept': 'application/json'
                 }
             });
             

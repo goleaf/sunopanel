@@ -33,6 +33,8 @@ Route::delete('/tracks/{track}', [TrackController::class, 'destroy'])->name('tra
 Route::get('/tracks/{track}/status', [TrackController::class, 'status'])
     ->middleware(\App\Http\Middleware\JsonMiddleware::class)
     ->name('tracks.status');
+Route::post('/tracks/{track}/start', [TrackController::class, 'start'])->name('tracks.start');
+Route::post('/tracks/{track}/stop', [TrackController::class, 'stop'])->name('tracks.stop');
 Route::post('/tracks/{track}/retry', [TrackController::class, 'retry'])->name('tracks.retry');
 Route::post('/tracks/retry-all', [TrackController::class, 'retryAll'])->name('tracks.retry-all');
 Route::post('/tracks/{track}/upload-to-youtube', [TrackController::class, 'uploadToYoutube'])->name('tracks.upload-to-youtube');
