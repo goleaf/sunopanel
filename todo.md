@@ -42,6 +42,15 @@
 
 ## 🔥 Critical Priority Tasks
 
+### 0. Add Retry All (Force Redownload) Button to Track Detail Page (URGENT) ✅ COMPLETED
+- [x] Add "Retry All (Redownload)" button to track detail page for completed, failed, and stopped tracks
+- [x] Implement JavaScript functionality with confirmation dialog for force redownload
+- [x] Update V1 API TrackController to support force_redownload parameter
+- [x] Enhance TrackService to handle force redownload with file deletion
+- [x] Add proper error handling and logging for file deletion during redownload
+- [x] Add comprehensive button handlers for start, stop, retry, and retry-all operations
+- [x] Test retry all functionality to ensure it works properly
+
 ### 0. Fix Track Stop Functionality Issues (URGENT) ✅ COMPLETED
 - [x] Fix V1 API controller validation to allow stopping both 'processing' and 'pending' tracks
 - [x] Fix JavaScript error: this.statusUpdater.updateTrackStatus is not a function

@@ -190,6 +190,17 @@
                             </button>
                             @endif
                             
+                            <!-- Retry All (Force Redownload) Button -->
+                            @if(in_array($track->status, ['completed', 'failed', 'stopped']))
+                            <button type="button" id="retry-all-processing" class="btn btn-error btn-sm gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                                </svg>
+                                Retry All (Redownload)
+                            </button>
+                            @endif
+                            
                             <form action="{{ route('tracks.destroy', $track) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this track?')">
                                 @csrf
                                 @method('DELETE')
@@ -536,6 +547,150 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Start the updater
         statusUpdater.start();
+    }
+    
+    // Handle Start Processing button
+    const startBtn = document.getElementById('start-processing');
+    if (startBtn) {
+        startBtn.addEventListener('click', async () => {
+            if (!confirm('Start processing this track?')) return;
+            
+            startBtn.classList.add('loading');
+            startBtn.disabled = true;
+            
+            try {
+                const response = await fetch(`/api/tracks/${trackId}/start`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast('Track processing started', 'success');
+                    setTimeout(() => window.location.reload(), 1000);
+                } else {
+                    throw new Error(result.message || 'Failed to start processing');
+                }
+            } catch (error) {
+                console.error('Error starting track:', error);
+                showToast('Failed to start processing: ' + error.message, 'error');
+                startBtn.classList.remove('loading');
+                startBtn.disabled = false;
+            }
+        });
+    }
+    
+    // Handle Stop Processing button
+    const stopBtn = document.getElementById('stop-processing');
+    if (stopBtn) {
+        stopBtn.addEventListener('click', async () => {
+            if (!confirm('Stop processing this track?')) return;
+            
+            stopBtn.classList.add('loading');
+            stopBtn.disabled = true;
+            
+            try {
+                const response = await fetch(`/api/tracks/${trackId}/stop`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast('Track processing stopped', 'warning');
+                    setTimeout(() => window.location.reload(), 1000);
+                } else {
+                    throw new Error(result.message || 'Failed to stop processing');
+                }
+            } catch (error) {
+                console.error('Error stopping track:', error);
+                showToast('Failed to stop processing: ' + error.message, 'error');
+                stopBtn.classList.remove('loading');
+                stopBtn.disabled = false;
+            }
+        });
+    }
+    
+    // Handle Retry Processing button
+    const retryBtn = document.getElementById('retry-processing');
+    if (retryBtn) {
+        retryBtn.addEventListener('click', async () => {
+            if (!confirm('Retry processing this track?')) return;
+            
+            retryBtn.classList.add('loading');
+            retryBtn.disabled = true;
+            
+            try {
+                const response = await fetch(`/api/tracks/${trackId}/retry`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast('Track processing retried', 'success');
+                    setTimeout(() => window.location.reload(), 1000);
+                } else {
+                    throw new Error(result.message || 'Failed to retry processing');
+                }
+            } catch (error) {
+                console.error('Error retrying track:', error);
+                showToast('Failed to retry processing: ' + error.message, 'error');
+                retryBtn.classList.remove('loading');
+                retryBtn.disabled = false;
+            }
+        });
+    }
+    
+    // Handle Retry All (Force Redownload) button
+    const retryAllBtn = document.getElementById('retry-all-processing');
+    if (retryAllBtn) {
+        retryAllBtn.addEventListener('click', async () => {
+            if (!confirm('This will redownload all files (MP3, image) and regenerate the MP4 video from scratch. This may take several minutes. Continue?')) return;
+            
+            retryAllBtn.classList.add('loading');
+            retryAllBtn.disabled = true;
+            
+            try {
+                const response = await fetch(`/api/tracks/${trackId}/start`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify({ 
+                        force_redownload: true,
+                        force_regenerate: true 
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast('Track redownload and regeneration started', 'success');
+                    setTimeout(() => window.location.reload(), 1000);
+                } else {
+                    throw new Error(result.message || 'Failed to start redownload');
+                }
+            } catch (error) {
+                console.error('Error starting redownload:', error);
+                showToast('Failed to start redownload: ' + error.message, 'error');
+                retryAllBtn.classList.remove('loading');
+                retryAllBtn.disabled = false;
+            }
+        });
     }
     
     // Handle YouTube toggle button clicks

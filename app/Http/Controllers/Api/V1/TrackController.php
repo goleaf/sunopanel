@@ -118,29 +118,34 @@ final class TrackController extends BaseApiController
     /**
      * Start processing a track.
      */
-    public function start(Track $track): JsonResponse
+    public function start(Track $track, Request $request): JsonResponse
     {
         try {
-            if ($track->status === 'processing') {
+            $forceRedownload = $request->boolean('force_redownload', false);
+            
+            if ($track->status === 'processing' && !$forceRedownload) {
                 return $this->error('Track is already being processed', 409);
             }
 
-            if ($track->status === 'completed') {
+            if ($track->status === 'completed' && !$forceRedownload) {
                 return $this->error('Track is already completed', 409);
             }
 
-            $result = $this->trackService->startProcessing($track);
+            $result = $this->trackService->startProcessing($track, $forceRedownload);
 
             if ($result) {
                 Log::info('Track processing started via API', [
                     'track_id' => $track->id,
                     'title' => $track->title,
+                    'force_redownload' => $forceRedownload,
                 ]);
 
                 return $this->success([
                     'id' => $track->id,
                     'status' => $track->fresh()->status,
-                    'message' => 'Track processing started successfully',
+                    'message' => $forceRedownload 
+                        ? 'Track redownload and processing started successfully'
+                        : 'Track processing started successfully',
                 ], 'Track processing started');
             }
 

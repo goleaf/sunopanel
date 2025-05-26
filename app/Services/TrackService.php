@@ -7,18 +7,24 @@ namespace App\Services;
 use App\Models\Track;
 use App\Jobs\ProcessTrack;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 final class TrackService
 {
     /**
      * Start processing a track.
      */
-    public function startProcessing(Track $track): bool
+    public function startProcessing(Track $track, bool $forceRedownload = false): bool
     {
         try {
-            // Check if track is already processing or completed
-            if (in_array($track->status, ['processing', 'completed'])) {
+            // Check if track is already processing or completed (unless force redownload)
+            if (in_array($track->status, ['processing', 'completed']) && !$forceRedownload) {
                 return false;
+            }
+
+            // If force redownload, clear existing files
+            if ($forceRedownload) {
+                $this->clearTrackFiles($track);
             }
 
             // Reset track status
@@ -26,6 +32,9 @@ final class TrackService
                 'status' => 'pending',
                 'progress' => 0,
                 'error_message' => null,
+                'mp3_path' => $forceRedownload ? null : $track->mp3_path,
+                'image_path' => $forceRedownload ? null : $track->image_path,
+                'mp4_path' => $forceRedownload ? null : $track->mp4_path,
             ]);
 
             // Dispatch the job
@@ -34,6 +43,7 @@ final class TrackService
             Log::info('Track processing started', [
                 'track_id' => $track->id,
                 'title' => $track->title,
+                'force_redownload' => $forceRedownload,
             ]);
 
             return true;
@@ -188,5 +198,44 @@ final class TrackService
     public function canRetry(Track $track): bool
     {
         return in_array($track->status, ['failed', 'stopped']);
+    }
+
+    /**
+     * Clear existing track files from storage.
+     */
+    private function clearTrackFiles(Track $track): void
+    {
+        try {
+            // Delete existing files if they exist
+            if ($track->mp3_path) {
+                Storage::disk('public')->delete($track->mp3_path);
+                Log::info('Deleted MP3 file for track redownload', [
+                    'track_id' => $track->id,
+                    'file_path' => $track->mp3_path,
+                ]);
+            }
+
+            if ($track->image_path) {
+                Storage::disk('public')->delete($track->image_path);
+                Log::info('Deleted image file for track redownload', [
+                    'track_id' => $track->id,
+                    'file_path' => $track->image_path,
+                ]);
+            }
+
+            if ($track->mp4_path) {
+                Storage::disk('public')->delete($track->mp4_path);
+                Log::info('Deleted MP4 file for track redownload', [
+                    'track_id' => $track->id,
+                    'file_path' => $track->mp4_path,
+                ]);
+            }
+
+        } catch (\Exception $e) {
+            Log::warning('Failed to delete some track files during redownload', [
+                'track_id' => $track->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 } 
