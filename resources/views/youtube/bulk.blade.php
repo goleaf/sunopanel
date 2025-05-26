@@ -175,6 +175,9 @@
                                 @endforeach
                             </select>
                         </div>
+                    @else
+                        <!-- Hidden input for single account -->
+                        <input type="hidden" name="account_id" value="{{ $activeAccount->id }}" />
                     @endif
                     
                     <!-- Upload Options -->
@@ -383,10 +386,26 @@ function queueUpload() {
         formData.append('track_ids[]', cb.value);
     });
     
+    // Ensure account_id is included (use empty string if not set)
+    if (!formData.has('account_id')) {
+        formData.append('account_id', '');
+    }
+    
     // Submit form
     const hiddenForm = document.createElement('form');
     hiddenForm.method = 'POST';
     hiddenForm.action = '{{ route("youtube.bulk.queue") }}';
+    
+    // Add CSRF token
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || 
+                     document.querySelector('input[name="_token"]')?.value;
+    if (csrfToken) {
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = '_token';
+        csrfInput.value = csrfToken;
+        hiddenForm.appendChild(csrfInput);
+    }
     
     for (let [key, value] of formData.entries()) {
         const input = document.createElement('input');
@@ -409,10 +428,26 @@ function uploadNow() {
         formData.append('track_ids[]', cb.value);
     });
     
+    // Ensure account_id is included (use empty string if not set)
+    if (!formData.has('account_id')) {
+        formData.append('account_id', '');
+    }
+    
     // Submit form
     const hiddenForm = document.createElement('form');
     hiddenForm.method = 'POST';
     hiddenForm.action = '{{ route("youtube.bulk.upload-now") }}';
+    
+    // Add CSRF token
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || 
+                     document.querySelector('input[name="_token"]')?.value;
+    if (csrfToken) {
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = '_token';
+        csrfInput.value = csrfToken;
+        hiddenForm.appendChild(csrfInput);
+    }
     
     for (let [key, value] of formData.entries()) {
         const input = document.createElement('input');

@@ -52,9 +52,26 @@ final class YouTubeBulkController extends Controller
 
         try {
             $tracks = Track::whereIn('id', $validated['track_ids'])->get();
-            $account = $validated['account_id'] 
-                ? YouTubeAccount::find($validated['account_id'])
-                : null;
+            
+            // Handle account selection
+            $account = null;
+            if (!empty($validated['account_id'])) {
+                $account = YouTubeAccount::find($validated['account_id']);
+                if (!$account) {
+                    return back()->with('error', 'Selected YouTube account not found.');
+                }
+            } else {
+                // Use active account if no specific account selected
+                $account = YouTubeAccount::getActive();
+                if (!$account) {
+                    return back()->with('error', 'No active YouTube account found. Please authenticate first.');
+                }
+            }
+
+            // Verify account has valid token
+            if ($account->isTokenExpired()) {
+                return back()->with('error', 'YouTube account token has expired. Please re-authenticate.');
+            }
 
             $uploadOptions = [
                 'privacy_status' => $validated['privacy_status'],
@@ -74,7 +91,9 @@ final class YouTubeBulkController extends Controller
         } catch (\Exception $e) {
             Log::error('Bulk upload queue failed', [
                 'error' => $e->getMessage(),
-                'track_count' => count($validated['track_ids']),
+                'track_count' => count($validated['track_ids'] ?? []),
+                'account_id' => $validated['account_id'] ?? 'none',
+                'trace' => $e->getTraceAsString(),
             ]);
 
             return back()->with('error', 'Failed to queue uploads: ' . $e->getMessage());
@@ -98,9 +117,26 @@ final class YouTubeBulkController extends Controller
 
         try {
             $tracks = Track::whereIn('id', $validated['track_ids'])->get();
-            $account = $validated['account_id'] 
-                ? YouTubeAccount::find($validated['account_id'])
-                : null;
+            
+            // Handle account selection
+            $account = null;
+            if (!empty($validated['account_id'])) {
+                $account = YouTubeAccount::find($validated['account_id']);
+                if (!$account) {
+                    return back()->with('error', 'Selected YouTube account not found.');
+                }
+            } else {
+                // Use active account if no specific account selected
+                $account = YouTubeAccount::getActive();
+                if (!$account) {
+                    return back()->with('error', 'No active YouTube account found. Please authenticate first.');
+                }
+            }
+
+            // Verify account has valid token
+            if ($account->isTokenExpired()) {
+                return back()->with('error', 'YouTube account token has expired. Please re-authenticate.');
+            }
 
             $uploadOptions = [
                 'privacy_status' => $validated['privacy_status'],
@@ -123,7 +159,9 @@ final class YouTubeBulkController extends Controller
         } catch (\Exception $e) {
             Log::error('Immediate bulk upload failed', [
                 'error' => $e->getMessage(),
-                'track_count' => count($validated['track_ids']),
+                'track_count' => count($validated['track_ids'] ?? []),
+                'account_id' => $validated['account_id'] ?? 'none',
+                'trace' => $e->getTraceAsString(),
             ]);
 
             return back()->with('error', 'Failed to upload tracks: ' . $e->getMessage());
