@@ -22,7 +22,7 @@ class ParseAllGenres extends Command
                             {--dry-run : Show what would be imported without actually importing}
                             {--process : Automatically start processing imported tracks}
                             {--check-downloads : Check download status of existing tracks}
-                            {--genres=* : Specific genres to parse (leave empty for all)}';
+                            {--genres=* : Specific genres to parse (comma-separated, leave empty for all)}';
 
     /**
      * The console command description.
@@ -61,7 +61,16 @@ class ParseAllGenres extends Command
         $specificGenres = $this->option('genres');
 
         // Use specific genres if provided, otherwise use all popular genres
-        $genresToParse = !empty($specificGenres) ? $specificGenres : $this->popularGenres;
+        if (!empty($specificGenres)) {
+            // Handle comma-separated genres
+            $genresToParse = [];
+            foreach ($specificGenres as $genreString) {
+                $genres = array_map('trim', explode(',', $genreString));
+                $genresToParse = array_merge($genresToParse, $genres);
+            }
+        } else {
+            $genresToParse = $this->popularGenres;
+        }
 
         $totalImported = 0;
         $totalSkipped = 0;

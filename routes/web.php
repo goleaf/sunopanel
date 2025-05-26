@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\GenreController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\ImportController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TrackController;
 use App\Http\Controllers\VideoUploadController;
@@ -175,6 +176,17 @@ Route::get('/youtube-auth', [\App\Http\Controllers\YouTubeAuthController::class,
 Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
 Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
 Route::post('/settings/reset', [SettingsController::class, 'reset'])->name('settings.reset');
+
+// Import routes
+Route::prefix('import')->name('import.')->group(function () {
+    Route::get('/', [ImportController::class, 'index'])->name('index');
+    Route::post('/json', [ImportController::class, 'importJson'])->name('json');
+    Route::post('/suno-discover', [ImportController::class, 'importSunoDiscover'])->name('suno-discover');
+    Route::post('/suno-search', [ImportController::class, 'importSunoSearch'])->name('suno-search');
+    Route::post('/suno-all', [ImportController::class, 'importSunoAll'])->name('suno-all');
+    Route::get('/progress/{sessionId}', [ImportController::class, 'getProgress'])->name('progress');
+    Route::get('/stats', [ImportController::class, 'getStats'])->name('stats');
+});
 
 // Queue Management routes
 Route::prefix('queue')->name('queue.')->group(function () {
