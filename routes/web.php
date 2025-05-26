@@ -3,6 +3,7 @@
 use App\Http\Controllers\GenreController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ImportController;
+use App\Http\Controllers\MonitoringController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TrackController;
 use App\Http\Controllers\VideoUploadController;
@@ -206,6 +207,20 @@ Route::prefix('queue')->name('queue.')->group(function () {
     // Queue control
     Route::post('/pause/{queueName}', [\App\Http\Controllers\QueueController::class, 'pauseQueue'])->name('pause');
     Route::post('/resume/{queueName}', [\App\Http\Controllers\QueueController::class, 'resumeQueue'])->name('resume');
+});
+
+// Monitoring routes
+Route::prefix('monitoring')->name('monitoring.')->group(function () {
+    Route::get('/', [MonitoringController::class, 'index'])->name('index');
+    Route::get('/health', [MonitoringController::class, 'health'])->name('health');
+    Route::get('/performance', [MonitoringController::class, 'performance'])->name('performance');
+    Route::get('/errors', [MonitoringController::class, 'errors'])->name('errors');
+    Route::get('/logs', [MonitoringController::class, 'logs'])->name('logs');
+    Route::get('/metrics', [MonitoringController::class, 'metrics'])->name('metrics');
+    Route::get('/realtime', [MonitoringController::class, 'realtime'])->name('realtime');
+    Route::post('/clear-cache', [MonitoringController::class, 'clearCache'])->name('clear-cache');
+    Route::get('/export-report', [MonitoringController::class, 'exportReport'])->name('export-report');
+    Route::post('/test-logging', [MonitoringController::class, 'testLogging'])->name('test-logging');
 });
 
 // Webhook routes (no CSRF protection needed)

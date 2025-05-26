@@ -2,12 +2,16 @@ class ImportDashboard {
     constructor() {
         this.currentSessionId = null;
         this.progressInterval = null;
+        this.statsInterval = null;
         this.init();
     }
 
     init() {
         this.setupEventListeners();
         this.setupSourceTypeToggle();
+        this.setupTabSwitching();
+        this.setupUnifiedImportOptions();
+        this.startStatsRefresh();
     }
 
     setupEventListeners() {
@@ -27,16 +31,18 @@ class ImportDashboard {
             this.handleSearchImport(e.target);
         });
 
-        // Modal close
-        document.getElementById('close-modal')?.addEventListener('click', () => {
-            this.hideProgressModal();
+        document.getElementById('unified-import-form')?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.handleUnifiedImport(e.target);
         });
 
-        // Click outside modal to close
-        document.getElementById('progress-modal')?.addEventListener('click', (e) => {
-            if (e.target.id === 'progress-modal') {
-                this.hideProgressModal();
-            }
+        // Control buttons
+        document.getElementById('stop-import')?.addEventListener('click', () => {
+            this.stopImport();
+        });
+
+        document.getElementById('refresh-stats')?.addEventListener('click', () => {
+            this.refreshStats();
         });
     }
 
@@ -56,6 +62,68 @@ class ImportDashboard {
                 }
             });
         }
+    }
+
+    setupTabSwitching() {
+        const tabs = document.querySelectorAll('.import-tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetTab = tab.getAttribute('data-tab');
+                
+                // Update tab appearance
+                tabs.forEach(t => {
+                    t.classList.remove('active', 'border-blue-500', 'text-blue-600');
+                    t.classList.add('border-transparent', 'text-gray-500');
+                });
+                
+                tab.classList.remove('border-transparent', 'text-gray-500');
+                tab.classList.add('active', 'border-blue-500', 'text-blue-600');
+                
+                // Show/hide tab content
+                tabContents.forEach(content => {
+                    content.classList.add('hidden');
+                });
+                
+                document.getElementById(`${targetTab}-tab`)?.classList.remove('hidden');
+            });
+        });
+    }
+
+    setupUnifiedImportOptions() {
+        const sourceCheckboxes = document.querySelectorAll('input[name="sources[]"]');
+        const jsonOptions = document.getElementById('unified-json-options');
+        const discoverOptions = document.getElementById('unified-discover-options');
+        const searchOptions = document.getElementById('unified-search-options');
+
+        sourceCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', () => {
+                const checkedSources = Array.from(sourceCheckboxes)
+                    .filter(cb => cb.checked)
+                    .map(cb => cb.value);
+
+                // Show/hide relevant option sections
+                if (checkedSources.includes('json')) {
+                    jsonOptions?.classList.remove('hidden');
+                } else {
+                    jsonOptions?.classList.add('hidden');
+                }
+
+                if (checkedSources.includes('discover')) {
+                    discoverOptions?.classList.remove('hidden');
+                } else {
+                    discoverOptions?.classList.add('hidden');
+                }
+
+                if (checkedSources.includes('search')) {
+                    searchOptions?.classList.remove('hidden');
+                } else {
+                    searchOptions?.classList.add('hidden');
+                }
+            });
+        });
     }
 
     async handleJsonImport(form) {
@@ -148,10 +216,47 @@ class ImportDashboard {
         }
     }
 
+    async handleUnifiedImport(form) {
+        const formData = new FormData(form);
+        
+        // Validate that at least one source is selected
+        const sources = formData.getAll('sources[]');
+        if (sources.length === 0) {
+            this.showError('Please select at least one import source');
+            return;
+        }
+        
+        try {
+            this.showLoading('Starting unified import...');
+            
+            const response = await fetch('/import/suno-all', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    'Accept': 'application/json'
+                }
+            });
+
+            const result = await response.json();
+            
+            if (result.success) {
+                this.currentSessionId = result.session_id;
+                this.startProgressTracking();
+                this.showSuccess(`Unified import started successfully! Sources: ${sources.join(', ')}`);
+            } else {
+                this.showError(result.message || 'Failed to start unified import');
+            }
+        } catch (error) {
+            console.error('Unified import error:', error);
+            this.showError('An error occurred while starting the import');
+        }
+    }
+
     startProgressTracking() {
         if (!this.currentSessionId) return;
 
-        this.showProgressModal();
+        this.showProgressSection();
         
         // Clear any existing interval
         if (this.progressInterval) {
@@ -193,57 +298,72 @@ class ImportDashboard {
     }
 
     displayProgress(progress) {
-        const content = document.getElementById('modal-progress-content');
+        const content = document.getElementById('progress-content');
         if (!content) return;
 
         const percentage = progress.total > 0 ? Math.round((progress.imported / progress.total) * 100) : 0;
+        const statusColor = this.getStatusColor(progress.status);
         
-        let statusColor = 'blue';
-        if (progress.status === 'completed') statusColor = 'green';
-        if (progress.status === 'failed') statusColor = 'red';
-
         content.innerHTML = `
             <div class="space-y-4">
-                <div>
-                    <div class="flex justify-between text-sm text-gray-600 mb-1">
-                        <span>${progress.message || 'Processing...'}</span>
-                        <span>${percentage}%</span>
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-3 h-3 rounded-full ${statusColor}"></div>
+                        <span class="font-medium text-gray-900">${this.formatStatus(progress.status)}</span>
                     </div>
-                    <div class="w-full bg-gray-200 rounded-full h-2">
-                        <div class="bg-${statusColor}-600 h-2 rounded-full transition-all duration-300" style="width: ${percentage}%"></div>
-                    </div>
+                    <span class="text-sm text-gray-500">${percentage}%</span>
                 </div>
-
-                <div class="grid grid-cols-3 gap-4 text-center">
-                    <div>
-                        <div class="text-2xl font-bold text-green-600">${progress.imported || 0}</div>
-                        <div class="text-sm text-gray-600">Imported</div>
-                    </div>
-                    <div>
-                        <div class="text-2xl font-bold text-red-600">${progress.failed || 0}</div>
-                        <div class="text-sm text-gray-600">Failed</div>
-                    </div>
-                    <div>
-                        <div class="text-2xl font-bold text-blue-600">${progress.total || 0}</div>
-                        <div class="text-sm text-gray-600">Total</div>
-                    </div>
+                
+                <div class="w-full bg-gray-200 rounded-full h-3">
+                    <div class="bg-blue-600 h-3 rounded-full transition-all duration-300" style="width: ${percentage}%"></div>
                 </div>
-
-                <div class="text-center">
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-${statusColor}-100 text-${statusColor}-800">
-                        ${progress.status.charAt(0).toUpperCase() + progress.status.slice(1)}
-                    </span>
-                </div>
-
-                ${progress.status === 'completed' || progress.status === 'failed' ? `
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                     <div class="text-center">
-                        <button onclick="importDashboard.hideProgressModal()" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition duration-200">
-                            Close
-                        </button>
+                        <div class="text-2xl font-bold text-green-600">${this.formatNumber(progress.imported || 0)}</div>
+                        <div class="text-gray-500">Imported</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-red-600">${this.formatNumber(progress.failed || 0)}</div>
+                        <div class="text-gray-500">Failed</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-gray-600">${this.formatNumber(progress.total || 0)}</div>
+                        <div class="text-gray-500">Total</div>
+                    </div>
+                </div>
+                
+                ${progress.message ? `
+                    <div class="bg-gray-50 rounded-lg p-3">
+                        <p class="text-sm text-gray-700">${progress.message}</p>
+                    </div>
+                ` : ''}
+                
+                ${progress.error ? `
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-3">
+                        <p class="text-sm text-red-700">${progress.error}</p>
                     </div>
                 ` : ''}
             </div>
         `;
+    }
+
+    getStatusColor(status) {
+        switch (status) {
+            case 'running': return 'bg-blue-500';
+            case 'completed': return 'bg-green-500';
+            case 'failed': return 'bg-red-500';
+            default: return 'bg-gray-500';
+        }
+    }
+
+    formatStatus(status) {
+        switch (status) {
+            case 'running': return 'Import in Progress';
+            case 'completed': return 'Import Completed';
+            case 'failed': return 'Import Failed';
+            default: return 'Import Status Unknown';
+        }
     }
 
     stopProgressTracking() {
@@ -251,25 +371,37 @@ class ImportDashboard {
             clearInterval(this.progressInterval);
             this.progressInterval = null;
         }
-    }
-
-    showProgressModal() {
-        const modal = document.getElementById('progress-modal');
-        if (modal) {
-            modal.classList.remove('hidden');
-        }
-    }
-
-    hideProgressModal() {
-        const modal = document.getElementById('progress-modal');
-        if (modal) {
-            modal.classList.add('hidden');
-        }
-        this.stopProgressTracking();
         this.currentSessionId = null;
         
-        // Refresh page statistics
-        this.refreshStats();
+        // Refresh stats after import completion
+        setTimeout(() => {
+            this.refreshStats();
+        }, 2000);
+    }
+
+    stopImport() {
+        if (this.currentSessionId) {
+            this.stopProgressTracking();
+            this.hideProgressSection();
+            this.showNotification('Import stopped', 'warning');
+        }
+    }
+
+    showProgressSection() {
+        const section = document.getElementById('progress-section');
+        section?.classList.remove('hidden');
+    }
+
+    hideProgressSection() {
+        const section = document.getElementById('progress-section');
+        section?.classList.add('hidden');
+    }
+
+    startStatsRefresh() {
+        // Refresh stats every 30 seconds
+        this.statsInterval = setInterval(() => {
+            this.refreshStats();
+        }, 30000);
     }
 
     async refreshStats() {
@@ -280,11 +412,10 @@ class ImportDashboard {
                 }
             });
 
-            const stats = await response.json();
+            const result = await response.json();
             
-            if (stats) {
-                // Update statistics on the page
-                this.updateStatsDisplay(stats);
+            if (result.success) {
+                this.updateStatsDisplay(result.stats);
             }
         } catch (error) {
             console.error('Stats refresh error:', error);
@@ -292,22 +423,38 @@ class ImportDashboard {
     }
 
     updateStatsDisplay(stats) {
-        // Update the statistics cards with new data
-        const elements = {
-            'total-tracks': stats.total_tracks,
-            'completed-tracks': stats.completed_tracks,
-            'processing-tracks': stats.processing_tracks,
-            'failed-tracks': stats.failed_tracks,
-            'pending-jobs': stats.pending_jobs,
-            'failed-jobs': stats.failed_jobs
-        };
-
-        Object.entries(elements).forEach(([id, value]) => {
-            const element = document.getElementById(id);
-            if (element) {
-                element.textContent = this.formatNumber(value);
-            }
-        });
+        // Update main stats cards
+        document.getElementById('total-tracks').textContent = this.formatNumber(stats.total_tracks);
+        document.getElementById('completed-tracks').textContent = this.formatNumber(stats.completed_tracks);
+        document.getElementById('processing-tracks').textContent = this.formatNumber(stats.processing_tracks);
+        document.getElementById('pending-jobs').textContent = this.formatNumber(stats.pending_jobs);
+        document.getElementById('total-genres').textContent = this.formatNumber(stats.total_genres);
+        document.getElementById('pending-tracks').textContent = this.formatNumber(stats.pending_tracks);
+        document.getElementById('failed-tracks').textContent = this.formatNumber(stats.failed_tracks);
+        
+        // Update queue status
+        document.getElementById('queue-count').textContent = this.formatNumber(stats.pending_jobs);
+        document.getElementById('failed-count').textContent = this.formatNumber(stats.failed_jobs);
+        
+        // Update progress bars
+        const queueProgress = document.getElementById('queue-progress');
+        const failedProgress = document.getElementById('failed-progress');
+        
+        if (queueProgress) {
+            const queuePercentage = stats.pending_jobs > 0 ? Math.min(100, (stats.pending_jobs / 100) * 100) : 0;
+            queueProgress.style.width = `${queuePercentage}%`;
+        }
+        
+        if (failedProgress) {
+            const failedPercentage = stats.failed_jobs > 0 ? 100 : 0;
+            failedProgress.style.width = `${failedPercentage}%`;
+        }
+        
+        // Update queue status text
+        const queueStatus = document.getElementById('queue-status');
+        if (queueStatus) {
+            queueStatus.textContent = stats.pending_jobs > 0 ? 'Processing' : 'Idle';
+        }
     }
 
     formatNumber(num) {
@@ -329,19 +476,35 @@ class ImportDashboard {
     showNotification(message, type = 'info') {
         // Create notification element
         const notification = document.createElement('div');
-        notification.className = `fixed top-4 right-4 z-50 p-4 rounded-md shadow-lg max-w-sm transition-all duration-300 transform translate-x-full`;
+        notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg max-w-sm transition-all duration-300 transform translate-x-full`;
         
-        let bgColor = 'bg-blue-500';
-        let textColor = 'text-white';
-        
-        if (type === 'success') {
-            bgColor = 'bg-green-500';
-        } else if (type === 'error') {
-            bgColor = 'bg-red-500';
+        // Set colors based on type
+        switch (type) {
+            case 'success':
+                notification.className += ' bg-green-100 border border-green-200 text-green-800';
+                break;
+            case 'error':
+                notification.className += ' bg-red-100 border border-red-200 text-red-800';
+                break;
+            case 'warning':
+                notification.className += ' bg-yellow-100 border border-yellow-200 text-yellow-800';
+                break;
+            default:
+                notification.className += ' bg-blue-100 border border-blue-200 text-blue-800';
         }
         
-        notification.className += ` ${bgColor} ${textColor}`;
-        notification.textContent = message;
+        notification.innerHTML = `
+            <div class="flex items-center">
+                <div class="flex-1">
+                    <p class="text-sm font-medium">${message}</p>
+                </div>
+                <button class="ml-3 text-gray-400 hover:text-gray-600" onclick="this.parentElement.parentElement.remove()">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+        `;
         
         document.body.appendChild(notification);
         
@@ -354,15 +517,29 @@ class ImportDashboard {
         setTimeout(() => {
             notification.classList.add('translate-x-full');
             setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.parentNode.removeChild(notification);
-                }
+                notification.remove();
             }, 300);
         }, 5000);
+    }
+
+    destroy() {
+        if (this.progressInterval) {
+            clearInterval(this.progressInterval);
+        }
+        if (this.statsInterval) {
+            clearInterval(this.statsInterval);
+        }
     }
 }
 
 // Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', function() {
     window.importDashboard = new ImportDashboard();
-}); 
+});
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', function() {
+    if (window.importDashboard) {
+        window.importDashboard.destroy();
+    }
+});

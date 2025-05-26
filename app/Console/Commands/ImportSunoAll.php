@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Exception;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 class ImportSunoAll extends Command
@@ -25,7 +26,8 @@ class ImportSunoAll extends Command
                             {--search-term= : Search term for search API (empty for all)}
                             {--search-rank=most_relevant : Ranking for search API}
                             {--process : Automatically start processing imported tracks}
-                            {--dry-run : Preview import without creating tracks}';
+                            {--dry-run : Preview import without creating tracks}
+                            {--session-id= : Session ID for progress tracking}';
 
     /**
      * The console command description.
@@ -42,6 +44,7 @@ class ImportSunoAll extends Command
         $sources = array_map('trim', explode(',', $this->option('sources')));
         $dryRun = $this->option('dry-run');
         $autoProcess = $this->option('process');
+        $sessionId = $this->option('session-id');
 
         $this->info("Starting multi-source Suno import");
         $this->info("Sources: " . implode(', ', $sources));
@@ -50,15 +53,21 @@ class ImportSunoAll extends Command
             $this->warn('DRY RUN MODE - No tracks will be created');
         }
 
+        $this->updateProgress($sessionId, 10, 'Starting unified import...');
+
         $totalImported = 0;
         $totalFailed = 0;
+        $totalSources = count($sources);
 
         try {
-            foreach ($sources as $source) {
+            foreach ($sources as $index => $source) {
                 $this->newLine();
                 $this->info("=== Processing source: {$source} ===");
                 
-                $result = $this->processSource($source, $dryRun, $autoProcess);
+                $sourceProgress = 10 + (($index / $totalSources) * 80);
+                $this->updateProgress($sessionId, (int)$sourceProgress, "Processing source: {$source}...", 'running', $totalImported, $totalFailed);
+                
+                $result = $this->processSource($source, $dryRun, $autoProcess, $sessionId);
                 
                 if ($result['success']) {
                     $totalImported += $result['imported'];
@@ -73,14 +82,17 @@ class ImportSunoAll extends Command
             $this->info("=== SUMMARY ===");
             if ($dryRun) {
                 $this->info("DRY RUN: Would import {$totalImported} tracks total");
+                $this->updateProgress($sessionId, 100, "Dry run completed: Would import {$totalImported} tracks", 'completed', $totalImported, $totalFailed);
             } else {
                 $this->info("Total imported: {$totalImported} tracks");
                 $this->info("Failed sources: {$totalFailed}");
+                $this->updateProgress($sessionId, 100, "Unified import completed: {$totalImported} tracks imported", 'completed', $totalImported, $totalFailed);
             }
             
             return $totalFailed > 0 ? 1 : 0;
         } catch (Exception $e) {
             $this->error("Failed to complete multi-source import: " . $e->getMessage());
+            $this->updateProgress($sessionId, 100, 'Import failed: ' . $e->getMessage(), 'failed', $totalImported, $totalFailed);
             Log::error("Failed to complete multi-source Suno import", [
                 'sources' => $sources,
                 'error' => $e->getMessage(),
@@ -95,20 +107,21 @@ class ImportSunoAll extends Command
      * @param string $source
      * @param bool $dryRun
      * @param bool $autoProcess
+     * @param string|null $sessionId
      * @return array
      */
-    protected function processSource(string $source, bool $dryRun, bool $autoProcess): array
+    protected function processSource(string $source, bool $dryRun, bool $autoProcess, ?string $sessionId = null): array
     {
         try {
             switch ($source) {
                 case 'discover':
-                    return $this->processDiscoverSource($dryRun, $autoProcess);
+                    return $this->processDiscoverSource($dryRun, $autoProcess, $sessionId);
                 
                 case 'search':
-                    return $this->processSearchSource($dryRun, $autoProcess);
+                    return $this->processSearchSource($dryRun, $autoProcess, $sessionId);
                 
                 case 'json':
-                    return $this->processJsonSource($dryRun, $autoProcess);
+                    return $this->processJsonSource($dryRun, $autoProcess, $sessionId);
                 
                 default:
                     return [
