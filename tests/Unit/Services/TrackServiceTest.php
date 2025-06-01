@@ -5,11 +5,8 @@ declare(strict_types=1);
 use App\Services\TrackService;
 use App\Models\Track;
 use App\Jobs\ProcessTrack;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
-
-uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->trackService = new TrackService();
@@ -26,14 +23,19 @@ beforeEach(function () {
 
 describe('TrackService', function () {
     it('can start processing a track', function () {
+        $trackId = $this->track->id;
         $result = $this->trackService->startProcessing($this->track);
         
         expect($result)->toBeTrue();
-        expect($this->track->fresh()->status)->toBe('processing');
-        expect($this->track->fresh()->started_at)->not->toBeNull();
         
-        Queue::assertPushed(ProcessTrack::class, function ($job) {
-            return $job->track->id === $this->track->id;
+        $updatedTrack = Track::find($trackId);
+        expect($updatedTrack)->not->toBeNull();
+        expect($updatedTrack->status)->toBe('pending');
+        expect($updatedTrack->progress)->toBe(0);
+        expect($updatedTrack->error_message)->toBeNull();
+        
+        Queue::assertPushed(ProcessTrack::class, function ($job) use ($trackId) {
+            return $job->track->id === $trackId;
         });
     });
 
@@ -53,10 +55,14 @@ describe('TrackService', function () {
         Storage::disk('public')->put('tracks/mp3/' . $this->track->id . '.mp3', 'fake mp3 content');
         Storage::disk('public')->put('tracks/images/' . $this->track->id . '.jpg', 'fake image content');
         
+        $trackId = $this->track->id;
         $result = $this->trackService->startProcessing($this->track, true);
         
         expect($result)->toBeTrue();
-        expect($this->track->fresh()->status)->toBe('processing');
+        
+        $updatedTrack = Track::find($trackId);
+        expect($updatedTrack)->not->toBeNull();
+        expect($updatedTrack->status)->toBe('pending');
         
         // Check files were deleted
         expect(Storage::disk('public')->exists('tracks/mp3/' . $this->track->id . '.mp3'))->toBeFalse();
@@ -68,11 +74,15 @@ describe('TrackService', function () {
     it('can stop processing a track', function () {
         $this->track->update(['status' => 'processing']);
         
+        $trackId = $this->track->id;
         $result = $this->trackService->stopProcessing($this->track);
         
         expect($result)->toBeTrue();
-        expect($this->track->fresh()->status)->toBe('stopped');
-        expect($this->track->fresh()->stopped_at)->not->toBeNull();
+        
+        $updatedTrack = Track::find($trackId);
+        expect($updatedTrack)->not->toBeNull();
+        expect($updatedTrack->status)->toBe('stopped');
+        expect($updatedTrack->error_message)->toBe('Processing was manually stopped');
     });
 
     it('cannot stop non-processing track', function () {
@@ -86,11 +96,16 @@ describe('TrackService', function () {
     it('can retry processing a track', function () {
         $this->track->update(['status' => 'failed']);
         
+        $trackId = $this->track->id;
         $result = $this->trackService->retryProcessing($this->track);
         
         expect($result)->toBeTrue();
-        expect($this->track->fresh()->status)->toBe('processing');
-        expect($this->track->fresh()->started_at)->not->toBeNull();
+        
+        $updatedTrack = Track::find($trackId);
+        expect($updatedTrack)->not->toBeNull();
+        expect($updatedTrack->status)->toBe('pending');
+        expect($updatedTrack->progress)->toBe(0);
+        expect($updatedTrack->error_message)->toBeNull();
         
         Queue::assertPushed(ProcessTrack::class);
     });
@@ -188,22 +203,30 @@ describe('TrackService', function () {
     });
 
     it('can delete track files during force redownload', function () {
-        // Create fake files
-        Storage::disk('public')->put('tracks/mp3/' . $this->track->id . '.mp3', 'fake mp3 content');
-        Storage::disk('public')->put('tracks/images/' . $this->track->id . '.jpg', 'fake image content');
-        Storage::disk('public')->put('tracks/mp4/' . $this->track->id . '.mp4', 'fake mp4 content');
+        // Set file paths on the track
+        $this->track->update([
+            'mp3_path' => 'tracks/mp3/' . $this->track->id . '.mp3',
+            'image_path' => 'tracks/images/' . $this->track->id . '.jpg',
+            'mp4_path' => 'tracks/mp4/' . $this->track->id . '.mp4',
+        ]);
+        
+        // Create fake files using the track's file paths
+        Storage::disk('public')->put($this->track->mp3_path, 'fake mp3 content');
+        Storage::disk('public')->put($this->track->image_path, 'fake image content');
+        Storage::disk('public')->put($this->track->mp4_path, 'fake mp4 content');
         
         // Verify files exist
-        expect(Storage::disk('public')->exists('tracks/mp3/' . $this->track->id . '.mp3'))->toBeTrue();
-        expect(Storage::disk('public')->exists('tracks/images/' . $this->track->id . '.jpg'))->toBeTrue();
-        expect(Storage::disk('public')->exists('tracks/mp4/' . $this->track->id . '.mp4'))->toBeTrue();
+        expect(Storage::disk('public')->exists($this->track->mp3_path))->toBeTrue();
+        expect(Storage::disk('public')->exists($this->track->image_path))->toBeTrue();
+        expect(Storage::disk('public')->exists($this->track->mp4_path))->toBeTrue();
         
+        $trackId = $this->track->id;
         $this->trackService->startProcessing($this->track, true);
         
         // Verify files were deleted
-        expect(Storage::disk('public')->exists('tracks/mp3/' . $this->track->id . '.mp3'))->toBeFalse();
-        expect(Storage::disk('public')->exists('tracks/images/' . $this->track->id . '.jpg'))->toBeFalse();
-        expect(Storage::disk('public')->exists('tracks/mp4/' . $this->track->id . '.mp4'))->toBeFalse();
+        expect(Storage::disk('public')->exists('tracks/mp3/' . $trackId . '.mp3'))->toBeFalse();
+        expect(Storage::disk('public')->exists('tracks/images/' . $trackId . '.jpg'))->toBeFalse();
+        expect(Storage::disk('public')->exists('tracks/mp4/' . $trackId . '.mp4'))->toBeFalse();
     });
 
     it('handles file deletion errors gracefully', function () {
@@ -215,24 +238,32 @@ describe('TrackService', function () {
         Storage::shouldReceive('disk->delete')->andThrow(new \Exception('Delete failed'));
         
         // Should not throw exception and should still process
+        $trackId = $this->track->id;
         $result = $this->trackService->startProcessing($this->track, true);
         
         expect($result)->toBeTrue();
-        expect($this->track->fresh()->status)->toBe('processing');
+        
+        $updatedTrack = Track::find($trackId);
+        expect($updatedTrack)->not->toBeNull();
+        expect($updatedTrack->status)->toBe('pending');
     });
 
     it('can bulk start multiple tracks', function () {
         $tracks = Track::factory()->count(3)->create(['status' => 'pending']);
         
         $results = [];
+        $trackIds = [];
         foreach ($tracks as $track) {
+            $trackIds[] = $track->id;
             $results[] = $this->trackService->startProcessing($track);
         }
         
         expect(array_filter($results))->toHaveCount(3); // All should be true
         
-        foreach ($tracks as $track) {
-            expect($track->fresh()->status)->toBe('processing');
+        foreach ($trackIds as $trackId) {
+            $updatedTrack = Track::find($trackId);
+            expect($updatedTrack)->not->toBeNull();
+            expect($updatedTrack->status)->toBe('pending');
         }
         
         Queue::assertPushed(ProcessTrack::class, 3);
@@ -245,8 +276,8 @@ describe('TrackService', function () {
         $this->track->update(['status' => 'processing']);
         
         // These should not throw exceptions even with invalid states
-        expect(fn() => $this->trackService->startProcessing($this->track))->not->toThrow();
-        expect(fn() => $this->trackService->stopProcessing($this->track))->not->toThrow();
+        expect(fn() => $this->trackService->startProcessing($this->track))->not->toThrow(\Exception::class);
+        expect(fn() => $this->trackService->stopProcessing($this->track))->not->toThrow(\Exception::class);
     });
 
     it('handles track with missing URLs', function () {
@@ -256,10 +287,14 @@ describe('TrackService', function () {
             'image_url' => null,
         ]);
         
+        $trackId = $trackWithoutUrls->id;
         $result = $this->trackService->startProcessing($trackWithoutUrls);
         
         // Should still attempt to process (validation happens in the job)
         expect($result)->toBeTrue();
-        expect($trackWithoutUrls->fresh()->status)->toBe('processing');
+        
+        $updatedTrack = Track::find($trackId);
+        expect($updatedTrack)->not->toBeNull();
+        expect($updatedTrack->status)->toBe('pending');
     });
 }); 

@@ -63,7 +63,7 @@ final class YouTubeCredential extends Model
      */
     public static function getLatest(): ?self
     {
-        return self::latest()->first();
+        return self::orderBy('created_at', 'desc')->first();
     }
 
     /**

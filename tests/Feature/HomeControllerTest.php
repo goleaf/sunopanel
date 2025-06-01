@@ -14,21 +14,20 @@ beforeEach(function () {
     $this->genre = Genre::factory()->create(['name' => 'City Pop']);
     
     // Create tracks with different statuses
-    $this->completedTracks = Track::factory()->count(5)->create([
-        'status' => 'completed',
-        'genre_id' => $this->genre->id,
-    ]);
+    $this->completedTracks = Track::factory()->count(5)->completed()->create();
+    $this->completedTracks->each(function ($track) {
+        $track->genres()->attach($this->genre);
+    });
     
-    $this->processingTracks = Track::factory()->count(2)->create([
-        'status' => 'processing',
-        'genre_id' => $this->genre->id,
-    ]);
+    $this->processingTracks = Track::factory()->count(2)->processing()->create();
+    $this->processingTracks->each(function ($track) {
+        $track->genres()->attach($this->genre);
+    });
     
-    $this->uploadedTracks = Track::factory()->count(3)->create([
-        'status' => 'uploadedToYoutube',
-        'genre_id' => $this->genre->id,
-        'youtube_uploaded_at' => now(),
-    ]);
+    $this->uploadedTracks = Track::factory()->count(3)->uploadedToYoutube()->create();
+    $this->uploadedTracks->each(function ($track) {
+        $track->genres()->attach($this->genre);
+    });
     
     // Create settings
     Setting::factory()->create([
@@ -73,7 +72,7 @@ describe('HomeController', function () {
 
     it('displays tracks with pagination', function () {
         // Create more tracks to test pagination
-        Track::factory()->count(20)->create(['status' => 'completed']);
+        Track::factory()->count(20)->completed()->create();
         
         $response = $this->get('/');
         
@@ -96,10 +95,10 @@ describe('HomeController', function () {
 
     it('filters tracks by genre', function () {
         $anotherGenre = Genre::factory()->create(['name' => 'Jazz']);
-        Track::factory()->count(3)->create([
-            'status' => 'completed',
-            'genre_id' => $anotherGenre->id,
-        ]);
+        $jazzTracks = Track::factory()->count(3)->completed()->create();
+        $jazzTracks->each(function ($track) use ($anotherGenre) {
+            $track->genres()->attach($anotherGenre);
+        });
         
         $response = $this->get('/?genre=' . $this->genre->id);
         
@@ -107,14 +106,13 @@ describe('HomeController', function () {
         
         $tracks = $response->viewData('tracks');
         foreach ($tracks as $track) {
-            expect($track->genre_id)->toBe($this->genre->id);
+            expect($track->genres->contains($this->genre))->toBeTrue();
         }
     });
 
     it('searches tracks by title', function () {
-        Track::factory()->create([
+        Track::factory()->completed()->create([
             'title' => 'Unique Search Title',
-            'status' => 'completed',
         ]);
         
         $response = $this->get('/?search=Unique Search');
@@ -148,7 +146,7 @@ describe('HomeController', function () {
         expect($tracks->count())->toBe(3); // Only uploaded tracks
         
         foreach ($tracks as $track) {
-            expect($track->status)->toBe('uploadedToYoutube');
+            expect($track->youtube_video_id)->not->toBeNull();
         }
     });
 
@@ -163,7 +161,7 @@ describe('HomeController', function () {
         expect($tracks->count())->toBe(7); // 5 completed + 2 processing
         
         foreach ($tracks as $track) {
-            expect($track->status)->not->toBe('uploadedToYoutube');
+            expect($track->youtube_video_id)->toBeNull();
         }
     });
 
@@ -256,7 +254,7 @@ describe('HomeController', function () {
         
         foreach ($tracks as $track) {
             expect($track->status)->toBe('completed');
-            expect($track->genre_id)->toBe($this->genre->id);
+            expect($track->genres->contains($this->genre))->toBeTrue();
         }
     });
 
