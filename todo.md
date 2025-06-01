@@ -78,6 +78,12 @@
 
 ## 🔥 Critical Priority Tasks
 
+### 0. Fix AppServiceProvider Class Resolution Ambiguity (URGENT)
+- [ ] Fix "Ambiguous class resolution" error between app/Providers/AppServiceProvider.php and vendor/laravel/pint/app/Providers/AppServiceProvider.php
+- [ ] Add exclude-files-from-classmap configuration to composer.json
+- [ ] Regenerate autoload files to resolve the conflict
+- [ ] Test application to ensure proper functionality
+
 ### 0. YouTube Upload Command for Cron Integration ✅ COMPLETED
 - [x] Analyze existing YouTube upload system and commands
 - [x] Found comprehensive YouTube upload system already in place:
