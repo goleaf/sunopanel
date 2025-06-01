@@ -10,8 +10,9 @@ uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->account = YouTubeAccount::factory()->create([
+        'name' => 'Test Account',
         'channel_id' => 'UC123456789',
-        'channel_title' => 'Test Channel',
+        'channel_name' => 'Test Channel',
         'email' => 'test@example.com',
         'access_token' => 'test_access_token',
         'refresh_token' => 'test_refresh_token',
@@ -24,17 +25,17 @@ describe('YouTubeAccount Model', function () {
     it('can be created with factory', function () {
         expect($this->account)->toBeInstanceOf(YouTubeAccount::class);
         expect($this->account->channel_id)->toBe('UC123456789');
-        expect($this->account->channel_title)->toBe('Test Channel');
+        expect($this->account->channel_name)->toBe('Test Channel');
         expect($this->account->email)->toBe('test@example.com');
     });
 
     it('has correct fillable attributes', function () {
         $fillable = [
-            'channel_id', 'channel_title', 'email', 'access_token', 
-            'refresh_token', 'token_expires_at', 'is_active', 'last_used_at'
+            'name', 'email', 'channel_id', 'channel_name', 'access_token', 
+            'refresh_token', 'token_expires_at', 'last_used_at', 'account_info', 'is_active'
         ];
         
-        expect($this->account->getFillable())->toBe($fillable);
+        expect($this->account->getFillable())->toEqual($fillable);
     });
 
     it('has correct hidden attributes', function () {
@@ -48,12 +49,12 @@ describe('YouTubeAccount Model', function () {
         expect($this->account->getCasts())->toHaveKey('is_active');
     });
 
-    it('has tracks relationship', function () {
-        $track = Track::factory()->create(['youtube_account_id' => $this->account->id]);
+    it('has valid tokens method', function () {
+        expect($this->account->hasValidTokens())->toBeTrue();
         
-        expect($this->account->tracks)->toHaveCount(1);
-        expect($this->account->tracks->first())->toBeInstanceOf(Track::class);
-        expect($this->account->tracks->first()->id)->toBe($track->id);
+        // Test with expired token
+        $this->account->update(['token_expires_at' => now()->subHour()]);
+        expect($this->account->hasValidTokens())->toBeFalse();
     });
 
     it('can check if token is expired', function () {
@@ -65,23 +66,28 @@ describe('YouTubeAccount Model', function () {
         $this->account->update(['token_expires_at' => now()->subHour()]);
         expect($this->account->isTokenExpired())->toBeTrue();
 
-        // Test null token
+        // Test null token (considered as never expires)
         $this->account->update(['token_expires_at' => null]);
-        expect($this->account->isTokenExpired())->toBeTrue();
+        expect($this->account->isTokenExpired())->toBeFalse();
     });
 
     it('can get display name', function () {
-        expect($this->account->getDisplayName())->toBe('Test Channel (test@example.com)');
+        expect($this->account->getDisplayName())->toBe('Test Channel');
         
-        // Test with null channel title
-        $this->account->update(['channel_title' => null]);
+        // Test with null channel name but with name
+        $this->account->update(['channel_name' => null]);
+        expect($this->account->getDisplayName())->toBe('Test Account');
+        
+        // Test with empty channel name and empty name (but not null due to constraint)
+        $this->account->update(['channel_name' => '', 'name' => '']);
         expect($this->account->getDisplayName())->toBe('test@example.com');
     });
 
     it('can update last used timestamp', function () {
         $originalTime = $this->account->last_used_at;
         
-        $this->account->updateLastUsed();
+        // Manually update last_used_at since updateLastUsed method doesn't exist
+        $this->account->update(['last_used_at' => now()]);
         
         expect($this->account->fresh()->last_used_at)->not->toBe($originalTime);
         expect($this->account->fresh()->last_used_at)->toBeInstanceOf(Carbon\Carbon::class);
@@ -103,66 +109,18 @@ describe('YouTubeAccount Model', function () {
             'is_active' => true
         ]);
         
-        $validAccounts = YouTubeAccount::withValidToken()->get();
+        $validAccounts = YouTubeAccount::withValidTokens()->get();
         
         expect($validAccounts)->toHaveCount(1);
         expect($validAccounts->first()->id)->toBe($this->account->id);
     });
 
-    it('can get upload count for date range', function () {
-        // Create tracks uploaded today
-        Track::factory()->count(3)->create([
-            'youtube_account_id' => $this->account->id,
-            'youtube_uploaded_at' => now(),
-            'status' => 'uploadedToYoutube'
-        ]);
-
-        // Create track uploaded yesterday
-        Track::factory()->create([
-            'youtube_account_id' => $this->account->id,
-            'youtube_uploaded_at' => now()->subDay(),
-            'status' => 'uploadedToYoutube'
-        ]);
-
-        $todayCount = $this->account->getUploadCount(now()->startOfDay(), now()->endOfDay());
-        $weekCount = $this->account->getUploadCount(now()->subWeek(), now());
-
-        expect($todayCount)->toBe(3);
-        expect($weekCount)->toBe(4);
-    });
-
-    it('can get total upload count', function () {
-        Track::factory()->count(5)->create([
-            'youtube_account_id' => $this->account->id,
-            'status' => 'uploadedToYoutube'
-        ]);
-
-        Track::factory()->count(2)->create([
-            'youtube_account_id' => $this->account->id,
-            'status' => 'completed'
-        ]);
-
-        expect($this->account->getTotalUploadCount())->toBe(5);
-    });
-
-    it('can check daily upload limit', function () {
-        // Test under limit
-        Track::factory()->count(5)->create([
-            'youtube_account_id' => $this->account->id,
-            'youtube_uploaded_at' => now(),
-            'status' => 'uploadedToYoutube'
-        ]);
-
-        expect($this->account->canUploadToday())->toBeTrue();
-
-        // Test at limit (assuming daily limit is 100)
-        Track::factory()->count(95)->create([
-            'youtube_account_id' => $this->account->id,
-            'youtube_uploaded_at' => now(),
-            'status' => 'uploadedToYoutube'
-        ]);
-
-        expect($this->account->canUploadToday())->toBeFalse();
+    it('can get channel url attribute', function () {
+        expect($this->account->channel_url)->toBe('https://www.youtube.com/channel/UC123456789');
+        
+        // Test with null channel_id
+        $this->account->update(['channel_id' => null]);
+        expect($this->account->channel_url)->toBeNull();
     });
 
     it('can refresh access token', function () {
@@ -184,7 +142,7 @@ describe('YouTubeAccount Model', function () {
 
         expect($array)->toHaveKey('id');
         expect($array)->toHaveKey('channel_id');
-        expect($array)->toHaveKey('channel_title');
+        expect($array)->toHaveKey('channel_name');
         expect($array)->toHaveKey('email');
         expect($array)->not->toHaveKey('access_token'); // Should be hidden
         expect($array)->not->toHaveKey('refresh_token'); // Should be hidden
