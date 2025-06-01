@@ -216,6 +216,14 @@ final class Track extends Model
     }
 
     /**
+     * Check if the track has been uploaded to YouTube.
+     */
+    public function isUploadedToYoutube(): bool
+    {
+        return $this->youtube_video_id !== null;
+    }
+
+    /**
      * Scope a query to only include tracks with specific status.
      */
     public function scopeWithStatus($query, string $status)

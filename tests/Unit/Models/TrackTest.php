@@ -84,20 +84,20 @@ describe('Track Scopes', function () {
         // Clear existing tracks to have predictable counts
         Track::query()->delete();
         
-        // Create test tracks with specific attributes using factory states
-        Track::factory()->pending()->create();
-        Track::factory()->completed()->create();
-        Track::factory()->failed()->create();
-        Track::factory()->processing()->create();
-        Track::factory()->completed()->create(['youtube_video_id' => 'abc123']);
-        Track::factory()->completed()->create(['youtube_video_id' => null]);
-        Track::factory()->completed()->create(['youtube_enabled' => true]);
-        Track::factory()->completed()->create(['youtube_enabled' => false]);
+        // Create test tracks with explicit status values
+        Track::factory()->create(['status' => 'pending', 'youtube_video_id' => null, 'youtube_enabled' => true]);
+        Track::factory()->create(['status' => 'completed', 'youtube_video_id' => null, 'youtube_enabled' => true]);
+        Track::factory()->create(['status' => 'failed', 'youtube_video_id' => null, 'youtube_enabled' => true]);
+        Track::factory()->create(['status' => 'processing', 'youtube_video_id' => null, 'youtube_enabled' => true]);
+        Track::factory()->create(['status' => 'completed', 'youtube_video_id' => 'abc123', 'youtube_enabled' => true]);
+        Track::factory()->create(['status' => 'completed', 'youtube_video_id' => null, 'youtube_enabled' => true]);
+        Track::factory()->create(['status' => 'completed', 'youtube_video_id' => null, 'youtube_enabled' => true]);
+        Track::factory()->create(['status' => 'completed', 'youtube_video_id' => null, 'youtube_enabled' => false]);
     });
 
     it('can filter by completed status', function () {
         $completedTracks = Track::completed()->get();
-        expect($completedTracks)->toHaveCount(1)
+        expect($completedTracks)->toHaveCount(5) // 5 tracks with completed status
             ->and($completedTracks->first()->status)->toBe('completed');
     });
 
@@ -132,12 +132,12 @@ describe('Track Scopes', function () {
 
     it('can filter youtube enabled tracks', function () {
         $enabledTracks = Track::youtubeEnabled()->get();
-        expect($enabledTracks)->toHaveCount(1); // Only the one explicitly created with youtube_enabled = true
+        expect($enabledTracks)->toHaveCount(7); // 7 tracks with youtube_enabled = true
     });
 
     it('can filter youtube disabled tracks', function () {
         $disabledTracks = Track::youtubeDisabled()->get();
-        expect($disabledTracks)->toHaveCount(1);
+        expect($disabledTracks)->toHaveCount(1); // 1 track with youtube_enabled = false
     });
 });
 
