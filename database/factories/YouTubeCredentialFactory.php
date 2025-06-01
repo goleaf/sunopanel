@@ -33,8 +33,9 @@ final class YouTubeCredentialFactory extends Factory
             'access_token' => $useOAuth ? $this->faker->sha256() : null,
             'refresh_token' => $useOAuth ? $this->faker->sha256() : null,
             'token_created_at' => $useOAuth ? time() - $this->faker->numberBetween(0, 3600) : null,
+            'token_expires_in' => $useOAuth ? 3600 : null, // 1 hour expiry
             'use_oauth' => $useOAuth,
-            'api_key' => !$useOAuth ? $this->faker->regexify('AIza[a-zA-Z0-9_-]{35}') : null,
+            'user_email' => $useOAuth ? $this->faker->email() : null,
         ];
     }
 
@@ -50,15 +51,16 @@ final class YouTubeCredentialFactory extends Factory
             'access_token' => $this->faker->sha256(),
             'refresh_token' => $this->faker->sha256(),
             'token_created_at' => time() - $this->faker->numberBetween(0, 3600),
+            'token_expires_in' => 3600,
             'use_oauth' => true,
-            'api_key' => null,
+            'user_email' => $this->faker->email(),
         ]);
     }
 
     /**
-     * Create API key credentials.
+     * Create non-OAuth credentials.
      */
-    public function apiKey(): static
+    public function nonOAuth(): static
     {
         return $this->state(fn (array $attributes) => [
             'client_id' => null,
@@ -67,8 +69,9 @@ final class YouTubeCredentialFactory extends Factory
             'access_token' => null,
             'refresh_token' => null,
             'token_created_at' => null,
+            'token_expires_in' => null,
             'use_oauth' => false,
-            'api_key' => $this->faker->regexify('AIza[a-zA-Z0-9_-]{35}'),
+            'user_email' => null,
         ]);
     }
 
