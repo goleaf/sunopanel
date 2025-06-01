@@ -232,6 +232,38 @@ final class Track extends Model
     }
 
     /**
+     * Scope a query to only include failed tracks.
+     */
+    public function scopeFailed($query)
+    {
+        return $query->where('status', 'failed');
+    }
+
+    /**
+     * Scope a query to only include processing tracks.
+     */
+    public function scopeProcessing($query)
+    {
+        return $query->where('status', 'processing');
+    }
+
+    /**
+     * Scope a query to only include YouTube enabled tracks.
+     */
+    public function scopeYoutubeEnabled($query)
+    {
+        return $query->where('youtube_enabled', true);
+    }
+
+    /**
+     * Scope a query to only include YouTube disabled tracks.
+     */
+    public function scopeYoutubeDisabled($query)
+    {
+        return $query->where('youtube_enabled', false);
+    }
+
+    /**
      * Scope a query to only include tracks uploaded to YouTube.
      */
     public function scopeUploadedToYoutube($query)
