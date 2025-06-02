@@ -77,8 +77,9 @@ final class ImportService
                 // URLs should not be stripped of HTML
                 $sanitized[$key] = $value;
             } else {
-                // Strip HTML tags from other fields
-                $sanitized[$key] = strip_tags((string) $value);
+                // Remove script tags and their content first, then strip remaining HTML tags
+                $cleaned = preg_replace('/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/mi', '', (string) $value);
+                $sanitized[$key] = strip_tags($cleaned);
             }
         }
 
