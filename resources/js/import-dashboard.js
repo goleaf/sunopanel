@@ -12,6 +12,22 @@ class ImportDashboard {
         this.setupTabSwitching();
         this.setupUnifiedImportOptions();
         this.startStatsRefresh();
+        this.initializeDefaultTab();
+    }
+
+    initializeDefaultTab() {
+        // Ensure the first tab (JSON) is active by default
+        const firstTab = document.querySelector('.import-tab[data-tab="json"]');
+        const firstTabContent = document.getElementById('json-tab');
+        
+        if (firstTab && firstTabContent) {
+            // Make sure the first tab is properly styled as active
+            firstTab.classList.remove('border-transparent', 'text-gray-500');
+            firstTab.classList.add('active', 'border-blue-500', 'text-blue-600');
+            
+            // Make sure the first tab content is visible
+            firstTabContent.classList.remove('hidden');
+        }
     }
 
     setupEventListeners() {
