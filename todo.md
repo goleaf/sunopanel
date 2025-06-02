@@ -28,6 +28,17 @@
 
 **READY FOR USE**: All functionality implemented and working. To use with live data, obtain fresh bearer token from Suno.com and update the BEARER_TOKEN constant in ImportSunoGenre.php command.
 
+**IMPLEMENTATION DETAILS:**
+- **Command**: `php artisan import:suno-genre --genre="Spanish Pop" --size=20 --pages=1 --rank-by=most_relevant --process --dry-run`
+- **API Endpoint**: https://studio-api.prod.suno.com/api/search/ (POST)
+- **Search Type**: tag_song (specifically for genre-based searches)
+- **Duplicate Prevention**: Checks Track::where('suno_id', $sunoId)->exists() before creating
+- **Foreach Processing**: Iterates through all tracks in search results with proper error handling
+- **UI Access**: Import Dashboard → Genre Import tab → Select genre → Configure options → Start Import
+- **Progress Tracking**: Real-time updates via /import/progress/{sessionId} endpoint
+- **Rate Limiting**: 3 attempts per 10 minutes per IP address
+- **Validation**: Genre required, size 1-100, pages 1-10, ranking options validated
+
 ### 0. Create Suno Trending Songs Import Feature (NEW TASK) 🔄
 - [ ] Update ImportSunoDiscover command to use new API token and headers from user's fetch request
 - [ ] Add one-click import button for trending songs in import dashboard
