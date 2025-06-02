@@ -35,8 +35,8 @@ class ProcessTrackListTest extends TestCase
         ];
 
         // Send track list to controller
-        $response = $this->post('/process-track-list', [
-            'track_list' => implode("\n", $trackList)
+        $response = $this->post('/process', [
+            'tracks_input' => implode("\n", $trackList)
         ]);
 
         // Assert success response

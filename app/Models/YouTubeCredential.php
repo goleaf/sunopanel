@@ -30,8 +30,9 @@ final class YouTubeCredential extends Model
         'access_token',
         'refresh_token',
         'token_created_at',
+        'token_expires_in',
         'use_oauth',
-        'api_key',
+        'user_email',
     ];
 
     /**
@@ -53,7 +54,6 @@ final class YouTubeCredential extends Model
         'client_secret',
         'access_token',
         'refresh_token',
-        'api_key',
     ];
 
     /**
@@ -98,19 +98,11 @@ final class YouTubeCredential extends Model
     }
 
     /**
-     * Check if API key is configured.
-     */
-    public function hasApiKey(): bool
-    {
-        return !empty($this->api_key);
-    }
-
-    /**
      * Check if valid authentication data exists.
      */
     public function hasValidAuthData(): bool
     {
-        return $this->use_oauth ? $this->hasOAuthCredentials() : $this->hasApiKey();
+        return $this->hasOAuthCredentials();
     }
 
     /**
@@ -143,13 +135,5 @@ final class YouTubeCredential extends Model
     public function scopeOAuth($query)
     {
         return $query->where('use_oauth', true);
-    }
-
-    /**
-     * Scope a query to only include API key credentials.
-     */
-    public function scopeApiKey($query)
-    {
-        return $query->where('use_oauth', false);
     }
 }

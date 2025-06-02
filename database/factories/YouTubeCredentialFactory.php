@@ -108,7 +108,7 @@ final class YouTubeCredentialFactory extends Factory
             'refresh_token' => null,
             'token_created_at' => null,
             'use_oauth' => true,
-            'api_key' => null,
+            'user_email' => null,
         ]);
     }
 

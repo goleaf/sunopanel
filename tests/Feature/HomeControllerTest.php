@@ -30,17 +30,21 @@ beforeEach(function () {
     });
     
     // Create settings
-    Setting::factory()->create([
-        'key' => 'global_filter',
-        'value' => 'all',
-        'type' => 'string'
-    ]);
+    Setting::firstOrCreate(
+        ['key' => 'global_filter'],
+        [
+            'value' => 'all',
+            'type' => 'string'
+        ]
+    );
     
-    Setting::factory()->create([
-        'key' => 'youtube_column_visible',
-        'value' => true,
-        'type' => 'boolean'
-    ]);
+    Setting::firstOrCreate(
+        ['key' => 'youtube_column_visible'],
+        [
+            'value' => '1',
+            'type' => 'boolean'
+        ]
+    );
 });
 
 describe('HomeController', function () {

@@ -47,6 +47,8 @@ describe('Genre Relationships', function () {
         $track2 = Track::factory()->create(['title' => 'Track 2']);
 
         $this->genre->tracks()->attach([$track1->id, $track2->id]);
+        $this->genre->refresh();
+        $this->genre->load('tracks');
 
         expect($this->genre->tracks)->toHaveCount(2)
             ->and($this->genre->tracks->first()->title)->toBe('Track 1')
@@ -64,6 +66,7 @@ describe('Genre Scopes', function () {
     });
 
     it('can filter genres with tracks', function () {
+        // Ensure we have a fresh query
         $genresWithTracks = Genre::withTracks()->get();
         expect($genresWithTracks)->toHaveCount(1)
             ->and($genresWithTracks->first()->name)->toBe('With Tracks');

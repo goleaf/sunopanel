@@ -28,7 +28,7 @@ describe('TrackService', function () {
         
         expect($result)->toBeTrue();
         
-        $updatedTrack = Track::find($trackId);
+        $updatedTrack = Track::where('id', $trackId)->first();
         expect($updatedTrack)->not->toBeNull();
         expect($updatedTrack->status)->toBe('pending');
         expect($updatedTrack->progress)->toBe(0);
@@ -60,7 +60,7 @@ describe('TrackService', function () {
         
         expect($result)->toBeTrue();
         
-        $updatedTrack = Track::find($trackId);
+        $updatedTrack = Track::where('id', $trackId)->first();
         expect($updatedTrack)->not->toBeNull();
         expect($updatedTrack->status)->toBe('pending');
         
@@ -74,12 +74,11 @@ describe('TrackService', function () {
     it('can stop processing a track', function () {
         $this->track->update(['status' => 'processing']);
         
-        $trackId = $this->track->id;
         $result = $this->trackService->stopProcessing($this->track);
         
         expect($result)->toBeTrue();
         
-        $updatedTrack = Track::find($trackId);
+        $updatedTrack = Track::where('id', $this->track->id)->first();
         expect($updatedTrack)->not->toBeNull();
         expect($updatedTrack->status)->toBe('stopped');
         expect($updatedTrack->error_message)->toBe('Processing was manually stopped');
@@ -96,12 +95,11 @@ describe('TrackService', function () {
     it('can retry processing a track', function () {
         $this->track->update(['status' => 'failed']);
         
-        $trackId = $this->track->id;
         $result = $this->trackService->retryProcessing($this->track);
         
         expect($result)->toBeTrue();
         
-        $updatedTrack = Track::find($trackId);
+        $updatedTrack = Track::where('id', $this->track->id)->first();
         expect($updatedTrack)->not->toBeNull();
         expect($updatedTrack->status)->toBe('pending');
         expect($updatedTrack->progress)->toBe(0);
@@ -220,13 +218,12 @@ describe('TrackService', function () {
         expect(Storage::disk('public')->exists($this->track->image_path))->toBeTrue();
         expect(Storage::disk('public')->exists($this->track->mp4_path))->toBeTrue();
         
-        $trackId = $this->track->id;
         $this->trackService->startProcessing($this->track, true);
         
         // Verify files were deleted
-        expect(Storage::disk('public')->exists('tracks/mp3/' . $trackId . '.mp3'))->toBeFalse();
-        expect(Storage::disk('public')->exists('tracks/images/' . $trackId . '.jpg'))->toBeFalse();
-        expect(Storage::disk('public')->exists('tracks/mp4/' . $trackId . '.mp4'))->toBeFalse();
+        expect(Storage::disk('public')->exists('tracks/mp3/' . $this->track->id . '.mp3'))->toBeFalse();
+        expect(Storage::disk('public')->exists('tracks/images/' . $this->track->id . '.jpg'))->toBeFalse();
+        expect(Storage::disk('public')->exists('tracks/mp4/' . $this->track->id . '.mp4'))->toBeFalse();
     });
 
     it('handles file deletion errors gracefully', function () {
@@ -238,12 +235,11 @@ describe('TrackService', function () {
         Storage::shouldReceive('disk->delete')->andThrow(new \Exception('Delete failed'));
         
         // Should not throw exception and should still process
-        $trackId = $this->track->id;
         $result = $this->trackService->startProcessing($this->track, true);
         
         expect($result)->toBeTrue();
         
-        $updatedTrack = Track::find($trackId);
+        $updatedTrack = Track::where('id', $this->track->id)->first();
         expect($updatedTrack)->not->toBeNull();
         expect($updatedTrack->status)->toBe('pending');
     });
@@ -252,16 +248,14 @@ describe('TrackService', function () {
         $tracks = Track::factory()->count(3)->create(['status' => 'pending']);
         
         $results = [];
-        $trackIds = [];
         foreach ($tracks as $track) {
-            $trackIds[] = $track->id;
             $results[] = $this->trackService->startProcessing($track);
         }
         
         expect(array_filter($results))->toHaveCount(3); // All should be true
         
-        foreach ($trackIds as $trackId) {
-            $updatedTrack = Track::find($trackId);
+        foreach ($tracks as $track) {
+            $updatedTrack = Track::where('id', $track->id)->first();
             expect($updatedTrack)->not->toBeNull();
             expect($updatedTrack->status)->toBe('pending');
         }
@@ -287,13 +281,12 @@ describe('TrackService', function () {
             'image_url' => null,
         ]);
         
-        $trackId = $trackWithoutUrls->id;
         $result = $this->trackService->startProcessing($trackWithoutUrls);
         
         // Should still attempt to process (validation happens in the job)
         expect($result)->toBeTrue();
         
-        $updatedTrack = Track::find($trackId);
+        $updatedTrack = Track::where('id', $trackWithoutUrls->id)->first();
         expect($updatedTrack)->not->toBeNull();
         expect($updatedTrack->status)->toBe('pending');
     });

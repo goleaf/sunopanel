@@ -20,17 +20,21 @@ beforeEach(function () {
     });
 
     // Create settings
-    Setting::create([
-        'key' => 'youtube_visibility_filter',
-        'value' => 'all',
-        'type' => 'string',
-    ]);
+    Setting::firstOrCreate(
+        ['key' => 'youtube_visibility_filter'],
+        [
+            'value' => 'all',
+            'type' => 'string',
+        ]
+    );
     
-    Setting::create([
-        'key' => 'show_youtube_column',
-        'value' => 'true',
-        'type' => 'boolean',
-    ]);
+    Setting::firstOrCreate(
+        ['key' => 'show_youtube_column'],
+        [
+            'value' => 'true',
+            'type' => 'boolean',
+        ]
+    );
 });
 
 describe('Track Index', function () {

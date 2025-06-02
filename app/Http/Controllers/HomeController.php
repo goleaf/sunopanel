@@ -6,6 +6,8 @@ namespace App\Http\Controllers;
 
 use App\Jobs\ProcessTrack;
 use App\Models\Track;
+use App\Models\Genre;
+use App\Models\Setting;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -14,11 +16,91 @@ use Illuminate\View\View;
 final class HomeController extends Controller
 {
     /**
-     * Show the add tracks form.
+     * Show the dashboard with tracks overview.
      */
-    public function index(): View
+    public function index(Request $request): View
     {
-        return view('home.index');
+        // Get tracks for the dashboard (limited for performance)
+        $query = Track::with('genres');
+        
+        // Apply global YouTube visibility filter
+        $globalFilter = Setting::get('global_filter', 'all');
+        match ($globalFilter) {
+            'uploaded_only' => $query->uploadedToYoutube(),
+            'not_uploaded_only' => $query->notUploadedToYoutube(),
+            default => null,
+        };
+        
+        // Apply search filter if provided
+        if ($request->filled('search')) {
+            $searchTerm = $request->input('search');
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('title', 'like', "%{$searchTerm}%")
+                  ->orWhere('genres_string', 'like', "%{$searchTerm}%");
+            });
+        }
+        
+        // Filter by status if provided
+        if ($request->filled('status') && in_array($request->input('status'), Track::$statuses)) {
+            $query->withStatus($request->input('status'));
+        }
+        
+        // Filter by genre if provided
+        if ($request->filled('genre')) {
+            $genre = $request->input('genre');
+            $query->whereHas('genres', fn($q) => $q->where('id', $genre));
+        }
+        
+        // Get paginated tracks sorted by status priority
+        $sortDirection = $request->input('direction', 'desc');
+        $sortColumn = $request->input('sort', 'created_at');
+        
+        if ($sortColumn === 'created_at') {
+            $tracks = $query->orderByRaw("CASE 
+                    WHEN status = 'processing' THEN 1 
+                    WHEN status = 'pending' THEN 2
+                    WHEN status = 'failed' THEN 3
+                    WHEN status = 'stopped' THEN 4
+                    WHEN status = 'completed' THEN 5
+                    ELSE 6 END")
+                ->orderBy('created_at', $sortDirection)
+                ->paginate(15)
+                ->withQueryString();
+        } else {
+            $tracks = $query->orderBy($sortColumn, $sortDirection)
+                ->paginate(15)
+                ->withQueryString();
+        }
+        
+        // Get genres with track counts
+        $genres = Genre::withCount('tracks')->orderBy('name')->get();
+        
+        // Calculate statistics
+        $statsQuery = Track::query();
+        
+        // Apply the same global filter to stats
+        match ($globalFilter) {
+            'uploaded_only' => $statsQuery->uploadedToYoutube(),
+            'not_uploaded_only' => $statsQuery->notUploadedToYoutube(),
+            default => null,
+        };
+        
+        $stats = [
+            'total' => $statsQuery->count(),
+            'completed' => $statsQuery->where('status', 'completed')->count(),
+            'processing' => $statsQuery->where('status', 'processing')->count(),
+            'pending' => $statsQuery->where('status', 'pending')->count(),
+            'failed' => $statsQuery->where('status', 'failed')->count(),
+            'uploaded_to_youtube' => $statsQuery->whereNotNull('youtube_video_id')->count(),
+        ];
+        
+        // Get settings
+        $settings = [
+            'global_filter' => Setting::get('global_filter', 'all'),
+            'youtube_column_visible' => Setting::get('youtube_column_visible', true),
+        ];
+        
+        return view('home.index', compact('tracks', 'genres', 'stats', 'settings'));
     }
 
     /**
