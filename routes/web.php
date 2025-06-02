@@ -184,6 +184,7 @@ Route::prefix('import')->name('import.')->group(function () {
     Route::post('/json', [ImportController::class, 'importJson'])->name('json');
     Route::post('/suno-discover', [ImportController::class, 'importSunoDiscover'])->name('suno-discover');
     Route::post('/suno-search', [ImportController::class, 'importSunoSearch'])->name('suno-search');
+    Route::post('/suno-genre', [ImportController::class, 'importSunoGenre'])->name('suno-genre');
     Route::post('/suno-all', [ImportController::class, 'importSunoAll'])->name('suno-all');
     Route::get('/progress/{sessionId}', [ImportController::class, 'getProgress'])->name('progress');
     Route::get('/stats', [ImportController::class, 'getStats'])->name('stats');

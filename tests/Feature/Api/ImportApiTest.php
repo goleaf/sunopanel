@@ -119,6 +119,11 @@ final class ImportApiTest extends TestCase
     {
         Queue::fake();
         
+        // Temporarily enable rate limiting for this test
+        app()->detectEnvironment(function () {
+            return 'production';
+        });
+        
         $file = UploadedFile::fake()->createWithContent(
             'test.json',
             json_encode([['title' => 'Test Track']])
@@ -131,6 +136,13 @@ final class ImportApiTest extends TestCase
                 'json_file' => $file,
                 'format' => 'auto'
             ]);
+            
+            // Debug if not successful
+            if ($response->status() !== 200) {
+                dump("Request $i failed with status: " . $response->status());
+                dump("Response: " . $response->content());
+            }
+            
             $response->assertStatus(200);
         }
 
@@ -146,11 +158,21 @@ final class ImportApiTest extends TestCase
                      'success' => false,
                      'message' => 'Too many import attempts. Please try again later.'
                  ]);
+                 
+        // Reset environment
+        app()->detectEnvironment(function () {
+            return 'testing';
+        });
     }
 
     public function test_discover_import_rate_limiting(): void
     {
         Queue::fake();
+
+        // Temporarily enable rate limiting for this test
+        app()->detectEnvironment(function () {
+            return 'production';
+        });
 
         // Make 3 requests (the limit)
         for ($i = 0; $i < 3; $i++) {
@@ -174,11 +196,21 @@ final class ImportApiTest extends TestCase
                      'success' => false,
                      'message' => 'Too many discover import attempts. Please try again later.'
                  ]);
+                 
+        // Reset environment
+        app()->detectEnvironment(function () {
+            return 'testing';
+        });
     }
 
     public function test_search_import_rate_limiting(): void
     {
         Queue::fake();
+
+        // Temporarily enable rate limiting for this test
+        app()->detectEnvironment(function () {
+            return 'production';
+        });
 
         // Make 3 requests (the limit)
         for ($i = 0; $i < 3; $i++) {
@@ -202,11 +234,21 @@ final class ImportApiTest extends TestCase
                      'success' => false,
                      'message' => 'Too many search import attempts. Please try again later.'
                  ]);
+                 
+        // Reset environment
+        app()->detectEnvironment(function () {
+            return 'testing';
+        });
     }
 
     public function test_unified_import_rate_limiting(): void
     {
         Queue::fake();
+
+        // Temporarily enable rate limiting for this test
+        app()->detectEnvironment(function () {
+            return 'production';
+        });
 
         // Make 2 requests (the limit)
         for ($i = 0; $i < 2; $i++) {
@@ -230,6 +272,11 @@ final class ImportApiTest extends TestCase
                      'success' => false,
                      'message' => 'Too many unified import attempts. Please try again later.'
                  ]);
+                 
+        // Reset environment
+        app()->detectEnvironment(function () {
+            return 'testing';
+        });
     }
 
     public function test_json_import_validates_file_size(): void

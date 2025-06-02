@@ -530,4 +530,90 @@ final class ImportControllerTest extends TestCase
         $this->assertStringStartsWith('import_json_', $sessionId1);
         $this->assertStringStartsWith('import_json_', $sessionId2);
     }
+
+    public function test_quick_trending_import_with_updated_api_credentials(): void
+    {
+        Queue::fake();
+
+        // Test quick import of trending songs with the new API configuration
+        $response = $this->post(route('import.suno-discover'), [
+            'section' => 'trending_songs',
+            'page_size' => 50,
+            'pages' => 1,
+            'start_index' => 0,
+            'dry_run' => false,
+            'process' => true,
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'success' => true,
+        ]);
+        
+        $responseData = $response->json();
+        $this->assertArrayHasKey('session_id', $responseData);
+        $this->assertStringStartsWith('import_discover_', $responseData['session_id']);
+        $this->assertStringContainsString('Suno Discover import started successfully', $responseData['message']);
+    }
+
+    public function test_quick_new_songs_import(): void
+    {
+        Queue::fake();
+
+        // Test quick import of new songs
+        $response = $this->post(route('import.suno-discover'), [
+            'section' => 'new_songs',
+            'page_size' => 50,
+            'pages' => 1,
+            'start_index' => 0,
+            'dry_run' => false,
+            'process' => true,
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'success' => true,
+        ]);
+        
+        $responseData = $response->json();
+        $this->assertArrayHasKey('session_id', $responseData);
+        $this->assertStringStartsWith('import_discover_', $responseData['session_id']);
+    }
+
+    public function test_quick_popular_songs_import(): void
+    {
+        Queue::fake();
+
+        // Test quick import of popular songs
+        $response = $this->post(route('import.suno-discover'), [
+            'section' => 'popular_songs',
+            'page_size' => 50,
+            'pages' => 1,
+            'start_index' => 0,
+            'dry_run' => false,
+            'process' => true,
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'success' => true,
+        ]);
+        
+        $responseData = $response->json();
+        $this->assertArrayHasKey('session_id', $responseData);
+        $this->assertStringStartsWith('import_discover_', $responseData['session_id']);
+    }
+
+    public function test_import_dashboard_contains_quick_import_buttons(): void
+    {
+        $response = $this->get(route('import.index'));
+
+        $response->assertSee('Quick Import Actions');
+        $response->assertSee('Import Trending Songs');
+        $response->assertSee('Import New Songs');
+        $response->assertSee('Import Popular Songs');
+        $response->assertSee('id="quick-trending-import"', false);
+        $response->assertSee('id="quick-new-import"', false);
+        $response->assertSee('id="quick-popular-import"', false);
+    }
 } 

@@ -38,9 +38,9 @@ class ImportSunoDiscover extends Command
      * Suno API configuration
      */
     private const API_BASE_URL = 'https://studio-api.prod.suno.com/api/discover/';
-    private const BEARER_TOKEN = 'eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18yT1o2eU1EZzhscWRKRWloMXJvemY4T3ptZG4iLCJ0eXAiOiJKV1QifQ.eyJhdWQiOiJzdW5vLWFwaSIsImF6cCI6Imh0dHBzOi8vc3Vuby5jb20iLCJleHAiOjE3NDgyMTk1NDQsImZ2YSI6WzUxMTQzLC0xXSwiaHR0cHM6Ly9zdW5vLmFpL2NsYWltcy9jbGVya19pZCI6InVzZXJfMmpUWW1MUnFWM0gwN1QxQng3RW9yMXFqTVdtIiwiaHR0cHM6Ly9zdW5vLmFpL2NsYWltcy9lbWFpbCI6ImdvbGVhZkBnbWFpbC5jb20iLCJodHRwczovL3N1bm8uYWkvY2xhaW1zL3Bob25lIjpudWxsLCJpYXQiOjE3NDgyMTk0ODQsImlzcyI6Imh0dHBzOi8vY2xlcmsuc3Vuby5jb20iLCJqdGkiOiI1NjA5MjNhY2MxYjM0NTRkN2MzMSIsIm5iZiI6MTc0ODIxOTQ3NCwic2lkIjoic2Vzc18ydnpiWElYaUdNV1c1RjJNU0FNaXlLRzFtZ2kiLCJzdWIiOiJ1c2VyXzJqVFltTFJxVjNIMDdUMUJ4N0VvcjFxak1XbSJ9.HWe9SkP_g7vW1EfibwrJ-83GdJg0Bpb6WnYjbHI9xNm7iG1GsHWEoosPxxbuoFDsm96mCpVCWHo7HfqAYQgxbLRfvLTiVrTeSVcGTURxaWmCJ0MQz7DviGzpZwf2c7XhbEKWq5NXP-0EthNO_zBWh61A-MKfrgyhvmlTsaDbJJP2E4MezDx-864NBeo36QrqxmWnZnALRBl89Y3Xf9l41i4_Ulv_4fl0Ttu7aupVh2dl22VCytYtfAUwwEjYp-u73IlVoBSbMRPY6LppZENPDJYyhYjNf-14WwBCPWCInI9J5REkSQm0lNJMnUmQU2m-bqnBKmv2z5v7eZrQ69tTFw';
-    private const BROWSER_TOKEN = '{"token":"eyJ0aW1lc3RhbXAiOjE3NDgyMTk0ODUwMzZ9"}';
-    private const DEVICE_ID = '25b238d9-fc72-454e-bf39-31b22888b1df';
+    private const BEARER_TOKEN = 'eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18yT1o2eU1EZzhscWRKRWloMXJvemY4T3ptZG4iLCJ0eXAiOiJKV1QifQ.eyJhdWQiOiJzdW5vLWFwaSIsImF6cCI6Imh0dHBzOi8vc3Vuby5jb20iLCJleHAiOjE3NDg4NTkwOTUsImZ2YSI6WzEsLTFdLCJodHRwczovL3N1bm8uYWkvY2xhaW1zL2NsZXJrX2lkIjoidXNlcl8yalRZbUxScVYzSDA3VDFCeDdFb3IxcWpNV20iLCJodHRwczovL3N1bm8uYWkvY2xhaW1zL2VtYWlsIjoiZ29sZWFmQGdtYWlsLmNvbSIsImh0dHBzOi8vc3Vuby5haS9jbGFpbXMvcGhvbmUiOm51bGwsImlhdCI6MTc0ODg1OTAzNSwiaXNzIjoiaHR0cHM6Ly9jbGVyay5zdW5vLmNvbSIsImp0aSI6IjU5MWU4ZDcxZWJlNjE5MDcxMWIxIiwibmJmIjoxNzQ4ODU5MDI1LCJzaWQiOiJzZXNzXzJ4d3BQZnJkN1Y2ZlI1dlliQWZvbm02VTlxaiIsInN1YiI6InVzZXJfMmpUWW1MUnFWM0gwN1QxQng3RW9yMXFqTVdtIn0.Lgb8tIvPRksY6QIJcQpMg6VtN46Vzs0oI4w9zwxZ8UYFFMYgPL7PrtKX05nMpel1AFhNphzHI_oq4avMk0HB8b80ZKeUey0W_Xf3Au914UoXXMWX0twsCcIccQ4jz0h_XTjR-pVYiR7RhK2TKYuoL8vluKgBlm7H8A7baVTh9tEbrbDJXo7lAUrpbV2QQAnYUY_0XFr4mf-ayXEzf9MhV2GBM_If2drmyfVRQAxzdtcJC3VZTgp0uaDVH-qNFYzYx3a2y7fHQpxpmn2tPd26SDwxuSk9scromTw2gh1YG8P2Xq-o8_FL3x1OWUFPmAZt0hRPWpTForoI2Xd8DuovIg';
+    private const BROWSER_TOKEN = '{"token":"eyJ0aW1lc3RhbXAiOjE3NDg4NTkwNDExOTB9"}';
+    private const DEVICE_ID = '42c6837d-7c0f-4093-b9bc-10d1671749aa';
 
     /**
      * Execute the console command.
@@ -194,11 +194,15 @@ class ImportSunoDiscover extends Command
             'priority' => 'u=1, i',
             'sec-ch-ua' => '"Chromium";v="136", "Google Chrome";v="136", "Not.A/Brand";v="99"',
             'sec-ch-ua-mobile' => '?0',
-            'sec-ch-ua-platform' => '"macOS"',
+            'sec-ch-ua-platform' => '"Windows"',
             'sec-fetch-dest' => 'empty',
             'sec-fetch-mode' => 'cors',
             'sec-fetch-site' => 'same-site',
+        ])->withOptions([
             'referer' => 'https://suno.com/',
+            'referrerPolicy' => 'strict-origin-when-cross-origin',
+            'mode' => 'cors',
+            'credentials' => 'include'
         ])->timeout(60)->post(self::API_BASE_URL, $payload);
 
         if (!$response->successful()) {

@@ -47,9 +47,38 @@ class ImportDashboard {
             this.handleSearchImport(e.target);
         });
 
+        document.getElementById('genre-import-form')?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.handleGenreImport(e.target);
+        });
+
         document.getElementById('unified-import-form')?.addEventListener('submit', (e) => {
             e.preventDefault();
             this.handleUnifiedImport(e.target);
+        });
+
+        // Quick import buttons
+        document.getElementById('quick-trending-import')?.addEventListener('click', () => {
+            this.handleQuickImport('trending_songs');
+        });
+
+        document.getElementById('quick-new-import')?.addEventListener('click', () => {
+            this.handleQuickImport('new_songs');
+        });
+
+        // Genre preset buttons
+        document.querySelectorAll('.genre-preset').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const genre = e.target.getAttribute('data-genre');
+                const genreInput = document.querySelector('#genre-import-form input[name="genre"]');
+                if (genreInput) {
+                    genreInput.value = genre;
+                }
+            });
+        });
+
+        document.getElementById('quick-popular-import')?.addEventListener('click', () => {
+            this.handleQuickImport('popular_songs');
         });
 
         // Control buttons
@@ -229,6 +258,98 @@ class ImportDashboard {
         } catch (error) {
             console.error('Search import error:', error);
             this.showError('An error occurred while starting the import');
+        }
+    }
+
+    async handleGenreImport(form) {
+        const formData = new FormData(form);
+        
+        try {
+            this.showLoading('Starting Suno Genre import...');
+            
+            const response = await fetch('/import/suno-genre', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    'Accept': 'application/json'
+                }
+            });
+
+            const result = await response.json();
+            
+            if (result.success) {
+                this.currentSessionId = result.session_id;
+                this.startProgressTracking();
+                this.showSuccess('Suno Genre import started successfully!');
+            } else {
+                this.showError(result.message || 'Failed to start Suno Genre import');
+            }
+        } catch (error) {
+            console.error('Genre import error:', error);
+            this.showError('An error occurred while starting the import');
+        }
+    }
+
+    async handleQuickImport(section) {
+        try {
+            // Disable the button to prevent multiple clicks
+            const button = document.getElementById(`quick-${section.replace('_', '-')}-import`);
+            if (button) {
+                button.disabled = true;
+                button.innerHTML = `
+                    <svg class="w-5 h-5 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    Importing...
+                `;
+            }
+
+            this.showLoading(`Starting quick import of ${section.replace('_', ' ')}...`);
+            
+            // Create form data for the quick import
+            const formData = new FormData();
+            formData.append('section', section);
+            formData.append('page_size', '50'); // Import 50 tracks
+            formData.append('pages', '1'); // Just 1 page for quick import
+            formData.append('start_index', '0');
+            formData.append('dry_run', 'false');
+            formData.append('process', 'true'); // Auto-process the tracks
+            
+            const response = await fetch('/import/suno-discover', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    'Accept': 'application/json'
+                }
+            });
+
+            const result = await response.json();
+            
+            if (result.success) {
+                this.currentSessionId = result.session_id;
+                this.startProgressTracking();
+                this.showSuccess(`Quick import of ${section.replace('_', ' ')} started successfully!`);
+            } else {
+                this.showError(result.message || `Failed to start quick import of ${section.replace('_', ' ')}`);
+            }
+        } catch (error) {
+            console.error('Quick import error:', error);
+            this.showError('An error occurred while starting the quick import');
+        } finally {
+            // Re-enable the button
+            const button = document.getElementById(`quick-${section.replace('_', '-')}-import`);
+            if (button) {
+                button.disabled = false;
+                const sectionName = section.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+                button.innerHTML = `
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                    Import ${sectionName}
+                `;
+            }
         }
     }
 

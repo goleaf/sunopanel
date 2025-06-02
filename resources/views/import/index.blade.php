@@ -114,6 +114,36 @@
         </div>
     </div>
 
+    <!-- Quick Import Actions -->
+    <div class="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg shadow-md p-6 mb-8">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+            <div class="mb-4 lg:mb-0">
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">Quick Import Actions</h3>
+                <p class="text-gray-600">One-click import for popular content from Suno's trending collections</p>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-3">
+                <button id="quick-trending-import" class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white font-medium rounded-lg hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition duration-200 shadow-lg">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                    Import Trending Songs
+                </button>
+                <button id="quick-new-import" class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium rounded-lg hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-200 shadow-lg">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    Import New Songs
+                </button>
+                <button id="quick-popular-import" class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white font-medium rounded-lg hover:from-purple-700 hover:to-purple-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition duration-200 shadow-lg">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
+                    </svg>
+                    Import Popular Songs
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Import Tabs -->
     <div class="bg-white rounded-lg shadow-md mb-8">
         <div class="border-b border-gray-200">
@@ -140,6 +170,14 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                         </svg>
                         Suno Search
+                    </div>
+                </button>
+                <button class="import-tab border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" data-tab="genre">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                        </svg>
+                        Genre Import
                     </div>
                 </button>
                 <button class="import-tab border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" data-tab="unified">
@@ -383,6 +421,89 @@
 
                     <button type="submit" class="w-full bg-purple-600 text-white py-3 px-4 rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition duration-200 font-medium">
                         Start Search Import
+                    </button>
+                </form>
+            </div>
+
+            <!-- Genre Import Tab -->
+            <div id="genre-tab" class="tab-content hidden">
+                <div class="mb-6">
+                    <h3 class="text-xl font-semibold text-gray-900 mb-2">Genre Import</h3>
+                    <p class="text-gray-600 mb-4">Import tracks by specific genre using Suno's tag-based search. Perfect for building genre-specific collections.</p>
+                    
+                    <div class="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-4">
+                        <h4 class="font-medium text-orange-900 mb-2">Popular Genres:</h4>
+                        <div class="flex flex-wrap gap-2 text-sm text-orange-800">
+                            <button type="button" class="genre-preset px-3 py-1 bg-orange-100 hover:bg-orange-200 rounded-full transition-colors" data-genre="Spanish Pop">Spanish Pop</button>
+                            <button type="button" class="genre-preset px-3 py-1 bg-orange-100 hover:bg-orange-200 rounded-full transition-colors" data-genre="City Pop">City Pop</button>
+                            <button type="button" class="genre-preset px-3 py-1 bg-orange-100 hover:bg-orange-200 rounded-full transition-colors" data-genre="Lo-Fi">Lo-Fi</button>
+                            <button type="button" class="genre-preset px-3 py-1 bg-orange-100 hover:bg-orange-200 rounded-full transition-colors" data-genre="Jazz">Jazz</button>
+                            <button type="button" class="genre-preset px-3 py-1 bg-orange-100 hover:bg-orange-200 rounded-full transition-colors" data-genre="Electronic">Electronic</button>
+                            <button type="button" class="genre-preset px-3 py-1 bg-orange-100 hover:bg-orange-200 rounded-full transition-colors" data-genre="Rock">Rock</button>
+                            <button type="button" class="genre-preset px-3 py-1 bg-orange-100 hover:bg-orange-200 rounded-full transition-colors" data-genre="Hip Hop">Hip Hop</button>
+                            <button type="button" class="genre-preset px-3 py-1 bg-orange-100 hover:bg-orange-200 rounded-full transition-colors" data-genre="Classical">Classical</button>
+                        </div>
+                        <p class="text-xs text-orange-700 mt-2">Click any genre above to auto-fill the genre field</p>
+                    </div>
+                </div>
+                
+                <form id="genre-import-form" class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Genre</label>
+                        <input type="text" name="genre" placeholder="e.g., Spanish Pop, City Pop, Jazz" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500" required>
+                        <p class="text-xs text-gray-500 mt-1">Enter the genre you want to search for. Use specific genre names for better results.</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Rank By</label>
+                        <select name="rank_by" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500">
+                            <option value="most_relevant">Most Relevant</option>
+                            <option value="trending">Trending</option>
+                            <option value="most_recent">Most Recent</option>
+                            <option value="upvote_count">Upvote Count</option>
+                            <option value="play_count">Play Count</option>
+                            <option value="dislike_count">Dislike Count</option>
+                            <option value="by_hour">By Hour</option>
+                            <option value="by_day">By Day</option>
+                            <option value="by_week">By Week</option>
+                            <option value="by_month">By Month</option>
+                            <option value="all_time">All Time</option>
+                            <option value="default">Default</option>
+                        </select>
+                        <p class="text-xs text-gray-500 mt-1">How to rank and sort the genre search results</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Size per Page</label>
+                            <input type="number" name="size" value="20" min="1" max="100" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500">
+                            <p class="text-xs text-gray-500 mt-1">Number of tracks per page (1-100)</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Pages</label>
+                            <input type="number" name="pages" value="1" min="1" max="10" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500">
+                            <p class="text-xs text-gray-500 mt-1">Number of pages to fetch (1-10)</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Start Index</label>
+                            <input type="number" name="from_index" min="0" placeholder="0" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500">
+                            <p class="text-xs text-gray-500 mt-1">Starting index for pagination</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center space-x-6">
+                        <label class="flex items-center">
+                            <input type="checkbox" name="dry_run" class="rounded border-gray-300 text-orange-600 focus:ring-orange-500">
+                            <span class="ml-2 text-sm text-gray-700">Dry Run</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" name="process" class="rounded border-gray-300 text-orange-600 focus:ring-orange-500">
+                            <span class="ml-2 text-sm text-gray-700">Auto Process</span>
+                        </label>
+                    </div>
+
+                    <button type="submit" class="w-full bg-orange-600 text-white py-3 px-4 rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transition duration-200 font-medium">
+                        Start Genre Import
                     </button>
                 </form>
             </div>

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Console\Commands;
 
 use App\Models\Genre;
@@ -11,19 +13,19 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
-class ImportSunoSearch extends Command
+class ImportSunoGenre extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'import:suno-search 
-                            {--term= : Search term (empty for all public songs)}
+    protected $signature = 'import:suno-genre 
+                            {--genre= : Genre term to search for (e.g., "Spanish Pop")}
+                            {--from-index=0 : Starting index for pagination}
                             {--size=20 : Number of tracks per request}
                             {--pages=1 : Number of pages to fetch}
-                            {--rank-by=most_relevant : Ranking method (upvote_count, play_count, dislike_count, trending, most_recent, most_relevant, by_hour, by_day, by_week, by_month, all_time, default)}
-                            {--instrumental=false : Search for instrumental tracks only}
+                            {--rank-by=most_relevant : Ranking method (most_relevant, trending, most_recent, etc.)}
                             {--process : Automatically start processing imported tracks}
                             {--dry-run : Preview import without creating tracks}
                             {--session-id= : Session ID for progress tracking}';
@@ -33,47 +35,52 @@ class ImportSunoSearch extends Command
      *
      * @var string
      */
-    protected $description = 'Import tracks from Suno search API (public songs, search by term, etc.)';
+    protected $description = 'Import tracks from Suno by genre using tag_song search';
 
     /**
-     * Suno API configuration
+     * Suno API configuration from user's curl request
      */
     private const API_BASE_URL = 'https://studio-api.prod.suno.com/api/search/';
-    private const BEARER_TOKEN = 'eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18yT1o2eU1EZzhscWRKRWloMXJvemY4T3ptZG4iLCJ0eXAiOiJKV1QifQ.eyJhdWQiOiJzdW5vLWFwaSIsImF6cCI6Imh0dHBzOi8vc3Vuby5jb20iLCJleHAiOjE3NDg4NTkwOTUsImZ2YSI6WzEsLTFdLCJodHRwczovL3N1bm8uYWkvY2xhaW1zL2NsZXJrX2lkIjoidXNlcl8yalRZbUxScVYzSDA3VDFCeDdFb3IxcWpNV20iLCJodHRwczovL3N1bm8uYWkvY2xhaW1zL2VtYWlsIjoiZ29sZWFmQGdtYWlsLmNvbSIsImh0dHBzOi8vc3Vuby5haS9jbGFpbXMvcGhvbmUiOm51bGwsImlhdCI6MTc0ODg1OTAzNSwiaXNzIjoiaHR0cHM6Ly9jbGVyay5zdW5vLmNvbSIsImp0aSI6IjU5MWU4ZDcxZWJlNjE5MDcxMWIxIiwibmJmIjoxNzQ4ODU5MDI1LCJzaWQiOiJzZXNzXzJ4d3BQZnJkN1Y2ZlI1dlliQWZvbm02VTlxaiIsInN1YiI6InVzZXJfMmpUWW1MUnFWM0gwN1QxQng3RW9yMXFqTVdtIn0.Lgb8tIvPRksY6QIJcQpMg6VtN46Vzs0oI4w9zwxZ8UYFFMYgPL7PrtKX05nMpel1AFhNphzHI_oq4avMk0HB8b80ZKeUey0W_Xf3Au914UoXXMWX0twsCcIccQ4jz0h_XTjR-pVYiR7RhK2TKYuoL8vluKgBlm7H8A7baVTh9tEbrbDJXo7lAUrpbV2QQAnYUY_0XFr4mf-ayXEzf9MhV2GBM_If2drmyfVRQAxzdtcJC3VZTgp0uaDVH-qNFYzYx3a2y7fHQpxpmn2tPd26SDwxuSk9scromTw2gh1YG8P2Xq-o8_FL3x1OWUFPmAZt0hRPWpTForoI2Xd8DuovIg';
-    private const BROWSER_TOKEN = '{"token":"eyJ0aW1lc3RhbXAiOjE3NDg4NTkwNDExOTB9"}';
+    private const BEARER_TOKEN = 'eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18yT1o2eU1EZzhscWRKRWloMXJvemY4T3ptZG4iLCJ0eXAiOiJKV1QifQ.eyJhdWQiOiJzdW5vLWFwaSIsImF6cCI6Imh0dHBzOi8vc3Vuby5jb20iLCJleHAiOjE3NDg4NTk1MzAsImZ2YSI6WzgsLTFdLCJodHRwczovL3N1bm8uYWkvY2xhaW1zL2NsZXJrX2lkIjoidXNlcl8yalRZbUxScVYzSDA3VDFCeDdFb3IxcWpNV20iLCJodHRwczovL3N1bm8uYWkvY2xhaW1zL2VtYWlsIjoiZ29sZWFmQGdtYWlsLmNvbSIsImh0dHBzOi8vc3Vuby5haS9jbGFpbXMvcGhvbmUiOm51bGwsImlhdCI6MTc0ODg1OTQ3MCwiaXNzIjoiaHR0cHM6Ly9jbGVyay5zdW5vLmNvbSIsImp0aSI6IjRlOGJmZTFkMjViMTNhNThmODUwIiwibmJmIjoxNzQ4ODU5NDYwLCJzaWQiOiJzZXNzXzJ4d3BQZnJkN1Y2ZlI1dlliQWZvbm02VTlxaiIsInN1YiI6InVzZXJfMmpUWW1MUnFWM0gwN1QxQng3RW9yMXFqTVdtIn0.gosPI06mXTF-W_IwTISbKnd3gcCnWZHoU3siZQuQuB5xy2V5SzT9JnF7LfHD_aYOe52mWzTKTlI5_vyW2m2InlZlyFAspY76__fZw-1AxGoSOLFoBjZ__AQdCF9yzatLs4Qdki4Bgy6eQQ_pegbGXYvEkEKniqprCaTVXlsv6OQcO0A8AItY1CA3XMFkCd1tRwJV8sbmJ0B_zpPvvLe_wJKevdvfE8-9yychrMGb-xh-ca3PqJ13w1ovJoblIdr4yiziCulghYO7Kp_WO5mO81-tt9Iob2WooW_Q6t-_CFHiw8qof6pYBZ3pgga8WGdnv76BfwMubvABlNtT8kC95Q';
+    private const BROWSER_TOKEN = '{"token":"eyJ0aW1lc3RhbXAiOjE3NDg4NTk0NzU0OTV9"}';
     private const DEVICE_ID = '42c6837d-7c0f-4093-b9bc-10d1671749aa';
 
     /**
      * Execute the console command.
      */
-    public function handle()
+    public function handle(): int
     {
-        $term = $this->option('term') ?? '';
+        $genre = $this->option('genre');
+        $fromIndex = (int) $this->option('from-index');
         $size = (int) $this->option('size');
         $pages = (int) $this->option('pages');
         $rankBy = $this->option('rank-by');
-        $instrumental = $this->option('instrumental') === 'true';
         $autoProcess = $this->option('process');
         $dryRun = $this->option('dry-run');
         $sessionId = $this->option('session-id');
 
-        $this->info("Fetching tracks from Suno search API");
-        $this->info("Search term: " . ($term ?: '(all public songs)'));
+        if (empty($genre)) {
+            $this->error('Genre parameter is required. Use --genre="Spanish Pop" for example.');
+            return 1;
+        }
+
+        $this->info("Fetching tracks from Suno genre search API");
+        $this->info("Genre: {$genre}");
         $this->info("Size per page: {$size}");
         $this->info("Pages to fetch: {$pages}");
         $this->info("Rank by: {$rankBy}");
-        $this->info("Instrumental only: " . ($instrumental ? 'yes' : 'no'));
         
         if ($dryRun) {
             $this->warn('DRY RUN MODE - No tracks will be created');
         }
 
         if ($sessionId) {
-            $this->updateProgress($sessionId, 10, 'Starting Suno Search import...');
+            $this->updateProgress($sessionId, 10, 'Starting Suno Genre import...');
         }
 
         $totalImported = 0;
         $totalFailed = 0;
+        $totalSkipped = 0;
 
         try {
             for ($page = 1; $page <= $pages; $page++) {
@@ -84,9 +91,9 @@ class ImportSunoSearch extends Command
                     $this->updateProgress($sessionId, (int)$pageProgress, "Fetching page {$page}/{$pages}...", 'running', $totalImported, $totalFailed);
                 }
                 
-                $fromIndex = ($page - 1) * $size;
+                $currentFromIndex = $fromIndex + (($page - 1) * $size);
                 
-                $tracks = $this->fetchTracksFromAPI($term, $fromIndex, $size, $rankBy, $instrumental);
+                $tracks = $this->fetchTracksFromAPI($genre, $currentFromIndex, $size, $rankBy);
                 
                 if (empty($tracks)) {
                     $this->warn("No tracks found on page {$page}");
@@ -98,11 +105,18 @@ class ImportSunoSearch extends Command
                 foreach ($tracks as $index => $trackData) {
                     try {
                         if ($dryRun) {
-                            $this->displayTrackPreview($trackData, $totalImported + $index + 1);
+                            $this->displayTrackPreview($trackData, $index + 1);
                             $totalImported++;
                         } else {
+                            // Check for duplicates before creating
+                            $sunoId = $trackData['id'] ?? null;
+                            if ($sunoId && Track::where('suno_id', $sunoId)->exists()) {
+                                $this->comment("Track with Suno ID {$sunoId} already exists, skipping");
+                                $totalSkipped++;
+                                continue;
+                            }
+
                             $track = $this->processTrack($trackData);
-                            
                             if ($track) {
                                 $totalImported++;
                                 
@@ -110,55 +124,48 @@ class ImportSunoSearch extends Command
                                     \App\Jobs\ProcessTrack::dispatch($track);
                                     $this->comment("Queued track for processing: {$track->title}");
                                 }
+                            } else {
+                                $totalSkipped++;
                             }
-                        }
-
-                        // Update progress within page
-                        if ($sessionId) {
-                            $trackProgress = $pageProgress + (($index + 1) / count($tracks)) * (80 / $pages);
-                            $this->updateProgress($sessionId, (int)$trackProgress, "Processing track " . ($totalImported) . "...", 'running', $totalImported, $totalFailed);
                         }
                     } catch (Exception $e) {
                         $totalFailed++;
                         $this->error("Failed to process track: " . $e->getMessage());
-                        Log::error("Failed to process Suno search track", [
+                        Log::error("Failed to process track from genre search", [
                             'track_data' => $trackData,
                             'error' => $e->getMessage(),
                         ]);
-
-                        // Update progress with failure
-                        if ($sessionId) {
-                            $trackProgress = $pageProgress + (($index + 1) / count($tracks)) * (80 / $pages);
-                            $this->updateProgress($sessionId, (int)$trackProgress, "Processing track " . ($totalImported + $totalFailed) . "...", 'running', $totalImported, $totalFailed);
-                        }
                     }
-                }
-                
-                // Add delay between pages to be respectful to the API
-                if ($page < $pages) {
-                    $this->comment("Waiting 2 seconds before next page...");
-                    sleep(2);
                 }
             }
 
-            $message = $dryRun ? "DRY RUN: Would import {$totalImported} tracks" : "Import finished. Imported: {$totalImported}, Failed: {$totalFailed}";
-            
             if ($sessionId) {
+                $message = $dryRun 
+                    ? "DRY RUN: Would import {$totalImported} tracks, {$totalSkipped} skipped, {$totalFailed} failed"
+                    : "Successfully imported {$totalImported} tracks, {$totalSkipped} skipped, {$totalFailed} failed";
+                    
                 $this->updateProgress($sessionId, 100, $message, 'completed', $totalImported, $totalFailed);
             }
 
             $this->newLine();
-            $this->info($message);
-            
-            return $totalFailed > 0 ? 1 : 0;
+            if ($dryRun) {
+                $this->info("DRY RUN: Would import {$totalImported} tracks");
+            } else {
+                $this->info("Successfully imported {$totalImported} tracks");
+            }
+            $this->info("Skipped: {$totalSkipped} tracks");
+            $this->info("Failed: {$totalFailed} tracks");
+
+            return 0;
+
         } catch (Exception $e) {
             if ($sessionId) {
                 $this->updateProgress($sessionId, 100, 'Import failed: ' . $e->getMessage(), 'failed', $totalImported, $totalFailed);
             }
             
-            $this->error("Failed to import from Suno search: " . $e->getMessage());
-            Log::error("Failed to import from Suno search", [
-                'term' => $term,
+            $this->error("Failed to import from Suno genre search: " . $e->getMessage());
+            Log::error("Failed to import from Suno genre search", [
+                'genre' => $genre,
                 'error' => $e->getMessage(),
             ]);
             return 1;
@@ -166,28 +173,28 @@ class ImportSunoSearch extends Command
     }
 
     /**
-     * Fetch tracks from Suno search API.
+     * Fetch tracks from Suno search API using tag_song search type.
      *
-     * @param string $term
+     * @param string $genre
      * @param int $fromIndex
      * @param int $size
      * @param string $rankBy
-     * @param bool $instrumental
      * @return array
      * @throws Exception
      */
-    protected function fetchTracksFromAPI(string $term, int $fromIndex, int $size, string $rankBy, bool $instrumental): array
+    protected function fetchTracksFromAPI(string $genre, int $fromIndex, int $size, string $rankBy): array
     {
+        // URL encode the genre term
+        $encodedGenre = urlencode($genre);
+        
         $payload = [
             'search_queries' => [
                 [
-                    'name' => 'public_song',
-                    'search_type' => 'public_song',
-                    'term' => $term,
+                    'name' => 'tag_song',
+                    'search_type' => 'tag_song',
+                    'term' => $encodedGenre,
                     'from_index' => $fromIndex,
-                    'size' => $size,
                     'rank_by' => $rankBy,
-                    'is_instrumental' => $instrumental,
                 ]
             ]
         ];
@@ -200,44 +207,43 @@ class ImportSunoSearch extends Command
             'browser-token' => self::BROWSER_TOKEN,
             'content-type' => 'text/plain;charset=UTF-8',
             'device-id' => self::DEVICE_ID,
+            'dnt' => '1',
+            'origin' => 'https://suno.com',
             'priority' => 'u=1, i',
+            'referer' => 'https://suno.com/',
             'sec-ch-ua' => '"Chromium";v="136", "Google Chrome";v="136", "Not.A/Brand";v="99"',
             'sec-ch-ua-mobile' => '?0',
             'sec-ch-ua-platform' => '"Windows"',
             'sec-fetch-dest' => 'empty',
             'sec-fetch-mode' => 'cors',
             'sec-fetch-site' => 'same-site',
-        ])->withOptions([
-            'referer' => 'https://suno.com/',
-            'referrerPolicy' => 'strict-origin-when-cross-origin',
-            'mode' => 'cors',
-            'credentials' => 'include'
+            'user-agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
         ])->timeout(60)->post(self::API_BASE_URL, $payload);
 
         if (!$response->successful()) {
             $this->error("API Response Status: {$response->status()}");
             $this->error("API Response Body: " . $response->body());
-            throw new Exception("Failed to fetch data from Suno search API. Status: {$response->status()}");
+            throw new Exception("Failed to fetch data from Suno genre search API. Status: {$response->status()}");
         }
 
         $data = $response->json();
         
         // Extract tracks from the search results structure
         if (!isset($data['result']) || !is_array($data['result'])) {
-            throw new Exception("No result found in Suno search API response");
+            throw new Exception("No result found in Suno genre search API response");
         }
         
-        if (!isset($data['result']['public_song']) || !is_array($data['result']['public_song'])) {
-            throw new Exception("No public_song data found in search results");
+        if (!isset($data['result']['tag_song']) || !is_array($data['result']['tag_song'])) {
+            throw new Exception("No tag_song data found in search results");
         }
         
-        $publicSongData = $data['result']['public_song'];
+        $tagSongData = $data['result']['tag_song'];
         
-        if (!isset($publicSongData['result']) || !is_array($publicSongData['result'])) {
+        if (!isset($tagSongData['result']) || !is_array($tagSongData['result'])) {
             return []; // No tracks found, return empty array
         }
 
-        return $publicSongData['result'];
+        return $tagSongData['result'];
     }
 
     /**
@@ -372,5 +378,22 @@ class ImportSunoSearch extends Command
             $track->genres()->sync($genreIds);
             $this->comment("Attached " . count($genreIds) . " genres to track");
         }
+    }
+
+    /**
+     * Update progress for session-based tracking.
+     */
+    protected function updateProgress(string $sessionId, int $progress, string $message, string $status = 'running', int $imported = 0, int $failed = 0): void
+    {
+        $progressData = [
+            'status' => $status,
+            'progress' => $progress,
+            'message' => $message,
+            'imported' => $imported,
+            'failed' => $failed,
+            'updated_at' => now()->toISOString(),
+        ];
+
+        Cache::put("import_progress_{$sessionId}", $progressData, 3600); // 1 hour
     }
 } 
