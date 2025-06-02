@@ -16,6 +16,7 @@
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
 
-/* Import track status CSS */
+/* Import component styles */
+@import './components/navigation.css';
 @import './status-updates.css';
 @import './components/track-status.css';

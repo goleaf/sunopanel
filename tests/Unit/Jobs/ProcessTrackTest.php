@@ -68,7 +68,7 @@ class ProcessTrackTest extends TestCase
 
     public function testProcessTrackHandlesErrors(): void
     {
-        // Sample track with bad urls
+        // Sample track with invalid URLs (non-Suno.ai URLs will be rejected)
         $trackData = [
             'title' => 'Error Test Track',
             'mp3_url' => 'https://example.com/bad-url.mp3',
@@ -80,21 +80,15 @@ class ProcessTrackTest extends TestCase
         // Create track
         $track = Track::create($trackData);
 
-        // Mock HTTP responses to simulate errors
-        Http::fake([
-            $trackData['mp3_url'] => Http::response('Not found', 404),
-            $trackData['image_url'] => Http::response('Not found', 404),
-        ]);
-
-        // Process should catch the exception
+        // Process should catch the exception due to invalid URLs
         $job = new ProcessTrack($track);
         
         try {
             $job->handle();
             $this->fail('Expected exception was not thrown');
         } catch (\Exception $e) {
-            // Expected exception
-            $this->assertStringContainsString('Failed to download', $e->getMessage());
+            // Expected exception for invalid URLs
+            $this->assertStringContainsString('invalid URLs', $e->getMessage());
         }
 
         // Refresh track from database
@@ -104,6 +98,7 @@ class ProcessTrackTest extends TestCase
         $this->assertEquals('failed', $track->status);
         $this->assertEquals(0, $track->progress);
         $this->assertNotNull($track->error_message);
+        $this->assertStringContainsString('invalid URLs', $track->error_message);
     }
     
     protected function tearDown(): void

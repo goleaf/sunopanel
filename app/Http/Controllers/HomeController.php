@@ -48,7 +48,7 @@ final class HomeController extends Controller
         // Filter by genre if provided
         if ($request->filled('genre')) {
             $genre = $request->input('genre');
-            $query->whereHas('genres', fn($q) => $q->where('id', $genre));
+            $query->whereHas('genres', fn($q) => $q->where('genres.id', $genre));
         }
         
         // Get paginated tracks sorted by status priority

@@ -66,14 +66,20 @@ class ProcessTrackTest extends TestCase
         ]);
         
         // Call the ProcessTrack job (this should fail due to invalid URLs)
-        (new ProcessTrack($track))->handle();
+        try {
+            (new ProcessTrack($track))->handle();
+            $this->fail('Expected exception was not thrown');
+        } catch (\Exception $e) {
+            // Expected exception for invalid URLs
+            $this->assertStringContainsString('invalid URLs', $e->getMessage());
+        }
         
         // Refresh track to get updated data
         $track->refresh();
         
         // Verify track failed due to invalid URLs (not Suno.ai URLs)
         $this->assertEquals('failed', $track->status);
-        $this->assertStringContains('invalid URLs', $track->error_message);
+        $this->assertStringContainsString('invalid URLs', $track->error_message);
         
         // Verify no genres were attached
         $this->assertEquals(0, $track->genres->count());

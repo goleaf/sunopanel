@@ -1,5 +1,39 @@
 # TODO List - SunoPanel System Upgrades
 
+## 🔥 Critical Priority Tasks - Import Functionality Testing & Improvements
+
+### 0. Create Comprehensive Import Tests & Functionality Improvements (URGENT) 🚧 IN PROGRESS
+- [ ] Create comprehensive feature tests for ImportController
+  - [ ] Test import dashboard index page
+  - [ ] Test JSON import functionality with file upload
+  - [ ] Test JSON import functionality with URL
+  - [ ] Test Suno Discover import functionality
+  - [ ] Test Suno Search import functionality
+  - [ ] Test unified import functionality
+  - [ ] Test progress tracking endpoints
+  - [ ] Test statistics endpoints
+- [ ] Create unit tests for import services and commands
+  - [ ] Test import command classes
+  - [ ] Test import validation logic
+  - [ ] Test import progress tracking
+  - [ ] Test import error handling
+- [ ] Improve import functionality
+  - [ ] Add proper error handling and validation
+  - [ ] Implement proper file upload security
+  - [ ] Add import rate limiting
+  - [ ] Improve progress tracking accuracy
+  - [ ] Add import history and logging
+  - [ ] Implement import rollback functionality
+- [ ] Add API tests for import endpoints
+  - [ ] Test import API endpoints with authentication
+  - [ ] Test import API rate limiting
+  - [ ] Test import API error responses
+- [ ] Enhance import UI and UX
+  - [ ] Add real-time progress updates
+  - [ ] Improve error messaging
+  - [ ] Add import preview functionality
+  - [ ] Implement drag-and-drop file upload
+
 ## ✅ Completed Tasks
 - [x] Fix YouTube API error: Call to a member function getViewCount() on null
   - Fixed by adding 'statistics' to the API request parts and adding null checks
@@ -594,4 +628,67 @@
 - Successfully resolved schema mismatches, factory issues, unique constraints, and route problems
 - Database transaction issue appears to be SQLite-specific or RefreshDatabase trait related
 - All business logic and application functionality working correctly outside of test environment
-- May need alternative test database configuration or different transaction handling approach 
+- May need alternative test database configuration or different transaction handling approach
+
+# Top Menu Refactoring Todo
+
+## Tasks to Complete
+
+### 1. Create Blade Components Structure
+- [x] Create `resources/views/components` directory
+- [x] Create navigation components:
+  - [x] `navigation/main.blade.php` - Main navigation wrapper
+  - [x] `navigation/brand.blade.php` - Logo and brand section
+  - [x] `navigation/desktop-menu.blade.php` - Desktop navigation menu
+  - [x] `navigation/mobile-menu.blade.php` - Mobile navigation menu
+  - [x] `navigation/nav-link.blade.php` - Individual navigation link component
+  - [x] `navigation/dropdown.blade.php` - Dropdown menu component
+  - [x] `navigation/mobile-toggle.blade.php` - Mobile menu toggle button
+
+### 2. Extract Navigation Data
+- [x] Create navigation configuration/data structure
+- [x] Define menu items with routes, icons, and labels
+- [x] Create helper for active route detection
+
+### 3. Refactor Layout File
+- [x] Replace inline navigation with component calls
+- [x] Clean up the main layout file
+- [x] Move CSS styles to appropriate component files or CSS modules
+
+### 4. Create Component Classes (if needed)
+- [x] Create PHP component classes for complex logic
+- [x] Implement active state detection logic
+- [x] Add proper type hints and documentation
+
+### 5. Testing and Optimization
+- [ ] Test desktop navigation functionality
+- [ ] Test mobile navigation functionality
+- [ ] Test dropdown menus
+- [ ] Verify active states work correctly
+- [ ] Test responsive behavior
+
+### 6. Documentation and Cleanup
+- [ ] Add component documentation
+- [ ] Remove unused code
+- [ ] Commit changes to git
+
+## Current Status
+- [x] Analyzed existing navigation structure
+- [x] Created component structure and files
+- [x] Extracted navigation data to config file
+- [x] Created reusable icon component
+- [x] Created all navigation components
+- [x] Refactored main layout file
+- [x] Created separate CSS file for navigation styles
+- [x] Created JavaScript module for navigation functionality
+- [x] Built assets successfully
+- [ ] Testing phase
+
+## Notes
+- Current navigation has desktop and mobile versions
+- YouTube section has dropdown functionality
+- Navigation uses TailwindCSS with custom styles
+- Active states are handled with route checking
+- Mobile menu has toggle functionality with JavaScript
+- All components are now modular and reusable
+- Configuration-driven approach makes it easy to modify menu items 

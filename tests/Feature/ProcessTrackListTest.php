@@ -57,10 +57,13 @@ class ProcessTrackListTest extends TestCase
         $this->assertEquals('City pop,80s', $track1->genres_string);
         $this->assertEquals('pending', $track1->status);
         
-        // Check genre associations
-        $this->assertEquals(2, $track1->genres()->count());
-        $this->assertTrue($track1->genres->contains('name', 'City pop'));
-        $this->assertTrue($track1->genres->contains('name', '80s'));
+        // Check genre associations (genres are attached when ProcessTrack job runs, not during creation)
+        // Since we're faking the queue, the job hasn't run yet, so no genres are attached
+        $this->assertEquals(0, $track1->genres()->count());
+        
+        // But the genres_string should contain the genre information
+        $this->assertStringContainsString('City pop', $track1->genres_string);
+        $this->assertStringContainsString('80s', $track1->genres_string);
         
         // Verify jobs were dispatched
         Queue::assertPushed(ProcessTrack::class, 4);
