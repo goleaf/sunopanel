@@ -48,8 +48,8 @@ final class ImportController extends Controller
      */
     public function importJson(Request $request): JsonResponse
     {
-        // Rate limiting (skip in testing environment)
-        if (!app()->environment('testing')) {
+        // Rate limiting (skip in testing environment unless explicitly enabled)
+        if (!app()->environment('testing') || config('app.test_rate_limiting', false)) {
             $key = 'import_json_' . $request->ip();
             if (RateLimiter::tooManyAttempts($key, 5)) {
                 return response()->json([
@@ -107,12 +107,8 @@ final class ImportController extends Controller
                 $path = $file->store('imports', 'local');
                 
                 // Get the full path - handle both real and fake storage
-                // Check if storage is faked (for testing) rather than environment
-                $isFakeStorage = config('filesystems.disks.local.driver') === 'local' && 
-                                app()->bound('filesystem.fake.local');
-                
-                if ($isFakeStorage || app()->runningUnitTests()) {
-                    // In testing with fake storage, use Storage facade to get content
+                if (app()->runningUnitTests()) {
+                    // In testing, always use Storage facade to get content
                     $content = Storage::disk('local')->get($path);
                     if ($content === null) {
                         return response()->json([
@@ -151,7 +147,7 @@ final class ImportController extends Controller
                 }
                 
                 // Set source path for command
-                $source = ($isFakeStorage || app()->runningUnitTests()) ? $path : storage_path("app/{$path}");
+                $source = app()->runningUnitTests() ? $path : storage_path("app/{$path}");
             } else {
                 $source = $request->json_url;
                 
@@ -232,8 +228,8 @@ final class ImportController extends Controller
      */
     public function importSunoDiscover(Request $request): JsonResponse
     {
-        // Rate limiting (skip in testing environment)
-        if (!app()->environment('testing')) {
+        // Rate limiting (skip in testing environment unless explicitly enabled)
+        if (!app()->environment('testing') || config('app.test_rate_limiting', false)) {
             $key = 'import_discover_' . $request->ip();
             if (RateLimiter::tooManyAttempts($key, 3)) {
                 return response()->json([
@@ -320,8 +316,8 @@ final class ImportController extends Controller
      */
     public function importSunoSearch(Request $request): JsonResponse
     {
-        // Rate limiting (skip in testing environment)
-        if (!app()->environment('testing')) {
+        // Rate limiting (skip in testing environment unless explicitly enabled)
+        if (!app()->environment('testing') || config('app.test_rate_limiting', false)) {
             $key = 'import_search_' . $request->ip();
             if (RateLimiter::tooManyAttempts($key, 3)) {
                 return response()->json([

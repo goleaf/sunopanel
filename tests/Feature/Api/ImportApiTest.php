@@ -119,10 +119,8 @@ final class ImportApiTest extends TestCase
     {
         Queue::fake();
         
-        // Temporarily enable rate limiting for this test
-        app()->detectEnvironment(function () {
-            return 'production';
-        });
+        // Temporarily set a flag to enable rate limiting in testing
+        config(['app.test_rate_limiting' => true]);
         
         $file = UploadedFile::fake()->createWithContent(
             'test.json',
@@ -159,10 +157,8 @@ final class ImportApiTest extends TestCase
                      'message' => 'Too many import attempts. Please try again later.'
                  ]);
                  
-        // Reset environment
-        app()->detectEnvironment(function () {
-            return 'testing';
-        });
+        // Reset config
+        config(['app.test_rate_limiting' => false]);
     }
 
     public function test_discover_import_rate_limiting(): void
